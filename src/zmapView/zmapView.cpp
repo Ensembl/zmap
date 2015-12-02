@@ -511,16 +511,7 @@ ZMapViewWindow zMapViewCreate(GtkWidget *view_container, ZMapFeatureSequenceMap 
   /* I DON'T UNDERSTAND WHY THERE IS A LIST OF SEQUENCES HERE.... */
 
   /* Set up sequence to be fetched, in this case server defaults to whatever is set in config. file. */
-  sequence_fetch = g_new0(ZMapFeatureSequenceMapStruct, 1) ;
-  sequence_fetch->config_file = g_strdup(sequence_map->config_file) ;
-  sequence_fetch->stylesfile = g_strdup(sequence_map->stylesfile) ;
-  sequence_fetch->dataset = g_strdup(sequence_map->dataset) ;
-  sequence_fetch->sequence = g_strdup(sequence_map->sequence) ;
-  sequence_fetch->start = sequence_map->start ;
-  sequence_fetch->end = sequence_map->end ;
-  sequence_fetch->cached_parsers = sequence_map->cached_parsers ;
-  sequence_fetch->sources = sequence_map->sources ;
-
+  sequence_fetch = sequence_map->copy() ;
   sequences_list = g_list_append(sequences_list, sequence_fetch) ;
 
   view_name = sequence_map->sequence ;
@@ -660,7 +651,8 @@ gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view
       stylesfile = zmap_view->view_sequence->stylesfile;
 
       // get the stanza structs from ZMap config
-      settings_list = zmap_view->view_sequence->GetSources(config_str, &stylesfile) ;
+      zmap_view->view_sequence->ConstructSources(config_str, &stylesfile) ;
+      settings_list = zmap_view->view_sequence->GetSources() ;
 
       viewSetUpStyles(zmap_view, stylesfile) ;
 
@@ -2202,8 +2194,6 @@ static gboolean viewSetUpServerConnections(ZMapView zmap_view, GList *settings_l
               tmp_error = NULL ;
             }
         }
-
-      zMapConfigSourcesFreeList(settings_list);
     }
 
   return result ;
@@ -7085,9 +7075,9 @@ static void configUpdateContext(ZMapView view,
     }
 
   /* Update the sources list if the sources have changed */
-  if (zMapViewGetFlag(view, ZMAPFLAG_SAVE_SOURCES))
+  //if (zMapViewGetFlag(view, ZMAPFLAG_SAVE_SOURCES))
     {
-      updateContextSources(context, file_type, view->context_map.sources) ;
+      updateContextSources(context, file_type, view->view_sequence->sources) ;
 
       changed = TRUE ;
     }

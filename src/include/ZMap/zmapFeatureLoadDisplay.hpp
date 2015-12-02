@@ -199,9 +199,6 @@ typedef struct ZMapFeatureContextMapStructType
    * Maps the group unique_id (GQuark) to a GList of column unique ids (GQuark) */
   GHashTable *column_groups ;
 
-  /* This lists all user-created sources */
-  std::map<std::string, _ZMapConfigSourceStruct*> *sources ;
-
 } ZMapFeatureContextMapStruct, *ZMapFeatureContextMap ;
 
 
@@ -239,7 +236,10 @@ typedef struct ZMapFeatureSequenceMapStructType
   int start, end ;                                          /* chromosome coordinates */
 
 
-  GList* GetSources(const char *config_str, char **stylesfile) ;
+  ZMapFeatureSequenceMapStructType* copy() ;
+
+  GList* GetSources() ;
+  void ConstructSources(const char *config_str, char **stylesfile) ;
 
   void AddSource(const std::string &source_name, _ZMapConfigSourceStruct *source, GError **error) ;
   void AddFileSource(const char *file) ;

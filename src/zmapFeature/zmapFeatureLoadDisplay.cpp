@@ -37,8 +37,11 @@
 
 #include <ZMap/zmapFeatureLoadDisplay.hpp>
 #include <ZMap/zmapConfigStanzaStructs.hpp>
+#include <ZMap/zmapConfigStrings.hpp>
 #include <ZMap/zmapGLibUtils.hpp>
 #include <ZMap/zmapConfigIni.hpp>
+
+using namespace std ;
 
 
 static gint colIDOrderCB(gconstpointer a, gconstpointer b,gpointer user_data) ;
@@ -86,7 +89,7 @@ ZMapFeatureColumn zMapFeatureGetSetColumn(ZMapFeatureContextMap context_map,GQua
     }
   /*      else*/
   {
-    std::map<GQuark, ZMapFeatureColumn>::iterator iter = context_map->columns->find(gff->column_id) ;
+    map<GQuark, ZMapFeatureColumn>::iterator iter = context_map->columns->find(gff->column_id) ;
 
     if (iter != context_map->columns->end())
       {
@@ -131,7 +134,7 @@ GList *zMapFeatureGetColumnFeatureSets(ZMapFeatureContextMap context_map,GQuark 
    * also need to scan for all calls to this func since caching the data
    */
 
-  std::map<GQuark, ZMapFeatureColumn>::iterator col_iter = context_map->columns->find(column_id) ;
+  map<GQuark, ZMapFeatureColumn>::iterator col_iter = context_map->columns->find(column_id) ;
 
   if (col_iter != context_map->columns->end())
       column = col_iter->second ;
@@ -225,7 +228,7 @@ GList* zMapFeatureGetOrderedColumnsListIDs(ZMapFeatureContextMap context_map)
   GList *columns = NULL ;
   zMapReturnValIfFail(context_map, columns) ;
 
-  for (std::map<GQuark, ZMapFeatureColumn>::iterator iter = context_map->columns->begin() ; 
+  for (map<GQuark, ZMapFeatureColumn>::iterator iter = context_map->columns->begin() ; 
        iter != context_map->columns->end(); 
        ++iter)
     {
@@ -246,7 +249,7 @@ GList* zMapFeatureGetOrderedColumnsList(ZMapFeatureContextMap context_map)
   GList *columns = NULL ;
   zMapReturnValIfFail(context_map, columns) ;
 
-  for (std::map<GQuark, ZMapFeatureColumn>::iterator iter = context_map->columns->begin() ; 
+  for (map<GQuark, ZMapFeatureColumn>::iterator iter = context_map->columns->begin() ; 
        iter != context_map->columns->end(); 
        ++iter)
     {
@@ -265,9 +268,27 @@ GList* zMapFeatureGetOrderedColumnsList(ZMapFeatureContextMap context_map)
  *              ZMapFeatureSequenceMap routines
  */
 
+ZMapFeatureSequenceMapStructType* ZMapFeatureSequenceMapStructType::copy()
+{
+  ZMapFeatureSequenceMapStructType *dest = NULL ;
+
+  dest = g_new0(ZMapFeatureSequenceMapStruct, 1) ;
+
+  dest->config_file = g_strdup(config_file) ;
+  dest->stylesfile = g_strdup(stylesfile) ;
+  dest->dataset = g_strdup(dataset) ;
+  dest->sequence = g_strdup(sequence) ;
+  dest->start = start ;
+  dest->end = end ;
+  dest->cached_parsers = cached_parsers ;
+  dest->sources = sources ;
+
+  return dest ;
+}
+
 
 /* Add a source to our list of user-created sources. Sets the error if the name already exists. */
-void ZMapFeatureSequenceMapStructType::AddSource(const std::string &source_name, 
+void ZMapFeatureSequenceMapStructType::AddSource(const string &source_name, 
                                                  ZMapConfigSource source, 
                                                  GError **error)
 {
@@ -281,7 +302,7 @@ void ZMapFeatureSequenceMapStructType::AddSource(const std::string &source_name,
   else
     {
       if (!sources)
-        sources = new std::map<std::string, ZMapConfigSource> ;
+        sources = new map<string, ZMapConfigSource> ;
 
       (*sources)[source_name] = source ;
     }
@@ -303,7 +324,7 @@ void ZMapFeatureSequenceMapStructType::AddFileSource(const char *file)
     src->url = g_strdup_printf("file:///%s", file) ;
 
   /* Add the source to our list. Use the filename as the source name */
-  std::string source_name(file) ;
+  string source_name(file) ;
   GError *error = NULL ;
 
   AddSource(source_name, src, &error) ;
@@ -316,20 +337,14 @@ void ZMapFeatureSequenceMapStructType::AddFileSource(const char *file)
 }
 
 
-/* Get the full list of all sources (including any from the config file, the given config string,
- * the command line, or any that have been specified dynamically by the user) */
-GList* ZMapFeatureSequenceMapStructType::GetSources(const char *config_str,
-                                                    char **stylesfile)
+/* Get the list of ZMapConfigSource structs from our sources map, returned in a glist. */
+GList* ZMapFeatureSequenceMapStructType::GetSources()
 {
   GList *settings_list = NULL ;
 
-  // get any sources specified in the config file or the given config string
-  settings_list = zMapConfigGetSources(config_file, config_str, stylesfile) ;
-
-  // get sources specified by the user
   if (sources)
     {
-      for (std::map<std::string, ZMapConfigSource>::iterator iter = sources->begin();
+      for (map<string, ZMapConfigSource>::iterator iter = sources->begin();
            iter != sources->end() ;
            ++iter)
         {
@@ -341,6 +356,52 @@ GList* ZMapFeatureSequenceMapStructType::GetSources(const char *config_str,
 }
 
 
+/* Construct the full list of all sources. this adds any sources from the config file or 
+ * the given config string to those already stored in the sources list (from the command line or
+ * user-defined sources). */
+void ZMapFeatureSequenceMapStructType::ConstructSources(const char *config_str,
+                                                        char **stylesfile)
+{
+  // This will be the list of names from the sources stanza
+  char *source_names = NULL ;
+
+  // get any sources specified in the config file or the given config string
+  GList *settings_list = zMapConfigGetSources(config_file, config_str, stylesfile) ;
+
+  ZMapConfigIniContext context = zMapConfigIniContextProvide(config_file, ZMAPCONFIG_FILE_NONE) ;
+
+  if (context && config_str)
+    zMapConfigIniContextIncludeBuffer(context, config_str);
+
+  if (context && 
+      settings_list && g_list_length(settings_list) > 0 &&
+      zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG, 
+                                    ZMAPSTANZA_APP_SOURCES, &source_names))
+    {
+      // Create the sources map if it doesn't exist
+      if (!sources)
+        sources = new map<string, ZMapConfigSource> ;
+
+      GList *names_list = zMapConfigString2QuarkIDList(source_names) ;
+
+      // loop through all config sources
+      GList *source_item = settings_list ;
+      GList *name_item = names_list ;
+
+      for ( ; source_item && name_item; source_item = g_list_next(source_item), name_item = g_list_next(name_item))
+        {
+          string source_name(g_quark_to_string(GPOINTER_TO_INT(name_item->data))) ;
+
+          // Add it to the map (check it's not already there)
+          if ((*sources)[source_name])
+            zMapLogWarning("Source '%s' already exists; not adding", source_name.c_str()) ;
+          else
+            (*sources)[source_name] = (ZMapConfigSource)(source_item->data) ;
+        }
+    }
+}
+
+
 
 /*
  *              Internal routines.
@@ -349,14 +410,14 @@ GList* ZMapFeatureSequenceMapStructType::GetSources(const char *config_str,
 static gint colIDOrderCB(gconstpointer a, gconstpointer b,gpointer user_data)
 {
   ZMapFeatureColumn pa = NULL,pb = NULL;
-  std::map<GQuark, ZMapFeatureColumn> *columns = (std::map<GQuark, ZMapFeatureColumn>*)user_data;
+  map<GQuark, ZMapFeatureColumn> *columns = (map<GQuark, ZMapFeatureColumn>*)user_data;
 
   if (columns)
     {
       GQuark quark1 = (GQuark)GPOINTER_TO_INT(a) ;
       GQuark quark2 = (GQuark)GPOINTER_TO_INT(b) ;
-      std::map<GQuark, ZMapFeatureColumn>::iterator iter1 = columns->find(quark1) ;
-      std::map<GQuark, ZMapFeatureColumn>::iterator iter2 = columns->find(quark2) ;
+      map<GQuark, ZMapFeatureColumn>::iterator iter1 = columns->find(quark1) ;
+      map<GQuark, ZMapFeatureColumn>::iterator iter2 = columns->find(quark2) ;
 
       if (iter1 != columns->end())
         pa = iter1->second ;
@@ -380,14 +441,14 @@ static gint colIDOrderCB(gconstpointer a, gconstpointer b,gpointer user_data)
 static gint colOrderCB(gconstpointer a, gconstpointer b,gpointer user_data)
 {
   ZMapFeatureColumn pa = NULL,pb = NULL;
-  std::map<GQuark, ZMapFeatureColumn> *columns = (std::map<GQuark, ZMapFeatureColumn>*) user_data;
+  map<GQuark, ZMapFeatureColumn> *columns = (map<GQuark, ZMapFeatureColumn>*) user_data;
 
   if (columns)
     {
       GQuark quark1 = (GQuark)GPOINTER_TO_INT(a) ;
       GQuark quark2 = (GQuark)GPOINTER_TO_INT(b) ;
-      std::map<GQuark, ZMapFeatureColumn>::iterator iter1 = columns->find(quark1) ;
-      std::map<GQuark, ZMapFeatureColumn>::iterator iter2 = columns->find(quark2) ;
+      map<GQuark, ZMapFeatureColumn>::iterator iter1 = columns->find(quark1) ;
+      map<GQuark, ZMapFeatureColumn>::iterator iter2 = columns->find(quark2) ;
 
       if (iter1 != columns->end())
         pa = iter1->second ;
