@@ -70,12 +70,12 @@ typedef struct ZMapDataSourceStruct_
 ZMapDataSource zMapDataSourceCreate(const char * const file_name, GError **error = NULL) ;
 ZMapDataSource zMapDataSourceCreateFromGIO(GIOChannel * const io_channel) ;
 gboolean zMapDataSourceIsOpen(ZMapDataSource const source) ;
-gboolean zMapDataSourceDestroy( ZMapDataSource *source ) ;
+gboolean zMapDataSourceDestroy( ZMapDataSource *source) ;
 ZMapDataSourceType zMapDataSourceGetType(ZMapDataSource source ) ;
-gboolean zMapDataSourceReadHTSHeader(ZMapDataSource source ) ;
-gboolean zMapDataSourceReadLine (ZMapDataSource const data_pipe , GString * const str ) ;
+gboolean zMapDataSourceReadHTSHeader(ZMapDataSource source, const char *sequence) ;
+gboolean zMapDataSourceReadLine (ZMapDataSource const data_pipe , GString * const str) ;
 gboolean zMapDataSourceGetGFFVersion(ZMapDataSource const source, int * const out_val) ;
-ZMapDataSourceType zMapDataSourceTypeFromFilename(const char * const ) ;
+ZMapDataSourceType zMapDataSourceTypeFromFilename(const char * const) ;
 
 
 

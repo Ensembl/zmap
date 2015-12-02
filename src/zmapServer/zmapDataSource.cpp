@@ -560,25 +560,42 @@ ZMapDataSourceType zMapDataSourceTypeFromFilename(const char * const file_name )
 }
 
 
-/*
- * Read the HTS file header and look for the sequence name data.
+/* Read the HTS file header and look for the sequence name data.
  * This assumes that we have already opened the file and called
  * hts_hdr = sam_hdr_read() ;
+ * Returns TRUE if reference sequence name found in BAM file header and
+ * records that name in the HTS struct, returns FALSE otherwise.
  */
-gboolean zMapDataSourceReadHTSHeader(ZMapDataSource source)
+gboolean zMapDataSourceReadHTSHeader(ZMapDataSource source, const char *sequence)
 {
   gboolean result = FALSE ;
   ZMapDataSourceHTSFile pHTS = (ZMapDataSourceHTSFile) source ;
-  zMapReturnValIfFail(source && zMapDataSourceIsOpen(source), result ) ;
-  zMapReturnValIfFail(pHTS && pHTS->hts_file, result ) ;
 
-  /*
-   * Read the HTS header and fish out the (first, possibly only) @SQ:<name> tag.
-   */
-  if ( pHTS->hts_hdr && pHTS->hts_hdr->n_targets >= 1)
+  zMapReturnValIfFail(source && zMapDataSourceIsOpen(source), FALSE) ;
+  zMapReturnValIfFail(pHTS && pHTS->hts_file, FALSE) ;
+
+  // Read the HTS header and look a @SQ:<name> tag that matches the sequence
+  // we are looking for.
+  if (pHTS->hts_hdr && pHTS->hts_hdr->n_targets >= 1)
     {
-      pHTS->sequence = g_strdup(pHTS->hts_hdr->target_name[0]) ;
-      result = TRUE ;
+      bool found ;
+      int i ;
+
+      for (i = 0, found = false ; i < pHTS->hts_hdr->n_targets ; i++)
+        {
+          if (g_ascii_strcasecmp(sequence, pHTS->hts_hdr->target_name[i]) == 0)
+            {
+              found = true ;
+              break ;
+            }
+        }
+
+
+      if (found)
+        {
+          pHTS->sequence = g_strdup(pHTS->hts_hdr->target_name[i]) ;
+          result = TRUE ;
+        }
     }
 
   return result ;
