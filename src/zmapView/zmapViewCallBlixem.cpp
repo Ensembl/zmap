@@ -1394,7 +1394,7 @@ static gboolean buildParamString(ZMapBlixemData blixem_data, char ** paramString
       int start, end ;
 
       start = end = blixem_data->position ;
-      if (blixem_data->view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
+      if (zMapViewGetRevCompStatus(blixem_data->view))
         zMapFeatureReverseComplementCoords(blixem_data->view->features, &start, &end) ;
 
       paramString[icount] = g_strdup("-s") ;
@@ -1434,7 +1434,7 @@ static gboolean buildParamString(ZMapBlixemData blixem_data, char ** paramString
       int start = blixem_data->window_start,
           end  = blixem_data->window_end ;
 
-      if (blixem_data->view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
+      if (zMapViewGetRevCompStatus(blixem_data->view))
         zMapFeatureReverseComplementCoords(blixem_data->view->features, &start, &end) ;
 
       paramString[icount] = g_strdup("-z") ;
@@ -1468,7 +1468,7 @@ static gboolean buildParamString(ZMapBlixemData blixem_data, char ** paramString
     }
 
   /* Start with reverse strand showing. */
-  if (status && blixem_data->view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
+  if (status && zMapViewGetRevCompStatus(blixem_data->view))
     {
       paramString[icount] = g_strdup("-r") ;
       ++icount ;
@@ -1917,7 +1917,7 @@ static gboolean writeFeatureFiles(ZMapBlixemData blixem_data)
   const int end = blixem_data->features_max ; ;
 
   /* Rev-comp the coords if necessary */
-  if (blixem_data->view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
+  if (zMapViewGetRevCompStatus(blixem_data->view))
     zMapFeatureReverseComplementCoords(blixem_data->view->features, &blixem_data->features_min, &blixem_data->features_max) ;
 
   /* Write the headers */
@@ -2225,7 +2225,7 @@ static void writeFeatureLine(ZMapFeature feature, ZMapBlixemData  blixem_data)
   if (includeFeature(blixem_data, feature))
     {
       /* First, revcomp the feature if necessary */
-      if (blixem_data->view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
+      if (zMapViewGetRevCompStatus(blixem_data->view))
         zMapFeatureReverseComplement(blixem_data->view->features, feature) ;
 
       /* Unset any GFF attributes */
@@ -2248,7 +2248,7 @@ static void writeFeatureLine(ZMapFeature feature, ZMapBlixemData  blixem_data)
         }
 
       /* Undo any revcomp */
-      if (blixem_data->view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
+      if (zMapViewGetRevCompStatus(blixem_data->view))
         zMapFeatureReverseComplement(blixem_data->view->features, feature) ;
     }
 
@@ -2434,7 +2434,7 @@ static gboolean writeFastAFile(ZMapBlixemData blixem_data)
           start = blixem_data->scope_min ;
           end = blixem_data->scope_max ;
 
-          if (blixem_data->view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
+          if (zMapViewGetRevCompStatus(blixem_data->view))
             zMapFeatureReverseComplementCoords(blixem_data->view->features, &start, &end) ;
 
           /* Write header as:   ">seq_name start end" so file is self describing, note that
@@ -2468,7 +2468,7 @@ static gboolean writeFastAFile(ZMapBlixemData blixem_data)
           end = blixem_data->scope_max ;
 
           dna = zMapFeatureGetDNA((ZMapFeatureAny)(blixem_data->block),
-                                  start, end, blixem_data->view->flags[ZMAPFLAG_REVCOMPED_FEATURES]) ;
+                                  start, end, zMapViewGetRevCompStatus(blixem_data->view)) ;
 
           total_chars = (end - start + 1) ;
 

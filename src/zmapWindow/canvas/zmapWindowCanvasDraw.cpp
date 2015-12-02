@@ -66,9 +66,6 @@ typedef struct HighlightDataStructType
 static void highlightSplice(gpointer data, gpointer user_data) ;
 
 
-static AlignGap makeGapped(ZMapFeature feature, double offset, FooCanvasItem *foo, gboolean is_forward) ;
-
-
 
 
 /*

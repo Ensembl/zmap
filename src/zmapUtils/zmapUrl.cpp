@@ -2114,7 +2114,7 @@ char *zMapURLGetQueryValue(const char *full_query, const char *key)
     {
       split = ptr = g_strsplit(full_query, "&", 0) ;
 
-      while(ptr && *ptr != '\0')
+      while(ptr && *ptr != NULL && **ptr != '\0')
         {
           char **key_value = NULL, **kv_ptr, *real_key ;
 

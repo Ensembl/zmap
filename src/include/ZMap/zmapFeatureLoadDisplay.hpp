@@ -37,6 +37,12 @@
 #include <ZMap/zmapStyle.hpp>
 #include <ZMap/zmapStyleTree.hpp>
 
+#include <string>
+#include <map>
+
+
+struct _ZMapConfigSourceStruct ;
+
 
 /* Overview:
  * 
@@ -218,24 +224,37 @@ typedef struct ZMapFeatureParserCacheStructType
 typedef struct ZMapFeatureSequenceMapStructType
 {
   char *config_file ;
-  GSList *file_list ;   /* list of filenames passed on command line */
   char *stylesfile ;    /* path to styles file given on command line or in config dir */
 
   GHashTable *cached_parsers ; /* filenames (as GQuarks) mapped to cached info about GFF parsing that
                                 * is in progress (ZMapFeatureParserCache) if parsing has already been started */
 
+  std::map<std::string, _ZMapConfigSourceStruct*> *sources ;
+
   char *dataset ;                                           /* e.g. human */
   char *sequence ;                                          /* e.g. chr6-18 */
   int start, end ;                                          /* chromosome coordinates */
+
+
+  ZMapFeatureSequenceMapStructType* copy() ;
+
+  GList* getSources() ;
+  void constructSources(const char *config_str, char **stylesfile) ;
+
+  void addSource(const std::string &source_name, _ZMapConfigSourceStruct *source, GError **error) ;
+  void addFileSource(const char *file) ;
+
 } ZMapFeatureSequenceMapStruct, *ZMapFeatureSequenceMap ;
 
 
 
 ZMapFeatureColumn zMapFeatureGetSetColumn(ZMapFeatureContextMap map, GQuark set_id) ;
+GList *zMapFeatureGetColumnFeatureSets(ZMapFeatureContextMap map, GQuark column_id, gboolean unique_id) ;
 gboolean zMapFeatureIsCoverageColumn(ZMapFeatureContextMap map, GQuark column_id) ;
 gboolean zMapFeatureIsSeqColumn(ZMapFeatureContextMap map, GQuark column_id) ;
 gboolean zMapFeatureIsSeqFeatureSet(ZMapFeatureContextMap map, GQuark fset_id) ;
-GList *zMapFeatureGetColumnFeatureSets(ZMapFeatureContextMap map, GQuark column_id, gboolean unique_id) ;
+GList* zMapFeatureGetOrderedColumnsListIDs(ZMapFeatureContextMap context_map) ;
+GList* zMapFeatureGetOrderedColumnsList(ZMapFeatureContextMap context_map) ;
 
 #endif /* ZMAP_FEATURE_LOAD_DISPLAY_H */
 

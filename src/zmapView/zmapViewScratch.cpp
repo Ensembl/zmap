@@ -1440,7 +1440,7 @@ gboolean zmapViewScratchCopyFeatures(ZMapView view,
       if (!zMapViewGetFlag(view, ZMAPFLAG_ENABLE_ANNOTATION))
         zMapViewSetFlag(view, ZMAPFLAG_ENABLE_ANNOTATION, TRUE) ;
 
-      view->flags[ZMAPFLAG_SAVE_SCRATCH] = TRUE ;
+      zMapViewSetFlag(view, ZMAPFLAG_SAVE_SCRATCH, TRUE) ;
 
       EditOperation operation = g_new0(EditOperationStruct, 1);
 
@@ -1480,7 +1480,7 @@ gboolean zmapViewScratchSetCDS(ZMapView view,
    * column keys have no effect if the column is disabled.) */
   if (features && zMapViewGetFlag(view, ZMAPFLAG_ENABLE_ANNOTATION))
     {
-      view->flags[ZMAPFLAG_SAVE_SCRATCH] = TRUE ;
+      zMapViewSetFlag(view, ZMAPFLAG_SAVE_SCRATCH, TRUE) ;
 
       EditOperation operation = g_new0(EditOperationStruct, 1);
 
@@ -1531,7 +1531,7 @@ gboolean zmapViewScratchDeleteFeatures(ZMapView view,
    * column keys have no effect if the column is disabled.) */
   if (features && zMapViewGetFlag(view, ZMAPFLAG_ENABLE_ANNOTATION))
     {
-      view->flags[ZMAPFLAG_SAVE_SCRATCH] = TRUE ;
+      zMapViewSetFlag(view, ZMAPFLAG_SAVE_SCRATCH, TRUE) ;
 
       EditOperation operation = g_new0(EditOperationStruct, 1);
 
@@ -1570,7 +1570,7 @@ gboolean zmapViewScratchClear(ZMapView view)
       if (view->edit_list_start)
         {
           /* There will be nothing in the scratch column now so nothing needs saving */
-          view->flags[ZMAPFLAG_SAVE_SCRATCH] = FALSE ;
+          zMapViewSetFlag(view, ZMAPFLAG_SAVE_SCRATCH, FALSE) ;
 
           EditOperation operation = g_new0(EditOperationStruct, 1) ;
 
@@ -1597,7 +1597,7 @@ gboolean zmapViewScratchUndo(ZMapView view)
     {
       if (view->edit_list_end)
         {
-          view->flags[ZMAPFLAG_SAVE_SCRATCH] = TRUE ;
+          zMapViewSetFlag(view, ZMAPFLAG_SAVE_SCRATCH, TRUE) ;
 
           /* Special treatment if the last operation was a "clear" or "save" because these shift the start
            * pointer to be the same as the end pointer, so we need to move it back (to the start of
@@ -1663,7 +1663,7 @@ gboolean zmapViewScratchRedo(ZMapView view)
       /* Move the end pointer forward */
       if (view->edit_list_end && view->edit_list_end->next)
         {
-          view->flags[ZMAPFLAG_SAVE_SCRATCH] = TRUE ;
+          zMapViewSetFlag(view, ZMAPFLAG_SAVE_SCRATCH, TRUE) ;
           view->edit_list_end = view->edit_list_end->next ;
 
           /* For clear/save operations we need to move the start pointer to the same as the end pointer */
@@ -1675,7 +1675,7 @@ gboolean zmapViewScratchRedo(ZMapView view)
         }
       else if (!view->edit_list_end && view->edit_list)
         {
-          view->flags[ZMAPFLAG_SAVE_SCRATCH] = TRUE ;
+          zMapViewSetFlag(view, ZMAPFLAG_SAVE_SCRATCH, TRUE) ;
 
           /* If the list exists but start/end pointers are null then we had un-done the entire list,
            * so we just need to set the start/end pointers to the first item in the list */
@@ -1709,7 +1709,7 @@ gboolean zmapViewScratchSave(ZMapView view, ZMapFeature feature)
 {
   if (zMapViewGetFlag(view, ZMAPFLAG_ENABLE_ANNOTATION) && feature)
     {
-      view->flags[ZMAPFLAG_SAVE_SCRATCH] = TRUE ;
+      zMapViewSetFlag(view, ZMAPFLAG_SAVE_SCRATCH, TRUE) ;
 
       /* Save the cached feature name and featureset in the source feature (instead of the
        * temp feature name and featureset which are no longer needed now we're taking

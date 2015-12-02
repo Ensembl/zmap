@@ -228,9 +228,9 @@ GList *zMapConfigIniContextGetSources(ZMapConfigIniContext context)
   GList *glist = NULL;
 
   glist = zMapConfigIniContextGetReferencedStanzas(context, create_config_source,
-  ZMAPSTANZA_APP_CONFIG,
-  ZMAPSTANZA_APP_CONFIG,
-  "sources", "source");
+                                                   ZMAPSTANZA_APP_CONFIG,
+                                                   ZMAPSTANZA_APP_CONFIG,
+                                                   ZMAPSTANZA_APP_SOURCES, "source");
 
   return glist;
 }
@@ -253,6 +253,30 @@ GList *zMapConfigIniContextGetNamed(ZMapConfigIniContext context, char *stanza_n
     }
 
   return glist ;
+}
+
+
+
+void zMapConfigSourceDestroy(ZMapConfigSource source_to_free)
+{
+  if(source_to_free->url)
+    g_free(source_to_free->url);
+  if(source_to_free->version)
+    g_free(source_to_free->version);
+  if(source_to_free->featuresets)
+    g_free(source_to_free->featuresets);
+  if(source_to_free->biotypes)
+    g_free(source_to_free->biotypes);
+  //  if(source_to_free->navigatorsets)
+  //    g_free(source_to_free->navigatorsets);
+  if(source_to_free->stylesfile)
+    g_free(source_to_free->stylesfile);
+  //  if(source_to_free->styles_list)
+  //    g_free(source_to_free->styles_list);
+  if(source_to_free->format)
+    g_free(source_to_free->format);
+
+  return ;
 }
 
 
@@ -1022,6 +1046,34 @@ std::map<GQuark, ZMapFeatureColumn> *zMapConfigIniGetColumns(ZMapConfigIniContex
 }
 
 
+/* Get the list of sources from the given config file / config string */
+GList *zMapConfigGetSources(const char *config_file, const char *config_str, char ** stylesfile)
+{
+  GList *settings_list = NULL;
+  ZMapConfigIniContext context ;
+
+  if ((context = zMapConfigIniContextProvide(config_file, ZMAPCONFIG_FILE_NONE)))
+    {
+
+      if (config_str)
+        zMapConfigIniContextIncludeBuffer(context, config_str);
+
+      settings_list = zMapConfigIniContextGetSources(context);
+
+      if(stylesfile)
+        {
+          zMapConfigIniContextGetFilePath(context,
+                                          ZMAPSTANZA_APP_CONFIG,ZMAPSTANZA_APP_CONFIG,
+                                          ZMAPSTANZA_APP_STYLESFILE,stylesfile);
+        }
+      zMapConfigIniContextDestroy(context);
+
+    }
+
+  return(settings_list);
+}
+
+
 
 
 /*
@@ -1167,9 +1219,6 @@ gboolean zMapConfigLegacyStyles(char *config_file)
 
   return(result) ;
 }
-
-
-
 
 
 
@@ -1537,6 +1586,7 @@ static ZMapConfigIniContextKeyEntry get_app_group_data(const char **stanza_name,
     { ZMAPSTANZA_APP_STYLESFILE,         G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_APP_LEGACY_STYLES,      G_TYPE_BOOLEAN, NULL, FALSE },
     { ZMAPSTANZA_APP_COLUMNS,            G_TYPE_STRING,  NULL, FALSE },
+    { ZMAPSTANZA_APP_SOURCES,            G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_APP_STYLE_FROM_METHOD,  G_TYPE_BOOLEAN, NULL, FALSE },
     { ZMAPSTANZA_APP_XREMOTE_DEBUG,      G_TYPE_BOOLEAN, NULL, FALSE },
     { ZMAPSTANZA_APP_REPORT_THREAD,      G_TYPE_BOOLEAN, NULL, FALSE },
@@ -2009,25 +2059,7 @@ static gpointer create_config_source()
 static void free_source_list_item(gpointer list_data, gpointer unused_data)
 {
   ZMapConfigSource source_to_free = (ZMapConfigSource)list_data;
-
-  if(source_to_free->url)
-    g_free(source_to_free->url);
-  if(source_to_free->version)
-    g_free(source_to_free->version);
-  if(source_to_free->featuresets)
-    g_free(source_to_free->featuresets);
-  if(source_to_free->biotypes)
-    g_free(source_to_free->biotypes);
-  //  if(source_to_free->navigatorsets)
-  //    g_free(source_to_free->navigatorsets);
-  if(source_to_free->stylesfile)
-    g_free(source_to_free->stylesfile);
-  //  if(source_to_free->styles_list)
-  //    g_free(source_to_free->styles_list);
-  if(source_to_free->format)
-    g_free(source_to_free->format);
-
-  return ;
+  zMapConfigSourceDestroy(source_to_free) ;
 }
 
 

@@ -1092,19 +1092,8 @@ static gboolean validateSequenceDetails(GList *seq_maps, GError **error)
       if ((seq_map->sequence && seq_map->start && seq_map->end)
           || (!(seq_map->sequence) && !(seq_map->start) && !(seq_map->end)))
         {
-          /* We must have a config file or some files on the command line (otherwise we have no
-           * sources) */
-          if (seq_map->config_file || seq_map->file_list)
-            {
-
-            }
-          else
-            {
-              result = FALSE ;
-
-              g_set_error(&tmp_error, ZMAP_APP_ERROR, ZMAPAPP_ERROR_NO_SOURCES,
-                          "No data sources - you must specify a config file, or pass data in GFF files on the command line") ;
-            }
+          /* We no longer check that we have any sources set up because we allow zmap to start up
+           * empty, because the user can create sources from the main window */
         }
       else
         {
@@ -1274,17 +1263,26 @@ static void checkInputFileForSequenceDetails(const char* const filename,
           if (!seq_map)
             seq_map = createSequenceMap(sequence, start, end, config_file, styles_file, seq_maps_inout) ;
 
-          /* Cache the filename and parser state */
-          seq_map->file_list = g_slist_append(seq_map->file_list, g_strdup(filename)) ;
+          /* Create the source for this input file */
+          if (seq_map)
+            {
+              seq_map->addFileSource(filename) ;
 
-          ZMapFeatureParserCache parser_cache = g_new0(ZMapFeatureParserCacheStruct, 1) ;
-          parser_cache->parser = (gpointer)parser ;
-          parser_cache->line = gff_line ;
-          parser_cache->pipe = gff_pipe ;
-          parser_cache->pipe_status = status ;
+              /* Cache the parser state */
+              ZMapFeatureParserCache parser_cache = g_new0(ZMapFeatureParserCacheStruct, 1) ;
+              parser_cache->parser = (gpointer)parser ;
+              parser_cache->line = gff_line ;
+              parser_cache->pipe = gff_pipe ;
+              parser_cache->pipe_status = status ;
 
-          seq_map->cached_parsers = g_hash_table_new(NULL, NULL) ;
-          g_hash_table_insert(seq_map->cached_parsers, GINT_TO_POINTER(g_quark_from_string(filename)), parser_cache) ;
+              seq_map->cached_parsers = g_hash_table_new(NULL, NULL) ;
+              g_hash_table_insert(seq_map->cached_parsers, GINT_TO_POINTER(g_quark_from_string(filename)), parser_cache) ;
+            }
+          else
+            {
+              g_set_error(&tmp_error, ZMAP_APP_ERROR, ZMAPAPP_ERROR_SEQUENCE_MAP,
+                          "Error creating sequence map for file %s", filename);
+            }
         }
     }
   else if (!tmp_error)

@@ -848,7 +848,6 @@ static gboolean transcript_get_sub_feature_info(gpointer user_data, guint param_
         if (gapped_exon)
           {
             GArray *exon_aligns ;
-            int coord ;
             int exon_index ;
             int align_value = 0 ;
 

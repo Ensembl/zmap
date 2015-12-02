@@ -312,8 +312,16 @@ gboolean zMapStyleMerge(ZMapFeatureTypeStyle curr_style, ZMapFeatureTypeStyle ne
 
                   /* free old list before overwriting */
                   if(*l)
-                        g_list_free( *l);
-                  *l = g_list_copy(*ln);
+                    {
+                      g_list_free( *l);
+                      *l = NULL ;
+                    }
+
+                  if (*ln)
+                    {
+                      *l = g_list_copy(*ln);
+                    }
+
                   break;
               }
 

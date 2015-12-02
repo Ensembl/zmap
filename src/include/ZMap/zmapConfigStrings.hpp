@@ -203,6 +203,7 @@
 #define ZMAPSTANZA_APP_STYLE_FROM_METHOD "stylename-from-methodname"
 #define ZMAPSTANZA_APP_XREMOTE_DEBUG     "xremote-debug"
 #define ZMAPSTANZA_APP_COLUMNS           "columns"
+#define ZMAPSTANZA_APP_SOURCES           "sources"
 #define ZMAPSTANZA_APP_REPORT_THREAD     "thread-fail-silent"
 #define ZMAPSTANZA_APP_NAVIGATOR_SETS    "navigatorsets"
 

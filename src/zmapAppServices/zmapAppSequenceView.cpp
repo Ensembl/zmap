@@ -41,7 +41,8 @@
 
 #include <ZMap/zmapUtilsGUI.hpp>
 #include <ZMap/zmapAppServices.hpp>
-
+#include <ZMap/zmapControl.hpp>
+#include <ZMap/zmapConfigStanzaStructs.hpp>
 
 
 /* Data we need in callbacks. */
@@ -55,6 +56,7 @@ typedef struct MainFrameStructName
 
   GtkWidget *chooser_widg ;
 
+  ZMapFeatureSequenceMap orig_sequence_map ;
   ZMapFeatureSequenceMapStruct sequence_map ;
   gboolean display_sequence ;
 
@@ -80,6 +82,7 @@ static void createViewCB(GtkWidget *widget, gpointer cb_data) ;
 static void chooseConfigCB(GtkFileChooserButton *widget, gpointer user_data) ;
 #endif
 static void defaultsCB(GtkWidget *widget, gpointer cb_data) ;
+static void createSourceCB(GtkWidget *widget, gpointer cb_data) ;
 static void closeCB(GtkWidget *widget, gpointer cb_data) ;
 
 
@@ -159,6 +162,7 @@ static GtkWidget *makePanel(GtkWidget *toplevel, gpointer *our_data,
   main_data->user_data = user_data ;
   main_data->close_func = close_func ;
   main_data->close_data = close_data ;
+  main_data->orig_sequence_map = sequence_map ;
   main_data->sequence_map = *sequence_map ;
   main_data->sequence_map.sequence = g_strdup(main_data->sequence_map.sequence) ;
   main_data->sequence_map.config_file = g_strdup(main_data->sequence_map.config_file) ;
@@ -258,7 +262,7 @@ static GtkWidget *makeMainFrame(MainFrame main_data, ZMapFeatureSequenceMap sequ
 static GtkWidget *makeButtonBox(MainFrame main_data)
 {
   GtkWidget *frame ;
-  GtkWidget *button_box, *create_button, *chooser_button, *defaults_button, *close_button ;
+  GtkWidget *button_box, *create_button, *chooser_button, *defaults_button, *source_button, *close_button ;
   char *home_dir ;
 
   frame = gtk_frame_new(NULL) ;
@@ -296,6 +300,12 @@ static GtkWidget *makeButtonBox(MainFrame main_data)
                          GTK_SIGNAL_FUNC(defaultsCB), (gpointer)main_data) ;
       gtk_box_pack_start(GTK_BOX(button_box), defaults_button, FALSE, TRUE, 0) ;
     }
+
+  
+  source_button = gtk_button_new_with_label("Set up source") ;
+  gtk_signal_connect(GTK_OBJECT(source_button), "clicked", 
+                     GTK_SIGNAL_FUNC(createSourceCB), (gpointer)main_data) ;
+  gtk_box_pack_start(GTK_BOX(button_box), source_button, FALSE, TRUE, 0) ;
 
 
   /* Only add a close button and set a default button if this is a standalone dialog. */
@@ -361,6 +371,52 @@ static void defaultsCB(GtkWidget *widget, gpointer cb_data)
 #ifndef __CYGWIN__
   gtk_file_chooser_set_filename(GTK_FILE_CHOOSER(main_data->chooser_widg), main_data->sequence_map.config_file) ;
 #endif
+
+  return ;
+}
+
+
+/* Callback called when the create-source dialog has been ok'd to do the work to create the new
+ * source from the user-provided info. Returns true if successfully created the source.  */
+static void createNewSourceCB(const char *source_name, 
+                              const std::string &url, 
+                              const char *featuresets,
+                              const char *biotypes,
+                              gpointer user_data,
+                              GError **error)
+{
+  ZMapFeatureSequenceMap sequence_map = (ZMapFeatureSequenceMap)user_data ;
+  zMapReturnIfFail(sequence_map) ;
+
+  GError *tmp_error = NULL ;
+
+  ZMapConfigSource source = g_new0(ZMapConfigSourceStruct, 1) ;
+
+  source->url = g_strdup(url.c_str()) ;
+      
+  if (featuresets && *featuresets)
+    source->featuresets = g_strdup(featuresets) ;
+      
+  /* Add the new source to the view */
+  std::string source_name_str(source_name) ;
+  sequence_map->addSource(source_name_str, source, &tmp_error) ;
+
+  if (tmp_error)
+    {
+      zMapConfigSourceDestroy(source) ;
+      source = NULL ;
+
+      g_propagate_error(error, tmp_error) ;
+    }
+}
+
+
+/* Set up a new source. */
+static void createSourceCB(GtkWidget *widget, gpointer cb_data)
+{
+  MainFrame main_data = (MainFrame)cb_data ;
+
+  zMapAppCreateSource(&main_data->sequence_map, createNewSourceCB, main_data->orig_sequence_map) ;
 
   return ;
 }
@@ -494,6 +550,9 @@ static void createViewCB(GtkWidget *widget, gpointer cb_data)
       seq_map = g_new0(ZMapFeatureSequenceMapStruct,1) ;
 
       seq_map->config_file = g_strdup(config_txt) ;
+
+      if (main_data->orig_sequence_map)
+        seq_map->sources = main_data->orig_sequence_map->sources ;
 
       if (*sequence)
         {
