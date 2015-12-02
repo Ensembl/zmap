@@ -83,10 +83,12 @@ typedef struct MainFrameStructName
 
   GtkComboBox *combo ;
 
+  list<GtkWidget*> file_widgets ;
   GtkWidget *name_widg ;
   GtkWidget *path_widg ;
 
 #ifdef USE_ENSEMBL
+  list<GtkWidget*> ensembl_widgets ;
   GtkWidget *host_widg ;
   GtkWidget *port_widg ;
   GtkWidget *user_widg ;
@@ -110,13 +112,15 @@ static GtkWidget *makePanel(GtkWidget *toplevel,
                             gpointer *seqdata_out,
                             ZMapFeatureSequenceMap sequence_map,
                             ZMapAppCreateSourceCB user_func,
-                            gpointer user_data) ;
+                            gpointer user_data,
+                            MainFrame *main_data) ;
 static GtkWidget *makeButtonBox(MainFrame main_data) ;
 static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data) ;
 static void cancelCB(GtkWidget *widget, gpointer cb_data) ;
 static void applyCB(GtkWidget *widget, gpointer cb_data) ;
 static GtkWidget *makeMainFrame(MainFrame main_data, ZMapFeatureSequenceMap sequence_map) ;
 static gboolean applyFile(MainFrame main_data) ;
+static void setWidgetsVisibility(list<GtkWidget*> widget_list, const gboolean visible) ;
 
 #ifdef USE_ENSEMBL
 static void dbnameCB(GtkWidget *widget, gpointer cb_data) ;
@@ -150,13 +154,26 @@ GtkWidget *zMapAppCreateSource(ZMapFeatureSequenceMap sequence_map,
   gtk_window_set_policy(GTK_WINDOW(toplevel), FALSE, TRUE, FALSE ) ;
   gtk_container_border_width(GTK_CONTAINER(toplevel), 0) ;
 
-  container = makePanel(toplevel, &seq_data, sequence_map, user_func, user_data) ;
+  MainFrame main_data = NULL ;
+  container = makePanel(toplevel, &seq_data, sequence_map, user_func, user_data, &main_data) ;
 
   gtk_container_add(GTK_CONTAINER(toplevel), container) ;
   gtk_signal_connect(GTK_OBJECT(toplevel), "destroy",
                      GTK_SIGNAL_FUNC(toplevelDestroyCB), seq_data) ;
 
   gtk_widget_show_all(toplevel) ;
+
+  /* Only show widgets for the relevant file type (ensembl by default if it exists, file
+   * otherwise) */
+  if (main_data)
+    {
+#ifdef USE_ENSEMBL
+      setWidgetsVisibility(main_data->ensembl_widgets, TRUE) ;
+      setWidgetsVisibility(main_data->file_widgets, FALSE) ;
+#else
+      setWidgetsVisibility(main_data->file_widgets, TRUE) ;
+#endif
+    }
 
   return toplevel ;
 }
@@ -173,13 +190,14 @@ static GtkWidget *makePanel(GtkWidget *toplevel,
                             gpointer *our_data,
                             ZMapFeatureSequenceMap sequence_map,
                             ZMapAppCreateSourceCB user_func,
-                            gpointer user_data)
+                            gpointer user_data,
+                            MainFrame *main_data_out)
 {
   GtkWidget *frame = NULL ;
   GtkWidget *vbox, *main_frame, *button_box ;
   MainFrame main_data ;
 
-  main_data = g_new0(MainFrameStruct, 1) ;
+  main_data = new MainFrameStruct ;
 
   main_data->sequence_map = sequence_map ;
   main_data->user_func = user_func ;
@@ -204,6 +222,9 @@ static GtkWidget *makePanel(GtkWidget *toplevel,
   button_box = makeButtonBox(main_data) ;
   gtk_box_pack_start(GTK_BOX(vbox), button_box, TRUE, TRUE, 0) ;
 
+  if (main_data_out)
+    *main_data_out = main_data ;
+
   return frame ;
 }
 
@@ -215,7 +236,8 @@ static GtkWidget* makeEntryWidget(const char *label_str,
                                   int *row,
                                   const int col,
                                   const int max_col, 
-                                  gboolean mandatory)
+                                  gboolean mandatory,
+                                  list<GtkWidget*> *widget_list)
 {
   GtkWidget *label = gtk_label_new(label_str) ;
   gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5) ;
@@ -248,53 +270,27 @@ static GtkWidget* makeEntryWidget(const char *label_str,
       gtk_widget_set_tooltip_text(entry, tooltip) ;
     }
 
+  if (widget_list)
+    {
+      widget_list->push_back(label) ;
+      widget_list->push_back(entry) ;
+    }
+
   return entry ;
 }
 
 
-static void setFileWidgetVisibility(MainFrame main_data, const gboolean visible)
+/* Set the visibility of all the widgets in the given list */
+static void setWidgetsVisibility(list<GtkWidget*> widget_list, const gboolean visible)
 {
-  zMapReturnIfFail(main_data && main_data->path_widg) ;
-
-  if (visible)
-    gtk_widget_show_all(main_data->path_widg) ;
-  else
-    gtk_widget_hide_all(main_data->path_widg) ;
-}
-
-
-#ifdef USE_ENSEMBL
-static void setEnsemblWidgetVisibility(MainFrame main_data, const gboolean visible)
-{
-  zMapReturnIfFail(main_data && main_data->host_widg && main_data->port_widg &&
-                   main_data->user_widg && main_data->pass_widg && 
-                   main_data->dbname_widg && main_data->dbprefix_widg &&
-                   main_data->featuresets_widg && main_data->biotypes_widg) ;
-
-  if (visible)
+  for (list<GtkWidget*>::const_iterator iter = widget_list.begin(); iter != widget_list.end(); ++iter)
     {
-      gtk_widget_show_all(main_data->host_widg) ;
-      gtk_widget_show_all(main_data->port_widg) ;
-      gtk_widget_show_all(main_data->user_widg) ;
-      gtk_widget_show_all(main_data->pass_widg) ;
-      gtk_widget_show_all(main_data->dbname_widg) ;
-      gtk_widget_show_all(main_data->dbprefix_widg) ;
-      gtk_widget_show_all(main_data->featuresets_widg) ;
-      gtk_widget_show_all(main_data->biotypes_widg) ;
-    }
-  else
-    {
-      gtk_widget_hide_all(main_data->host_widg) ;
-      gtk_widget_hide_all(main_data->port_widg) ;
-      gtk_widget_hide_all(main_data->user_widg) ;
-      gtk_widget_hide_all(main_data->pass_widg) ;
-      gtk_widget_hide_all(main_data->dbname_widg) ;
-      gtk_widget_hide_all(main_data->dbprefix_widg) ;
-      gtk_widget_hide_all(main_data->featuresets_widg) ;
-      gtk_widget_hide_all(main_data->biotypes_widg) ;
+      if (visible)
+        gtk_widget_show_all(*iter) ;
+      else
+        gtk_widget_hide_all(*iter) ;
     }
 }
-#endif /* USE_ENSEMBL */
 
 
 /* Returns the selected string value in a combo box as a newly-allocated free. Returns null if
@@ -327,16 +323,16 @@ static void sourceTypeChangedCB(GtkComboBox *combo, gpointer data)
     {
       if (strcmp(value, SOURCE_TYPE_FILE) == 0)
         {
-          setFileWidgetVisibility(main_data, TRUE) ;
+          setWidgetsVisibility(main_data->file_widgets, TRUE) ;
 #ifdef USE_ENSEMBL
-          setEnsemblWidgetVisibility(main_data, FALSE) ;
+          setWidgetsVisibility(main_data->ensembl_widgets, FALSE) ;
 #endif /* USE_ENSEMBL */
         }
 #ifdef USE_ENSEMBL
       else if (strcmp(value, SOURCE_TYPE_ENSEMBL) == 0)
         {
-          setFileWidgetVisibility(main_data, FALSE) ;
-          setEnsemblWidgetVisibility(main_data, TRUE) ;
+          setWidgetsVisibility(main_data->ensembl_widgets, TRUE) ;
+          setWidgetsVisibility(main_data->file_widgets, FALSE) ;
         }
 #endif /* USE_ENSEMBL */
 
@@ -399,30 +395,38 @@ static GtkWidget *makeMainFrame(MainFrame main_data, ZMapFeatureSequenceMap sequ
 
   /* First column */
   main_data->name_widg = makeEntryWidget("Source name :", NULL, "REQUIRED: Please enter a name for the new source", 
-                                         table, &row, col, col + 2, TRUE) ;
+                                         table, &row, col, col + 2, TRUE, NULL) ;
   main_data->path_widg = makeEntryWidget("Path/URL :", NULL, "REQUIRED: The file/URL to load features from", 
-                                           table, &row, col, col + 2, TRUE) ;
+                                         table, &row, col, col + 2, TRUE, &main_data->file_widgets) ;
 
 #ifdef USE_ENSEMBL
+
+  /* Place this widget on the same row as path_widg as they will be interchangeable */
+  --row ;
+
+  main_data->dbname_widg = makeEntryWidget("Database :", NULL, "REQUIRED: The database to load features from", 
+                                           table, &row, col, col + 2, TRUE, &main_data->ensembl_widgets) ;
+
   /* Add a button next to the dbname widget to allow the user to search for a db in this host */
   GtkWidget *dbname_button = gtk_button_new() ;
   gtk_button_set_image(GTK_BUTTON(dbname_button), gtk_image_new_from_stock(GTK_STOCK_FIND, GTK_ICON_SIZE_BUTTON));
   gtk_widget_set_tooltip_text(dbname_button, "Look up database for this host") ;
   gtk_signal_connect(GTK_OBJECT(dbname_button), "clicked", GTK_SIGNAL_FUNC(dbnameCB), main_data) ;
   gtk_table_attach(table, dbname_button, col + 2, col + 3, row - 1, row, GTK_SHRINK, GTK_SHRINK, xpad, ypad) ;
+  main_data->ensembl_widgets.push_back(dbname_button) ;
 
   main_data->dbprefix_widg = makeEntryWidget("DB prefix :", NULL, "OPTIONAL: If specified, this prefix will be added to source names for features from this database", 
-                                             table, &row, col, col + 2, FALSE) ;
+                                             table, &row, col, col + 2, FALSE, &main_data->ensembl_widgets) ;
 
   /* Second column */
   int max_row = row ;
   row = 0 ;
   col += 3 ;
 
-  main_data->host_widg = makeEntryWidget("Host :", DEFAULT_ENSEMBL_HOST, NULL, table, &row, col, cols - 1, FALSE) ;
-  main_data->port_widg = makeEntryWidget("Port :", DEFAULT_ENSEMBL_PORT, NULL, table, &row, col, cols - 1, FALSE) ;
-  main_data->user_widg = makeEntryWidget("Username :", DEFAULT_ENSEMBL_USER, NULL, table, &row, col, cols - 1, FALSE) ;
-  main_data->pass_widg = makeEntryWidget("Password :", DEFAULT_ENSEMBL_PASS, "Can be empty if not required", table, &row, col, cols - 1, FALSE) ;
+  main_data->host_widg = makeEntryWidget("Host :", DEFAULT_ENSEMBL_HOST, NULL, table, &row, col, cols - 1, FALSE, &main_data->ensembl_widgets) ;
+  main_data->port_widg = makeEntryWidget("Port :", DEFAULT_ENSEMBL_PORT, NULL, table, &row, col, cols - 1, FALSE, &main_data->ensembl_widgets) ;
+  main_data->user_widg = makeEntryWidget("Username :", DEFAULT_ENSEMBL_USER, NULL, table, &row, col, cols - 1, FALSE, &main_data->ensembl_widgets) ;
+  main_data->pass_widg = makeEntryWidget("Password :", DEFAULT_ENSEMBL_PASS, "Can be empty if not required", table, &row, col, cols - 1, FALSE, &main_data->ensembl_widgets) ;
 
   /* Rows at bottom spanning full width */
   col = 0 ;
@@ -430,7 +434,7 @@ static GtkWidget *makeMainFrame(MainFrame main_data, ZMapFeatureSequenceMap sequ
     row = max_row ;
 
   main_data->featuresets_widg = makeEntryWidget("Featuresets :", NULL, "OPTIONAL: Semi-colon-separated list of featuresets to filter input by", 
-                                                table, &row, col, cols - 1, FALSE) ;
+                                                table, &row, col, cols - 1, FALSE, &main_data->ensembl_widgets) ;
 
   /* Add a button next to the featuresets widget to allow the user to search for featuresets in this database */
   GtkWidget *featuresets_button = gtk_button_new() ;
@@ -438,9 +442,10 @@ static GtkWidget *makeMainFrame(MainFrame main_data, ZMapFeatureSequenceMap sequ
   gtk_widget_set_tooltip_text(featuresets_button, "Look up featuresets for this database") ;
   gtk_signal_connect(GTK_OBJECT(featuresets_button), "clicked", GTK_SIGNAL_FUNC(featuresetsCB), main_data) ;
   gtk_table_attach(table, featuresets_button, cols - 1, cols, row - 1, row, GTK_SHRINK, GTK_SHRINK, xpad, ypad) ;
+  main_data->ensembl_widgets.push_back(featuresets_button) ;
 
   main_data->biotypes_widg = makeEntryWidget("Biotypes :", NULL, "OPTIONAL: Semi-colon-separated list of biotypes to filter input by", 
-                                             table, &row, col, cols - 1, FALSE) ;
+                                             table, &row, col, cols - 1, FALSE, &main_data->ensembl_widgets) ;
 
   /* Add a button next to the biotypes widget to allow the user to search for biotypes in this database */
   GtkWidget *biotypes_button = gtk_button_new() ;
@@ -448,7 +453,10 @@ static GtkWidget *makeMainFrame(MainFrame main_data, ZMapFeatureSequenceMap sequ
   gtk_widget_set_tooltip_text(biotypes_button, "Look up biotypes for this database") ;
   gtk_signal_connect(GTK_OBJECT(biotypes_button), "clicked", GTK_SIGNAL_FUNC(biotypesCB), main_data) ;
   gtk_table_attach(table, biotypes_button, cols - 1, cols, row - 1, row, GTK_SHRINK, GTK_SHRINK, xpad, ypad) ;
+  main_data->ensembl_widgets.push_back(biotypes_button) ;
+
 #endif /* USE_ENSEMBL */
+
 
   return frame ;
 }
@@ -494,7 +502,7 @@ static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data)
 {
   MainFrame main_data = (MainFrame)cb_data ;
 
-  g_free(main_data) ;
+  delete main_data ;
 
   return ;
 }
