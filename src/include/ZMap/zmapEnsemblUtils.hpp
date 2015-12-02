@@ -31,6 +31,9 @@
 #ifndef ZMAP_ENSEMBL_UTILS_H
 #define ZMAP_ENSEMBL_UTILS_H
 
+#include <config.h>
+
+#ifdef USE_ENSEMBL
 #include <list>
 #include <string>
 
@@ -54,5 +57,7 @@ std::list<std::string> *EnsemblGetBiotypesList(const char *host,
                                                const char *dbname,
                                                GError **error) ;
 
+
+#endif /* USE_ENSEMBL */
 
 #endif /* !ZMAP_ENSEMBL_UTILS_H */

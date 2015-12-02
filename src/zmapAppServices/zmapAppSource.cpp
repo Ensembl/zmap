@@ -36,25 +36,33 @@
 
 #include <zmapAppServices_P.hpp>
 
-#include <ZMap/zmap.hpp>
-
 #include <string.h>
+#include <gbtools/gbtools.hpp>
 
+#include <config.h>
+
+#include <ZMap/zmap.hpp>
 #include <ZMap/zmapUtilsGUI.hpp>
 #include <ZMap/zmapAppServices.hpp>
-#include <ZMap/zmapEnsemblUtils.hpp>
 
-#include <gbtools/gbtools.hpp>
+#ifdef USE_ENSEMBL
+#include <ZMap/zmapEnsemblUtils.hpp>
+#endif
 
 using namespace std ;
 
 
+#define xpad 4
+#define ypad 4
+#define SOURCE_TYPE_FILE "File/URL"
+
+#ifdef USE_ENSEMBL
 #define DEFAULT_ENSEMBL_HOST "ensembldb.ensembl.org"
 #define DEFAULT_ENSEMBL_PORT "3306"
 #define DEFAULT_ENSEMBL_USER "anonymous"
 #define DEFAULT_ENSEMBL_PASS NULL
-#define xpad 4
-#define ypad 4
+#define SOURCE_TYPE_ENSEMBL "Ensembl"
+#endif
 
 
 /* Generic definitions of columns for displaying a list of e.g. databases. For now just include a
@@ -73,7 +81,12 @@ typedef struct MainFrameStructName
 {
   GtkWidget *toplevel ;
 
+  GtkComboBox *combo ;
+
   GtkWidget *name_widg ;
+  GtkWidget *path_widg ;
+
+#ifdef USE_ENSEMBL
   GtkWidget *host_widg ;
   GtkWidget *port_widg ;
   GtkWidget *user_widg ;
@@ -82,6 +95,7 @@ typedef struct MainFrameStructName
   GtkWidget *dbprefix_widg ;
   GtkWidget *featuresets_widg ;
   GtkWidget *biotypes_widg ;
+#endif
 
   ZMapFeatureSequenceMap sequence_map ;
   
@@ -97,14 +111,20 @@ static GtkWidget *makePanel(GtkWidget *toplevel,
                             ZMapFeatureSequenceMap sequence_map,
                             ZMapAppCreateSourceCB user_func,
                             gpointer user_data) ;
-static GtkWidget *makeMainFrame(MainFrame main_data, ZMapFeatureSequenceMap sequence_map) ;
 static GtkWidget *makeButtonBox(MainFrame main_data) ;
 static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data) ;
+static void cancelCB(GtkWidget *widget, gpointer cb_data) ;
+static void applyCB(GtkWidget *widget, gpointer cb_data) ;
+static GtkWidget *makeMainFrame(MainFrame main_data, ZMapFeatureSequenceMap sequence_map) ;
+static gboolean applyFile(MainFrame main_data) ;
+
+#ifdef USE_ENSEMBL
 static void dbnameCB(GtkWidget *widget, gpointer cb_data) ;
 static void featuresetsCB(GtkWidget *widget, gpointer cb_data) ;
 static void biotypesCB(GtkWidget *widget, gpointer cb_data) ;
-static void cancelCB(GtkWidget *widget, gpointer cb_data) ;
-static void applyCB(GtkWidget *widget, gpointer cb_data) ;
+static gboolean applyEnsembl(MainFrame main_data) ;
+#endif /* USE_ENSEMBL */
+
 
 
 
@@ -178,6 +198,7 @@ static GtkWidget *makePanel(GtkWidget *toplevel,
   gtk_container_add(GTK_CONTAINER(frame), vbox) ;
 
   main_frame = makeMainFrame(main_data, sequence_map) ;
+
   gtk_box_pack_start(GTK_BOX(vbox), main_frame, TRUE, TRUE, 0) ;
 
   button_box = makeButtonBox(main_data) ;
@@ -187,7 +208,6 @@ static GtkWidget *makePanel(GtkWidget *toplevel,
 }
 
 
-/* Make an entry widget and a label and add them to the given boxes. Returns the entry widget. */
 static GtkWidget* makeEntryWidget(const char *label_str, 
                                   const char *default_value,
                                   const char *tooltip,
@@ -232,13 +252,137 @@ static GtkWidget* makeEntryWidget(const char *label_str,
 }
 
 
+static void setFileWidgetVisibility(MainFrame main_data, const gboolean visible)
+{
+  zMapReturnIfFail(main_data && main_data->path_widg) ;
+
+  if (visible)
+    gtk_widget_show_all(main_data->path_widg) ;
+  else
+    gtk_widget_hide_all(main_data->path_widg) ;
+}
+
+
+#ifdef USE_ENSEMBL
+static void setEnsemblWidgetVisibility(MainFrame main_data, const gboolean visible)
+{
+  zMapReturnIfFail(main_data && main_data->host_widg && main_data->port_widg &&
+                   main_data->user_widg && main_data->pass_widg && 
+                   main_data->dbname_widg && main_data->dbprefix_widg &&
+                   main_data->featuresets_widg && main_data->biotypes_widg) ;
+
+  if (visible)
+    {
+      gtk_widget_show_all(main_data->host_widg) ;
+      gtk_widget_show_all(main_data->port_widg) ;
+      gtk_widget_show_all(main_data->user_widg) ;
+      gtk_widget_show_all(main_data->pass_widg) ;
+      gtk_widget_show_all(main_data->dbname_widg) ;
+      gtk_widget_show_all(main_data->dbprefix_widg) ;
+      gtk_widget_show_all(main_data->featuresets_widg) ;
+      gtk_widget_show_all(main_data->biotypes_widg) ;
+    }
+  else
+    {
+      gtk_widget_hide_all(main_data->host_widg) ;
+      gtk_widget_hide_all(main_data->port_widg) ;
+      gtk_widget_hide_all(main_data->user_widg) ;
+      gtk_widget_hide_all(main_data->pass_widg) ;
+      gtk_widget_hide_all(main_data->dbname_widg) ;
+      gtk_widget_hide_all(main_data->dbprefix_widg) ;
+      gtk_widget_hide_all(main_data->featuresets_widg) ;
+      gtk_widget_hide_all(main_data->biotypes_widg) ;
+    }
+}
+#endif /* USE_ENSEMBL */
+
+
+/* Returns the selected string value in a combo box as a newly-allocated free. Returns null if
+ * not found. */
+static char* comboGetValue(GtkComboBox *combo)
+{
+  char *result = NULL ;
+
+  GtkTreeIter iter;
+  
+  if (gtk_combo_box_get_active_iter(GTK_COMBO_BOX(combo), &iter))
+    {
+      GtkTreeModel *model = gtk_combo_box_get_model(GTK_COMBO_BOX(combo));
+      
+      gtk_tree_model_get(model, &iter, 0, &result, -1);
+    }
+
+  return result ;
+}
+
+
+static void sourceTypeChangedCB(GtkComboBox *combo, gpointer data)
+{
+  MainFrame main_data = (MainFrame)data ;
+  zMapReturnIfFail(main_data) ;
+
+  char *value = comboGetValue(combo) ;
+
+  if (value)
+    {
+      if (strcmp(value, SOURCE_TYPE_FILE) == 0)
+        {
+          setFileWidgetVisibility(main_data, TRUE) ;
+#ifdef USE_ENSEMBL
+          setEnsemblWidgetVisibility(main_data, FALSE) ;
+#endif /* USE_ENSEMBL */
+        }
+#ifdef USE_ENSEMBL
+      else if (strcmp(value, SOURCE_TYPE_ENSEMBL) == 0)
+        {
+          setFileWidgetVisibility(main_data, FALSE) ;
+          setEnsemblWidgetVisibility(main_data, TRUE) ;
+        }
+#endif /* USE_ENSEMBL */
+
+      g_free(value) ;
+    }
+}
+
+
+static GtkComboBox *createComboBox(MainFrame main_data)
+{
+  GtkComboBox *combo = NULL ;
+
+  /* Create a combo box to choose the type of source to create */
+  GtkListStore *store = gtk_list_store_new(1, G_TYPE_STRING);
+  combo = GTK_COMBO_BOX(gtk_combo_box_new_with_model(GTK_TREE_MODEL(store)));
+  g_object_unref(store) ;
+
+  GtkCellRenderer *renderer = gtk_cell_renderer_text_new();
+  gtk_cell_layout_pack_start(GTK_CELL_LAYOUT(combo), renderer, FALSE);
+  gtk_cell_layout_set_attributes(GTK_CELL_LAYOUT(combo), renderer, "text", 0, NULL);
+ 
+  GtkTreeIter iter;
+  gtk_list_store_append(store, &iter);
+  gtk_list_store_set(store, &iter, 0, SOURCE_TYPE_FILE, -1);
+
+  gtk_combo_box_set_active_iter(combo, &iter);
+
+#ifdef USE_ENSEMBL
+  gtk_list_store_append(store, &iter);
+  gtk_list_store_set(store, &iter, 0, SOURCE_TYPE_ENSEMBL, -1);
+  gtk_combo_box_set_active_iter(combo, &iter);
+#endif /* USE_ENSEMBL */
+
+  g_signal_connect(G_OBJECT(combo), "changed", G_CALLBACK(sourceTypeChangedCB), main_data);
+
+  return combo ;
+}
+
+
 /* Make the label/entry fields frame. */
 static GtkWidget *makeMainFrame(MainFrame main_data, ZMapFeatureSequenceMap sequence_map)
 {
-  GtkWidget *frame = gtk_frame_new( "New File source: " ) ;
+  GtkWidget *frame = gtk_frame_new( "New source: " ) ;
   gtk_container_border_width(GTK_CONTAINER(frame), 5);
 
-  const int rows = 5 ;
+  const int rows = 7 ;
   const int cols = 6 ;
   GtkTable *table = GTK_TABLE(gtk_table_new(rows, cols, FALSE)) ;
   gtk_container_add (GTK_CONTAINER (frame), GTK_WIDGET(table)) ;
@@ -246,14 +390,20 @@ static GtkWidget *makeMainFrame(MainFrame main_data, ZMapFeatureSequenceMap sequ
   int row = 0 ;
   int col = 0 ;
 
+  main_data->combo = createComboBox(main_data) ;
+  gtk_table_attach(table, gtk_label_new("Source type :"), col, col + 1, row, row + 1, GTK_SHRINK, GTK_SHRINK, xpad, ypad) ;
+  gtk_table_attach(table, GTK_WIDGET(main_data->combo), col + 1, col + 2, row, row + 1, GTK_SHRINK, GTK_SHRINK, xpad, ypad) ;
+  ++row ;
+
   /* Create the label/entry widgets */
 
   /* First column */
   main_data->name_widg = makeEntryWidget("Source name :", NULL, "REQUIRED: Please enter a name for the new source", 
                                          table, &row, col, col + 2, TRUE) ;
-  main_data->dbname_widg = makeEntryWidget("DB name :", NULL, "REQUIRED: The database to load features from", 
+  main_data->path_widg = makeEntryWidget("Path/URL :", NULL, "REQUIRED: The file/URL to load features from", 
                                            table, &row, col, col + 2, TRUE) ;
 
+#ifdef USE_ENSEMBL
   /* Add a button next to the dbname widget to allow the user to search for a db in this host */
   GtkWidget *dbname_button = gtk_button_new() ;
   gtk_button_set_image(GTK_BUTTON(dbname_button), gtk_image_new_from_stock(GTK_STOCK_FIND, GTK_ICON_SIZE_BUTTON));
@@ -298,6 +448,7 @@ static GtkWidget *makeMainFrame(MainFrame main_data, ZMapFeatureSequenceMap sequ
   gtk_widget_set_tooltip_text(biotypes_button, "Look up biotypes for this database") ;
   gtk_signal_connect(GTK_OBJECT(biotypes_button), "clicked", GTK_SIGNAL_FUNC(biotypesCB), main_data) ;
   gtk_table_attach(table, biotypes_button, cols - 1, cols, row - 1, row, GTK_SHRINK, GTK_SHRINK, xpad, ypad) ;
+#endif /* USE_ENSEMBL */
 
   return frame ;
 }
@@ -346,6 +497,199 @@ static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data)
   g_free(main_data) ;
 
   return ;
+}
+
+
+/* Kill the dialog. */
+static void cancelCB(GtkWidget *widget, gpointer cb_data)
+{
+  MainFrame main_data = (MainFrame)cb_data ;
+
+  gtk_widget_destroy(main_data->toplevel) ;
+
+  return ;
+}
+
+
+/* Create the new source. */
+static void applyCB(GtkWidget *widget, gpointer cb_data)
+{
+  gboolean ok = FALSE ;
+  MainFrame main_frame = (MainFrame)cb_data ;
+
+  char *source_type = comboGetValue(main_frame->combo) ;
+
+  if (source_type)
+    {
+      if (strcmp(source_type, SOURCE_TYPE_FILE) == 0)
+        {
+          ok = applyFile(main_frame) ;
+        }
+#ifdef USE_ENSEMBL
+      else if (strcmp(source_type, SOURCE_TYPE_ENSEMBL) == 0)
+        {
+          ok = applyEnsembl(main_frame) ;
+        }
+#endif /* USE_ENSEMBL */
+
+      g_free(source_type) ;
+    }
+
+  if (ok)
+    gtk_widget_destroy(main_frame->toplevel); 
+
+  return ;
+}
+
+
+/* Utility to get entry text but to return null is place of empty strings */
+static const char* getEntryText(GtkEntry *entry)
+{
+  const char *result = NULL ;
+
+  if (entry)
+    result = gtk_entry_get_text(entry) ;
+
+  if (result && *result == 0)
+    result = NULL ;
+
+  return result ;
+}
+
+
+static gboolean applyFile(MainFrame main_frame)
+{
+  gboolean ok = FALSE ;
+
+  const char *source_name = getEntryText(GTK_ENTRY(main_frame->name_widg)) ;
+  const char *path = getEntryText(GTK_ENTRY(main_frame->path_widg)) ;
+
+  if (!source_name)
+    {
+      zMapWarning("%s", "Please enter a source name") ;
+    }
+  else if (!path)
+    {
+      zMapWarning("%s", "Please enter a path/URL") ;
+    }
+  else
+    {
+      GError *tmp_error = NULL ;
+      
+      // Prepend file:///, unless its an http/ftp url
+      std::string url("");
+
+      if (strncasecmp(path, "http://", 7) != 0 &&
+          strncasecmp(path, "https://", 8) != 0 &&
+          strncasecmp(path, "ftp://", 6) != 0)
+        {
+          url += "file:///" ;
+        }
+
+      url += path ;
+
+      (main_frame->user_func)(source_name, url, NULL, NULL, main_frame->user_data, &tmp_error) ;
+
+      if (tmp_error)
+        zMapWarning("Failed to create new source: %s", tmp_error->message) ;
+
+      ok = TRUE ;
+    }
+
+  return ok ;
+}
+
+
+/* 
+ * Ensembl functions
+ */
+
+#ifdef USE_ENSEMBL
+
+static void appendUrlValue(std::string &url, const char *prefix, const char *value)
+{
+  if (prefix)
+    url += prefix ;
+
+  if (value)
+    url += value ;
+}
+
+
+static std::string constructUrl(const char *host, const char *port,
+                                const char *user, const char *pass,
+                                const char *dbname, const char *dbprefix)
+{
+  std::string url = "ensembl://" ;
+
+  appendUrlValue(url, NULL, user) ;
+  appendUrlValue(url, ":", pass) ;
+  appendUrlValue(url, "@", host) ;
+  appendUrlValue(url, ":", port) ;
+
+  const char *separator= "?";
+      
+  if (dbname)
+    {
+      url += separator ;
+      url += "db_name=" ;
+      url += dbname ;
+      separator = "&" ;
+    }
+
+  if (dbprefix)
+    {
+      url += separator ;
+      url += "db_prefix=" ;
+      url += dbprefix ;
+      separator = "&" ;
+    }
+
+  return url ;
+}
+
+
+static gboolean applyEnsembl(MainFrame main_frame)
+{
+  gboolean ok = FALSE ;
+
+  const char *source_name = getEntryText(GTK_ENTRY(main_frame->name_widg)) ;
+  const char *host = getEntryText(GTK_ENTRY(main_frame->host_widg)) ;
+  const char *port = getEntryText(GTK_ENTRY(main_frame->port_widg)) ;
+  const char *user = getEntryText(GTK_ENTRY(main_frame->user_widg)) ;
+  const char *pass = getEntryText(GTK_ENTRY(main_frame->pass_widg)) ;
+  const char *dbname = getEntryText(GTK_ENTRY(main_frame->dbname_widg)) ;
+  const char *dbprefix = getEntryText(GTK_ENTRY(main_frame->dbprefix_widg)) ;
+  const char *featuresets = getEntryText(GTK_ENTRY(main_frame->featuresets_widg)) ;
+  const char *biotypes = getEntryText(GTK_ENTRY(main_frame->featuresets_widg)) ;
+
+  if (!source_name)
+    {
+      zMapWarning("%s", "Please enter a source name") ;
+    }
+  else if (!host)
+    {
+      zMapWarning("%s", "Please enter a host") ;
+    }
+  else if (!dbname)
+    {
+      zMapWarning("%s", "Please enter a database name") ;
+    }
+  else
+    {
+      GError *tmp_error = NULL ;
+      
+      std::string url = constructUrl(host, port, user, pass, dbname, dbprefix) ;
+
+      (main_frame->user_func)(source_name, url, featuresets, biotypes, main_frame->user_data, &tmp_error) ;
+
+      if (tmp_error)
+        zMapWarning("Failed to create new source: %s", tmp_error->message) ;
+
+      ok = TRUE ;
+    }
+
+  return ok ;
 }
 
 
@@ -704,124 +1048,4 @@ static void biotypesCB(GtkWidget *widget, gpointer cb_data)
   return ;
 }
 
-
-/* Kill the dialog. */
-static void cancelCB(GtkWidget *widget, gpointer cb_data)
-{
-  MainFrame main_data = (MainFrame)cb_data ;
-
-  gtk_widget_destroy(main_data->toplevel) ;
-
-  return ;
-}
-
-
-static void appendUrlValue(std::string &url, const char *prefix, const char *value)
-{
-  if (prefix)
-    url += prefix ;
-
-  if (value)
-    url += value ;
-}
-
-
-static std::string constructUrl(const char *host, const char *port,
-                                const char *user, const char *pass,
-                                const char *dbname, const char *dbprefix)
-{
-  std::string url = "ensembl://" ;
-
-  appendUrlValue(url, NULL, user) ;
-  appendUrlValue(url, ":", pass) ;
-  appendUrlValue(url, "@", host) ;
-  appendUrlValue(url, ":", port) ;
-
-  const char *separator= "?";
-      
-  if (dbname)
-    {
-      url += separator ;
-      url += "db_name=" ;
-      url += dbname ;
-      separator = "&" ;
-    }
-
-  if (dbprefix)
-    {
-      url += separator ;
-      url += "db_prefix=" ;
-      url += dbprefix ;
-      separator = "&" ;
-    }
-
-  return url ;
-}
-
-
-/* Utility to get entry text but to return null is place of empty strings */
-static const char* getEntryText(GtkEntry *entry)
-{
-  const char *result = NULL ;
-
-  if (entry)
-    result = gtk_entry_get_text(entry) ;
-
-  if (result && *result == 0)
-    result = NULL ;
-
-  return result ;
-}
-
-
-/* Create the new source. */
-static void applyCB(GtkWidget *widget, gpointer cb_data)
-{
-  gboolean ok = FALSE ;
-  MainFrame main_frame = (MainFrame)cb_data ;
-
-  const char *source_name = getEntryText(GTK_ENTRY(main_frame->name_widg)) ;
-  const char *host = getEntryText(GTK_ENTRY(main_frame->host_widg)) ;
-  const char *port = getEntryText(GTK_ENTRY(main_frame->port_widg)) ;
-  const char *user = getEntryText(GTK_ENTRY(main_frame->user_widg)) ;
-  const char *pass = getEntryText(GTK_ENTRY(main_frame->pass_widg)) ;
-  const char *dbname = getEntryText(GTK_ENTRY(main_frame->dbname_widg)) ;
-  const char *dbprefix = getEntryText(GTK_ENTRY(main_frame->dbprefix_widg)) ;
-  const char *featuresets = getEntryText(GTK_ENTRY(main_frame->featuresets_widg)) ;
-  const char *biotypes = getEntryText(GTK_ENTRY(main_frame->featuresets_widg)) ;
-
-  if (!source_name)
-    {
-      zMapWarning("%s", "Please enter a source name") ;
-    }
-  else if (!host)
-    {
-      zMapWarning("%s", "Please enter a host") ;
-    }
-  else if (!dbname)
-    {
-      zMapWarning("%s", "Please enter a database name") ;
-    }
-  else
-    {
-      GError *tmp_error = NULL ;
-      
-      std::string url = constructUrl(host, port, user, pass, dbname, dbprefix) ;
-
-      (main_frame->user_func)(source_name, url, featuresets, biotypes, main_frame->user_data, &tmp_error) ;
-
-      if (tmp_error)
-        zMapWarning("Failed to create new source: %s", tmp_error->message) ;
-
-      ok = TRUE ;
-    }
-
-  if (ok)
-    gtk_widget_destroy(main_frame->toplevel); 
-
-  return ;
-}
-
-
-
-
+#endif /* USE_ENSEMBL */

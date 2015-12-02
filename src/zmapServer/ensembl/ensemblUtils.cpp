@@ -30,6 +30,10 @@
  *-------------------------------------------------------------------
  */
 
+#include <config.h>
+
+#ifdef USE_ENSEMBL
+
 #include <string.h>
 #include <stdio.h>
 
@@ -168,3 +172,5 @@ static list<string>* ensemblGetList(const char *host,
 
   return result ;
 }
+
+#endif /* USE_ENSEMBL */
