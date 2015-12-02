@@ -473,7 +473,7 @@ static gboolean setEntryFromSelection(GtkEntry *entry, GtkTreeView *tree_view)
       GtkTreeModel *model = NULL ;
       GList *rows = gtk_tree_selection_get_selected_rows(tree_selection, &model) ;
           
-      for (GList *row = rows; row; row = g_list_next(rows))
+      for (GList *row = rows; row; row = g_list_next(row))
         {
           GtkTreePath *path = (GtkTreePath*)(row->data) ;
           GtkTreeIter iter ;
