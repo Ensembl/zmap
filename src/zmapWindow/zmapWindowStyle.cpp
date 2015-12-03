@@ -147,6 +147,7 @@ void zMapWindowShowStyleDialog(ZMapWindow window,
 
   StyleChange my_data = g_new0(StyleChangeStruct,1);
 
+  my_data->style = style ;
   my_data->window = window;
   my_data->created_cb_func = created_cb_func ;
   my_data->cb_data = cb_data ;
