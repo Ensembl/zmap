@@ -2050,10 +2050,13 @@ static void style_set_property(char *current_stanza_name, const char *key, GType
 
 static gpointer create_config_source()
 {
-  ZMapConfigSource src = g_new0(ZMapConfigSourceStruct, 1);
+  ZMapConfigSource src ;
 
-  src->group = SOURCE_GROUP_START;        // default_value
-  return(src);
+  src = g_new0(ZMapConfigSourceStruct, 1) ;
+
+  src->group = SOURCE_GROUP_START ;                         // default_value
+
+  return src ;
 }
 
 static void free_source_list_item(gpointer list_data, gpointer unused_data)
@@ -2135,24 +2138,26 @@ gpointer parent_data, GValue *property_value)
         bool_ptr = &(config_source->provide_mapping) ;
       else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_GROUP) == 0)
         {
+          const char *value = "";
+
           int_ptr = &(config_source->group) ;
 
-          // painful bit of code but there you go
           *int_ptr = SOURCE_GROUP_NEVER;
-          const char *value = "";
-          if(type == G_TYPE_STRING)
-            value = g_value_get_string(property_value);
 
-          if (!strcmp(value,ZMAPSTANZA_SOURCE_GROUP_ALWAYS))
-            *int_ptr = SOURCE_GROUP_ALWAYS;
-          else if(!strcmp(value,ZMAPSTANZA_SOURCE_GROUP_START))
-            *int_ptr = SOURCE_GROUP_START;
-          else if(!strcmp(value,ZMAPSTANZA_SOURCE_GROUP_DELAYED))
-            *int_ptr = SOURCE_GROUP_DELAYED;
-          else if(strcmp(value,ZMAPSTANZA_SOURCE_GROUP_NEVER))
-            zMapLogWarning("Server stanza %s group option invalid",current_stanza_name);
+          if (type == G_TYPE_STRING
+              && ((value = g_value_get_string(property_value) && *value)))
+            {
+              if (!strcmp(value,ZMAPSTANZA_SOURCE_GROUP_ALWAYS))
+                *int_ptr = SOURCE_GROUP_ALWAYS;
+              else if(!strcmp(value,ZMAPSTANZA_SOURCE_GROUP_START))
+                *int_ptr = SOURCE_GROUP_START;
+              else if(!strcmp(value,ZMAPSTANZA_SOURCE_GROUP_DELAYED))
+                *int_ptr = SOURCE_GROUP_DELAYED;
+              else if(strcmp(value,ZMAPSTANZA_SOURCE_GROUP_NEVER))
+                zMapLogWarning("Server stanza %s group option invalid",current_stanza_name);
+            }
 
-          return;
+          return ;
         }
 
       if (type == G_TYPE_BOOLEAN && G_VALUE_TYPE(property_value) == type)
