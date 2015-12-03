@@ -115,7 +115,7 @@ pkgconfig_DATA = zmap.pc
 
 noinst_LTLIBRARIES = libZMapApp.la libZMap.la libZMapAppServices.la \
                      libZMapThr.la libZMapRemoteControl.la libZMapXML.la libZMapUtils.la \
-                     libzmapfoocanvas.la libPFetch.la
+                     libzmapfoocanvas.la libPFetch.la libZMapServers.la
 
 libZMapApp_la_SOURCES =
 libZMapApp_la_LIBADD  = zmapApp/libZMapApp.la
@@ -150,6 +150,9 @@ libZMapXML_la_LIBADD  = zmapXML/libZMapXML.la
 libZMapUtils_la_SOURCES = 
 libZMapUtils_la_LIBADD  = zmapUtils/libZMapUtils.la
 
+libZMapServers_la_SOURCES = 
+libZMapServers_la_LIBADD  = zmapServer/libZMapServers.la
+
 libPFetch_la_SOURCES = 
 libPFetch_la_LIBADD  = libpfetch/libpfetch.la libcurlobject/libcurlobject.la
 
@@ -183,6 +186,7 @@ zmap_LDADD =                                                 \
 	$(top_builddir)/.libs/libZMapRemoteControl.a         \
 	$(top_builddir)/.libs/libZMapXML.a                   \
 	$(top_builddir)/.libs/libZMapUtils.a                 \
+	$(top_builddir)/.libs/libZMapServers.a               \
 	$(top_builddir)/.libs/libzmapfoocanvas.a             \
 	$(top_builddir)/.libs/libPFetch.a
 
