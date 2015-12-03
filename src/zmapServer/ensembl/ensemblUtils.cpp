@@ -73,11 +73,11 @@ typedef enum
 
 
 
-list<string>* EnsemblGetDatabaseList(const char *host, 
-                                     const int port,
-                                     const char *user,
-                                     const char *passwd,
-                                     GError **error)
+list<string>* zMapEnsemblGetDatabaseList(const char *host, 
+                                         const int port,
+                                         const char *user,
+                                         const char *passwd,
+                                         GError **error)
 {
   list<string> *result = NULL ;
 
@@ -89,12 +89,12 @@ list<string>* EnsemblGetDatabaseList(const char *host,
 }
 
 
-list<string>* EnsemblGetFeaturesetsList(const char *host, 
-                                        const int port,
-                                        const char *user,
-                                        const char *passwd,
-                                        const char *dbname,
-                                        GError **error)
+list<string>* zMapEnsemblGetFeaturesetsList(const char *host, 
+                                            const int port,
+                                            const char *user,
+                                            const char *passwd,
+                                            const char *dbname,
+                                            GError **error)
 {
   list<string> *result = NULL ;
 
@@ -106,12 +106,12 @@ list<string>* EnsemblGetFeaturesetsList(const char *host,
 }
 
 
-list<string>* EnsemblGetBiotypesList(const char *host, 
-                                     const int port,
-                                     const char *user,
-                                     const char *passwd,
-                                     const char *dbname,
-                                     GError **error)
+list<string>* zMapEnsemblGetBiotypesList(const char *host, 
+                                         const int port,
+                                         const char *user,
+                                         const char *passwd,
+                                         const char *dbname,
+                                         GError **error)
 {
   list<string> *result = NULL ;
 
