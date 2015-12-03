@@ -34,12 +34,14 @@
  *-------------------------------------------------------------------
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif 
+
 #include <zmapAppServices_P.hpp>
 
 #include <string.h>
 #include <gbtools/gbtools.hpp>
-
-#include <config.h>
 
 #include <ZMap/zmap.hpp>
 #include <ZMap/zmapUtilsGUI.hpp>
@@ -716,7 +718,7 @@ static list<string>* mainFrameGetDatabaseList(MainFrame main_data, GError **erro
   const char *user = gtk_entry_get_text(GTK_ENTRY(main_data->user_widg)) ;
   const char *pass = gtk_entry_get_text(GTK_ENTRY(main_data->pass_widg)) ;
   
-  db_list = EnsemblGetDatabaseList(host, port, user, pass, error) ;
+  db_list = zMapEnsemblGetDatabaseList(host, port, user, pass, error) ;
 
   return db_list ;
 }
@@ -738,7 +740,7 @@ static list<string>* mainFrameGetFeaturesetsList(MainFrame main_data, GError **e
   const char *pass = gtk_entry_get_text(GTK_ENTRY(main_data->pass_widg)) ;
   const char *dbname = gtk_entry_get_text(GTK_ENTRY(main_data->dbname_widg)) ;
   
-  db_list = EnsemblGetFeaturesetsList(host, port, user, pass, dbname, error) ;
+  db_list = zMapEnsemblGetFeaturesetsList(host, port, user, pass, dbname, error) ;
 
   return db_list ;
 }
@@ -760,7 +762,7 @@ static list<string>* mainFrameGetBiotypesList(MainFrame main_data, GError **erro
   const char *pass = gtk_entry_get_text(GTK_ENTRY(main_data->pass_widg)) ;
   const char *dbname = gtk_entry_get_text(GTK_ENTRY(main_data->dbname_widg)) ;
   
-  db_list = EnsemblGetBiotypesList(host, port, user, pass, dbname, error) ;
+  db_list = zMapEnsemblGetBiotypesList(host, port, user, pass, dbname, error) ;
 
   return db_list ;
 }
