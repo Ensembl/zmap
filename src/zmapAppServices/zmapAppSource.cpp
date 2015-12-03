@@ -38,11 +38,12 @@
 #include <config.h>
 #endif 
 
-#include <zmapAppServices_P.hpp>
-
+#include <list>
 #include <string.h>
+
 #include <gbtools/gbtools.hpp>
 
+#include <zmapAppServices_P.hpp>
 #include <ZMap/zmap.hpp>
 #include <ZMap/zmapUtilsGUI.hpp>
 #include <ZMap/zmapAppServices.hpp>
