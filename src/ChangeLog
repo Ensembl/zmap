@@ -1,3 +1,36 @@
+2015-11-23  zmap  <zmap@sanger.ac.uk>
+ ZMap version 2.3.0-132-g729ff2f - Update RT and git commit reports
+ src/ChangeLog                                  |   26 ++++++++++++++++++++++++
+ src/build/release_docs/GIT_COMMITS.txt         |    1 +
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt |   12 ++++++++++-
+ 3 files changed, 38 insertions(+), 1 deletions(-)
+
+2015-11-23  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix a bug where curl_multi_fdset failures weren't being handled - BUG FIX
+ src/libcurlobject/libcurlobject.c |  118 +++++++++++++++++++++++--------------
+ 1 files changed, 73 insertions(+), 45 deletions(-)
+
+2015-11-18  Gemma Guest  <gb10@sanger.ac.uk>
+ Disable style selection, which is not working - WIP
+ src/zmapWindow/zmapWindowColConfig.cpp |  161 +++++++++++++++++++++-----------
+ 1 files changed, 108 insertions(+), 53 deletions(-)
+
+2015-11-18  Gemma Guest  <gb10@sanger.ac.uk>
+ Add Select-All button on Columns dialog - WIP
+ src/zmapWindow/zmapWindowColConfig.cpp |  158 ++++++++++++++++++++++++-------
+ 1 files changed, 122 insertions(+), 36 deletions(-)
+
+2015-11-18  Gemma Guest  <gb10@sanger.ac.uk>
+ Remove dummy menu item - TRIVIAL
+ src/zmapWindow/zmapWindowColConfig.cpp |   32 ++++++++++++++++----------------
+ 1 files changed, 16 insertions(+), 16 deletions(-)
+
+2015-11-19  zmap  <zmap@sanger.ac.uk>
+ ZMap version 2.3.0-127-g90a34de - Update RT and git commit reports
+ src/ChangeLog                                  |    5 +++++
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt |    2 +-
+ 2 files changed, 6 insertions(+), 1 deletions(-)
+
 2015-11-17  zmap  <zmap@sanger.ac.uk>
  ZMap version 2.3.0-126-gc0e948b - Update RT and git commit reports
  src/ChangeLog |    7 +++++++
