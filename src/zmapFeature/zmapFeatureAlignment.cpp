@@ -36,13 +36,12 @@
 
 #include <glib.h>
 
-
-#include <ZMap/zmap.hpp>
-#include <ZMap/zmapGFFStringUtils.hpp>
-
 #include <errno.h>
 #include <string.h>
 #include <ctype.h>
+
+#include <ZMap/zmap.hpp>
+#include <ZMap/zmapGFFStringUtils.hpp>
 
 #include <zmapFeature_P.hpp>
 
@@ -144,6 +143,11 @@ static char alignStrCanonicalGetOperatorChar(AlignStrCanonical canon, int i) ;
 static gboolean alignStrCanonicalAddOperator(AlignStrCanonical canon, const AlignStrOpStruct * const op) ;
 static gboolean alignStrCanonicalRemoveOperator(AlignStrCanonical canon, int i) ;
 static AlignStrCanonical alignStrMakeCanonical(const char *match_str, ZMapFeatureAlignFormat align_format) ;
+
+static GArray* blockArrayCreate() ;
+static gboolean blockArrayDestroy(GArray* const) ;
+static ZMapAlignBlock blockArrayGetBlock(GArray* const, int index) ;
+static gboolean blockAddBlock(GArray**, const ZMapAlignBlockStruct * const) ;
 
 static GArray * alignStrOpArrayCreate() ;
 static void alignStrOpArrayDestroy(GArray * const align_array) ;
@@ -570,6 +574,39 @@ void zMapFeatureAlignmentPrintExonsAligns(GArray *exons, GArray *introns, GArray
  */
 
 
+void zmapFeatureAlignmentCopyFeature(ZMapFeature orig_feature, ZMapFeature new_feature)
+{
+  bool result = false ;
+  ZMapAlignBlockStruct align ;
+
+  if (orig_feature->feature.homol.align != NULL && orig_feature->feature.homol.align->len > (guint)0)
+    {
+      unsigned int i ;
+
+      new_feature->feature.homol.align = g_array_sized_new(FALSE, TRUE,
+                                                           sizeof(ZMapAlignBlockStruct),
+                                                           orig_feature->feature.homol.align->len) ;
+
+      for (i = 0; i < orig_feature->feature.homol.align->len; i++)
+        {
+          align = g_array_index(orig_feature->feature.homol.align, ZMapAlignBlockStruct, i) ;
+
+          new_feature->feature.homol.align = g_array_append_val(new_feature->feature.homol.align, align) ;
+        }
+    }
+
+  return ;
+}
+
+
+void zmapFeatureAlignmentDestroyFeature(ZMapFeature feature)
+{
+  if (feature->feature.homol.align)
+    g_array_free(feature->feature.homol.align, TRUE) ;
+
+  return ;
+}
+
 
 ZMapFeaturePartsList zmapFeatureAlignmentSubPartsGet(ZMapFeature feature, ZMapFeatureSubPartType requested_bounds)
 {
@@ -774,6 +811,59 @@ gboolean zmapFeatureAlignmentMatchingBoundaries(ZMapFeature feature,
 /*
  *            Internal routines.
  */
+
+
+
+/*
+ * Create a GArray to store elements of type ZMapAlignBlockStruct
+ */
+static GArray* blockArrayCreate()
+{
+  GArray* align_block_array = NULL ;
+  align_block_array = g_array_sized_new(FALSE, FALSE, sizeof(ZMapAlignBlockStruct), 10) ;
+  return align_block_array ;
+}
+
+/*
+ * Destroy a GArray storing elements of type ZMapAlignBlockStruct
+ */
+static gboolean blockArrayDestroy(GArray* const align_block_array)
+{
+  gboolean result = FALSE ;
+  if (align_block_array)
+    {
+      g_array_free(align_block_array, TRUE) ;
+      result = TRUE ;
+    }
+  return result ;
+}
+
+/*
+ *
+ */
+static ZMapAlignBlock blockArrayGetBlock(GArray*const align_block_array, int index)
+{
+  ZMapAlignBlock block = NULL ;
+  if (align_block_array && index>=0)
+    {
+      block = &g_array_index(align_block_array, ZMapAlignBlockStruct, index) ;
+    }
+  return block ;
+}
+
+static gboolean blockAddBlock(GArray** p_align_block_array, const ZMapAlignBlockStruct * const block)
+{
+  gboolean result = FALSE ;
+  GArray *align_block_array = NULL ;
+  if (p_align_block_array && (align_block_array = *p_align_block_array) && block)
+    {
+      align_block_array = g_array_append_val(align_block_array, *block) ;
+      *p_align_block_array = align_block_array ;
+      result = TRUE ;
+    }
+  return result ;
+}
+
 
 
 /*
@@ -1911,7 +2001,7 @@ static gboolean alignStrCanon2Homol(AlignStrCanonical canon,
   align = canon->align ;
 
   /* is there a call to do this in feature code ??? (sm23) there is now... */
-  local_map = zMapAlignBlockArrayCreate() ;
+  local_map = blockArrayCreate() ;
 
   if (ref_strand == ZMAPSTRAND_FORWARD)
     curr_ref = p_start ;
@@ -1995,7 +2085,7 @@ static gboolean alignStrCanon2Homol(AlignStrCanonical canon,
                   else
                     gap.q2 = (curr_match -= curr_length) + 1 ;
 
-                  zMapAlignBlockAddBlock(&local_map, &gap) ;
+                  blockAddBlock(&local_map, &gap) ;
                   ++j ;    /* increment for next gap element. */
 
                   boundary_type = ALIGN_BLOCK_BOUNDARY_MATCH ;
@@ -2014,7 +2104,7 @@ static gboolean alignStrCanon2Homol(AlignStrCanonical canon,
             prev_gap->end_boundary = boundary_type ;
 
           if (op->op == 'M')
-            prev_gap = zMapAlignBlockArrayGetBlock(local_map, local_map->len-1) ;
+            prev_gap = blockArrayGetBlock(local_map, local_map->len-1) ;
           else
             prev_gap = NULL ;
 
@@ -2181,7 +2271,7 @@ static gboolean alignStrCanon2Exons(AlignStrCanonical canon,
                               cds_start = exon.x1 ;
                             cds_end = exon.x2 ;
 
-                            local_map = zMapAlignBlockArrayCreate() ;
+                            local_map = blockArrayCreate() ;
                             g_array_append_val(aligns, local_map) ;
 
                             if (prev_op == '3')
@@ -2400,7 +2490,7 @@ static gboolean alignStrCanon2Exons(AlignStrCanonical canon,
                                 calcCoords(ref_strand, curr_ref, ref_length, &(exon.x1), &(exon.x2)) ;
                                 g_array_append_val(exons, exon) ;
 
-                                local_map = zMapAlignBlockArrayCreate() ;
+                                local_map = blockArrayCreate() ;
                                 g_array_append_val(aligns, local_map) ;
 
                                 prev_start_boundary = ALIGN_BLOCK_BOUNDARY_INTRON ;
@@ -2804,7 +2894,7 @@ static AlignStrCanonical homol2AlignStrCanonical(ZMapFeature feature, ZMapFeatur
           /*
            * Identify the current block.
            */
-          this_block = zMapAlignBlockArrayGetBlock(align, i) ;
+          this_block = blockArrayGetBlock(align, i) ;
 
           /*
            * Create I or D to represent whatever is between last_block and
@@ -3956,7 +4046,7 @@ static void addNewAlign(GArray *local_map,
   else
     sub_align.q2 = (curr_match - match_length) + 1 ;
 
-  zMapAlignBlockAddBlock(&local_map, &sub_align) ;
+  blockAddBlock(&local_map, &sub_align) ;
 
   return ;
 }

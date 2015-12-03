@@ -5,13 +5,17 @@ SUBDIRS = . tests
 
 noinst_LTLIBRARIES = libZMapFeature.la
 
-libZMapFeature_la_SOURCES =    \
+libZMapFeature_la_SOURCES =  	 \
 zmapFeature.cpp                  \
 zmapFeature_P.hpp                \
 zmapFeature3FrameTranslation.cpp \
 zmapFeatureAlignment.cpp         \
-zmapFeatureBasic.cpp              \
+zmapFeatureAny.cpp		 \
+zmapFeatureBasic.cpp             \
 zmapFeatureContext.cpp           \
+zmapFeatureContextAlign.cpp	\
+zmapFeatureContextBlock.cpp	\
+zmapFeatureContextSet.cpp	\
 zmapFeatureContextUtils.cpp      \
 zmapFeatureDNA.cpp               \
 zmapFeatureFormatInput.cpp       \

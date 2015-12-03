@@ -180,6 +180,9 @@ GArray *zMapFeatureTranscriptCreateSpanArray(void)
   return spans ;
 }
 
+
+
+
 /*
  * Adds CDS start and end to a feature but tests values as we go along to make sure
  * that the coordinates are only changed if the range is being expanded. The phase is
@@ -1024,6 +1027,120 @@ gboolean zMapFeatureTranscriptDeleteSubfeatureAtCoord(ZMapFeature transcript, Co
 /*
  *            Package routines.
  */
+
+
+
+void zmapFeatureTranscriptCopyFeature(ZMapFeature orig_feature, ZMapFeature new_feature)
+{
+  ZMapSpanStruct span;
+  unsigned int i ;
+
+
+  if (orig_feature->feature.transcript.exons != NULL)
+    {
+      new_feature->feature.transcript.exons =
+        g_array_sized_new(FALSE, TRUE,
+                          sizeof(ZMapSpanStruct),
+                          orig_feature->feature.transcript.exons->len);
+
+      for (i = 0; i < orig_feature->feature.transcript.exons->len; i++)
+        {
+          span = g_array_index(orig_feature->feature.transcript.exons, ZMapSpanStruct, i);
+          new_feature->feature.transcript.exons =
+            g_array_append_val(new_feature->feature.transcript.exons, span);
+        }
+    }
+
+  if (orig_feature->feature.transcript.introns != NULL)
+    {
+      new_feature->feature.transcript.introns =
+        g_array_sized_new(FALSE, TRUE,
+                          sizeof(ZMapSpanStruct),
+                          orig_feature->feature.transcript.introns->len);
+
+      for (i = 0; i < orig_feature->feature.transcript.introns->len; i++)
+        {
+          span = g_array_index(orig_feature->feature.transcript.introns, ZMapSpanStruct, i);
+          new_feature->feature.transcript.introns =
+            g_array_append_val(new_feature->feature.transcript.introns, span);
+        }
+    }
+
+  // nested copy, it's a list of lists...
+  if (orig_feature->feature.transcript.exon_aligns != NULL)
+    {
+      int i ;
+      GArray *orig_array_aligns, *new_array_aligns ;
+
+      orig_array_aligns = orig_feature->feature.transcript.exon_aligns ;
+
+      new_array_aligns = g_array_sized_new(FALSE, TRUE, sizeof(GArray *), orig_array_aligns->len) ;
+
+      // Step through the array of GArrays each one a GArray of align blocks.   
+      for (i = 0 ; i < orig_array_aligns->len ; i++)
+        {
+          GArray *orig_aligns, *new_aligns ;
+          int j ;
+
+          orig_aligns = g_array_index(orig_array_aligns, GArray *, i) ;
+
+          // Allocate a new GArray to hold a copy of the original align blocks and copy
+          // the blocks.
+          new_aligns = g_array_sized_new(FALSE, TRUE, sizeof(GArray *), orig_array_aligns->len) ;
+
+          for (j = 0 ; j < orig_aligns->len ; j++)
+            {
+              ZMapAlignBlockStruct align ;
+
+              align = g_array_index(orig_aligns, ZMapAlignBlockStruct, j) ;
+              new_aligns = g_array_append_val(new_aligns, align) ;
+            }
+
+          // put the new array of aligns into the array of arrays. 
+          new_array_aligns = g_array_append_val(new_array_aligns, new_aligns) ;
+
+        }
+
+      // ok...all done, add the new array of arrays.   
+      new_feature->feature.transcript.exon_aligns = new_array_aligns ;
+    }
+
+  if (orig_feature->feature.transcript.vulgar_str)
+    new_feature->feature.transcript.vulgar_str = g_strdup(orig_feature->feature.transcript.vulgar_str) ;
+
+  return ;
+}
+
+
+void zmapFeatureTranscriptDestroyFeature(ZMapFeature feature)
+{
+  if (feature->feature.transcript.exons)
+    g_array_free(feature->feature.transcript.exons, TRUE) ;
+
+  if (feature->feature.transcript.introns)
+    g_array_free(feature->feature.transcript.introns, TRUE) ;
+
+  if (feature->feature.transcript.exon_aligns)
+    {
+      int i ;
+
+      for (i = 0 ; i < feature->feature.transcript.exon_aligns->len ; i++)
+        {
+          GArray *align_array ;
+
+          align_array = g_array_index(feature->feature.transcript.exon_aligns, GArray *, i) ;
+
+          g_array_free(align_array, TRUE) ;
+        }
+
+      g_array_free(feature->feature.transcript.exon_aligns, TRUE) ;
+    }
+
+  if (feature->feature.transcript.vulgar_str)
+    g_free((void*)(feature->feature.transcript.vulgar_str)) ;
+
+  return ;
+}
 
 
 /* Do any of boundaries match the exons or introns of the transcript ?

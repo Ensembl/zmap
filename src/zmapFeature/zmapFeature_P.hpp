@@ -48,23 +48,36 @@ typedef struct
   GINT_TO_POINTER((FEATURE_ANY)->unique_id)
 
 
+
+ZMapFeatureAny zmapFeatureAnyCreateFeature(ZMapFeatureLevelType feature_type,
+                                           ZMapFeatureAny parent,
+                                           GQuark original_id, GQuark unique_id,
+                                           GHashTable *children) ;
+ZMapFeatureAny zmapFeatureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNotify destroy_cb) ;
+void zmapDestroyFeatureAny(gpointer data) ;
+gboolean zmapFeatureAnyAddFeature(ZMapFeatureAny feature_any, ZMapFeatureAny feature) ;
+gboolean zmapDestroyFeatureAnyWithChildren(ZMapFeatureAny feature_any, gboolean free_children) ;
+void zmapFeatureAnyAddToDestroyList(ZMapFeatureContext context, ZMapFeatureAny feature_any) ;
+void zmapDestroyFeatureAny(gpointer data) ;
+
 void zmapFeatureRevComp(const int seq_start, const int seq_end, int *coord1, int *coord2) ;
 void zmapFeatureInvert(int *coord, const int seq_start, const int seq_end) ;
 
 void zmapPrintFeatureContext(ZMapFeatureContext context) ;
-gboolean zmapStr2Enum(ZMapFeatureStr2Enum type_table, char *type_str, int *type_out) ;
 
+
+
+
+void zmapFeatureBlockAddEmptySets(ZMapFeatureBlock ref, ZMapFeatureBlock block, GList *feature_set_names) ;
 
 
 
 void zmapFeature3FrameTranslationSetRevComp(ZMapFeatureSet feature_set, int block_start, int block_end) ;
 void zmapFeatureORFSetRevComp(ZMapFeatureSet feature_set, ZMapFeatureSet translation_fs) ;
 
-
 int zmapFeatureDNACalculateVariationDiff(const int start, 
                                          const int end,
                                          GList *variations) ;
-
 
 gboolean zmapFeatureCoordsMatch(int slop,  gboolean full_match,
                                 int boundary_start, int boundary_end, int start, int end,
@@ -74,26 +87,37 @@ gboolean zmapFeatureMatchingBoundaries(ZMapFeature feature,
                                        ZMapFeaturePartsList boundaries,
                                        ZMapFeaturePartsList *matching_boundaries_out,
                                        ZMapFeaturePartsList *non_matching_boundaries_out) ;
+
+ZMapFeaturePartsList zmapFeatureBasicSubPartsGet(ZMapFeature feature, ZMapFeatureSubPartType requested_bounds) ;
 gboolean zmapFeatureBasicMatchingBoundaries(ZMapFeature feature,
                                             ZMapFeatureSubPartType part_type, gboolean exact_match, int slop,
                                             ZMapFeaturePartsList boundaries,
                                             ZMapFeaturePartsList *matching_boundaries_out,
                                             ZMapFeaturePartsList *non_matching_boundaries_out) ;
+void zmapFeatureBasicCopyFeature(ZMapFeature orig_feature, ZMapFeature new_feature) ;
+void zmapFeatureBasicDestroyFeature(ZMapFeature feature) ;
+
+ZMapFeaturePartsList zmapFeatureAlignmentSubPartsGet(ZMapFeature feature, ZMapFeatureSubPartType requested_bounds) ;
 gboolean zmapFeatureAlignmentMatchingBoundaries(ZMapFeature feature,
                                                 ZMapFeatureSubPartType part_type, gboolean exact_match, int slop,
                                                 ZMapFeaturePartsList boundaries,
                                                 ZMapFeaturePartsList *matching_boundaries_out,
                                                 ZMapFeaturePartsList *non_matching_boundaries_out) ;
+void zmapFeatureAlignmentCopyFeature(ZMapFeature orig_feature, ZMapFeature new_feature) ;
+void zmapFeatureAlignmentDestroyFeature(ZMapFeature feature) ;
+
+ZMapFeaturePartsList zmapFeatureTranscriptSubPartsGet(ZMapFeature feature, ZMapFeatureSubPartType requested_bounds) ;
 gboolean zmapFeatureTranscriptMatchingBoundaries(ZMapFeature feature,
                                                  ZMapFeatureSubPartType part_type, gboolean exact_match, int slop,
                                                  ZMapFeaturePartsList boundaries,
                                                  ZMapFeaturePartsList *matching_boundaries_out,
                                                  ZMapFeaturePartsList *non_matching_boundaries_out) ;
+void zmapFeatureTranscriptCopyFeature(ZMapFeature orig_feature, ZMapFeature new_feature) ;
+void zmapFeatureTranscriptDestroyFeature(ZMapFeature feature) ;
 
-ZMapFeaturePartsList zmapFeatureBasicSubPartsGet(ZMapFeature feature, ZMapFeatureSubPartType requested_bounds) ;
-ZMapFeaturePartsList zmapFeatureAlignmentSubPartsGet(ZMapFeature feature, ZMapFeatureSubPartType requested_bounds) ;
-ZMapFeaturePartsList zmapFeatureTranscriptSubPartsGet(ZMapFeature feature, ZMapFeatureSubPartType requested_bounds) ;
 
+// we surely need to get rid of this.....   
+gboolean zmapStr2Enum(ZMapFeatureStr2Enum type_table, char *type_str, int *type_out) ;
 
 
 #endif /* !ZMAP_FEATURE_P_H */

@@ -1532,12 +1532,6 @@ GType zMapFeatureDataGetType(void) ;
 gboolean zMapFeatureGetInfo(ZMapFeatureAny feature_any, ZMapFeatureSubPart sub_feature,
 			    const gchar *first_property_name, ...) ;
 
-GArray* zMapAlignBlockArrayCreate() ;
-gboolean zMapAlignBlockArrayDestroy(GArray* const) ;
-ZMapAlignBlock zMapAlignBlockArrayGetBlock(GArray* const, int index) ;
-gboolean zMapAlignBlockAddBlock(GArray**, const ZMapAlignBlockStruct * const) ;
-
-
 ZMapFeaturePartsList zMapFeaturePartsListCreate(ZMapFeatureFreePartFunc free_part_func) ;
 gboolean zMapFeaturePartsListAdd(ZMapFeaturePartsList parts, ZMapFeaturePart part) ;
 void zMapFeaturePartsListDestroy(ZMapFeaturePartsList parts) ;
