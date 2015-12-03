@@ -55,7 +55,8 @@ typedef enum
   ZMAPVIEW_ERROR_SERVERS,
   ZMAPVIEW_ERROR_CONTEXT_EMPTY,        /* no new features found when merging context */
   ZMAPVIEW_ERROR_CONTEXT_SERIOUS,      /* serious error when merging context */
-  ZMAPVIEW_ERROR_CREATING_SOURCE
+  ZMAPVIEW_ERROR_CREATING_SOURCE,
+  ZMAPVIEW_ERROR_CONNECT
 } ZMapViewError ;
 
 

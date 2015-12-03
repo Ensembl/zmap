@@ -2010,36 +2010,39 @@ void zMapViewSetUpServerConnection(ZMapView zmap_view, ZMapConfigSource current_
       if (!current_server->url)
         {
           /* url is absolutely required. Skip if there isn't one. */
-          throw std::invalid_argument("No url specified in the configuration file so cannot connect to server.") ;
+          g_set_error(error, ZMAP_VIEW_ERROR, ZMAPVIEW_ERROR_CONNECT,
+                      "No url specified in the configuration file so cannot connect to server.") ;
         }
-
-      GList *req_featuresets = NULL ;
-      GList *req_biotypes = NULL ;
-
-      if(current_server->featuresets)
+      else
         {
-          /* req all featuresets  as a list of their quark names. */
-          /* we need non canonicalised name to get Capitalised name on the status display */
-          req_featuresets = zMapConfigString2QuarkList(current_server->featuresets,FALSE) ;
+          GList *req_featuresets = NULL ;
+          GList *req_biotypes = NULL ;
 
-          if(!zmap_view->columns_set)
+          if(current_server->featuresets)
             {
-              zmapViewCreateColumns(zmap_view,req_featuresets);
-              g_list_foreach(zmap_view->window_list, invoke_merge_in_names, req_featuresets);
+              /* req all featuresets  as a list of their quark names. */
+              /* we need non canonicalised name to get Capitalised name on the status display */
+              req_featuresets = zMapConfigString2QuarkList(current_server->featuresets,FALSE) ;
+
+              if(!zmap_view->columns_set)
+                {
+                  zmapViewCreateColumns(zmap_view,req_featuresets);
+                  g_list_foreach(zmap_view->window_list, invoke_merge_in_names, req_featuresets);
+                }
             }
+
+          if(current_server->biotypes)
+            {
+              /* req all biotypes  as a list of their quark names. */
+              req_biotypes = zMapConfigString2QuarkList(current_server->biotypes,FALSE) ;
+            }
+
+          terminate = g_str_has_prefix(current_server->url,"pipe://");
+
+          zmapViewLoadFeatures(zmap_view, NULL, req_featuresets, req_biotypes, current_server,
+                               zmap_view->view_sequence->start, zmap_view->view_sequence->end,
+                               SOURCE_GROUP_START,TRUE, terminate) ;
         }
-
-      if(current_server->biotypes)
-        {
-          /* req all biotypes  as a list of their quark names. */
-          req_biotypes = zMapConfigString2QuarkList(current_server->biotypes,FALSE) ;
-        }
-
-      terminate = g_str_has_prefix(current_server->url,"pipe://");
-
-      zmapViewLoadFeatures(zmap_view, NULL, req_featuresets, req_biotypes, current_server,
-                           zmap_view->view_sequence->start, zmap_view->view_sequence->end,
-                           SOURCE_GROUP_START,TRUE, terminate) ;
     }
 }
 
