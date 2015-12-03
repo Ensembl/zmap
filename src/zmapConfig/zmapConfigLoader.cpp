@@ -2145,7 +2145,7 @@ gpointer parent_data, GValue *property_value)
           *int_ptr = SOURCE_GROUP_NEVER;
 
           if (type == G_TYPE_STRING
-              && ((value = g_value_get_string(property_value) && *value)))
+              && (value = g_value_get_string(property_value)) && *value)
             {
               if (!strcmp(value,ZMAPSTANZA_SOURCE_GROUP_ALWAYS))
                 *int_ptr = SOURCE_GROUP_ALWAYS;
