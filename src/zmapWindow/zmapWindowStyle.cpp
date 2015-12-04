@@ -203,7 +203,7 @@ void zmapWindowStyleDialogDestroy(ZMapWindow window)
 gboolean zmapWindowStyleDialogSetStyle(ZMapWindow window, ZMapFeatureTypeStyle style_in, 
                                        ZMapFeatureSet feature_set, const gboolean create_child)
 {
-  zMapReturnValIfFail(window && window->style_window, FALSE) ;
+  zMapReturnValIfFail(window, FALSE) ;
   StyleChange my_data = (StyleChange) window->style_window;
   ZMapFeatureTypeStyle style = style_in;
   GdkColor *fill_col = &my_data->window->canvas_background, *border_col = &my_data->window->canvas_background;
