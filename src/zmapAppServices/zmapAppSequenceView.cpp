@@ -209,10 +209,10 @@ static string sourceGetType(ZMapConfigSource source)
   if (source && source->url)
     {
       /* Just use the prefix in the url (i.e. up to the colon) */
-      const char *pos = strchr(source->url, ':') ;
+      const char *pos = source->url ;
 
-      if (pos)
-        result += pos ;
+      for (; pos && *pos && *pos != ':' && *pos != '\0'; ++pos)
+        result += *pos ;
     }
 
   return result ;
@@ -318,23 +318,6 @@ static GtkWidget *makeSourcesFrame(MainFrame main_data, ZMapFeatureSequenceMap s
 
   GtkWidget *button_box = gtk_hbox_new(FALSE, 5) ;
   gtk_box_pack_start(GTK_BOX(topbox), button_box, FALSE, FALSE, 0) ;
-  
-  GtkWidget *source_button = gtk_button_new() ;
-  gtk_button_set_image(GTK_BUTTON(source_button), 
-                       gtk_image_new_from_stock(GTK_STOCK_ADD, GTK_ICON_SIZE_BUTTON));
-  gtk_widget_set_tooltip_text(source_button, "Create a new source") ;
-  gtk_signal_connect(GTK_OBJECT(source_button), "clicked", 
-                     GTK_SIGNAL_FUNC(createSourceCB), (gpointer)main_data) ;
-  gtk_box_pack_start(GTK_BOX(button_box), source_button, FALSE, TRUE, 0) ;
-  
-  GtkWidget *remove_button = gtk_button_new() ;
-  gtk_button_set_image(GTK_BUTTON(remove_button), 
-                       gtk_image_new_from_stock(GTK_STOCK_DELETE, GTK_ICON_SIZE_BUTTON));
-  gtk_widget_set_tooltip_text(remove_button, "Remove the selected source(s)") ;
-  gtk_signal_connect(GTK_OBJECT(remove_button), "clicked", 
-                     GTK_SIGNAL_FUNC(removeSourceCB), (gpointer)main_data) ;
-  gtk_box_pack_start(GTK_BOX(button_box), remove_button, FALSE, TRUE, 0) ;
-  
 
   return frame ;
 }
@@ -431,6 +414,23 @@ static GtkWidget *makeButtonBox(MainFrame main_data)
   button_box = gtk_hbutton_box_new() ;
   gtk_container_border_width(GTK_CONTAINER(button_box), 5) ;
   gtk_container_add (GTK_CONTAINER (frame), button_box) ;
+  
+  GtkWidget *source_button = gtk_button_new() ;
+  gtk_button_set_image(GTK_BUTTON(source_button), 
+                       gtk_image_new_from_stock(GTK_STOCK_ADD, GTK_ICON_SIZE_BUTTON));
+  gtk_widget_set_tooltip_text(source_button, "Create a new source") ;
+  gtk_signal_connect(GTK_OBJECT(source_button), "clicked", 
+                     GTK_SIGNAL_FUNC(createSourceCB), (gpointer)main_data) ;
+  gtk_box_pack_start(GTK_BOX(button_box), source_button, FALSE, TRUE, 0) ;
+  
+  GtkWidget *remove_button = gtk_button_new() ;
+  gtk_button_set_image(GTK_BUTTON(remove_button), 
+                       gtk_image_new_from_stock(GTK_STOCK_DELETE, GTK_ICON_SIZE_BUTTON));
+  gtk_widget_set_tooltip_text(remove_button, "Remove the selected source(s)") ;
+  gtk_signal_connect(GTK_OBJECT(remove_button), "clicked", 
+                     GTK_SIGNAL_FUNC(removeSourceCB), (gpointer)main_data) ;
+  gtk_box_pack_start(GTK_BOX(button_box), remove_button, FALSE, TRUE, 0) ;
+  
 
 #ifndef __CYGWIN__
   /* N.B. we use the gtk "built-in" file chooser stuff. */
