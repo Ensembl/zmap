@@ -366,10 +366,6 @@ static ZMapFeatureContextExecuteStatus updateContextFeatureSetStyle(GQuark key,
                                                                     gpointer data,
                                                                     gpointer user_data,
                                                                     char **err_out) ;
-static void updateContextSources(ZMapConfigIniContext context, 
-                                 ZMapConfigIniFileType file_type,
-                                 std::map<std::string, ZMapConfigSource> *sources) ;
-
 static void viewWindowsMergeColumns(ZMapView zmap_view) ;
 static void viewSetUpStyles(ZMapView zmap_view, char *stylesfile) ;
 static void viewSetUpPredefinedColumns(ZMapView zmap_view, ZMapFeatureSequenceMap sequence_map) ;

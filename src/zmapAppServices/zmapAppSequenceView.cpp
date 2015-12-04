@@ -432,6 +432,12 @@ static GtkWidget *makeButtonBox(MainFrame main_data)
   gtk_signal_connect(GTK_OBJECT(remove_button), "clicked", 
                      GTK_SIGNAL_FUNC(removeSourceCB), (gpointer)main_data) ;
   gtk_box_pack_start(GTK_BOX(button_box), remove_button, FALSE, TRUE, 0) ;
+
+  save_button = gtk_button_new_from_stock(GTK_STOCK_SAVE) ;
+  gtk_widget_set_tooltip_text(save_button, "Save the source and sequence details to a configuration file") ;
+  gtk_signal_connect(GTK_OBJECT(save_button), "clicked",
+                     GTK_SIGNAL_FUNC(saveCB), (gpointer)main_data) ;
+  gtk_box_pack_start(GTK_BOX(button_box), save_button, FALSE, TRUE, 0) ;
   
 
 #ifndef __CYGWIN__
@@ -448,12 +454,6 @@ static GtkWidget *makeButtonBox(MainFrame main_data)
   main_data->chooser_widg = chooser_button = NULL ;
 #endif
   gtk_widget_set_tooltip_text(chooser_button, "Load source/sequence details from a configuration file") ;
-
-  save_button = gtk_button_new_from_stock(GTK_STOCK_SAVE) ;
-  gtk_widget_set_tooltip_text(save_button, "Save the source and sequence details to a configuration file") ;
-  gtk_signal_connect(GTK_OBJECT(save_button), "clicked",
-                     GTK_SIGNAL_FUNC(saveCB), (gpointer)main_data) ;
-  gtk_box_pack_start(GTK_BOX(button_box), save_button, FALSE, TRUE, 0) ;
 
   /* If a sequence is provided then make a button to set it in the entries fields,
    * saves the user tedious typing. */
@@ -877,7 +877,7 @@ static void saveSourcesToConfig(ZMapFeatureSequenceMap sequence_map,
   ZMapConfigIniContext context = NULL ;
 
   input_file = NULL ;
-  file_type = ZMapConfigIniFileType::USER ;
+  file_type = ZMAPCONFIG_FILE_USER ;
 
   if (!sequence_map || !sequence_map->sources)
     {

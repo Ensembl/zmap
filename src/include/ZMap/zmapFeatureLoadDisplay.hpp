@@ -36,6 +36,7 @@
 
 #include <ZMap/zmapStyle.hpp>
 #include <ZMap/zmapStyleTree.hpp>
+#include <ZMap/zmapConfigIni.hpp>
 
 #include <string>
 #include <map>
