@@ -205,11 +205,12 @@ gboolean zmapWindowStyleDialogSetStyle(ZMapWindow window, ZMapFeatureTypeStyle s
 {
   zMapReturnValIfFail(window, FALSE) ;
   StyleChange my_data = (StyleChange) window->style_window;
-  ZMapFeatureTypeStyle style = style_in;
-  GdkColor *fill_col = &my_data->window->canvas_background, *border_col = &my_data->window->canvas_background;
 
   if(!my_data)
     return FALSE;
+
+  ZMapFeatureTypeStyle style = style_in;
+  GdkColor *fill_col = &my_data->window->canvas_background, *border_col = &my_data->window->canvas_background;
 
   if (!style)
     {
