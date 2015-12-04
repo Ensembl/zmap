@@ -337,6 +337,24 @@ void ZMapFeatureSequenceMapStructType::addFileSource(const char *file)
 }
 
 
+/* Removet the source with the given name from our list. Sets the error if not found. */
+void ZMapFeatureSequenceMapStructType::removeSource(const char *source_name_cstr, 
+                                                    GError **error)
+{
+  string source_name(source_name_cstr) ;
+
+  if (sources && sources->find(source_name) != sources->end())
+    {
+      sources->erase(source_name) ;
+    }
+  else
+    {
+      g_set_error(error, g_quark_from_string("ZMap"), 99,
+                  "Source '%s' does not exist", source_name_cstr) ;
+    }
+}
+
+
 /* Get the list of ZMapConfigSource structs from our sources map, returned in a glist. */
 GList* ZMapFeatureSequenceMapStructType::getSources()
 {
@@ -359,16 +377,17 @@ GList* ZMapFeatureSequenceMapStructType::getSources()
 /* Construct the full list of all sources. this adds any sources from the config file or 
  * the given config string to those already stored in the sources list (from the command line or
  * user-defined sources). */
-void ZMapFeatureSequenceMapStructType::constructSources(const char *config_str,
+void ZMapFeatureSequenceMapStructType::constructSources(const char *filename,
+                                                        const char *config_str,
                                                         char **stylesfile)
 {
   // This will be the list of names from the sources stanza
   char *source_names = NULL ;
 
   // get any sources specified in the config file or the given config string
-  GList *settings_list = zMapConfigGetSources(config_file, config_str, stylesfile) ;
+  GList *settings_list = zMapConfigGetSources(filename, config_str, stylesfile) ;
 
-  ZMapConfigIniContext context = zMapConfigIniContextProvide(config_file, ZMAPCONFIG_FILE_NONE) ;
+  ZMapConfigIniContext context = zMapConfigIniContextProvide(filename, ZMAPCONFIG_FILE_NONE) ;
 
   if (context && config_str)
     zMapConfigIniContextIncludeBuffer(context, config_str);
@@ -392,12 +411,69 @@ void ZMapFeatureSequenceMapStructType::constructSources(const char *config_str,
         {
           string source_name(g_quark_to_string(GPOINTER_TO_INT(name_item->data))) ;
 
-          // Add it to the map (check it's not already there)
-          if ((*sources)[source_name])
-            zMapLogWarning("Source '%s' already exists; not adding", source_name.c_str()) ;
-          else
-            (*sources)[source_name] = (ZMapConfigSource)(source_item->data) ;
+          (*sources)[source_name] = (ZMapConfigSource)(source_item->data) ;
         }
+    }
+}
+
+
+void ZMapFeatureSequenceMapStructType::constructSources(const char *config_str,
+                                                        char **stylesfile)
+{
+  constructSources(config_file, config_str, stylesfile) ;
+}
+
+
+/* Update the given context with our list of sources */
+void ZMapFeatureSequenceMapStructType::updateContext(ZMapConfigIniContext context, 
+                                                     ZMapConfigIniFileType file_type)
+{
+  if (sources)
+    {
+      std::string sources_str ;
+
+      for (std::map<std::string, ZMapConfigSource>::const_iterator iter = sources->begin(); iter != sources->end(); ++iter)
+        {
+          std::string source_name = iter->first ;
+          ZMapConfigSource source = iter->second ;
+
+          /* Append to the list of sources */
+          if (sources_str.length() == 0)
+            sources_str += source_name ;
+          else
+            sources_str += "; " + source_name ;
+
+          /* Set the values in the source stanza */
+          if (source->url)
+            zMapConfigIniContextSetString(context, file_type, source_name.c_str(), ZMAPSTANZA_SOURCE_CONFIG, ZMAPSTANZA_SOURCE_URL, source->url) ;
+
+          if (source->featuresets)
+            zMapConfigIniContextSetString(context, file_type, source_name.c_str(), ZMAPSTANZA_SOURCE_CONFIG, ZMAPSTANZA_SOURCE_FEATURESETS, source->featuresets) ;
+
+          if (source->biotypes)
+            zMapConfigIniContextSetString(context, file_type, source_name.c_str(), ZMAPSTANZA_SOURCE_CONFIG, ZMAPSTANZA_SOURCE_BIOTYPES, source->biotypes) ;
+
+          if (source->version)
+            zMapConfigIniContextSetString(context, file_type, source_name.c_str(), ZMAPSTANZA_SOURCE_CONFIG, ZMAPSTANZA_SOURCE_VERSION, source->version) ;
+
+          if (source->stylesfile)
+            zMapConfigIniContextSetString(context, file_type, source_name.c_str(), ZMAPSTANZA_SOURCE_CONFIG, ZMAPSTANZA_SOURCE_STYLESFILE, source->stylesfile) ;
+
+          if (source->format)
+            zMapConfigIniContextSetString(context, file_type, source_name.c_str(), ZMAPSTANZA_SOURCE_CONFIG, ZMAPSTANZA_SOURCE_FORMAT, source->format) ;
+
+          zMapConfigIniContextSetInt(context, file_type, source_name.c_str(), ZMAPSTANZA_SOURCE_CONFIG, ZMAPSTANZA_SOURCE_TIMEOUT, source->timeout) ;
+          zMapConfigIniContextSetInt(context, file_type, source_name.c_str(), ZMAPSTANZA_SOURCE_CONFIG, ZMAPSTANZA_SOURCE_GROUP, source->group) ;
+
+          zMapConfigIniContextSetBoolean(context, file_type, source_name.c_str(), ZMAPSTANZA_SOURCE_CONFIG, ZMAPSTANZA_SOURCE_DELAYED, source->delayed) ;
+          zMapConfigIniContextSetBoolean(context, file_type, source_name.c_str(), ZMAPSTANZA_SOURCE_CONFIG, ZMAPSTANZA_SOURCE_MAPPING, source->provide_mapping) ;
+          zMapConfigIniContextSetBoolean(context, file_type, source_name.c_str(), ZMAPSTANZA_SOURCE_CONFIG, ZMAPSTANZA_SOURCE_REQSTYLES, source->req_styles) ;
+        }
+
+      /* Set the list of sources for the ZMap stanza */
+      zMapConfigIniContextSetString(context, file_type,
+                                    ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+                                    ZMAPSTANZA_APP_SOURCES, sources_str.c_str()) ;
     }
 }
 

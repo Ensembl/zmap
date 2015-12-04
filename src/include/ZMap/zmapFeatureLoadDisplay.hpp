@@ -36,6 +36,7 @@
 
 #include <ZMap/zmapStyle.hpp>
 #include <ZMap/zmapStyleTree.hpp>
+#include <ZMap/zmapConfigIni.hpp>
 
 #include <string>
 #include <map>
@@ -239,10 +240,13 @@ typedef struct ZMapFeatureSequenceMapStructType
   ZMapFeatureSequenceMapStructType* copy() ;
 
   GList* getSources() ;
+  void constructSources(const char *filename, const char *config_str, char **stylesfile) ;
   void constructSources(const char *config_str, char **stylesfile) ;
+  void updateContext(_ZMapConfigIniContextStruct *context, ZMapConfigIniFileType file_type) ;
 
   void addSource(const std::string &source_name, _ZMapConfigSourceStruct *source, GError **error) ;
   void addFileSource(const char *file) ;
+  void removeSource(const char *source_name_cstr, GError **error) ;
 
 } ZMapFeatureSequenceMapStruct, *ZMapFeatureSequenceMap ;
 
