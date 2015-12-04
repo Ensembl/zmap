@@ -203,10 +203,10 @@ void zmapWindowStyleDialogDestroy(ZMapWindow window)
 gboolean zmapWindowStyleDialogSetStyle(ZMapWindow window, ZMapFeatureTypeStyle style_in, 
                                        ZMapFeatureSet feature_set, const gboolean create_child)
 {
+  zMapReturnValIfFail(window && window->style_window, FALSE) ;
   StyleChange my_data = (StyleChange) window->style_window;
   ZMapFeatureTypeStyle style = style_in;
-  GdkColor colour = {0} ;
-  GdkColor *fill_col = &colour, *border_col = &colour;
+  GdkColor *fill_col = &my_data->window->canvas_background, *border_col = &my_data->window->canvas_background;
 
   if(!my_data)
     return FALSE;
@@ -259,6 +259,10 @@ gboolean zmapWindowStyleDialogSetStyle(ZMapWindow window, ZMapFeatureTypeStyle s
 
   if(style->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
     {
+      /* Default to background colour */
+      fill_col = &my_data->window->canvas_background ;
+      border_col = &my_data->window->canvas_background;
+
       zMapStyleGetColours(style, STYLE_PROP_TRANSCRIPT_CDS_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL, &fill_col, NULL, &border_col);
 
       gtk_color_button_set_color(GTK_COLOR_BUTTON(my_data->cds_fill_widget), fill_col) ;
@@ -733,10 +737,10 @@ static void createInfoWidgets(StyleChange my_data, GtkTable *table, const int co
 /* Create colour-button widgets for the standard feature colours */
 static void createColourWidgets(StyleChange my_data, GtkTable *table, int *row)
 {
-  GdkColor fill_colour;
-  GdkColor border_colour;
-  GdkColor *fill_col = &fill_colour;
-  GdkColor *border_col = &border_colour;
+  zMapReturnIfFail(my_data && my_data->window) ;
+
+  GdkColor *fill_col = &my_data->window->canvas_background;
+  GdkColor *border_col = &my_data->window->canvas_background;
   ZMapFeatureTypeStyle style = my_data->style;
   const int xpad = ZMAP_WINDOW_GTK_BUTTON_BOX_SPACING ;
   const int ypad = ZMAP_WINDOW_GTK_BUTTON_BOX_SPACING ;
@@ -771,10 +775,8 @@ static void createColourWidgets(StyleChange my_data, GtkTable *table, int *row)
 static void createCDSColourWidgets(StyleChange my_data, GtkTable *table, int *row)
 {
   ZMapFeatureTypeStyle style = my_data->style;
-  GdkColor fill_colour;
-  GdkColor border_colour;
-  GdkColor *fill_col = &fill_colour;
-  GdkColor *border_col = &border_colour;
+  GdkColor *fill_col = &my_data->window->canvas_background ;
+  GdkColor *border_col = &my_data->window->canvas_background ;
   const int xpad = ZMAP_WINDOW_GTK_BUTTON_BOX_SPACING ;
   const int ypad = ZMAP_WINDOW_GTK_BUTTON_BOX_SPACING ;
 
