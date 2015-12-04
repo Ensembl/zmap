@@ -239,6 +239,10 @@ static GtkWidget* createListWidget(ZMapFeatureSequenceMap sequence_map)
   GtkListStore *store = gtk_list_store_new((gint)(SourceColumn::TOTAL),
                                            G_TYPE_STRING, G_TYPE_STRING) ;
 
+  /* Make sure the sources map is up to date with the config file, if there is one */
+  if (sequence_map)
+    sequence_map->constructSources(sequence_map->config_file, NULL) ;
+
   if (sequence_map && sequence_map->sources)
     {
       map<string, ZMapConfigSource> *sources = sequence_map->sources ; 
@@ -283,7 +287,9 @@ static GtkWidget *makeSourcesFrame(MainFrame main_data, ZMapFeatureSequenceMap s
   gtk_container_add (GTK_CONTAINER (frame), topbox) ;
 
   GtkWidget *scrolled = gtk_scrolled_window_new(NULL, NULL) ;
+  gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
   gtk_box_pack_start(GTK_BOX(scrolled), topbox, TRUE, TRUE, 0) ;
+
   GtkWidget *list_widget = createListWidget(sequence_map) ;
   gtk_container_add(GTK_CONTAINER(scrolled), list_widget) ;
 
@@ -448,7 +454,7 @@ static GtkWidget *makeButtonBox(MainFrame main_data)
 
   /* set create button as default. */
   GTK_WIDGET_SET_FLAGS(create_button, GTK_CAN_DEFAULT) ;
-  gtk_window_set_default(GTK_WINDOW(main_data->toplevel), create_button) ;
+  //gtk_window_set_default(GTK_WINDOW(main_data->toplevel), create_button) ;
   
 
   return frame ;

@@ -392,11 +392,7 @@ void ZMapFeatureSequenceMapStructType::constructSources(const char *config_str,
         {
           string source_name(g_quark_to_string(GPOINTER_TO_INT(name_item->data))) ;
 
-          // Add it to the map (check it's not already there)
-          if ((*sources)[source_name])
-            zMapLogWarning("Source '%s' already exists; not adding", source_name.c_str()) ;
-          else
-            (*sources)[source_name] = (ZMapConfigSource)(source_item->data) ;
+          (*sources)[source_name] = (ZMapConfigSource)(source_item->data) ;
         }
     }
 }
