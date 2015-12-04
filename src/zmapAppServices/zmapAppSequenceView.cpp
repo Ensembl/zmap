@@ -37,6 +37,8 @@
 
 #include <ZMap/zmap.hpp>
 
+#include <string>
+#include <map>
 #include <string.h>
 
 #include <ZMap/zmapUtilsGUI.hpp>
@@ -44,6 +46,11 @@
 #include <ZMap/zmapControl.hpp>
 #include <ZMap/zmapConfigStanzaStructs.hpp>
 
+using namespace std;
+
+
+/* Columns in the list of sources */
+enum class SourceColumn {NAME, TYPE, TOTAL} ;
 
 /* Data we need in callbacks. */
 typedef struct MainFrameStructName
@@ -191,6 +198,80 @@ static GtkWidget *makePanel(GtkWidget *toplevel, gpointer *our_data,
 }
 
 
+/* Utility to get a descriptive type for the given source. Returns an empty string if not found. */
+static string sourceGetType(ZMapConfigSource source)
+{
+  string result("") ;
+
+  if (source && source->url)
+    {
+      /* Just use the prefix in the url (i.e. up to the colon) */
+      const char *pos = strchr(source->url, ':') ;
+
+      if (pos)
+        result += pos ;
+    }
+
+  return result ;
+}
+
+
+static void createTreeViewColumn(GtkTreeView *tree_view, 
+                                 const char *title,
+                                 GtkCellRenderer *renderer,
+                                 const char *type,
+                                 SourceColumn col_id)
+{
+  GtkTreeViewColumn *column = gtk_tree_view_column_new_with_attributes(title, 
+                                                                       renderer, 
+                                                                       type, 
+                                                                       col_id,
+                                                                       NULL);
+
+  gtk_tree_view_column_set_resizable(column, TRUE) ;
+  gtk_tree_view_append_column(tree_view, column);
+}
+
+
+/* Create the list widget to show all of the existing source names */
+static GtkWidget* createListWidget(ZMapFeatureSequenceMap sequence_map)
+{
+  GtkListStore *store = gtk_list_store_new((gint)(SourceColumn::TOTAL),
+                                           G_TYPE_STRING, G_TYPE_STRING) ;
+
+  if (sequence_map && sequence_map->sources)
+    {
+      map<string, ZMapConfigSource> *sources = sequence_map->sources ; 
+
+      /* Loop through all of the sources */
+      for (auto source_iter = sources->begin(); source_iter != sources->end(); ++source_iter)
+        {
+          string source_type = sourceGetType(source_iter->second) ;
+
+          /* Create a new row in the list store and set the values */
+          GtkTreeIter store_iter ;
+          gtk_list_store_append(store, &store_iter);
+
+          gtk_list_store_set(store, &store_iter, 
+                             SourceColumn::NAME, source_iter->first.c_str(),
+                             SourceColumn::TYPE, source_type.c_str(),
+                             -1);
+        }
+    }
+
+  GtkTreeView *tree_view = GTK_TREE_VIEW(gtk_tree_view_new_with_model(GTK_TREE_MODEL(store))) ;
+
+  GtkTreeSelection *tree_selection = gtk_tree_view_get_selection(tree_view) ;
+  gtk_tree_selection_set_mode(tree_selection, GTK_SELECTION_MULTIPLE);
+
+  GtkCellRenderer *renderer = gtk_cell_renderer_text_new();
+  createTreeViewColumn(tree_view, "Name", renderer, "text", SourceColumn::NAME) ;
+  createTreeViewColumn(tree_view, "Type", renderer, "text", SourceColumn::TYPE) ;
+
+  return GTK_WIDGET(tree_view) ;
+}
+
+
 /* Create a frame listing all of the available sources, plus buttons to add/remove sources */
 static GtkWidget *makeSourcesFrame(MainFrame main_data, ZMapFeatureSequenceMap sequence_map)
 {
@@ -201,10 +282,13 @@ static GtkWidget *makeSourcesFrame(MainFrame main_data, ZMapFeatureSequenceMap s
   gtk_container_border_width(GTK_CONTAINER(topbox), 5) ;
   gtk_container_add (GTK_CONTAINER (frame), topbox) ;
 
+  GtkWidget *scrolled = gtk_scrolled_window_new(NULL, NULL) ;
+  gtk_box_pack_start(GTK_BOX(scrolled), topbox, TRUE, TRUE, 0) ;
+  GtkWidget *list_widget = createListWidget(sequence_map) ;
+  gtk_container_add(GTK_CONTAINER(scrolled), list_widget) ;
 
   GtkWidget *button_box = gtk_hbox_new(FALSE, 5) ;
   gtk_box_pack_start(GTK_BOX(topbox), button_box, FALSE, FALSE, 0) ;
-
   
   GtkWidget *source_button = gtk_button_new() ;
   gtk_button_set_image(GTK_BUTTON(source_button), 
