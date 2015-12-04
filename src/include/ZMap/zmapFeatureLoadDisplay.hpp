@@ -243,6 +243,7 @@ typedef struct ZMapFeatureSequenceMapStructType
 
   void addSource(const std::string &source_name, _ZMapConfigSourceStruct *source, GError **error) ;
   void addFileSource(const char *file) ;
+  void removeSource(const char *source_name_cstr, GError **error) ;
 
 } ZMapFeatureSequenceMapStruct, *ZMapFeatureSequenceMap ;
 

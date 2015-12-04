@@ -583,6 +583,7 @@ static void createNewSourceCB(const char *source_name,
 static void createSourceCB(GtkWidget *widget, gpointer cb_data)
 {
   MainFrame main_data = (MainFrame)cb_data ;
+  zMapReturnIfFail(main_data) ;
 
   zMapAppCreateSource(&main_data->sequence_map, createNewSourceCB, main_data) ;
 
@@ -593,9 +594,46 @@ static void createSourceCB(GtkWidget *widget, gpointer cb_data)
 /* Remove the selected source(s). */
 static void removeSourceCB(GtkWidget *widget, gpointer cb_data)
 {
-  //MainFrame main_data = (MainFrame)cb_data ;
+  MainFrame main_data = (MainFrame)cb_data ;
+  zMapReturnIfFail(main_data && main_data->tree_view && main_data->orig_sequence_map) ;
 
-  //zMapAppCreateSource(&main_data->sequence_map, createNewSourceCB, main_data->orig_sequence_map) ;
+  GtkTreeSelection *selection = gtk_tree_view_get_selection(main_data->tree_view) ;
+  ZMapFeatureSequenceMap sequence_map = main_data->orig_sequence_map ;
+
+  if (!selection)
+    {
+      zMapCritical("%s", "No source selected") ;
+    }
+  else
+    {
+      GtkTreeModel *model = NULL ; 
+      GList *rows = gtk_tree_selection_get_selected_rows(selection, &model) ;
+
+      /* Loop through all selected sources */
+      for (GList *row = rows; row; row = g_list_next(row))
+        {
+          GtkTreePath *path = (GtkTreePath*)(row->data) ;
+          GtkTreeIter iter ;
+          gtk_tree_model_get_iter(model, &iter, path) ;
+
+          char *source_name = NULL ;
+          gtk_tree_model_get(model, &iter, SourceColumn::NAME, &source_name, -1) ;
+
+          if (source_name)
+            {
+              GError *error = NULL ;
+              sequence_map->removeSource(source_name, &error) ;
+              
+              if (error)
+                {
+                  zMapLogWarning("Error removing source '%s': %s", source_name, error->message) ;
+                }
+            }
+        }
+
+      /* Update the list widget */
+      updateSourcesList(main_data, sequence_map) ;
+    }
 
   return ;
 }
