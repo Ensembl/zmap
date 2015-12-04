@@ -317,7 +317,7 @@ gboolean zmapWindowColumnAddStyle(const GQuark style_id,
       zMapWindowGetSetColumnStyle(window, style_id);
 
       /* Check the style is not already in the list */
-      if (styles_list && !g_list_find(styles_list, GUINT_TO_POINTER(style_id)))
+      if (!styles_list || !g_list_find(styles_list, GUINT_TO_POINTER(style_id)))
         {
           /* Update the column_2_styles table */
           styles_list = g_list_append(styles_list, GUINT_TO_POINTER(style_id)) ;
@@ -335,13 +335,15 @@ gboolean zmapWindowColumnAddStyle(const GQuark style_id,
 }
 
 
-/* Remvoes the given style's association with the given column */
+/* Remvoes the given style's association with the given column. Returns true unless there was a
+ * fatal error (note that we still return true if the style is not in the column and was not
+ * therefore removed) */
 gboolean zmapWindowColumnRemoveStyle(const GQuark style_id,
                                      const GQuark column_id,
                                      ZMapFeatureContextMap context_map,
                                      ZMapWindow window)
 {
-  gboolean ok = FALSE ;
+  gboolean ok = TRUE ;
   zMapReturnValIfFail(style_id && column_id && context_map, ok) ;
 
   ZMapFeatureColumn column = NULL ;
@@ -427,7 +429,7 @@ gboolean zmapWindowFeaturesetSetStyle(GQuark style_id,
           ok = TRUE ;
 
           if (ok && feature_set && feature_set->style)
-            ok = zmapWindowColumnRemoveStyle(feature_set->style->unique_id, f2c->column_id, context_map, window) ;
+            zmapWindowColumnRemoveStyle(feature_set->style->unique_id, f2c->column_id, context_map, window) ;
 
           if (ok)
             ok = zmapWindowColumnAddStyle(style_id, f2c->column_id, context_map, window) ;
