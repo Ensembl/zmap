@@ -576,7 +576,6 @@ void zMapFeatureAlignmentPrintExonsAligns(GArray *exons, GArray *introns, GArray
 
 void zmapFeatureAlignmentCopyFeature(ZMapFeature orig_feature, ZMapFeature new_feature)
 {
-  bool result = false ;
   ZMapAlignBlockStruct align ;
 
   if (orig_feature->feature.homol.align != NULL && orig_feature->feature.homol.align->len > (guint)0)
