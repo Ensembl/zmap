@@ -41,6 +41,7 @@
 #include <map>
 #include <string.h>
 
+#include <zmapAppServices_P.hpp>
 #include <ZMap/zmapUtilsGUI.hpp>
 #include <ZMap/zmapAppServices.hpp>
 #include <ZMap/zmapControl.hpp>
@@ -94,7 +95,11 @@ static void chooseConfigCB(GtkFileChooserButton *widget, gpointer user_data) ;
 static void defaultsCB(GtkWidget *widget, gpointer cb_data) ;
 static void createSourceCB(GtkWidget *widget, gpointer cb_data) ;
 static void removeSourceCB(GtkWidget *widget, gpointer cb_data) ;
+static void saveCB(GtkWidget *widget, gpointer cb_data) ;
 static void closeCB(GtkWidget *widget, gpointer cb_data) ;
+static void saveSourcesToConfig(ZMapFeatureSequenceMap sequence_map,
+                                char **filepath_inout, 
+                                GError **error) ;
 
 
 
@@ -401,7 +406,8 @@ static GtkWidget *makeMainFrame(MainFrame main_data, ZMapFeatureSequenceMap sequ
 static GtkWidget *makeButtonBox(MainFrame main_data)
 {
   GtkWidget *frame ;
-  GtkWidget *button_box, *create_button, *chooser_button, *defaults_button, *close_button ;
+  GtkWidget *button_box, *create_button, *chooser_button, *defaults_button, *close_button,
+    *save_button, *source_button, *remove_button;
   char *home_dir ;
 
   frame = gtk_frame_new(NULL) ;
@@ -411,7 +417,7 @@ static GtkWidget *makeButtonBox(MainFrame main_data)
   gtk_container_border_width(GTK_CONTAINER(button_box), 5) ;
   gtk_container_add (GTK_CONTAINER (frame), button_box) ;
   
-  GtkWidget *source_button = gtk_button_new() ;
+  source_button = gtk_button_new() ;
   gtk_button_set_image(GTK_BUTTON(source_button), 
                        gtk_image_new_from_stock(GTK_STOCK_ADD, GTK_ICON_SIZE_BUTTON));
   gtk_widget_set_tooltip_text(source_button, "Create a new source") ;
@@ -419,7 +425,7 @@ static GtkWidget *makeButtonBox(MainFrame main_data)
                      GTK_SIGNAL_FUNC(createSourceCB), (gpointer)main_data) ;
   gtk_box_pack_start(GTK_BOX(button_box), source_button, FALSE, TRUE, 0) ;
   
-  GtkWidget *remove_button = gtk_button_new() ;
+  remove_button = gtk_button_new() ;
   gtk_button_set_image(GTK_BUTTON(remove_button), 
                        gtk_image_new_from_stock(GTK_STOCK_DELETE, GTK_ICON_SIZE_BUTTON));
   gtk_widget_set_tooltip_text(remove_button, "Remove the selected source(s)") ;
@@ -442,6 +448,12 @@ static GtkWidget *makeButtonBox(MainFrame main_data)
   main_data->chooser_widg = chooser_button = NULL ;
 #endif
   gtk_widget_set_tooltip_text(chooser_button, "Load source/sequence details from a configuration file") ;
+
+  save_button = gtk_button_new_from_stock(GTK_STOCK_SAVE) ;
+  gtk_widget_set_tooltip_text(save_button, "Save the source and sequence details to a configuration file") ;
+  gtk_signal_connect(GTK_OBJECT(save_button), "clicked",
+                     GTK_SIGNAL_FUNC(saveCB), (gpointer)main_data) ;
+  gtk_box_pack_start(GTK_BOX(button_box), save_button, FALSE, TRUE, 0) ;
 
   /* If a sequence is provided then make a button to set it in the entries fields,
    * saves the user tedious typing. */
@@ -530,6 +542,31 @@ static void defaultsCB(GtkWidget *widget, gpointer cb_data)
   return ;
 }
 
+
+/* Save the source and sequence details to a configuration file */
+static void saveCB(GtkWidget *widget, gpointer cb_data)
+{
+  MainFrame main_data = (MainFrame)cb_data ;
+
+  /* Cache the filepath so we can offer the same file by default the next time */
+  static char *filepath = NULL ;
+
+  GError *error = NULL ;
+
+  if (!filepath && main_data->orig_sequence_map && main_data->orig_sequence_map->config_file)
+    filepath = g_strdup(main_data->orig_sequence_map->config_file) ;
+
+  saveSourcesToConfig(main_data->orig_sequence_map, &filepath, &error) ;
+
+  if (error)
+    {
+      zMapCritical("Error saving file: %s", error->message) ;
+      g_error_free(error) ;
+      error = NULL ;
+    }
+
+  return ;
+}
 
 
 /* Callback called when the create-source dialog has been ok'd to do the work to create the new
@@ -623,6 +660,8 @@ static void removeSourceCB(GtkWidget *widget, gpointer cb_data)
               if (error)
                 {
                   zMapLogWarning("Error removing source '%s': %s", source_name, error->message) ;
+                  g_error_free(error) ;
+                  error = NULL ;
                 }
             }
         }
@@ -827,3 +866,76 @@ static void createViewCB(GtkWidget *widget, gpointer cb_data)
 }
 
 
+static void saveSourcesToConfig(ZMapFeatureSequenceMap sequence_map,
+                                char **filepath_inout, 
+                                GError **error)
+{
+  GError *tmp_error = NULL ;
+  char *output_file = NULL ;
+  char *input_file = NULL ;
+  ZMapConfigIniFileType file_type ;
+  ZMapConfigIniContext context = NULL ;
+
+  input_file = NULL ;
+  file_type = ZMapConfigIniFileType::USER ;
+
+  if (!sequence_map || !sequence_map->sources)
+    {
+      g_set_error(&tmp_error, ZMAP_APP_SERVICES_ERROR, ZMAPAPPSERVICES_ERROR_NO_SOURCES, "There are no sources") ;
+    }
+
+  if (!tmp_error && filepath_inout && *filepath_inout)
+    {
+      output_file = g_strdup(*filepath_inout) ;
+    }
+
+  if (!tmp_error && !output_file)
+    {
+      output_file = zmapGUIFileChooser(NULL, "Configuration Export filename ?", NULL, "ini") ;
+
+      if (!output_file)
+        g_set_error(&tmp_error, ZMAP_APP_SERVICES_ERROR, ZMAPAPPSERVICES_ERROR_CHECK_FILE, "No filename specified") ;
+    }
+
+  if (!tmp_error)
+    {
+      /* Read the context from the original input config file (if there was one - otherwise this
+       * will return an empty context. Note that it will also include any system config files too.) */
+      context = zMapConfigIniContextProvide(input_file, file_type) ;
+
+      if (!context)
+        g_set_error(&tmp_error, ZMAP_APP_SERVICES_ERROR, ZMAPAPPSERVICES_ERROR_CONTEXT, "Error creating context") ;
+    }
+
+  if (!tmp_error)
+    {
+      zMapConfigIniContextSetFile(context, file_type, output_file) ;
+      zMapConfigIniContextCreateKeyFile(context, file_type) ;
+
+      sequence_map->updateContext(context, file_type) ;
+
+      zMapConfigIniContextSetUnsavedChanges(context, file_type, TRUE) ;
+      zMapConfigIniContextSave(context, file_type) ;
+
+      /* Destroy the context */
+      zMapConfigIniContextDestroy(context) ;
+      context = NULL ;
+    }
+
+  if (output_file && filepath_inout && !*filepath_inout)
+    {
+      /* We've created the filepath in this function so set the output value from it */
+      if (*filepath_inout)
+        g_free(*filepath_inout) ;
+
+      *filepath_inout = output_file ;
+    }
+  else if (output_file)
+    {
+      /* Return value wasn't requested so free this */
+      g_free(output_file) ;
+    }
+
+  if (tmp_error)
+    g_propagate_error(error, tmp_error) ;
+}

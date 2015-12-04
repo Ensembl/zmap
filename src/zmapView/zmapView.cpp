@@ -7080,7 +7080,8 @@ static void configUpdateContext(ZMapView view,
   /* Update the sources list if the sources have changed */
   //if (zMapViewGetFlag(view, ZMAPFLAG_SAVE_SOURCES))
     {
-      updateContextSources(context, file_type, view->view_sequence->sources) ;
+      if (view && view->view_sequence)
+        view->view_sequence->updateContext(context, file_type) ;
 
       changed = TRUE ;
     }
@@ -7243,62 +7244,6 @@ static void updateContextHashList(ZMapConfigIniContext context, ZMapConfigIniFil
         }
     }
 }
-
-
-/* Add the given sources to the given context */
-static void updateContextSources(ZMapConfigIniContext context, 
-                                 ZMapConfigIniFileType file_type,
-                                 std::map<std::string, ZMapConfigSource> *sources)
-{
-  if (sources)
-    {
-      std::string sources_str ;
-
-      for (std::map<std::string, ZMapConfigSource>::const_iterator iter = sources->begin(); iter != sources->end(); ++iter)
-        {
-          std::string source_name = iter->first ;
-          ZMapConfigSource source = iter->second ;
-
-          /* Append to the list of sources */
-          if (sources_str.length() == 0)
-            sources_str += source_name ;
-          else
-            sources_str += "; " + source_name ;
-
-          /* Set the values in the source stanza */
-          if (source->url)
-            zMapConfigIniContextSetString(context, file_type, source_name.c_str(), ZMAPSTANZA_SOURCE_CONFIG, ZMAPSTANZA_SOURCE_URL, source->url) ;
-
-          if (source->featuresets)
-            zMapConfigIniContextSetString(context, file_type, source_name.c_str(), ZMAPSTANZA_SOURCE_CONFIG, ZMAPSTANZA_SOURCE_FEATURESETS, source->featuresets) ;
-
-          if (source->biotypes)
-            zMapConfigIniContextSetString(context, file_type, source_name.c_str(), ZMAPSTANZA_SOURCE_CONFIG, ZMAPSTANZA_SOURCE_BIOTYPES, source->biotypes) ;
-
-          if (source->version)
-            zMapConfigIniContextSetString(context, file_type, source_name.c_str(), ZMAPSTANZA_SOURCE_CONFIG, ZMAPSTANZA_SOURCE_VERSION, source->version) ;
-
-          if (source->stylesfile)
-            zMapConfigIniContextSetString(context, file_type, source_name.c_str(), ZMAPSTANZA_SOURCE_CONFIG, ZMAPSTANZA_SOURCE_STYLESFILE, source->stylesfile) ;
-
-          if (source->format)
-            zMapConfigIniContextSetString(context, file_type, source_name.c_str(), ZMAPSTANZA_SOURCE_CONFIG, ZMAPSTANZA_SOURCE_FORMAT, source->format) ;
-
-          zMapConfigIniContextSetInt(context, file_type, source_name.c_str(), ZMAPSTANZA_SOURCE_CONFIG, ZMAPSTANZA_SOURCE_TIMEOUT, source->timeout) ;
-          zMapConfigIniContextSetInt(context, file_type, source_name.c_str(), ZMAPSTANZA_SOURCE_CONFIG, ZMAPSTANZA_SOURCE_GROUP, source->group) ;
-
-          zMapConfigIniContextSetBoolean(context, file_type, source_name.c_str(), ZMAPSTANZA_SOURCE_CONFIG, ZMAPSTANZA_SOURCE_DELAYED, source->delayed) ;
-          zMapConfigIniContextSetBoolean(context, file_type, source_name.c_str(), ZMAPSTANZA_SOURCE_CONFIG, ZMAPSTANZA_SOURCE_MAPPING, source->provide_mapping) ;
-          zMapConfigIniContextSetBoolean(context, file_type, source_name.c_str(), ZMAPSTANZA_SOURCE_CONFIG, ZMAPSTANZA_SOURCE_REQSTYLES, source->req_styles) ;
-        }
-
-      /* Set the list of sources for the ZMap stanza */
-      zMapConfigIniContextSetString(context, file_type,
-                                    ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
-                                    ZMAPSTANZA_APP_SOURCES, sources_str.c_str()) ;
-    }
-}
-
 
 
 /* Callback called for all featuresets to set the key-value pair for the featureset-style stanza
