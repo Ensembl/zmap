@@ -83,6 +83,7 @@ static void chooseConfigCB(GtkFileChooserButton *widget, gpointer user_data) ;
 #endif
 static void defaultsCB(GtkWidget *widget, gpointer cb_data) ;
 static void createSourceCB(GtkWidget *widget, gpointer cb_data) ;
+static void removeSourceCB(GtkWidget *widget, gpointer cb_data) ;
 static void closeCB(GtkWidget *widget, gpointer cb_data) ;
 
 
@@ -190,15 +191,67 @@ static GtkWidget *makePanel(GtkWidget *toplevel, gpointer *our_data,
 }
 
 
+/* Create a frame listing all of the available sources, plus buttons to add/remove sources */
+static GtkWidget *makeSourcesFrame(MainFrame main_data, ZMapFeatureSequenceMap sequence_map)
+{
+  GtkWidget *frame = gtk_frame_new( "Sources: " );
+  gtk_container_border_width(GTK_CONTAINER(frame), 5);
+
+  GtkWidget *topbox = gtk_vbox_new(FALSE, 5) ;
+  gtk_container_border_width(GTK_CONTAINER(topbox), 5) ;
+  gtk_container_add (GTK_CONTAINER (frame), topbox) ;
 
 
-/* Make the label/entry fields frame. */
-static GtkWidget *makeMainFrame(MainFrame main_data, ZMapFeatureSequenceMap sequence_map)
+  GtkWidget *button_box = gtk_hbox_new(FALSE, 5) ;
+  gtk_box_pack_start(GTK_BOX(topbox), button_box, FALSE, FALSE, 0) ;
+
+  
+  GtkWidget *source_button = gtk_button_new() ;
+  gtk_button_set_image(GTK_BUTTON(source_button), 
+                       gtk_image_new_from_stock(GTK_STOCK_ADD, GTK_ICON_SIZE_BUTTON));
+  gtk_widget_set_tooltip_text(source_button, "Create a new source") ;
+  gtk_signal_connect(GTK_OBJECT(source_button), "clicked", 
+                     GTK_SIGNAL_FUNC(createSourceCB), (gpointer)main_data) ;
+  gtk_box_pack_start(GTK_BOX(button_box), source_button, FALSE, TRUE, 0) ;
+  
+  GtkWidget *remove_button = gtk_button_new() ;
+  gtk_button_set_image(GTK_BUTTON(remove_button), 
+                       gtk_image_new_from_stock(GTK_STOCK_DELETE, GTK_ICON_SIZE_BUTTON));
+  gtk_widget_set_tooltip_text(remove_button, "Remove the selected source(s)") ;
+  gtk_signal_connect(GTK_OBJECT(remove_button), "clicked", 
+                     GTK_SIGNAL_FUNC(removeSourceCB), (gpointer)main_data) ;
+  gtk_box_pack_start(GTK_BOX(button_box), remove_button, FALSE, TRUE, 0) ;
+  
+
+  return frame ;
+}
+
+
+static void makeLabel(const char *text, GtkWidget *parent)
+{
+  GtkWidget *label = gtk_label_new(text) ;
+  gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
+  gtk_box_pack_start(GTK_BOX(parent), label, FALSE, TRUE, 0) ;
+}
+
+
+static GtkWidget *makeEntry(GtkWidget *parent, const gboolean fill)
+{
+  GtkWidget *entry = gtk_entry_new() ;
+  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
+  gtk_box_pack_start(GTK_BOX(parent), entry, FALSE, fill, 0) ;
+  return entry ;
+}
+
+
+/* Create a frame listing the sequence name, start and end, so that the user can enter/modify
+ * them */
+static GtkWidget *makeSequenceFrame(MainFrame main_data, ZMapFeatureSequenceMap sequence_map)
 {
   GtkWidget *frame ;
-  GtkWidget *topbox, *hbox, *entrybox, *labelbox, *entry, *label ;
+  GtkWidget *topbox, *hbox, *entrybox, *labelbox ;
 
-  frame = gtk_frame_new( "New Sequence: " );
+  frame = gtk_frame_new( "Sequence: " );
   gtk_container_border_width(GTK_CONTAINER(frame), 5);
 
   topbox = gtk_vbox_new(FALSE, 5) ;
@@ -209,46 +262,24 @@ static GtkWidget *makeMainFrame(MainFrame main_data, ZMapFeatureSequenceMap sequ
   gtk_container_border_width(GTK_CONTAINER(hbox), 0);
   gtk_box_pack_start(GTK_BOX(topbox), hbox, TRUE, FALSE, 0) ;
 
-
-  /* Labels..... */
+  /* Box for labels */
   labelbox = gtk_vbox_new(TRUE, 0) ;
   gtk_box_pack_start(GTK_BOX(hbox), labelbox, FALSE, FALSE, 0) ;
 
-  label = gtk_label_new( "Sequence :" ) ;
-  gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
-  gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
-
-  label = gtk_label_new( "Start :" ) ;
-  gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
-  gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
-
-  label = gtk_label_new( "End :" ) ;
-  gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
-  gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
-
-  label = gtk_label_new( "Config File :" ) ;
-  gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
-  gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
-
-  /* Entries.... */
+  /* Box for entries */
   entrybox = gtk_vbox_new(TRUE, 0) ;
   gtk_box_pack_start(GTK_BOX(hbox), entrybox, TRUE, TRUE, 0) ;
 
-  main_data->sequence_widg = entry = gtk_entry_new() ;
-  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
-  gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, TRUE, 0) ;
+  /* Create the widgets */
+  makeLabel("Sequence :", labelbox) ;
+  makeLabel( "Start :", labelbox) ;
+  makeLabel("End :", labelbox) ;
+  makeLabel( "Config File :", labelbox) ;
 
-  main_data->start_widg = entry = gtk_entry_new() ;
-  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
-  gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
-
-  main_data->end_widg = entry = gtk_entry_new() ;
-  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
-  gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
-
-  main_data->config_widg = entry = gtk_entry_new() ;
-  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
-  gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
+  main_data->sequence_widg = makeEntry(entrybox, TRUE) ;
+  main_data->start_widg = makeEntry(entrybox, FALSE) ;
+  main_data->end_widg = makeEntry(entrybox, FALSE) ;
+  main_data->config_widg = makeEntry(entrybox, FALSE) ;
 
   /* Set the entry fields if required. */
   if (sequence_map && main_data->display_sequence)
@@ -258,11 +289,27 @@ static GtkWidget *makeMainFrame(MainFrame main_data, ZMapFeatureSequenceMap sequ
 }
 
 
+/* Make the label/entry fields frame. */
+static GtkWidget *makeMainFrame(MainFrame main_data, ZMapFeatureSequenceMap sequence_map)
+{
+  GtkWidget *frame = gtk_hbox_new(FALSE, 0) ;
+  GtkBox *box = GTK_BOX(frame) ;
+
+  GtkWidget *sources_frame = makeSourcesFrame(main_data, sequence_map) ;
+  GtkWidget *sequence_frame = makeSequenceFrame(main_data, sequence_map) ;
+
+  gtk_box_pack_start(box, sources_frame, TRUE, TRUE, 0) ;
+  gtk_box_pack_start(box, sequence_frame, TRUE, TRUE, 0) ;
+
+  return frame ;
+}
+
+
 /* Make the action buttons frame. */
 static GtkWidget *makeButtonBox(MainFrame main_data)
 {
   GtkWidget *frame ;
-  GtkWidget *button_box, *create_button, *chooser_button, *defaults_button, *source_button, *close_button ;
+  GtkWidget *button_box, *create_button, *chooser_button, *defaults_button, *close_button ;
   char *home_dir ;
 
   frame = gtk_frame_new(NULL) ;
@@ -271,11 +318,6 @@ static GtkWidget *makeButtonBox(MainFrame main_data)
   button_box = gtk_hbutton_box_new() ;
   gtk_container_border_width(GTK_CONTAINER(button_box), 5) ;
   gtk_container_add (GTK_CONTAINER (frame), button_box) ;
-
-  create_button = gtk_button_new_with_label("Create ZMap") ;
-  gtk_signal_connect(GTK_OBJECT(create_button), "clicked",
-                     GTK_SIGNAL_FUNC(createViewCB), (gpointer)main_data) ;
-  gtk_box_pack_start(GTK_BOX(button_box), create_button, FALSE, TRUE, 0) ;
 
 #ifndef __CYGWIN__
   /* N.B. we use the gtk "built-in" file chooser stuff. */
@@ -290,23 +332,18 @@ static GtkWidget *makeButtonBox(MainFrame main_data)
 #else
   main_data->chooser_widg = chooser_button = NULL ;
 #endif
+  gtk_widget_set_tooltip_text(chooser_button, "Load source/sequence details from a configuration file") ;
 
   /* If a sequence is provided then make a button to set it in the entries fields,
    * saves the user tedious typing. */
   if ((main_data->sequence_map.sequence))
     {
       defaults_button = gtk_button_new_with_label("Set Defaults") ;
+      gtk_widget_set_tooltip_text(defaults_button, "Set sequence details from default values") ;
       gtk_signal_connect(GTK_OBJECT(defaults_button), "clicked",
                          GTK_SIGNAL_FUNC(defaultsCB), (gpointer)main_data) ;
       gtk_box_pack_start(GTK_BOX(button_box), defaults_button, FALSE, TRUE, 0) ;
     }
-
-  
-  source_button = gtk_button_new_with_label("Set up source") ;
-  gtk_signal_connect(GTK_OBJECT(source_button), "clicked", 
-                     GTK_SIGNAL_FUNC(createSourceCB), (gpointer)main_data) ;
-  gtk_box_pack_start(GTK_BOX(button_box), source_button, FALSE, TRUE, 0) ;
-
 
   /* Only add a close button and set a default button if this is a standalone dialog. */
   if (main_data->toplevel)
@@ -315,11 +352,20 @@ static GtkWidget *makeButtonBox(MainFrame main_data)
       gtk_signal_connect(GTK_OBJECT(close_button), "clicked",
                          GTK_SIGNAL_FUNC(closeCB), (gpointer)main_data) ;
       gtk_box_pack_start(GTK_BOX(button_box), close_button, FALSE, TRUE, 0) ;
-
-      /* set create button as default. */
-      GTK_WIDGET_SET_FLAGS(create_button, GTK_CAN_DEFAULT) ;
-      gtk_window_set_default(GTK_WINDOW(main_data->toplevel), create_button) ;
     }
+
+  create_button = gtk_button_new_with_label("Run ZMap") ;
+  gtk_widget_set_tooltip_text(create_button, "Create a new ZMap View of the given source/sequence") ;
+  gtk_button_set_image(GTK_BUTTON(create_button), 
+                       gtk_image_new_from_stock(GTK_STOCK_EXECUTE, GTK_ICON_SIZE_BUTTON));
+  gtk_signal_connect(GTK_OBJECT(create_button), "clicked",
+                     GTK_SIGNAL_FUNC(createViewCB), (gpointer)main_data) ;
+  gtk_box_pack_start(GTK_BOX(button_box), create_button, FALSE, TRUE, 0) ;
+
+  /* set create button as default. */
+  GTK_WIDGET_SET_FLAGS(create_button, GTK_CAN_DEFAULT) ;
+  gtk_window_set_default(GTK_WINDOW(main_data->toplevel), create_button) ;
+  
 
   return frame ;
 }
@@ -417,6 +463,17 @@ static void createSourceCB(GtkWidget *widget, gpointer cb_data)
   MainFrame main_data = (MainFrame)cb_data ;
 
   zMapAppCreateSource(&main_data->sequence_map, createNewSourceCB, main_data->orig_sequence_map) ;
+
+  return ;
+}
+
+
+/* Remove the selected source(s). */
+static void removeSourceCB(GtkWidget *widget, gpointer cb_data)
+{
+  //MainFrame main_data = (MainFrame)cb_data ;
+
+  //zMapAppCreateSource(&main_data->sequence_map, createNewSourceCB, main_data->orig_sequence_map) ;
 
   return ;
 }
