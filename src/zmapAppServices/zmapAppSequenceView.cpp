@@ -72,6 +72,9 @@ typedef struct MainFrameStructName
   ZMapAppClosedSequenceViewCB close_func ;
   gpointer close_data ;
 
+  GtkTreeView *tree_view ;
+  GtkTreeModel *model ;
+
 } MainFrameStruct, *MainFrame ;
 
 
@@ -233,19 +236,17 @@ static void createTreeViewColumn(GtkTreeView *tree_view,
 }
 
 
-/* Create the list widget to show all of the existing source names */
-static GtkWidget* createListWidget(ZMapFeatureSequenceMap sequence_map)
+/* Update the list of sources on the dialog following a change to the sources in the sequence map */
+static void updateSourcesList(MainFrame main_data, ZMapFeatureSequenceMap sequence_map)
 {
-  GtkListStore *store = gtk_list_store_new((gint)(SourceColumn::TOTAL),
-                                           G_TYPE_STRING, G_TYPE_STRING) ;
+  zMapReturnIfFail(main_data && sequence_map) ;
 
-  /* Make sure the sources map is up to date with the config file, if there is one */
-  if (sequence_map)
-    sequence_map->constructSources(sequence_map->config_file, NULL) ;
-
-  if (sequence_map && sequence_map->sources)
+  if (main_data && main_data->model && sequence_map && sequence_map->sources)
     {
+      GtkListStore *store = GTK_LIST_STORE(main_data->model) ;
       map<string, ZMapConfigSource> *sources = sequence_map->sources ; 
+
+      gtk_list_store_clear(store) ;
 
       /* Loop through all of the sources */
       for (auto source_iter = sources->begin(); source_iter != sources->end(); ++source_iter)
@@ -262,8 +263,30 @@ static GtkWidget* createListWidget(ZMapFeatureSequenceMap sequence_map)
                              -1);
         }
     }
+  
+}
+
+
+/* Create the list widget to show all of the existing source names */
+static GtkWidget* createListWidget(ZMapFeatureSequenceMap sequence_map, MainFrame main_data)
+{
+  GtkListStore *store = gtk_list_store_new((gint)(SourceColumn::TOTAL),
+                                           G_TYPE_STRING, G_TYPE_STRING) ;
 
   GtkTreeView *tree_view = GTK_TREE_VIEW(gtk_tree_view_new_with_model(GTK_TREE_MODEL(store))) ;
+
+  if (main_data)
+    {
+      main_data->tree_view = tree_view ;
+      main_data->model = GTK_TREE_MODEL(store) ;
+    }
+
+  /* Make sure the sources map is up to date with the config file, if there is one */
+  if (sequence_map)
+    sequence_map->constructSources(sequence_map->config_file, NULL) ;
+
+  /* Update the values in the store with the sources from the sequence map */
+  updateSourcesList(main_data, sequence_map) ;
 
   GtkTreeSelection *tree_selection = gtk_tree_view_get_selection(tree_view) ;
   gtk_tree_selection_set_mode(tree_selection, GTK_SELECTION_MULTIPLE);
@@ -288,9 +311,9 @@ static GtkWidget *makeSourcesFrame(MainFrame main_data, ZMapFeatureSequenceMap s
 
   GtkWidget *scrolled = gtk_scrolled_window_new(NULL, NULL) ;
   gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
-  gtk_box_pack_start(GTK_BOX(scrolled), topbox, TRUE, TRUE, 0) ;
+  gtk_box_pack_start(GTK_BOX(topbox), scrolled, TRUE, TRUE, 0) ;
 
-  GtkWidget *list_widget = createListWidget(sequence_map) ;
+  GtkWidget *list_widget = createListWidget(sequence_map, main_data) ;
   gtk_container_add(GTK_CONTAINER(scrolled), list_widget) ;
 
   GtkWidget *button_box = gtk_hbox_new(FALSE, 5) ;
@@ -512,6 +535,7 @@ static void defaultsCB(GtkWidget *widget, gpointer cb_data)
 }
 
 
+
 /* Callback called when the create-source dialog has been ok'd to do the work to create the new
  * source from the user-provided info. Returns true if successfully created the source.  */
 static void createNewSourceCB(const char *source_name, 
@@ -521,8 +545,10 @@ static void createNewSourceCB(const char *source_name,
                               gpointer user_data,
                               GError **error)
 {
-  ZMapFeatureSequenceMap sequence_map = (ZMapFeatureSequenceMap)user_data ;
-  zMapReturnIfFail(sequence_map) ;
+  MainFrame main_data = (MainFrame)user_data ;
+  zMapReturnIfFail(main_data && main_data->orig_sequence_map) ;
+
+  ZMapFeatureSequenceMap sequence_map = main_data->orig_sequence_map ;
 
   GError *tmp_error = NULL ;
 
@@ -536,6 +562,12 @@ static void createNewSourceCB(const char *source_name,
   /* Add the new source to the view */
   std::string source_name_str(source_name) ;
   sequence_map->addSource(source_name_str, source, &tmp_error) ;
+
+  /* Update the sources list */
+  if (!tmp_error)
+    {
+      updateSourcesList(main_data, sequence_map) ;
+    }
 
   if (tmp_error)
     {
@@ -552,7 +584,7 @@ static void createSourceCB(GtkWidget *widget, gpointer cb_data)
 {
   MainFrame main_data = (MainFrame)cb_data ;
 
-  zMapAppCreateSource(&main_data->sequence_map, createNewSourceCB, main_data->orig_sequence_map) ;
+  zMapAppCreateSource(&main_data->sequence_map, createNewSourceCB, main_data) ;
 
   return ;
 }
