@@ -281,10 +281,6 @@ static GtkWidget* createListWidget(ZMapFeatureSequenceMap sequence_map, MainFram
       main_data->model = GTK_TREE_MODEL(store) ;
     }
 
-  /* Make sure the sources map is up to date with the config file, if there is one */
-  if (sequence_map)
-    sequence_map->constructSources(sequence_map->config_file, NULL) ;
-
   /* Update the values in the store with the sources from the sequence map */
   updateSourcesList(main_data, sequence_map) ;
 
