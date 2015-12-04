@@ -240,6 +240,7 @@ typedef struct ZMapFeatureSequenceMapStructType
   ZMapFeatureSequenceMapStructType* copy() ;
 
   GList* getSources() ;
+  void constructSources(const char *filename, const char *config_str, char **stylesfile) ;
   void constructSources(const char *config_str, char **stylesfile) ;
   void updateContext(_ZMapConfigIniContextStruct *context, ZMapConfigIniFileType file_type) ;
 

@@ -100,6 +100,7 @@ static void closeCB(GtkWidget *widget, gpointer cb_data) ;
 static void saveSourcesToConfig(ZMapFeatureSequenceMap sequence_map,
                                 char **filepath_inout, 
                                 GError **error) ;
+static void configChangedCB(GtkWidget *widget, gpointer user_data) ;
 
 
 
@@ -377,6 +378,8 @@ static GtkWidget *makeSequenceFrame(MainFrame main_data, ZMapFeatureSequenceMap 
   main_data->start_widg = makeEntry(entrybox, FALSE) ;
   main_data->end_widg = makeEntry(entrybox, FALSE) ;
   main_data->config_widg = makeEntry(entrybox, FALSE) ;
+
+  g_signal_connect(G_OBJECT(main_data->config_widg), "changed", G_CALLBACK(configChangedCB), main_data) ;
 
   /* Set the entry fields if required. */
   if (sequence_map && main_data->display_sequence)
@@ -938,4 +941,19 @@ static void saveSourcesToConfig(ZMapFeatureSequenceMap sequence_map,
 
   if (tmp_error)
     g_propagate_error(error, tmp_error) ;
+}
+
+
+/*
+ * Callback for when the config file text is changed.
+ */
+static void configChangedCB(GtkWidget *widget, gpointer user_data)
+{
+  MainFrame main_frame = (MainFrame) user_data ;
+  const char *filename = gtk_entry_get_text(GTK_ENTRY(widget)) ;
+ 
+  if (main_frame && main_frame->orig_sequence_map)
+    {
+      main_frame->orig_sequence_map->constructSources(filename, NULL, NULL) ;
+    }
 }

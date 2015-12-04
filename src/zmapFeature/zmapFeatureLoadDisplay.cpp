@@ -377,16 +377,17 @@ GList* ZMapFeatureSequenceMapStructType::getSources()
 /* Construct the full list of all sources. this adds any sources from the config file or 
  * the given config string to those already stored in the sources list (from the command line or
  * user-defined sources). */
-void ZMapFeatureSequenceMapStructType::constructSources(const char *config_str,
+void ZMapFeatureSequenceMapStructType::constructSources(const char *filename,
+                                                        const char *config_str,
                                                         char **stylesfile)
 {
   // This will be the list of names from the sources stanza
   char *source_names = NULL ;
 
   // get any sources specified in the config file or the given config string
-  GList *settings_list = zMapConfigGetSources(config_file, config_str, stylesfile) ;
+  GList *settings_list = zMapConfigGetSources(filename, config_str, stylesfile) ;
 
-  ZMapConfigIniContext context = zMapConfigIniContextProvide(config_file, ZMAPCONFIG_FILE_NONE) ;
+  ZMapConfigIniContext context = zMapConfigIniContextProvide(filename, ZMAPCONFIG_FILE_NONE) ;
 
   if (context && config_str)
     zMapConfigIniContextIncludeBuffer(context, config_str);
@@ -413,6 +414,13 @@ void ZMapFeatureSequenceMapStructType::constructSources(const char *config_str,
           (*sources)[source_name] = (ZMapConfigSource)(source_item->data) ;
         }
     }
+}
+
+
+void ZMapFeatureSequenceMapStructType::constructSources(const char *config_str,
+                                                        char **stylesfile)
+{
+  constructSources(config_file, config_str, stylesfile) ;
 }
 
 
