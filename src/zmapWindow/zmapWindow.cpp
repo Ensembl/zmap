@@ -178,7 +178,6 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
                                  GList *feature_set_names,
                                  GtkAdjustment *hadjustment,
                                  GtkAdjustment *vadjustment,
-                                 gboolean *flags,
                                  int *int_values) ;
 static void myWindowZoom(ZMapWindow window, double zoom_factor, double curr_pos) ;
 static void myWindowMove(ZMapWindow window, double start, double end) ;
@@ -432,13 +431,13 @@ ZMapFeatureContext zMapWindowGetContext(ZMapWindow window)
 
 ZMapWindow zMapWindowCreate(GtkWidget *parent_widget,
                             ZMapFeatureSequenceMap sequence, void *app_data,
-                            GList *feature_set_names, gboolean *flags, int *int_values)
+                            GList *feature_set_names, int *int_values)
 {
   ZMapWindow window ;
 
   window = myWindowCreate(parent_widget, sequence, app_data,
                           feature_set_names,
-                          NULL, NULL, flags, int_values) ;
+                          NULL, NULL, int_values) ;
 
   return window ;
 }
@@ -475,7 +474,6 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, ZMapFeatureSequenceMap seque
   new_window = myWindowCreate(parent_widget, sequence, app_data,
                               original_window->feature_set_names,
                               hadjustment, vadjustment,
-                              original_window->flags,
                               original_window->int_values) ;
   if (!new_window)
     return new_window ;
@@ -506,7 +504,7 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, ZMapFeatureSequenceMap seque
 
   /* Set revcomp'd features. */
   new_window->display_forward_coords = original_window->display_forward_coords ;
-  zmapWindowScaleCanvasSetRevComped(new_window->ruler, original_window->flags[ZMAPFLAG_REVCOMPED_FEATURES]) ;
+  zmapWindowScaleCanvasSetRevComped(new_window->ruler, zMapWindowGetFlag(original_window, ZMAPFLAG_REVCOMPED_FEATURES)) ;
     /* Sets display_forward too... */
 
   zmapWindowZoomControlCopyTo(original_window->zoom, new_window->zoom);
@@ -1636,11 +1634,11 @@ void zmapWindowSetScrollableArea(ZMapWindow window,
   /* formerly done by fc_end_update_cb(), which is silly: why redraw the scale bar on any update?? */
   /* NOTE also required stupid coding to handle spurious calls and bouncing event loops */
   if (   window->force_scale_redraw
-      || (window->ruler_previous_revcomp != window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
+         || (window->ruler_previous_revcomp != zMapWindowGetFlag(window, ZMAPFLAG_REVCOMPED_FEATURES))
       || (y1 != window->scroll_y1 || y2 != window->scroll_y2))
     {
 
-      window->ruler_previous_revcomp = window->flags[ZMAPFLAG_REVCOMPED_FEATURES] ;
+      window->ruler_previous_revcomp = zMapWindowGetFlag(window, ZMAPFLAG_REVCOMPED_FEATURES) ;
 
       if (zmapWindowScaleCanvasDraw(window->ruler,
                                     y1, y2,
@@ -2369,7 +2367,6 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
                                  GList *feature_set_names,
                                  GtkAdjustment *hadjustment,
                                  GtkAdjustment *vadjustment,
-                                 gboolean *flags,
                                  int *int_values)
 {
   ZMapWindow window = NULL ;
@@ -2448,7 +2445,6 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
   /* Add a hash table to map features to their canvas items. */
   window->context_to_item = zmapWindowFToICreate() ;
 
-  window->flags = flags ;
   window->int_values = int_values ;
 
   /* Init. lists of dialog windows attached to this zmap window. */
@@ -2931,7 +2927,7 @@ static void resetCanvas(ZMapWindow window, gboolean free_child_windows, gboolean
        * and window state restore then later adjusts everything using the
        * previous saved coordinates that are revcomped to agree with this
        */
-      if(window->flags[ZMAPFLAG_REVCOMPED_FEATURES] && window->scroll_initialised && free_revcomp_safe_windows)
+      if(zMapWindowGetFlag(window, ZMAPFLAG_REVCOMPED_FEATURES) && window->scroll_initialised && free_revcomp_safe_windows)
         {
           double y1,y2,x1,x2;
 
@@ -4444,13 +4440,13 @@ static void dragDataGetCB(GtkWidget *widget,
       if (feature_list)
         {
           /* Swop to other strand..... */
-          if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
+          if (zMapWindowGetFlag(window, ZMAPFLAG_REVCOMPED_FEATURES))
             zMapFeatureContextReverseComplement(window->feature_context) ;
 
           zMapGFFDumpList(feature_list, window->context_map->styles, NULL, NULL, result, &tmp_error) ;
 
           /* And swop it back again. */
-          if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
+          if (zMapWindowGetFlag(window, ZMAPFLAG_REVCOMPED_FEATURES))
             zMapFeatureContextReverseComplement(window->feature_context) ;
         }
 
@@ -5374,9 +5370,7 @@ void zmapWindowFetchData(ZMapWindow window,
                   unique_id = zMapFeatureSetCreateID((char *)g_quark_to_string(orig_id)) ;
 
                   /* must copy as this is a static list */
-                  if ((set_list = zMapFeatureGetColumnFeatureSets(window->context_map,
-                                                                  unique_id,
-                                                                  TRUE)))
+                  if (window->context_map && (set_list = window->context_map->getColumnFeatureSets(unique_id, TRUE)))
                     {
                       fset_list
                         = g_list_concat(g_list_copy(set_list), fset_list) ;
@@ -7349,7 +7343,7 @@ static char * tooltipTextCreate(ZMapWindow window, double wx, double wy)
             break ;
           case ZMAP_WINDOW_DISPLAY_CHROM:
             display_coord = zmapWindowWorldToSequenceForward(window, display_coord) ;
-            if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
+            if (zMapWindowGetFlag(window, ZMAPFLAG_REVCOMPED_FEATURES))
               display_coord = -display_coord ;
             text = g_strdup_printf("%d", display_coord) ;
             break ;
@@ -7612,6 +7606,22 @@ void zMapWindowUpdateColumnBackground(ZMapWindow window,
   return ;
 }
 
+
+gboolean zMapWindowGetFlag(ZMapWindow window, ZMapFlag flag)
+{                                               
+  gboolean result = FALSE ;
+  
+  if (window && window->sequence)
+    result = window->sequence->getFlag(flag) ;
+
+  return result ;
+}
+
+void zMapWindowSetFlag(ZMapWindow window, ZMapFlag flag, const gboolean value)
+{                                               
+  if (window && window->sequence)
+    window->sequence->setFlag(flag, value) ;
+}
 
 
 /*

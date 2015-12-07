@@ -1001,7 +1001,6 @@ typedef struct ZMapWindowStructType
 
   ZMapWindowState state;	/* need to store this see revcomp, RT 229703 */
 
-  gboolean *flags ; /* array of flags from the view level */
   int *int_values ; /* array of int values from the view level */
 
   /* The display_forward_coords flag controls whether coords are displayed

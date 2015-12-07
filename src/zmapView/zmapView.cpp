@@ -355,7 +355,7 @@ static void remoteReplyErrHandler(ZMapRemoteControlRCType error_type, char *err_
 static void getWindowList(gpointer data, gpointer user_data) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-static void configUpdateContext(ZMapView view, ZMapConfigIniContext context, const ZMapViewExportType export_type, ZMapConfigIniFileType file_type) ;
+static void configUpdateContext(ZMapView view, ZMapConfigIniContext context, ZMapConfigIniFileType file_type) ;
 static void updateContextHashList(ZMapConfigIniContext context,
                                   ZMapConfigIniFileType file_type, 
                                   const char *stanza,
@@ -2059,7 +2059,7 @@ static void viewWindowsMergeColumns(ZMapView zmap_view)
        *
        * due to constraints w/ old config we need to give the window a list of column name quarks in order
        */
-      GList *columns = zMapFeatureGetOrderedColumnsListIDs(&zmap_view->context_map) ;
+      GList *columns = zmap_view->context_map.getOrderedColumnsListIDs() ;
 
       g_list_foreach(zmap_view->window_list, invoke_merge_in_names, columns);
 
@@ -3248,11 +3248,6 @@ static ZMapView createZMapView(char *view_name, GList *sequences, void *app_data
   if (view_cbs_G->remote_request_func)
     zmap_view->xremote_client = TRUE ;
 
-  /* Set all flags to false by default */
-  int flag = 0 ;
-  for ( ; flag < ZMAPFLAG_NUM_FLAGS; ++flag)
-    zmap_view->flags[flag] = FALSE ;
-
   return zmap_view ;
 }
 
@@ -3270,7 +3265,6 @@ static ZMapViewWindow addWindow(ZMapView zmap_view, GtkWidget *parent_widget)
                             zmap_view->view_sequence,
                             view_window,
                             NULL,
-                            zmap_view->flags,
                             zmap_view->int_values) ;
 
   view_window->window = window ;
@@ -5606,7 +5600,7 @@ static ZMapFeatureContextExecuteStatus add_default_styles(GQuark key,
 
 #endif
                         /* find_or_create_column() needs f_col->style */
-                        f_col = zMapFeatureGetSetColumn(&(view->context_map),feature_set->unique_id);
+                        f_col = view->context_map.getSetColumn(feature_set->unique_id);
                         if(f_col)
                         {
                                 if(!f_col->style)
@@ -7022,7 +7016,8 @@ gboolean zMapViewExportConfig(ZMapView view,
       update_func(context, file_type, &view->context_map.styles) ;
 
       /* Update the context with any configuration values that have changed */
-      configUpdateContext(view, context, export_type, file_type) ;
+      if (export_type == ZMAPVIEW_EXPORT_CONFIG)
+        configUpdateContext(view, context, file_type) ;
 
       /* Do the save to file (force changes=true so we export even if nothing's changed) */
       zMapConfigIniContextSetUnsavedChanges(context, file_type, TRUE) ;
@@ -7051,25 +7046,15 @@ gboolean zMapViewExportConfig(ZMapView view,
 /* Update the given context with any configuration values that have been changed, e.g. column order */
 static void configUpdateContext(ZMapView view, 
                                 ZMapConfigIniContext context, 
-                                const ZMapViewExportType export_type,
                                 ZMapConfigIniFileType file_type)
 {
   gboolean changed = FALSE ;
   zMapReturnIfFail(view) ;
 
-  zMapReturnIfFailSafe(export_type == ZMAPVIEW_EXPORT_CONFIG) ;
-
   /* Update the columns list if column order has changed */
   if (zMapViewGetFlag(view, ZMAPFLAG_SAVE_COLUMNS))
     {
-      GList *ordered_list = zMapFeatureGetOrderedColumnsListIDs(&view->context_map) ;
-      char *result = zMap_g_list_quark_to_string(ordered_list, NULL) ;
-
-      zMapConfigIniContextSetString(context, file_type,
-                                    ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
-                                    ZMAPSTANZA_APP_COLUMNS, result);
-
-      g_free(result) ;
+      view->context_map.updateContext(context, file_type) ;
       changed = TRUE ;
     }
 

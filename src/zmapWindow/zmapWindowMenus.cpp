@@ -3663,7 +3663,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuBlixemBAM(int *start_index_inout,
       cbdata->req_id = req_id;
       /* if we click on a coverage column we blixem the data column which contains featuresets */
     }
-  else if(zMapFeatureIsSeqFeatureSet(cbdata->window->context_map,fset_id))
+  else if(cbdata->window->context_map->isSeqFeatureSet(fset_id))
     {
       /* if we click on a data column we blixem that not the featureset as we may have several featuresets in the column */
       /* can get the column from the menu_data->container_set or from the featureset_2_column... */
@@ -3806,7 +3806,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuRequestBAM(int *start_index_inout,
       cbdata->req_id = req_id;
       /* if we click on a coverage column we blixem the data column which contains featuresets */
     }
-  else if(zMapFeatureIsSeqFeatureSet(cbdata->window->context_map,fset_id))
+  else if(cbdata->window->context_map->isSeqFeatureSet(fset_id))
     {
       /* if we click on a data column we blixem that not the featureset as we may have several featuresets in the column */
       /* can get the column from the menu_data->container_set or from the featureset_2_column... */
@@ -3959,7 +3959,7 @@ GList * add_column_featuresets(ZMapFeatureContextMap map, GList *glist, GQuark c
     column = col_iter->second ;
 
   if(column)
-    l = zMapFeatureGetColumnFeatureSets(map, column_id, unique_id);
+    l = map->getColumnFeatureSets(column_id, unique_id);
 
   if(column && l)
     {
@@ -4298,7 +4298,7 @@ gboolean zMapWindowExportFeatureSets(ZMapWindow window,
       /*
        * Revcomp if required.
       */
-      if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
+      if (zMapWindowGetFlag(window, ZMAPFLAG_REVCOMPED_FEATURES))
         zMapFeatureContextReverseComplement(window->feature_context) ;
 
       /*
@@ -4349,7 +4349,7 @@ gboolean zMapWindowExportFeatureSets(ZMapWindow window,
        * Revcomp if required. Must be done irrespective of whether anything above
        * succeeded.
        */
-      if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
+      if (zMapWindowGetFlag(window, ZMAPFLAG_REVCOMPED_FEATURES))
         zMapFeatureContextReverseComplement(window->feature_context) ;
 
     }
@@ -4426,7 +4426,7 @@ static gboolean exportFeatures(ZMapWindow window, gboolean all_features, ZMapSpa
     }
 
   /* Swop to other strand..... */
-  if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
+  if (zMapWindowGetFlag(window, ZMAPFLAG_REVCOMPED_FEATURES))
     zMapFeatureContextReverseComplement(window->feature_context) ;
 
   if (!filepath)
@@ -4549,7 +4549,7 @@ static gboolean exportFeatures(ZMapWindow window, gboolean all_features, ZMapSpa
     }
 
   /* And swop it back again. */
-  if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
+  if (zMapWindowGetFlag(window, ZMAPFLAG_REVCOMPED_FEATURES))
     zMapFeatureContextReverseComplement(window->feature_context) ;
 
   if (filepath)

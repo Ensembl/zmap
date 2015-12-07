@@ -54,21 +54,21 @@ static gint colOrderCB(gconstpointer a, gconstpointer b,gpointer user_data) ;
 
 
 /* get the column struct for a featureset */
-ZMapFeatureColumn zMapFeatureGetSetColumn(ZMapFeatureContextMap context_map,GQuark set_id)
+ZMapFeatureColumn ZMapFeatureContextMapStructType::getSetColumn(GQuark set_id)
 {
   ZMapFeatureColumn column = NULL;
   ZMapFeatureSetDesc gff;
 
   char *name = (char *) g_quark_to_string(set_id);
 
-  if(!context_map->featureset_2_column)
+  if(!featureset_2_column)
     {
       /* so that we can use autoconfigured servers */
-      context_map->featureset_2_column = g_hash_table_new(NULL,NULL);
+      featureset_2_column = g_hash_table_new(NULL,NULL);
     }
 
   /* get the column the featureset goes in */
-  gff = (ZMapFeatureSetDesc)g_hash_table_lookup(context_map->featureset_2_column,GUINT_TO_POINTER(set_id));
+  gff = (ZMapFeatureSetDesc)g_hash_table_lookup(featureset_2_column,GUINT_TO_POINTER(set_id));
   if(!gff)
     {
       //            zMapLogWarning("creating featureset_2_column for %s",name);
@@ -85,13 +85,13 @@ ZMapFeatureColumn zMapFeatureGetSetColumn(ZMapFeatureContextMap context_map,GQua
         gff->column_ID =
         gff->feature_src_ID = set_id;
       gff->feature_set_text = name;
-      g_hash_table_insert(context_map->featureset_2_column,GUINT_TO_POINTER(set_id),gff);
+      g_hash_table_insert(featureset_2_column,GUINT_TO_POINTER(set_id),gff);
     }
   /*      else*/
   {
-    map<GQuark, ZMapFeatureColumn>::iterator iter = context_map->columns->find(gff->column_id) ;
+    map<GQuark, ZMapFeatureColumn>::iterator iter = columns->find(gff->column_id) ;
 
-    if (iter != context_map->columns->end())
+    if (iter != columns->end())
       {
         column = iter->second ;
       }
@@ -105,11 +105,11 @@ ZMapFeatureColumn zMapFeatureGetSetColumn(ZMapFeatureContextMap context_map,GQua
 
         column->order = zMapFeatureColumnOrderNext(FALSE);
 
-        gff_source = (ZMapFeatureSource)g_hash_table_lookup(context_map->source_2_sourcedata,GUINT_TO_POINTER(set_id));
+        gff_source = (ZMapFeatureSource)g_hash_table_lookup(source_2_sourcedata,GUINT_TO_POINTER(set_id));
         column->column_desc = name;
 
         column->featuresets_unique_ids = g_list_append(column->featuresets_unique_ids,GUINT_TO_POINTER(set_id));
-        (*context_map->columns)[set_id] = column ;
+        (*columns)[set_id] = column ;
       }
   }
 
@@ -117,7 +117,7 @@ ZMapFeatureColumn zMapFeatureGetSetColumn(ZMapFeatureContextMap context_map,GQua
 }
 
 
-GList *zMapFeatureGetColumnFeatureSets(ZMapFeatureContextMap context_map,GQuark column_id, gboolean unique_id)
+GList *ZMapFeatureContextMapStructType::getColumnFeatureSets(GQuark column_id, gboolean unique_id)
 {
   GList *glist = NULL;
   ZMapFeatureSetDesc fset;
@@ -134,9 +134,9 @@ GList *zMapFeatureGetColumnFeatureSets(ZMapFeatureContextMap context_map,GQuark 
    * also need to scan for all calls to this func since caching the data
    */
 
-  map<GQuark, ZMapFeatureColumn>::iterator col_iter = context_map->columns->find(column_id) ;
+  map<GQuark, ZMapFeatureColumn>::iterator col_iter = columns->find(column_id) ;
 
-  if (col_iter != context_map->columns->end())
+  if (col_iter != columns->end())
       column = col_iter->second ;
 
   if(!column)
@@ -155,7 +155,7 @@ GList *zMapFeatureGetColumnFeatureSets(ZMapFeatureContextMap context_map,GQuark 
 
   if(!glist)
   {
-    zMap_g_hash_table_iter_init(&iter,context_map->featureset_2_column);
+    zMap_g_hash_table_iter_init(&iter,featureset_2_column);
     while(zMap_g_hash_table_iter_next(&iter,&key,(gpointer*)(&fset)))
       {
         if(fset->column_id == column_id)
@@ -171,16 +171,16 @@ GList *zMapFeatureGetColumnFeatureSets(ZMapFeatureContextMap context_map,GQuark 
 
 
 /* from column_id return whether if is configured from seq-data= featuresets (coverage side) */
-gboolean zMapFeatureIsCoverageColumn(ZMapFeatureContextMap context_map,GQuark column_id)
+gboolean ZMapFeatureContextMapStructType::isCoverageColumn(GQuark column_id)
 {
   ZMapFeatureSource src;
   GList *fsets;
 
-  fsets = zMapFeatureGetColumnFeatureSets(context_map, column_id, TRUE);
+  fsets = getColumnFeatureSets(column_id, TRUE);
 
   for (; fsets ; fsets = fsets->next)
     {
-      src = (ZMapFeatureSource)g_hash_table_lookup(context_map->source_2_sourcedata,fsets->data);
+      src = (ZMapFeatureSource)g_hash_table_lookup(source_2_sourcedata,fsets->data);
       if(src && src->related_column)
       return TRUE;
     }
@@ -190,16 +190,16 @@ gboolean zMapFeatureIsCoverageColumn(ZMapFeatureContextMap context_map,GQuark co
 
 
 /* from column_id return whether it is configured from seq-data= featuresets (data side) */
-gboolean zMapFeatureIsSeqColumn(ZMapFeatureContextMap context_map,GQuark column_id)
+gboolean ZMapFeatureContextMapStructType::isSeqColumn(GQuark column_id)
 {
   ZMapFeatureSource src;
   GList *fsets;
 
-  fsets = zMapFeatureGetColumnFeatureSets(context_map, column_id, TRUE);
+  fsets = getColumnFeatureSets(column_id, TRUE);
 
   for (; fsets ; fsets = fsets->next)
     {
-      src = (ZMapFeatureSource)g_hash_table_lookup(context_map->source_2_sourcedata,fsets->data);
+      src = (ZMapFeatureSource)g_hash_table_lookup(source_2_sourcedata,fsets->data);
       if(src && src->is_seq)
       return TRUE;
     }
@@ -208,9 +208,9 @@ gboolean zMapFeatureIsSeqColumn(ZMapFeatureContextMap context_map,GQuark column_
 }
 
 
-gboolean zMapFeatureIsSeqFeatureSet(ZMapFeatureContextMap context_map,GQuark fset_id)
+gboolean ZMapFeatureContextMapStructType::isSeqFeatureSet(GQuark fset_id)
 {
-  ZMapFeatureSource src = (ZMapFeatureSource)g_hash_table_lookup(context_map->source_2_sourcedata,GUINT_TO_POINTER(fset_id));
+  ZMapFeatureSource src = (ZMapFeatureSource)g_hash_table_lookup(source_2_sourcedata,GUINT_TO_POINTER(fset_id));
   //zMapLogWarning("feature is_seq: %s -> %p", g_quark_to_string(fset_id),src);
 
   if(src && src->is_seq)
@@ -223,44 +223,55 @@ gboolean zMapFeatureIsSeqFeatureSet(ZMapFeatureContextMap context_map,GQuark fse
 /* Get a GList of column IDs as GQuarks in the correct order according to the 'order' field in
  * each ZMapFeatureColumn struct (from the context_map.columns hash table).
  * Returns a new GList which should be free'd with g_list_free() */
-GList* zMapFeatureGetOrderedColumnsListIDs(ZMapFeatureContextMap context_map)
+GList* ZMapFeatureContextMapStructType::getOrderedColumnsListIDs()
 {
-  GList *columns = NULL ;
-  zMapReturnValIfFail(context_map, columns) ;
+  GList *result = NULL ;
 
-  for (map<GQuark, ZMapFeatureColumn>::iterator iter = context_map->columns->begin() ; 
-       iter != context_map->columns->end(); 
+  for (map<GQuark, ZMapFeatureColumn>::iterator iter = columns->begin() ; 
+       iter != columns->end(); 
        ++iter)
     {
-      columns = g_list_prepend(columns, GINT_TO_POINTER(iter->first));
+      result = g_list_prepend(result, GINT_TO_POINTER(iter->first));
     }
 
-  columns = g_list_sort_with_data(columns, colIDOrderCB, context_map->columns);
+  result = g_list_sort_with_data(result, colIDOrderCB, columns);
 
-  return columns ;
+  return result ;
 }
 
 
 /* Get a GList of columns as ZMapFeatureColumn structs in the correct order according to 
  * the 'order' field in the struct (from the context_map.columns hash table).
  * Returns a new GList which should be free'd with g_list_free() */
-GList* zMapFeatureGetOrderedColumnsList(ZMapFeatureContextMap context_map)
+GList* ZMapFeatureContextMapStructType::getOrderedColumnsList()
 {
-  GList *columns = NULL ;
-  zMapReturnValIfFail(context_map, columns) ;
+  GList *result = NULL ;
 
-  for (map<GQuark, ZMapFeatureColumn>::iterator iter = context_map->columns->begin() ; 
-       iter != context_map->columns->end(); 
+  for (map<GQuark, ZMapFeatureColumn>::iterator iter = columns->begin() ; 
+       iter != columns->end(); 
        ++iter)
     {
-      columns = g_list_prepend(columns, iter->second);
+      result = g_list_prepend(result, iter->second);
     }
 
-  columns = g_list_sort_with_data(columns, colOrderCB, context_map->columns);
+  result = g_list_sort_with_data(result, colOrderCB, columns);
 
-  return columns ;
+  return result ;
 }
 
+
+void ZMapFeatureContextMapStructType::updateContext(_ZMapConfigIniContextStruct *context, 
+                                                    ZMapConfigIniFileType file_type)
+{
+  GList *ordered_list = getOrderedColumnsListIDs() ;
+  char *result = zMap_g_list_quark_to_string(ordered_list, NULL) ;
+
+  zMapConfigIniContextSetString(context, file_type,
+                                ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+                                ZMAPSTANZA_APP_COLUMNS, result);
+
+  g_free(result) ;
+}
 
 
 
@@ -282,6 +293,11 @@ ZMapFeatureSequenceMapStructType* ZMapFeatureSequenceMapStructType::copy()
   dest->end = end ;
   dest->cached_parsers = cached_parsers ;
   dest->sources = sources ;
+
+  for (int flag = 0; flag < ZMAPFLAG_NUM_FLAGS; ++flag)
+    {
+      dest->flags[flag] = flags[flag] ;
+    }
 
   return dest ;
 }
@@ -475,6 +491,27 @@ void ZMapFeatureSequenceMapStructType::updateContext(ZMapConfigIniContext contex
                                     ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
                                     ZMAPSTANZA_APP_SOURCES, sources_str.c_str()) ;
     }
+}
+
+
+void ZMapFeatureSequenceMapStructType::setFlag(ZMapFlag flag, 
+                                               const gboolean value)
+{
+  zMapReturnIfFail(flag >= 0 && flag < ZMAPFLAG_NUM_FLAGS) ;
+
+  flags[flag] = value ;
+
+}
+
+
+gboolean ZMapFeatureSequenceMapStructType::getFlag(ZMapFlag flag)
+{
+  gboolean result = FALSE ;
+  zMapReturnValIfFail(flag >= 0 && flag < ZMAPFLAG_NUM_FLAGS, result) ;
+
+  result = flags[flag] ;
+
+  return result ;
 }
 
 

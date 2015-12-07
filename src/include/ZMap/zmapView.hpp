@@ -46,7 +46,7 @@
 #include <ZMap/zmapUrl.hpp>
 #include <ZMap/zmapAppRemote.hpp>
 #include <ZMap/zmapConfigStanzaStructs.hpp>
-
+#include <ZMap/zmapFeatureLoadDisplay.hpp>
 
 
 /* Opaque type, represents an instance of a ZMapView. */

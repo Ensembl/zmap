@@ -2275,7 +2275,7 @@ static void featureSetWriteBAMList(gpointer data, gpointer user_data)
   if(feature_set)
     {
       /* check it's a bam type */
-      if (blixem_data->view && zMapFeatureIsSeqFeatureSet(&blixem_data->view->context_map, feature_set->unique_id))
+      if (blixem_data->view && blixem_data->view->context_map.isSeqFeatureSet(feature_set->unique_id))
         {
           /* Indicate that we've processed a valid featureset */
           blixem_data->coverage_done = TRUE ;
@@ -2323,7 +2323,7 @@ static void featureSetGetAlignList(gpointer data, gpointer user_data)
   else
     {
       /* assuming a mis-config treat the set id as a column id */
-      column_2_featureset = zMapFeatureGetColumnFeatureSets(&blixem_data->view->context_map,canon_id,TRUE);
+      column_2_featureset = blixem_data->view->context_map.getColumnFeatureSets(canon_id,TRUE);
 
       if(!column_2_featureset)
         {

@@ -178,10 +178,10 @@ void zMapViewSetFeatureSetSource(ZMapView view, GQuark f_id, ZMapFeatureSource s
 
 void zMapViewSetFlag(ZMapView view, ZMapFlag flag, const gboolean value)
 {
-  zMapReturnIfFail(view && flag >= 0 && flag < ZMAPFLAG_NUM_FLAGS) ;
+  zMapReturnIfFail(view && view->view_sequence && flag >= 0 && flag < ZMAPFLAG_NUM_FLAGS) ;
 
-  view->flags[flag] = value ;
-
+  view->view_sequence->setFlag(flag, value) ;
+  
   /* Perform any updates required for the particular flag that was set */
   switch (flag)
     {
@@ -201,9 +201,9 @@ void zMapViewSetFlag(ZMapView view, ZMapFlag flag, const gboolean value)
 gboolean zMapViewGetFlag(ZMapView view, ZMapFlag flag)
 {
   gboolean result = FALSE ;
-  zMapReturnValIfFail(view && flag >= 0 && flag < ZMAPFLAG_NUM_FLAGS, result) ;
+  zMapReturnValIfFail(view && view->view_sequence && flag >= 0 && flag < ZMAPFLAG_NUM_FLAGS, result) ;
 
-  result = view->flags[flag] ;
+  result = view->view_sequence->getFlag(flag) ;
 
   return result ;
 }

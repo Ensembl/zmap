@@ -272,7 +272,7 @@ char *zmapWindowMakeFeatureSelectionTextFromFeature(ZMapWindow window,
 
   text = g_string_sized_new(512) ;
   feature_coords = g_array_new(FALSE, FALSE, sizeof(FeatureCoordStruct)) ;
-  revcomped = window->flags[ZMAPFLAG_REVCOMPED_FEATURES] ;
+  revcomped = zMapWindowGetFlag(window, ZMAPFLAG_REVCOMPED_FEATURES) ;
 
   if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
     {
@@ -334,7 +334,7 @@ char *zmapWindowMakeFeatureSelectionTextFromSelection(ZMapWindow window, ZMapWin
 
   text = g_string_sized_new(512) ;
   feature_coords = g_array_new(FALSE, FALSE, sizeof(FeatureCoordStruct)) ;
-  revcomped = window->flags[ZMAPFLAG_REVCOMPED_FEATURES] ;
+  revcomped = zMapWindowGetFlag(window, ZMAPFLAG_REVCOMPED_FEATURES) ;
 
   /* If there are any focus items then make a selection string of their coords. */
   if ((selected = zmapWindowFocusGetFocusItems(window->focus)))

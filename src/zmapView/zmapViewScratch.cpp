@@ -242,7 +242,7 @@ ZMapFeatureSet zmapViewScratchGetFeatureset(ZMapView view)
   ZMapFeatureSet feature_set = NULL;
 
   GQuark column_id = zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME);
-  GList *fs_list = zMapFeatureGetColumnFeatureSets(&view->context_map, column_id, TRUE);
+  GList *fs_list = view->context_map.getColumnFeatureSets(column_id, TRUE);
 
   /* There should be one (and only one) featureset in the column */
   if (g_list_length(fs_list) > 0)
