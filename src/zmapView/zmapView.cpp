@@ -7062,7 +7062,7 @@ static void configUpdateContext(ZMapView view,
     }
 
   /* Update the sources list if the sources have changed */
-  //if (zMapViewGetFlag(view, ZMAPFLAG_SAVE_SOURCES))
+  if (zMapViewGetFlag(view, ZMAPFLAG_SAVE_SOURCES))
     {
       if (view && view->view_sequence)
         view->view_sequence->updateContext(context, file_type) ;

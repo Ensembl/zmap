@@ -602,6 +602,7 @@ static void createNewSourceCB(const char *source_name,
   /* Update the sources list */
   if (!tmp_error)
     {
+      sequence_map->setFlag(ZMAPFLAG_SAVE_SOURCES, TRUE) ;
       updateSourcesList(main_data, sequence_map) ;
     }
 
@@ -671,6 +672,7 @@ static void removeSourceCB(GtkWidget *widget, gpointer cb_data)
 
       /* Update the list widget */
       updateSourcesList(main_data, sequence_map) ;
+      sequence_map->setFlag(ZMAPFLAG_SAVE_SOURCES, TRUE) ;
     }
 
   return ;
