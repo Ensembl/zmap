@@ -1283,6 +1283,9 @@ gboolean zMapViewCheckIfUnsaved(ZMapView zmap_view)
 //  if (response != GTK_RESPONSE_CANCEL)
 //    response = checkForUnsavedConfig(zmap_view, ZMAPVIEW_EXPORT_STYLES) ;
 
+  if (response == GTK_RESPONSE_CANCEL)
+    result = FALSE ;
+
   return result ;
 }
 
