@@ -44,8 +44,27 @@
 using namespace std ;
 
 
+typedef gboolean (*HashListExportValueFunc)(const char *key_str, const char *value_str) ;
+
+
+
+/*
+ *              Local function declarations
+ */
+
 static gint colIDOrderCB(gconstpointer a, gconstpointer b,gpointer user_data) ;
 static gint colOrderCB(gconstpointer a, gconstpointer b,gpointer user_data) ;
+
+static void updateContextHashList(ZMapConfigIniContext context,
+                                  ZMapConfigIniFileType file_type, 
+                                  const char *stanza,
+                                  GHashTable *ghash,
+                                  HashListExportValueFunc *export_func) ;
+
+static ZMapFeatureContextExecuteStatus updateContextFeatureSetStyle(GQuark key,
+                                                                    gpointer data,
+                                                                    gpointer user_data,
+                                                                    char **err_out) ;
 
 
 /*
@@ -260,9 +279,13 @@ GList* ZMapFeatureContextMapStructType::getOrderedColumnsList()
 }
 
 
-void ZMapFeatureContextMapStructType::updateContext(_ZMapConfigIniContextStruct *context, 
-                                                    ZMapConfigIniFileType file_type)
+/* Update the given context with the columns settings from the ContextMap */
+bool ZMapFeatureContextMapStructType::updateContextColumns(_ZMapConfigIniContextStruct *context, 
+                                                           ZMapConfigIniFileType file_type)
 {
+  zMapReturnValIfFail(context, FALSE) ;
+
+  /* Update the context with the columns, if they need saving */
   GList *ordered_list = getOrderedColumnsListIDs() ;
   char *result = zMap_g_list_quark_to_string(ordered_list, NULL) ;
 
@@ -271,6 +294,17 @@ void ZMapFeatureContextMapStructType::updateContext(_ZMapConfigIniContextStruct 
                                 ZMAPSTANZA_APP_COLUMNS, result);
 
   g_free(result) ;
+  
+  return TRUE ;
+}
+
+bool ZMapFeatureContextMapStructType::updateContextColumnGroups(_ZMapConfigIniContextStruct *context, 
+                                                                ZMapConfigIniFileType file_type)
+{
+  /* Update the column-groups stanza if column groups have changed */
+  updateContextHashList(context, file_type, ZMAPSTANZA_COLUMN_GROUPS, column_groups, NULL) ;
+
+  return TRUE ;
 }
 
 
@@ -440,11 +474,14 @@ void ZMapFeatureSequenceMapStructType::constructSources(const char *config_str,
 }
 
 
-/* Update the given context with our list of sources */
-void ZMapFeatureSequenceMapStructType::updateContext(ZMapConfigIniContext context, 
+/* Update the given context with any settings that need saving from the sequenceMap. Returns true
+ * if the context was changed. */
+bool ZMapFeatureSequenceMapStructType::updateContext(ZMapConfigIniContext context, 
                                                      ZMapConfigIniFileType file_type)
 {
-  if (sources)
+  bool changed = FALSE ;
+
+  if (sources && getFlag(ZMAPFLAG_SAVE_SOURCES))
     {
       std::string sources_str ;
 
@@ -490,7 +527,11 @@ void ZMapFeatureSequenceMapStructType::updateContext(ZMapConfigIniContext contex
       zMapConfigIniContextSetString(context, file_type,
                                     ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
                                     ZMAPSTANZA_APP_SOURCES, sources_str.c_str()) ;
+
+      changed = TRUE ;
     }
+
+  return changed ;
 }
 
 
@@ -512,6 +553,56 @@ gboolean ZMapFeatureSequenceMapStructType::getFlag(ZMapFlag flag)
   result = flags[flag] ;
 
   return result ;
+}
+
+
+/*
+ *              External routines.
+ */
+
+/* Update the given context with any configuration values that have been changed, e.g. column order */
+void zMapFeatureUpdateContext(ZMapFeatureContextMap context_map,
+                              ZMapFeatureSequenceMap sequence_map,
+                              ZMapFeatureAny feature_any,
+                              ZMapConfigIniContext context, 
+                              ZMapConfigIniFileType file_type)
+{
+  gboolean changed = FALSE ;
+  zMapReturnIfFail(sequence_map) ;
+
+  if (context_map)
+    {
+      if (sequence_map->getFlag(ZMAPFLAG_SAVE_COLUMNS))
+        changed |= context_map->updateContextColumns(context, file_type) ;
+    
+      if (sequence_map->getFlag(ZMAPFLAG_SAVE_COLUMN_GROUPS))
+        changed |= context_map->updateContextColumnGroups(context, file_type) ;
+    }
+
+  if (sequence_map)
+    changed |= sequence_map->updateContext(context, file_type) ;
+
+  /* Update the featureset-style stanza if featureset->style relationshiops have changed */
+  if (sequence_map->getFlag(ZMAPFLAG_SAVE_FEATURESET_STYLE))
+    {
+      GKeyFile *gkf = zMapConfigIniGetKeyFile(context, file_type) ;
+
+      zMapFeatureContextExecute(feature_any, ZMAPFEATURE_STRUCT_FEATURESET, 
+                                updateContextFeatureSetStyle, gkf) ;
+
+      changed = TRUE ;
+    }
+  
+  /* Set the unsaved flag in the context if there were any changes, and reset the individual flags */
+  if (changed)
+    {
+      zMapConfigIniContextSetUnsavedChanges(context, file_type, TRUE) ;
+
+      sequence_map->setFlag(ZMAPFLAG_SAVE_COLUMNS, FALSE) ;
+      sequence_map->setFlag(ZMAPFLAG_SAVE_COLUMN_GROUPS, FALSE) ;
+      sequence_map->setFlag(ZMAPFLAG_SAVE_SOURCES, FALSE) ;
+      sequence_map->setFlag(ZMAPFLAG_SAVE_FEATURESET_STYLE, FALSE) ;
+    }
 }
 
 
@@ -580,3 +671,102 @@ static gint colOrderCB(gconstpointer a, gconstpointer b,gpointer user_data)
 
   return(0);
 }
+
+/* Update the given context with the given hash table of ids mapped to a glist of ids. This is
+ * exported as key=value where the hash table id is the key and the value is a
+ * semi-colon-separated list of the ids from the glist. export_func is an optional function that
+ * takes the key and glist-value and returns true if the value should be included in the context, false if
+ * not. If this function is null then all values are included.  */
+static void updateContextHashList(ZMapConfigIniContext context, ZMapConfigIniFileType file_type, 
+                                  const char *stanza, GHashTable *ghash, HashListExportValueFunc *export_func)
+{
+  zMapReturnIfFail(context && context->config) ;
+
+  GKeyFile *gkf = zMapConfigIniGetKeyFile(context, file_type) ;
+
+  if (gkf)
+    {
+      /* Loop through all entries in the hash table */
+      GList *iter = NULL ;
+      gpointer key = NULL,value = NULL;
+
+      zMap_g_hash_table_iter_init(&iter, ghash) ;
+
+      while(zMap_g_hash_table_iter_next(&iter, &key, &value))
+        {
+          const char *key_str = g_quark_to_string(GPOINTER_TO_INT(key)) ;
+
+          if (key_str)
+            {
+              GString *values_str = NULL ;
+
+              for (GList *item = (GList*)value ; item ; item = item->next) 
+                {
+                  const char *value_str = g_quark_to_string(GPOINTER_TO_INT(item->data)) ;
+
+                  if (!export_func || (*export_func)(key_str, value_str))
+                    {
+                      if (!values_str)
+                        values_str = g_string_new(value_str) ;
+                      else
+                        g_string_append_printf(values_str, " ; %s", value_str) ;
+                    }
+                }
+
+              if (values_str)
+                {
+                  g_key_file_set_string(gkf, stanza, key_str, values_str->str) ;
+                  g_string_free(values_str, TRUE) ;
+                }
+            }
+        }
+    }
+}
+
+/* Callback called for all featuresets to set the key-value pair for the featureset-style stanza
+ * in the given key file. Note that featuresets that have their default are not included. */
+static ZMapFeatureContextExecuteStatus updateContextFeatureSetStyle(GQuark key,
+                                                                    gpointer data,
+                                                                    gpointer user_data,
+                                                                    char **err_out)
+{
+  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK ;
+  ZMapFeatureAny feature_any = (ZMapFeatureAny)data ;
+  GKeyFile *gkf = (GKeyFile *)user_data ;
+
+  if (gkf && 
+      feature_any && 
+      feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURESET &&
+      ((ZMapFeatureSet)feature_any)->style)
+    {
+      ZMapFeatureSet featureset = (ZMapFeatureSet)feature_any ;
+      const char *key_str = g_quark_to_string(featureset->unique_id) ;
+      const char *value_str = g_quark_to_string(featureset->style->unique_id) ;
+          
+      /* Only export if value is different to key (otherwise the style name is the
+       * same as the column name, and this stanza doesn't add anything). Also don't
+       * export if it's a default style. */
+      if (featureset->style && featureset->unique_id != featureset->style->unique_id &&
+          strcmp(value_str, "invalid") &&
+          strcmp(value_str, "basic") &&
+          strcmp(value_str, "alignment") &&
+          strcmp(value_str, "transcript") &&
+          strcmp(value_str, "sequence") &&
+          strcmp(value_str, "assembly-path") &&
+          strcmp(value_str, "text") &&
+          strcmp(value_str, "graph") &&
+          strcmp(value_str, "glyph") &&
+          strcmp(value_str, "plain") &&
+          strcmp(value_str, "meta") &&
+          strcmp(value_str, "search hit marker"))
+        {
+          key_str = g_quark_to_string(featureset->original_id) ;
+          value_str = g_quark_to_string(featureset->style->original_id) ;
+
+          g_key_file_set_string(gkf, ZMAPSTANZA_FEATURESET_STYLE_CONFIG, key_str, value_str) ;
+        }
+    }
+
+  return status ;
+}
+

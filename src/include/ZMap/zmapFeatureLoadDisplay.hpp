@@ -43,6 +43,7 @@
 
 
 struct _ZMapConfigSourceStruct ;
+struct ZMapFeatureAnyStructType ;
 
 
 /* Overview:
@@ -231,7 +232,8 @@ typedef struct ZMapFeatureContextMapStructType
   GList* getOrderedColumnsListIDs() ;
   GList* getOrderedColumnsList() ;
 
-  void updateContext(_ZMapConfigIniContextStruct *context, ZMapConfigIniFileType file_type) ;
+  bool updateContextColumns(_ZMapConfigIniContextStruct *context, ZMapConfigIniFileType file_type) ;
+  bool updateContextColumnGroups(_ZMapConfigIniContextStruct *context, ZMapConfigIniFileType file_type) ;
 
 } ZMapFeatureContextMapStruct, *ZMapFeatureContextMap ;
 
@@ -280,13 +282,21 @@ typedef struct ZMapFeatureSequenceMapStructType
   GList* getSources() ;
   void constructSources(const char *filename, const char *config_str, char **stylesfile) ;
   void constructSources(const char *config_str, char **stylesfile) ;
-  void updateContext(_ZMapConfigIniContextStruct *context, ZMapConfigIniFileType file_type) ;
+  bool updateContext(_ZMapConfigIniContextStruct *context, ZMapConfigIniFileType file_type) ;
 
   void addSource(const std::string &source_name, _ZMapConfigSourceStruct *source, GError **error) ;
   void addFileSource(const char *file) ;
   void removeSource(const char *source_name_cstr, GError **error) ;
 
 } ZMapFeatureSequenceMapStruct, *ZMapFeatureSequenceMap ;
+
+
+void zMapFeatureUpdateContext(ZMapFeatureContextMap context_map,
+                              ZMapFeatureSequenceMap sequence_map,
+                              ZMapFeatureAnyStructType *feature_any, 
+                              ZMapConfigIniContext context, 
+                              ZMapConfigIniFileType file_type) ;
+
 
 
 

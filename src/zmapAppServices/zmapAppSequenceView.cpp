@@ -922,6 +922,8 @@ static void saveSourcesToConfig(ZMapFeatureSequenceMap sequence_map,
       zMapConfigIniContextSetUnsavedChanges(context, file_type, TRUE) ;
       zMapConfigIniContextSave(context, file_type) ;
 
+      sequence_map->setFlag(ZMAPFLAG_SAVE_SOURCES, FALSE) ;
+
       /* Destroy the context */
       zMapConfigIniContextDestroy(context) ;
       context = NULL ;
