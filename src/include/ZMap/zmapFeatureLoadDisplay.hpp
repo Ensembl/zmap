@@ -43,6 +43,7 @@
 
 
 struct _ZMapConfigSourceStruct ;
+struct ZMapFeatureAnyStructType ;
 
 
 /* Overview:
@@ -62,6 +63,27 @@ struct _ZMapConfigSourceStruct ;
  * held in a ZMapFeatureContextMapStruct (again, not a good name).
  * 
  */
+
+
+typedef enum
+  {
+    ZMAPFLAG_REVCOMPED_FEATURES,         /* True if the user has done a revcomp */
+    ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS, /* True if filtered columns should be highlighted */
+
+    ZMAPFLAG_SAVE_FEATURES,              /* True if there are new features that have not been saved */
+    ZMAPFLAG_SAVE_SCRATCH,               /* True if changes have been made in the scratch column
+                                          * that have not been "saved" to a real featureset */
+    ZMAPFLAG_SAVE_COLUMN_GROUPS,         /* True if there are unsaved changes to column groups */
+    ZMAPFLAG_SAVE_STYLES,                /* True if there are unsaved changes to styles */
+    ZMAPFLAG_SAVE_COLUMNS,               /* True if there are unsaved changes to the columns order */
+    ZMAPFLAG_SAVE_SOURCES,               /* True if there are unsaved changes to the sources */
+    ZMAPFLAG_SAVE_FEATURESET_STYLE,      /* True if featureset-style relationships have changed */
+
+    ZMAPFLAG_ENABLE_ANNOTATION,          /* True if we should enable editing via the annotation column */
+    ZMAPFLAG_ENABLE_ANNOTATION_INIT,     /* False until the enable-annotation flag has been initialised */
+
+    ZMAPFLAG_NUM_FLAGS                   /* Must be last in list */
+  } ZMapFlag;
 
 
 /* Struct holding information about sets of features. Can be used to look up the
@@ -200,6 +222,19 @@ typedef struct ZMapFeatureContextMapStructType
    * Maps the group unique_id (GQuark) to a GList of column unique ids (GQuark) */
   GHashTable *column_groups ;
 
+
+  gboolean isCoverageColumn(GQuark column_id) ;
+  gboolean isSeqColumn(GQuark column_id) ;
+  gboolean isSeqFeatureSet(GQuark fset_id) ;
+
+  ZMapFeatureColumn getSetColumn(GQuark set_id) ;
+  GList *getColumnFeatureSets(GQuark column_id, gboolean unique_id) ;
+  GList* getOrderedColumnsListIDs() ;
+  GList* getOrderedColumnsList() ;
+
+  bool updateContextColumns(_ZMapConfigIniContextStruct *context, ZMapConfigIniFileType file_type) ;
+  bool updateContextColumnGroups(_ZMapConfigIniContextStruct *context, ZMapConfigIniFileType file_type) ;
+
 } ZMapFeatureContextMapStruct, *ZMapFeatureContextMap ;
 
 
@@ -236,13 +271,18 @@ typedef struct ZMapFeatureSequenceMapStructType
   char *sequence ;                                          /* e.g. chr6-18 */
   int start, end ;                                          /* chromosome coordinates */
 
+  gboolean flags[ZMAPFLAG_NUM_FLAGS] ;
+
 
   ZMapFeatureSequenceMapStructType* copy() ;
+
+  gboolean getFlag(ZMapFlag flag) ;
+  void setFlag(ZMapFlag flag, const gboolean value) ;
 
   GList* getSources() ;
   void constructSources(const char *filename, const char *config_str, char **stylesfile) ;
   void constructSources(const char *config_str, char **stylesfile) ;
-  void updateContext(_ZMapConfigIniContextStruct *context, ZMapConfigIniFileType file_type) ;
+  bool updateContext(_ZMapConfigIniContextStruct *context, ZMapConfigIniFileType file_type) ;
 
   void addSource(const std::string &source_name, _ZMapConfigSourceStruct *source, GError **error) ;
   void addFileSource(const char *file) ;
@@ -251,14 +291,14 @@ typedef struct ZMapFeatureSequenceMapStructType
 } ZMapFeatureSequenceMapStruct, *ZMapFeatureSequenceMap ;
 
 
+void zMapFeatureUpdateContext(ZMapFeatureContextMap context_map,
+                              ZMapFeatureSequenceMap sequence_map,
+                              ZMapFeatureAnyStructType *feature_any, 
+                              ZMapConfigIniContext context, 
+                              ZMapConfigIniFileType file_type) ;
 
-ZMapFeatureColumn zMapFeatureGetSetColumn(ZMapFeatureContextMap map, GQuark set_id) ;
-GList *zMapFeatureGetColumnFeatureSets(ZMapFeatureContextMap map, GQuark column_id, gboolean unique_id) ;
-gboolean zMapFeatureIsCoverageColumn(ZMapFeatureContextMap map, GQuark column_id) ;
-gboolean zMapFeatureIsSeqColumn(ZMapFeatureContextMap map, GQuark column_id) ;
-gboolean zMapFeatureIsSeqFeatureSet(ZMapFeatureContextMap map, GQuark fset_id) ;
-GList* zMapFeatureGetOrderedColumnsListIDs(ZMapFeatureContextMap context_map) ;
-GList* zMapFeatureGetOrderedColumnsList(ZMapFeatureContextMap context_map) ;
+
+
 
 #endif /* ZMAP_FEATURE_LOAD_DISPLAY_H */
 

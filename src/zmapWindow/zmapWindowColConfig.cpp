@@ -269,6 +269,8 @@ static ColConfigure configure_create(ZMapWindow window, ZMapWindowColConfigureMo
 
 static void requestDestroyCB(gpointer data, guint callback_action, GtkWidget *widget) ;
 static void destroyCB(GtkWidget *widget, gpointer cb_data) ;
+static void saveCB(gpointer cb_data, guint callback_action, GtkWidget *widget) ;
+static void saveColumnsConfig(ZMapWindow window, const char *filename) ;
 
 static void helpCB(gpointer data, guint callback_action, GtkWidget *w) ;
 static void helpDisplayCB(gpointer data, guint callback_action, GtkWidget *w) ;
@@ -323,11 +325,12 @@ static GList* tree_view_get_selected_featuresets(LoadedPageData page_data) ;
 
 static GtkItemFactoryEntry menu_items_G[] =
   {
-    { (gchar *)"/_File",           NULL,          NULL,             0, (gchar *)"<Branch>",      NULL},
+    { (gchar *)"/_File",           NULL,          NULL,             0, (gchar *)"<Branch>",         NULL},
     { (gchar *)"/File/Close",      (gchar *)"<control>W", (GtkItemFactoryCallback)requestDestroyCB, 0, NULL,            NULL},
-    { (gchar *)"/_Help",           NULL,          NULL,             0, (gchar *)"<LastBranch>",  NULL},
-    { (gchar *)"/Help/General",    NULL,          (GtkItemFactoryCallback)helpCB,           0, NULL,            NULL},
-    { (gchar *)"/Help/Display",    NULL,          (GtkItemFactoryCallback)helpDisplayCB,           0, NULL,            NULL}
+    { (gchar *)"/File/Save",       (gchar *)"<control>S", (GtkItemFactoryCallback)saveCB, 0, NULL, NULL},
+    { (gchar *)"/_Help",           NULL,          NULL,             0, (gchar *)"<LastBranch>", NULL},
+    { (gchar *)"/Help/General",    NULL,          (GtkItemFactoryCallback)helpCB,           0, NULL, NULL},
+    { (gchar *)"/Help/Display",    NULL,          (GtkItemFactoryCallback)helpDisplayCB,           0, NULL, NULL}
   };
 
 
@@ -653,7 +656,7 @@ static void loaded_page_apply_reorder_columns(LoadedPageData page_data)
       if (page_data->window->feature_set_names)
         g_list_free(page_data->window->feature_set_names) ;
 
-      page_data->window->feature_set_names = zMapFeatureGetOrderedColumnsListIDs(page_data->window->context_map) ;
+      page_data->window->feature_set_names = page_data->window->context_map->getOrderedColumnsListIDs() ;
 
       /* Redraw */
       zmapWindowBusy(page_data->window, FALSE) ;
@@ -664,7 +667,7 @@ static void loaded_page_apply_reorder_columns(LoadedPageData page_data)
 
       zmapWindowBusy(page_data->window, FALSE) ;
      
-      page_data->configure_data->window->flags[ZMAPFLAG_SAVE_COLUMNS] = TRUE ;
+      zMapWindowSetFlag(page_data->configure_data->window, ZMAPFLAG_SAVE_COLUMNS, TRUE) ;
     }
 }
 
@@ -873,7 +876,7 @@ static void loaded_page_apply_groups(LoadedPageData page_data)
                   if (new_group_id)
                     hashListInsertID(column_groups, new_group_id, column_id) ;
                   
-                  page_data->window->flags[ZMAPFLAG_SAVE_COLUMN_GROUPS] = TRUE ;
+                  zMapWindowSetFlag(page_data->window, ZMAPFLAG_SAVE_COLUMN_GROUPS, TRUE) ;
                 }
             } while (gtk_tree_model_iter_next(model, &iter)) ;
         }
@@ -1355,9 +1358,10 @@ gboolean column_is_loaded_in_range(ZMapFeatureContextMap map,
                                    ZMapFeatureBlock block, GQuark column_id, int start, int end)
 {
 #define MH17_DEBUG      0
-  GList *fsets;
+  GList *fsets = NULL;
 
-  fsets = zMapFeatureGetColumnFeatureSets(map, column_id, TRUE);
+  if (map)
+    fsets = map->getColumnFeatureSets(column_id, TRUE);
 
 #if MH17_DEBUG
   zMapLogWarning("is col loaded %s %d -> %d? ",g_quark_to_string(column_id),start,end);
@@ -1699,7 +1703,7 @@ static GList *configure_get_deferred_column_lists(ColConfigure configure_data,
          && (column->column_id != g_quark_from_string(ZMAP_FIXED_STYLE_3FRAME))
          && !column_is_loaded_in_range(window->context_map,block,
                                        column->unique_id, window->sequence->start, window->sequence->end)
-         && !zMapFeatureIsSeqColumn(window->context_map,column->unique_id)
+         && !window->context_map->isSeqColumn(column->unique_id)
          )
         {
           columns = g_list_prepend(columns,GUINT_TO_POINTER(column->column_id));
@@ -2267,57 +2271,61 @@ static void loaded_cols_panel_create_tree_row(LoadedPageData page_data,
 
   zMapReturnIfFail(page_data && page_data->configure_data && column && store) ;
 
-  /* Create a new row in the list store */
-  GtkTreeIter iter ;
-  gtk_list_store_append(store, &iter);
+  /* Only add a row if this column exists */
+  if (container_fwd || container_rev)
+    {
+      /* Create a new row in the list store */
+      GtkTreeIter iter ;
+      gtk_list_store_append(store, &iter);
 
-  /* Set the column name */
-  const char *label_text = g_quark_to_string(column->column_id);
-  gtk_list_store_set(store, &iter, NAME_COLUMN, label_text, -1);
+      /* Set the column name */
+      const char *label_text = g_quark_to_string(column->column_id);
+      gtk_list_store_set(store, &iter, NAME_COLUMN, label_text, -1);
 
-  /* Set the style names */
-  char *style_names = columnGetStylesList(page_data, page_data->window->context_map, column->unique_id) ;
+      /* Set the style names */
+      char *style_names = columnGetStylesList(page_data, page_data->window->context_map, column->unique_id) ;
       
-  if (style_names)
-    {
-      gtk_list_store_set(store, &iter, STYLE_COLUMN, style_names, -1);
-      g_free(style_names) ;
-    }
+      if (style_names)
+        {
+          gtk_list_store_set(store, &iter, STYLE_COLUMN, style_names, -1);
+          g_free(style_names) ;
+        }
 
-  /* Set the group name */
-  GQuark group_id = hashListFindID(page_data->window->context_map->column_groups, column->column_id) ;
+      /* Set the group name */
+      GQuark group_id = hashListFindID(page_data->window->context_map->column_groups, column->column_id) ;
  
-  if (!group_id)
-    group_id = hashListFindID(page_data->window->context_map->column_groups, column->unique_id) ;
+      if (!group_id)
+        group_id = hashListFindID(page_data->window->context_map->column_groups, column->unique_id) ;
           
-  if (group_id)
-    gtk_list_store_set(store, &iter, GROUP_COLUMN, g_quark_to_string(group_id), -1);
+      if (group_id)
+        gtk_list_store_set(store, &iter, GROUP_COLUMN, g_quark_to_string(group_id), -1);
 
-  /* Show two sets of radio buttons for each column to change column display state for
-   * each strand. gb10: not sure why but historically we only added an apply button if we set
-   * non-default values for either forward or rev strand. I've kept this behaviour for now.  */
-  if (container_fwd)
-    {
-      ZMapStyleColumnDisplayState col_state = zmapWindowContainerFeatureSetGetDisplay(container_fwd) ;
-      set_tree_store_value_from_state(col_state, store, &iter, TRUE) ;
-      page_data->configure_data->has_apply_button = TRUE;
-    }
-  else
-    {
-      /* Auto by default */
-      set_tree_store_value_from_state(ZMAPSTYLE_COLDISPLAY_SHOW_HIDE, store, &iter, TRUE) ;
-    }
+      /* Show two sets of radio buttons for each column to change column display state for
+       * each strand. gb10: not sure why but historically we only added an apply button if we set
+       * non-default values for either forward or rev strand. I've kept this behaviour for now.  */
+      if (container_fwd)
+        {
+          ZMapStyleColumnDisplayState col_state = zmapWindowContainerFeatureSetGetDisplay(container_fwd) ;
+          set_tree_store_value_from_state(col_state, store, &iter, TRUE) ;
+          page_data->configure_data->has_apply_button = TRUE;
+        }
+      else
+        {
+          /* Auto by default */
+          set_tree_store_value_from_state(ZMAPSTYLE_COLDISPLAY_SHOW_HIDE, store, &iter, TRUE) ;
+        }
 
-  if (container_rev)
-    {
-      ZMapStyleColumnDisplayState col_state = zmapWindowContainerFeatureSetGetDisplay(container_rev) ;
-      set_tree_store_value_from_state(col_state, store, &iter, FALSE) ;
-      page_data->configure_data->has_apply_button = TRUE;
-    }
-  else
-    {
-      /* Auto by default */
-      set_tree_store_value_from_state(ZMAPSTYLE_COLDISPLAY_SHOW_HIDE, store, &iter, FALSE) ;
+      if (container_rev)
+        {
+          ZMapStyleColumnDisplayState col_state = zmapWindowContainerFeatureSetGetDisplay(container_rev) ;
+          set_tree_store_value_from_state(col_state, store, &iter, FALSE) ;
+          page_data->configure_data->has_apply_button = TRUE;
+        }
+      else
+        {
+          /* Auto by default */
+          set_tree_store_value_from_state(ZMAPSTYLE_COLDISPLAY_SHOW_HIDE, store, &iter, FALSE) ;
+        }
     }
 }
 
@@ -2360,10 +2368,10 @@ static GtkTreeModel* loaded_cols_panel_create_tree_model(LoadedPageData page_dat
                                                          FooCanvasGroup *required_column_group)
 {
   GtkTreeModel *model = NULL ;
-  zMapReturnValIfFail(page_data && page_data->window, model) ;
+  zMapReturnValIfFail(page_data && page_data->window && page_data->window->context_map, model) ;
 
   /* Get list of column structs in current display order */
-  GList *columns_list = zMapFeatureGetOrderedColumnsList(page_data->window->context_map) ;
+  GList *columns_list = page_data->window->context_map->getOrderedColumnsList() ;
 
   /* Create a tree store containing one row per column */
   GtkListStore *store = gtk_list_store_new(N_COLUMNS, G_TYPE_STRING, 
@@ -2892,6 +2900,20 @@ static void destroyCB(GtkWidget *widget, gpointer cb_data)
   configure_data->window->col_config_window = NULL ;
 
   g_free(configure_data) ;
+
+  return ;
+}
+
+
+/* Save the changed settings to the config file */
+static void saveCB(gpointer cb_data, guint callback_action, GtkWidget *widget)
+{
+  ColConfigure configure_data = (ColConfigure)cb_data ;
+  zMapReturnIfFail(configure_data && configure_data->window) ;
+
+  static char *filename = NULL ;
+
+  saveColumnsConfig(configure_data->window, filename) ;
 
   return ;
 }
@@ -3578,4 +3600,37 @@ static gboolean zmapAddSizingSignalHandlers(GtkWidget *widget, gboolean debug,
 
 
   return TRUE;
+}
+
+static void saveColumnsConfig(ZMapWindow window, const char *filename)
+{
+  zMapReturnIfFail(window) ;
+
+  ZMapConfigIniFileType file_type = ZMAPCONFIG_FILE_PREFS ;
+
+  ZMapConfigIniContext context = zMapConfigIniContextProvide(filename, file_type) ;
+  
+  if (context)
+    {
+      if (filename)
+        zMapConfigIniContextSetFile(context, file_type, filename) ;
+
+      zMapConfigIniContextCreateKeyFile(context, file_type) ;
+
+      zMapFeatureUpdateContext(window->context_map,
+                               window->sequence,
+                               (ZMapFeatureAny)window->feature_context,
+                               context, 
+                               file_type) ;
+
+      zMapConfigIniContextSetUnsavedChanges(context, file_type, TRUE) ;
+      zMapConfigIniContextSave(context, file_type) ;
+
+      zMapConfigIniContextDestroy(context) ;
+      context = NULL ;
+    }
+  else
+    {
+      zMapCritical("%s", "Program error: failed to create context") ;
+    }
 }

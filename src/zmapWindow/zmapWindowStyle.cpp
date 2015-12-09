@@ -527,7 +527,7 @@ gboolean zmapWindowFeaturesetSetStyle(GQuark style_id,
   if (ok)
     {
       feature_set->style = style;
-      window->flags[ZMAPFLAG_SAVE_FEATURESET_STYLE] = TRUE ;
+      zMapWindowSetFlag(window, ZMAPFLAG_SAVE_FEATURESET_STYLE, TRUE) ;
 
       if (redraw)
         {

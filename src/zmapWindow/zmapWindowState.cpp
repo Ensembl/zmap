@@ -288,7 +288,7 @@ gboolean zmapWindowStateSavePosition(ZMapWindowState state, ZMapWindow window)
                                    &(state->position.scroll_x2),
                                    &(state->position.scroll_y2));
 
-      state->rev_comp_state = state->position.rev_comp_state = window->flags[ZMAPFLAG_REVCOMPED_FEATURES];
+      state->rev_comp_state = state->position.rev_comp_state = zMapWindowGetFlag(window, ZMAPFLAG_REVCOMPED_FEATURES);
 
       if(window_state_debug_G)
         print_position(&(state->position), "save_position");
@@ -323,7 +323,7 @@ gboolean zmapWindowStateSaveMark(ZMapWindowState state, ZMapWindow window)
                                   &(state->mark.x1), &(state->mark.y1),
                                   &(state->mark.x2), &(state->mark.y2));
 
-      state->rev_comp_state = state->mark.rev_comp_state = window->flags[ZMAPFLAG_REVCOMPED_FEATURES];
+      state->rev_comp_state = state->mark.rev_comp_state = zMapWindowGetFlag(window, ZMAPFLAG_REVCOMPED_FEATURES);
     }
 
   return state->mark_set;
@@ -342,7 +342,7 @@ gboolean zmapWindowStateSaveFocusItems(ZMapWindowState state, ZMapWindow window)
   if ((window->focus) && (focus_item = zmapWindowFocusGetHotItem(window->focus)))
     {
       state->focus_items_set = serialize_item(focus_item, &(state->focus.item));
-      state->rev_comp_state = state->focus.rev_comp_state = window->flags[ZMAPFLAG_REVCOMPED_FEATURES];
+      state->rev_comp_state = state->focus.rev_comp_state = zMapWindowGetFlag(window, ZMAPFLAG_REVCOMPED_FEATURES);
 
       result = state->focus_items_set ;
     }
@@ -417,7 +417,7 @@ gboolean zmapWindowStateSaveBumpedColumns(ZMapWindowState state, ZMapWindow wind
         compress_mode = ZMAPWINDOW_COMPRESS_ALL ;
 
       state->bump.compress  = compress_mode;
-      state->rev_comp_state = state->bump.rev_comp_state = window->flags[ZMAPFLAG_REVCOMPED_FEATURES];
+      state->rev_comp_state = state->bump.rev_comp_state = zMapWindowGetFlag(window, ZMAPFLAG_REVCOMPED_FEATURES);
 
       state->bump_state_set = TRUE;
     }
@@ -488,7 +488,7 @@ static void state_mark_restore(ZMapWindow window, ZMapWindowMark mark, ZMapWindo
 
   restore = *serialized ;                                    /* n.b. struct copy */
 
-  if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES] != restore.rev_comp_state)
+  if (zMapWindowGetFlag(window, ZMAPFLAG_REVCOMPED_FEATURES) != restore.rev_comp_state)
     {
       int seq_start, seq_end ;
 
@@ -540,7 +540,7 @@ static void state_position_restore(ZMapWindow window, ZMapWindowPositionStruct *
       if(window_state_debug_G)
         print_position(position, "state_position_restore input");
 
-      if(window->flags[ZMAPFLAG_REVCOMPED_FEATURES] != position->rev_comp_state)
+      if(zMapWindowGetFlag(window, ZMAPFLAG_REVCOMPED_FEATURES) != position->rev_comp_state)
         {
           double tmp;
 
@@ -601,7 +601,7 @@ static void state_focus_items_restore(ZMapWindow window, ZMapWindowFocusSerialSt
 
       /* Forming the search correctly when a reverse complement has happened is not trivial
        * because of strand issues. */
-      if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES] != serialized->rev_comp_state)
+      if (zMapWindowGetFlag(window, ZMAPFLAG_REVCOMPED_FEATURES) != serialized->rev_comp_state)
         {
           if (restore.item.strand_specific)
             restore.item.strand = ZMAPFEATURE_SWOP_STRAND(restore.item.strand) ;
@@ -679,7 +679,7 @@ static void state_bumped_columns_restore(ZMapWindow window, ZMapWindowBumpStateS
       bumped_columns   = serialized->style_bump;
       bumped_col_count = bumped_columns->len;
 
-      swap_strand = (window->flags[ZMAPFLAG_REVCOMPED_FEATURES] != serialized->rev_comp_state);
+      swap_strand = (zMapWindowGetFlag(window, ZMAPFLAG_REVCOMPED_FEATURES) != serialized->rev_comp_state);
 
       for(i = 0; i < bumped_col_count; i++)
         {

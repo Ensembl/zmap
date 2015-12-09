@@ -1313,7 +1313,7 @@ void zmapWindowFeatureCallXRemote(ZMapWindow window, ZMapFeatureAny feature_any,
   /* REVCOMP COORD HACK......THIS HACK IS BECAUSE OUR COORD SYSTEM IS MUCKED UP FOR
    * REVCOMP'D FEATURES..... */
   /* Convert coords */
-  if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
+  if (zMapWindowGetFlag(window, ZMAPFLAG_REVCOMPED_FEATURES))
     {
       /* remap coords to forward strand range and also swop
        * them as they get reversed in revcomping.... */
@@ -1447,7 +1447,7 @@ static void handleXRemoteReply(gboolean reply_ok, char *reply_error,
                * actually been created but the peer may change any of the feature details before
                * creating and sending it back to us so we have no way of knowing when the correct
                * feature has been created. */
-              remote_data->window->flags[ZMAPFLAG_SAVE_SCRATCH] = FALSE ;
+              zMapWindowSetFlag(remote_data->window, ZMAPFLAG_SAVE_SCRATCH, FALSE) ;
             }
         }
     }

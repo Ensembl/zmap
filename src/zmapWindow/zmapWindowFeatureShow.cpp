@@ -2216,7 +2216,7 @@ static ZMapGuiNotebook makeTranscriptExtras(ZMapWindow window, ZMapFeature featu
           ZMapGuiNotebookTagValue tag_value ;
           int display_start, display_end, index ;
 
-          if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
+          if (zMapWindowGetFlag(window, ZMAPFLAG_REVCOMPED_FEATURES))
             index = feature->feature.transcript.exons->len - (i + 1) ;
           else
             index = i ;
@@ -2283,7 +2283,7 @@ static void callXRemote(ZMapWindow window, ZMapFeatureAny feature_any,
   /* REVCOMP COORD HACK......THIS HACK IS BECAUSE OUR COORD SYSTEM IS MUCKED UP FOR
    * REVCOMP'D FEATURES..... */
   /* Convert coords */
-  if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
+  if (zMapWindowGetFlag(window, ZMAPFLAG_REVCOMPED_FEATURES))
     {
       /* remap coords to forward strand range and also swop
        * them as they get reversed in revcomping.... */
@@ -2678,7 +2678,7 @@ static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_f
   window = show->zmapWindow ;
   offset = window->feature_context->parent_span.x1 - 1 ; /* need to convert user coords to chromosome coords */
 
-  if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
+  if (zMapWindowGetFlag(window, ZMAPFLAG_REVCOMPED_FEATURES))
     {
       revcomp = TRUE ;
       offset = window->feature_context->parent_span.x2 - offset + 1 ; /* inverts coords when revcomp'd */
@@ -2874,8 +2874,8 @@ static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_f
        * created a new "real" feature which is unsaved. */
       if (create_feature)
         {
-          window->flags[ZMAPFLAG_SAVE_SCRATCH] = FALSE ;
-          window->flags[ZMAPFLAG_SAVE_FEATURES] = TRUE ;
+          zMapWindowSetFlag(window, ZMAPFLAG_SAVE_SCRATCH, FALSE) ;
+          zMapWindowSetFlag(window, ZMAPFLAG_SAVE_FEATURES, TRUE) ;
         }
 
       /*! \todo Check that feature was saved successfully before reporting back. Also close

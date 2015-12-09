@@ -379,7 +379,6 @@ typedef struct _ZMapViewStruct
   gboolean columns_set;                   // if set from config style use config only
                                           // else use source featuresets in order as of old
 
-  gboolean flags[ZMAPFLAG_NUM_FLAGS] ;    /* boolean flags (also accessible from window level) */
   int int_values[ZMAPINT_NUM_VALUES] ;    /* int values (also accessible from window level) */
 
   /* Be good to get rid of this window stuff in any restructure..... */

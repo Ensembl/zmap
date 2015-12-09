@@ -305,9 +305,9 @@ static void onSearchColumnChanged(GtkWidget *col,gpointer user_data)
   gtk_entry_set_text(GTK_ENTRY(search_data->set_entry), search_data->set_txt) ;
   gtk_widget_show_all(search_data->set_entry);
 
-  if(column_id)
+  if(column_id && search_data->window && search_data->window->context_map)
     {
-      setList = zMapFeatureGetColumnFeatureSets(search_data->window->context_map, column_id, FALSE);
+      setList = search_data->window->context_map->getColumnFeatureSets(column_id, FALSE);
     }
 
   clearPopulateComboBox(GTK_WIDGET(search_data->set_entry), setList, search_data->n_sets);
@@ -423,8 +423,7 @@ static GtkWidget *makeFieldsPanel(SearchData search_data)
           }
       }
 
-    setList = zMapFeatureGetColumnFeatureSets(search_data->window->context_map,
-                                              search_data->column_id, FALSE);
+    setList = search_data->window->context_map->getColumnFeatureSets(search_data->column_id, FALSE);
    }
 
 #endif
