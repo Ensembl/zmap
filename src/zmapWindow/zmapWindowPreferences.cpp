@@ -44,6 +44,7 @@ gboolean zmapWindowGetPFetchUserPrefs(char *config_file, PFetchUserPrefsStruct *
   if((context = zMapConfigIniContextProvide(config_file, ZMAPCONFIG_FILE_NONE)))
     {
       char *tmp_string;
+      int tmp_int ;
 
       pfetch->port = 80; //default
 
@@ -59,11 +60,10 @@ gboolean zmapWindowGetPFetchUserPrefs(char *config_file, PFetchUserPrefsStruct *
           pfetch->cookie_jar = tmp_string ;
         }
 
-      if (zMapConfigIniContextGetFilePath(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
-                                          ZMAPSTANZA_APP_PORT, &tmp_string))
+      if (zMapConfigIniContextGetInt(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+                                          ZMAPSTANZA_APP_PORT, &tmp_int))
         {
-          if (tmp_string)
-            pfetch->port = atoi(tmp_string) ;
+          pfetch->port = tmp_int ;
         }
 
       if(zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
