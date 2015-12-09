@@ -57,9 +57,6 @@ typedef struct _FeatureSearchStruct
 
 
 
-static gboolean featureAnyAddFeature(ZMapFeatureAny feature_set, ZMapFeatureAny feature) ;
-static ZMapFeatureAny featureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNotify destroy_cb) ;
-static void featureAnyAddToDestroyList(ZMapFeatureContext context, ZMapFeatureAny feature_any) ;
 static void destroyContextSubparts(ZMapFeatureContext context) ;
 static void destroyFeature(ZMapFeature feature) ;
 static void destroyFeatureAnyShallow(gpointer data) ;
