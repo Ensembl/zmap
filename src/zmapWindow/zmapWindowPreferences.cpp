@@ -44,20 +44,34 @@ gboolean zmapWindowGetPFetchUserPrefs(char *config_file, PFetchUserPrefsStruct *
   if((context = zMapConfigIniContextProvide(config_file, ZMAPCONFIG_FILE_NONE)))
     {
       char *tmp_string;
+      int tmp_int ;
+
+      pfetch->port = 80; //default
 
       if (zMapConfigIniContextGetFilePath(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
                                         ZMAPSTANZA_APP_PFETCH_LOCATION, &tmp_string))
-        pfetch->location = tmp_string ;
+        {
+          pfetch->location = tmp_string ;
+        }
 
       if (zMapConfigIniContextGetFilePath(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
                                           ZMAPSTANZA_APP_COOKIE_JAR, &tmp_string))
-        pfetch->cookie_jar = tmp_string ;
+        {
+          pfetch->cookie_jar = tmp_string ;
+        }
+
+      if (zMapConfigIniContextGetInt(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+                                          ZMAPSTANZA_APP_PORT, &tmp_int))
+        {
+          pfetch->port = tmp_int ;
+        }
 
       if(zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
                                        ZMAPSTANZA_APP_PFETCH_MODE, &tmp_string))
-        pfetch->mode = (tmp_string ? tmp_string : g_strdup("http"));
+        {
+          pfetch->mode = (tmp_string ? tmp_string : g_strdup("http"));
+        }
 
-      pfetch->port = 80;
       pfetch->full_record = TRUE;
 
       if(pfetch->location)

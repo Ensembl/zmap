@@ -145,7 +145,6 @@ static gboolean alignStrCanonicalRemoveOperator(AlignStrCanonical canon, int i) 
 static AlignStrCanonical alignStrMakeCanonical(const char *match_str, ZMapFeatureAlignFormat align_format) ;
 
 static GArray* blockArrayCreate() ;
-static gboolean blockArrayDestroy(GArray* const) ;
 static ZMapAlignBlock blockArrayGetBlock(GArray* const, int index) ;
 static gboolean blockAddBlock(GArray**, const ZMapAlignBlockStruct * const) ;
 
@@ -823,19 +822,6 @@ static GArray* blockArrayCreate()
   return align_block_array ;
 }
 
-/*
- * Destroy a GArray storing elements of type ZMapAlignBlockStruct
- */
-static gboolean blockArrayDestroy(GArray* const align_block_array)
-{
-  gboolean result = FALSE ;
-  if (align_block_array)
-    {
-      g_array_free(align_block_array, TRUE) ;
-      result = TRUE ;
-    }
-  return result ;
-}
 
 /*
  *
