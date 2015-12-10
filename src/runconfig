@@ -1,11 +1,17 @@
 #!/bin/bash
 #
-# Noddy script to run configure as alphas + Roys machine are far from standard.
+# This script sets up various configure arguments for different machines,
+# e.g. if you use macports on the Mac then by default you need to point
+# configure at /opt/local.
+#
+# There is magic here, if you could be bothered you can just run configure
+# with the correct args from the command line and get the same result.
+#
 #
 #
 # PLEASE READ THIS BEFORE ALTERING THIS SCRIPT.....
 #
-# This script is called by the build scripts (in <zmap>/scripts) so you should
+# This script is called by our automatic build system (in <zmap>/scripts) so you should
 # NOT start adding command line flags and args or you will mess up the build !!!!
 #
 #
