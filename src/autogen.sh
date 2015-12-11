@@ -168,6 +168,8 @@ while getopts ":adefghinuvz" opt ; do
 	v  ) verbose='-v' ;;
 	z  ) install[$aceconn_key]='no'
              install[$ensc_core_key]='no'
+             install[$gb_tools_key]='no'
+             install[$htslib_key]='no'
              install[$zeromq_key]='no' ;;
 	\? ) zmap_message_exit "Bad arg flag: $usage" ;;
     esac
