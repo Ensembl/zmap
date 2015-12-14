@@ -303,7 +303,7 @@ $BASE_DIR/../scripts/zmap_SO_header.pl || zmap_message_exit "zmap failed to gene
 # and save it to the file specified. This will be modified at some point 
 # to find the location from a function in scripts/zmap_functions.sh
 #
-config_set_ZMAP_ARCH `hostname`
+config_set_ZMAP_ARCH `hostname -s`
 zmap_message_out "ZMAP_ARCH is $ZMAP_ARCH"
 arch_trusty="trusty_x86_64"
 arch_tviewsrv="Linux_i686"
