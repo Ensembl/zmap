@@ -40,6 +40,10 @@ AC_ARG_VAR(GLIB_GENMARSHAL, [The glib-genmarshal executable.])
 AC_CHECK_PROG(GLIB_GENMARSHAL, glib-genmarshal, glib-genmarshal)
 
 
+# Check for C++11 language support
+#
+AX_CXX_COMPILE_STDCXX_0X()
+
 
 # External libraries
 #
