@@ -1,18 +1,24 @@
 
-Git commits for  from commit "production" until commit "release/2.4.0"
+Git commits for  from commit "production" until commit "release/2.5.0"
 
-729ff2f 2015-11-23 Fix a bug where curl_multi_fdset failures weren't being handled - BUG FIX
-834e0f3 2015-11-17 Fix a bug merging styles, and don't allow cyclic dependencies - REGRESSION FIX
-d652251 2015-11-17 Avoid potential cyclic dependency with styles - REGRESSION FIX
-faf2d26 2015-11-11 Update relase notes for last release - DOC
-b3f3a76 2015-11-11 Update help pages - DOC
-2daf114 2015-11-11 Merge branch 'feature/columns' into develop - NEW FEATURE 'column groups'
-1f26c7b 2015-11-09 Fix blixem-associated-columns bug - REGRESSION FIX
-c9b5f85 2015-11-09 Avoid potential null access - BUG FIX
-52740ad 2015-11-06 Save user preferences - NEW FEATURE 'Save prefs'
-2c61386 2015-11-06 Remove special treatment of bam reads for blixem - BUG FIX
-b9d7a5e 2015-11-06 Merge branch 'feature/styles' into develop
-4ef21d0 2015-11-03 RT495468 with no persistent columns we were resetting state in a tight loop thus blocking tooltips etc. - BUG FIX
+5c0a8c7 2015-12-10 Fix bug with otter sources not loading - REGRESSION FIX
+9387976 2015-12-10 Remove unused RT_Test and server directories. NEW FEATURE
+eeba5e7 2015-12-10 Removed foocanvas, moved to it's own zmap_foocanvas respository. NEW FEATURE
+ae9705f 2015-12-09 Merge branch 'feature/pfetch' into develop - NEW FEATURE 'pfetch https'
+9b9e2f0 2015-12-09 Merge branch 'feature/columns' into develop
+54e85e5 2015-12-04 Merge branch 'feature/ensembl_gui' into develop
+8d0211a 2015-12-04 Fix a bug assigning styles - REGRESSION FIX
+00e6928 2015-12-04 Fix an error assigning styles - BUG FIX
+22fc6c7 2015-12-04 Edit-style dialog now uses background colour if none set - BUG FIX
+100158e 2015-12-03 Reorganise feature code, new files and moving of create/destroy code for features into appropriate files. - NEW FEATURE 'feature reorganise.'
+040c3d6 2015-12-03 fix my own stupid bug. - BUG FIX
+686e86a 2015-12-02 Merge branch 'feature/ensembl_gui' into develop
+56ef9d4 2015-12-02 Fix uninitialised variable - BUG FIX
+d1fe718 2015-12-02 Not loading right BAM sequence because we didn't search the list of sequences in the hts header. - RT '502868'
+ed645c5 2015-12-01 Merge branch 'feature/VULGAR' into develop
+57e39cb 2015-11-27 Merge branch 'feature/columns' into develop
+8c75116 2015-11-25 Allow http/ftp sources - NEW FEATURE 'http/ftp sources'
+145df5e 2015-11-25 Avoid potential crash with invalid bam file name - BUG FIX
 
 
 End of git commits

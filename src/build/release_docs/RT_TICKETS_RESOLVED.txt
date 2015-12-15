@@ -1,13 +1,23 @@
 
-Request Tracker Tickets Resolved from 19/10/2015 to 25/11/2015
+Request Tracker Tickets Resolved from 11/11/2015 to 15/12/2015
 
-ticket/410365
-id: ticket/410365
+ticket/326083
+id: ticket/326083
 Queue: zmap
-Subject: Feature search window. 
-Requestors: sm23@sanger.ac.uk
-Owner: sm23
-Resolved: Wed Oct 21 16:44:48 2015
+Subject: Show translation crashes if there's no DNA sequence
+Requestors: gb10@sanger.ac.uk
+Owner: edgrif
+Resolved: Mon Nov 30 16:52:48 2015
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
+ticket/456914
+id: ticket/456914
+Queue: zmap
+Subject: bugfixes
+Requestors: mh19@sanger.ac.uk
+Owner: edgrif
+Resolved: Mon Nov 30 17:04:49 2015
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
@@ -21,43 +31,43 @@ Resolved: Mon Nov 23 12:20:46 2015
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
-ticket/494900
-id: ticket/494900
+ticket/499440
+id: ticket/499440
 Queue: zmap
-Subject: autconf macros bug ?
-Requestors: edgrif@sanger.ac.uk
+Subject: group = always
+Requestors: jgrg@sanger.ac.uk, mg13@sanger.ac.uk
 Owner: edgrif
-Resolved: Tue Nov 03 09:19:38 2015
+Resolved: Thu Dec 03 09:15:48 2015
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
-ticket/495468
-id: ticket/495468
+ticket/502868
+id: ticket/502868
 Queue: zmap
-Subject: up and down arrows in zmap seem to be broken.
-Requestors: gdr@sanger.ac.uk, mpk@sanger.ac.uk
+Subject: Error loading bam files with more than 1 sequence
+Requestors: gb10@sanger.ac.uk
 Owner: edgrif
-Resolved: Tue Nov 03 11:00:32 2015
+Resolved: Wed Dec 02 08:41:04 2015
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
-ticket/496304
-id: ticket/496304
+ticket/504232
+id: ticket/504232
 Queue: zmap
-Subject: Splice comparison feature bug
-Requestors: mh19@sanger.ac.uk
+Subject: Problem compiling zmap
+Requestors: thibaut@ebi.ac.uk
 Owner: edgrif
-Resolved: Tue Nov 03 10:17:36 2015
+Resolved: Thu Dec 03 11:18:33 2015
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
-ticket/498166
-id: ticket/498166
+ticket/505463
+id: ticket/505463
 Queue: zmap
-Subject: Cron <zmap@tviewsrv> cd ~/BUILD_CHECKOUT ; ./annobuild -o > /nfs/zmap/ZMap/BUILDS/OVERNIGHT_BUILDS/ANNOBUILD.LOG 2>&1
-Requestors: root@sanger.ac.uk
-Owner: edgrif
-Resolved: Mon Nov 09 15:57:41 2015
+Subject: Development ZMap - column loading broken
+Requestors: mg13@sanger.ac.uk
+Owner: gb10
+Resolved: Fri Dec 11 08:47:08 2015
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
