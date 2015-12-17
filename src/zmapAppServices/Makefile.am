@@ -6,6 +6,7 @@ SUBDIRS = .
 noinst_LTLIBRARIES = libZMapAppServices.la
 
 libZMapAppServices_la_SOURCES = \
+zmapAppServices_P.hpp \
 zmapAppDebugConfig.cpp \
 zmapAppSequenceView.cpp \
 zmapAppSource.cpp \
