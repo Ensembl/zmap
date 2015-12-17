@@ -1,3 +1,17 @@
+2015-12-17  Gemma Guest  <gb10@sanger.ac.uk>
+ Merge branch 'develop' into release/2.5.0
+2015-12-17  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix missing include file in dist - BUILD
+ src/zmapAppServices/Makefile.am |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+2015-12-15  zmap  <zmap@sanger.ac.uk>
+ ZMap version 2.4.1-111-gb7a8287 - Update RT and git commit reports
+ src/ChangeLog                                  | 1611 ++++++++++++------------
+ src/build/release_docs/GIT_COMMITS.txt         |   32 +-
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt |   66 +-
+ 3 files changed, 837 insertions(+), 872 deletions(-)
+
 2015-12-15  Gemma Guest  <gb10@sanger.ac.uk>
  Add autotools check for c++0x support - BUILD
  src/ax_cxx_compile_stdcxx_0x.m4 |  111 +++++++++++++++++++++++++++++++++++++++
