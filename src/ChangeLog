@@ -1,3 +1,17 @@
+2015-12-18  Gemma Guest  <gb10@sanger.ac.uk>
+ Temporarily disable c++0x flag - BUILD
+ src/Makefile.common                         |    6 +++---
+ src/configure.ac                            |    2 +-
+ src/zmapAppServices/zmapAppSequenceView.cpp |   18 ++++++++++--------
+ src/zmapFeature/zmapFeatureAlignment.cpp    |   16 ++++++++--------
+ 4 files changed, 22 insertions(+), 20 deletions(-)
+
+2015-12-17  zmap  <zmap@sanger.ac.uk>
+ ZMap version 2.4.1-114-g4fa5f9e - Update RT and git commit reports
+ src/ChangeLog                                  |   14 ++++++++++++++
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt |    2 +-
+ 2 files changed, 15 insertions(+), 1 deletions(-)
+
 2015-12-17  Gemma Guest  <gb10@sanger.ac.uk>
  Merge branch 'develop' into release/2.5.0
 2015-12-17  Gemma Guest  <gb10@sanger.ac.uk>
