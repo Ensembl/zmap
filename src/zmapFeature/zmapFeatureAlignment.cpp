@@ -56,7 +56,7 @@
 
 
 // Used to do overall parsing of a vulgar string.   
-enum class VulgarParseState {START, IN_EXON, IN_INTRON, END} ;
+typedef enum {VulgarParseState_START, VulgarParseState_IN_EXON, VulgarParseState_IN_INTRON, VulgarParseState_END} VulgarParseState ;
 
 // Used for "start"/"end" ops for vulgar string
 #define VULGAR_NO_OP '\0'
@@ -2178,7 +2178,7 @@ static gboolean alignStrCanon2Exons(AlignStrCanonical canon,
 
   // loop over operators and contruct exons, introns and align arrays.
   //   
-  for (i = 0, state = VulgarParseState::START, prev_op = VULGAR_NO_OP, curr_op = VULGAR_NO_OP,
+  for (i = 0, state = VulgarParseState_START, prev_op = VULGAR_NO_OP, curr_op = VULGAR_NO_OP,
          prev_start_boundary = ALIGN_BLOCK_BOUNDARY_EDGE, prev_end_boundary = ALIGN_BLOCK_BOUNDARY_EDGE,
          exon_index = 0, intron_index = 0,
          prev_spliced_exon = FALSE ;
@@ -2209,13 +2209,13 @@ static gboolean alignStrCanon2Exons(AlignStrCanonical canon,
         {
           switch (state)
             {
-            case VulgarParseState::START:
+            case VulgarParseState_START:
               {
                 switch (curr_op)
                   {
                   case 'M':    /* Match. */
                     {
-                      state = VulgarParseState::IN_EXON ;
+                      state = VulgarParseState_IN_EXON ;
 
                       break ;
                     }
@@ -2233,7 +2233,7 @@ static gboolean alignStrCanon2Exons(AlignStrCanonical canon,
                 break ;
               }
 
-            case VulgarParseState::IN_EXON:
+            case VulgarParseState_IN_EXON:
               {
                 switch (curr_op)
                   {
@@ -2546,7 +2546,7 @@ static gboolean alignStrCanon2Exons(AlignStrCanonical canon,
                                 setAlignBoundaries(sub_align, sub_align->start_boundary, prev_end_boundary) ;
                               }
 
-                            state = VulgarParseState::IN_INTRON ;
+                            state = VulgarParseState_IN_INTRON ;
 
                             break ;
                           }
@@ -2578,7 +2578,7 @@ static gboolean alignStrCanon2Exons(AlignStrCanonical canon,
               }
               
 
-            case VulgarParseState::IN_INTRON:
+            case VulgarParseState_IN_INTRON:
               {
                 switch (curr_op)
                   {
@@ -2728,7 +2728,7 @@ static gboolean alignStrCanon2Exons(AlignStrCanonical canon,
                   case 'S':
                     {
                       // Found next exon   
-                      state = VulgarParseState::IN_EXON ;
+                      state = VulgarParseState_IN_EXON ;
 
                       break ;
                     }
