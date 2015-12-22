@@ -1106,10 +1106,7 @@ static gboolean setBlixemScope(ZMapBlixemData blixem_data)
       blixem_data->features_min = blixem_data->scope_min ;
       blixem_data->features_max = blixem_data->scope_max ;
 
-      if (is_mark && 
-          (blixem_data->features_from_mark ||
-           blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SEQ ||
-           blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SEQ_MULTISET))
+      if (is_mark && blixem_data->features_from_mark)
         {
           blixem_data->features_min = blixem_data->mark_start ;
           blixem_data->features_max = blixem_data->mark_end ;
@@ -1613,7 +1610,9 @@ static void writeRequestedHomologyList(ZMapBlixemData blixem_data)
     }
   else if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SET)
     {
-      g_hash_table_foreach(blixem_data->feature_set->features, getAlignFeatureCB, blixem_data) ;
+      /* Exclude bam featuresets */
+      if (!blixem_data->view || !blixem_data->view->context_map.isSeqFeatureSet(blixem_data->feature_set->unique_id))
+        g_hash_table_foreach(blixem_data->feature_set->features, getAlignFeatureCB, blixem_data) ;
     }
   else if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_MULTISET)
     {
@@ -1718,23 +1717,23 @@ static void writeCoverageColumn(ZMapBlixemData blixem_data)
    * single selected featureset instead. */
   blixem_data->coverage_done = FALSE ;
 
-  if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SEQ_MULTISET)
-    {
-      /* Write out any associated bam featuresets */
-      if (blixem_data->assoc_featuresets)
-        g_list_foreach(blixem_data->assoc_featuresets, featureSetWriteBAMList, blixem_data) ;
-    }
+  /* Write out any associated bam featuresets */
+  if (blixem_data->assoc_featuresets)
+    g_list_foreach(blixem_data->assoc_featuresets, featureSetWriteBAMList, blixem_data) ;
   
-  if (!blixem_data->coverage_done ||
-      blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SEQ)
+  if (!blixem_data->coverage_done)
     {
-      /* Write out the selected bam featureset */
+      /* Write out the selected featureset(s) if it is bam */
       GList *l = NULL;
       GString *attribute = g_string_new(NULL) ;
       
       for(l = blixem_data->source; l ; l = l->next)
         {
-          writeBAMLine(blixem_data, GPOINTER_TO_UINT(l->data), attribute) ;
+          GQuark featureset_id = (GQuark)(GPOINTER_TO_UINT(l->data)) ;
+          GQuark unique_id = zMapFeatureSetCreateID(g_quark_to_string(featureset_id)) ;
+
+          if (blixem_data->view && blixem_data->view->context_map.isSeqFeatureSet(unique_id))
+            writeBAMLine(blixem_data, featureset_id, attribute) ;
         }
 
       /* Free our string buffer. */
@@ -1760,23 +1759,24 @@ static void getColumnGroupCB(gpointer key, gpointer data, gpointer user_data)
       GQuark group_featureset_id = zMapStyleCreateID(g_quark_to_string(group_featureset)) ;
 
       /* Check if the featureset is in this group. This is the given featureset for a
-       * regular multiset command or the list of sources for a BAM multiset command. */
+       * regular multiset command or the list of sources if given e.g. for a BAM multiset command. */
       gboolean found = FALSE ;
 
-      if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_MULTISET && 
-          blixem_data->feature_set &&
-          group_featureset_id == blixem_data->feature_set->unique_id)
+      if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_MULTISET)
         {
-          found = TRUE ;
-        }
-      else if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SEQ_MULTISET && blixem_data->source)
-        {
-          for (GList *item = blixem_data->source; item && !found; item = item->next)
+          if (blixem_data->source)
             {
-              GQuark featureset_id = (GQuark)GPOINTER_TO_INT(item->data) ;
-              featureset_id = zMapStyleCreateID(g_quark_to_string(featureset_id))  ;
-
-              found = (featureset_id == group_featureset_id) ;
+              for (GList *item = blixem_data->source; item && !found; item = item->next)
+                {
+                  GQuark featureset_id = (GQuark)GPOINTER_TO_INT(item->data) ;
+                  featureset_id = zMapStyleCreateID(g_quark_to_string(featureset_id))  ;
+                  
+                  found = (featureset_id == group_featureset_id) ;
+                }
+            }
+          else if (blixem_data->feature_set)
+            {
+              found = (blixem_data->feature_set->unique_id == group_featureset_id) ;
             }
         }
 
@@ -1921,8 +1921,7 @@ static void getAssocFeaturesets(ZMapBlixemData blixem_data)
 {
   zMapReturnIfFail(blixem_data) ;
 
-  if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_MULTISET ||
-      blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SEQ_MULTISET)
+  if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_MULTISET)
     {
       /* First, populate the list of column groups that the selected feature set is in */
       getColumnGroups(blixem_data) ;
@@ -2344,7 +2343,7 @@ static void featureSetGetAlignList(gpointer data, gpointer user_data)
   ZMapFeatureSet feature_set = NULL ;
   GList *column_2_featureset = NULL ;
 
-  if (!blixem_data)
+  if (!blixem_data || !blixem_data->view)
     return ;
 
   canon_id = zMapFeatureSetCreateID((char *)g_quark_to_string(set_id)) ;
@@ -2353,8 +2352,10 @@ static void featureSetGetAlignList(gpointer data, gpointer user_data)
 
   if(feature_set)
     {
-      /* Check it's an alignment type */
-      if (feature_set->style && feature_set->style->mode == ZMAPSTYLE_MODE_ALIGNMENT)
+      /* Check it's an alignment type and is not a bam type */
+      if (feature_set->style && 
+          feature_set->style->mode == ZMAPSTYLE_MODE_ALIGNMENT &&
+          !blixem_data->view->context_map.isSeqFeatureSet(feature_set->unique_id))
         {
           /* Also check that it's the correct alignment type (dna/protein) - we don't want to
            * check every feature individually if we know it's not relevant.  */
@@ -2378,7 +2379,10 @@ static void featureSetGetAlignList(gpointer data, gpointer user_data)
         {
           feature_set = (ZMapFeatureSet)g_hash_table_lookup(blixem_data->block->feature_sets, column_2_featureset->data) ;
           
-          if (feature_set && feature_set->style && feature_set->style->mode == ZMAPSTYLE_MODE_ALIGNMENT)
+          if (feature_set && 
+              feature_set->style && 
+              feature_set->style->mode == ZMAPSTYLE_MODE_ALIGNMENT &&
+              !blixem_data->view->context_map.isSeqFeatureSet(feature_set->unique_id))
             {
               g_hash_table_foreach(feature_set->features, getAlignFeatureCB, blixem_data) ;
             }

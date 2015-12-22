@@ -4101,9 +4101,9 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
           seq_sets = add_column_featuresets(menu_data->window->context_map,seq_sets,menu_data->req_id,FALSE);
 
           if (menu_item_id == BLIX_SEQ_COVERAGE_MULTISET)
-            requested_homol_set = ZMAPWINDOW_ALIGNCMD_SEQ_MULTISET ;
+            requested_homol_set = ZMAPWINDOW_ALIGNCMD_MULTISET ;
           else
-            requested_homol_set = ZMAPWINDOW_ALIGNCMD_SEQ ;
+            requested_homol_set = ZMAPWINDOW_ALIGNCMD_SET ;
         }
       break;
 
@@ -4140,7 +4140,7 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
                   if(src)
                     {
                       seq_sets = g_list_prepend (seq_sets,GUINT_TO_POINTER(src->feature_src_ID));
-                      requested_homol_set = ZMAPWINDOW_ALIGNCMD_SEQ ;
+                      requested_homol_set = ZMAPWINDOW_ALIGNCMD_SET ;
                     }
                 }
             }
