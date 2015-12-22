@@ -54,6 +54,7 @@
 #include <ZMap/zmapConfigStrings.hpp>
 #include <ZMap/zmapThreads.hpp>
 #include <ZMap/zmapGFF.hpp>
+#include <ZMap/zmapUrlUtils.hpp>
 
 /* private header for this module */
 #include <zmapView_P.hpp>
@@ -1635,13 +1636,19 @@ static void writeRequestedHomologyList(ZMapBlixemData blixem_data)
  * particular source/region */
 static void writeBAMLine(ZMapBlixemData blixem_data, const GQuark featureset_id, GString *attribute)
 {
+  zMapReturnIfFail(blixem_data && blixem_data->sequence_map) ;
+
   const char *sequence_name = g_quark_to_string(blixem_data->block->original_id) ;
   static const char * SO_region = "region" ;
+  const char *featureset_name = g_quark_to_string(featureset_id) ;
+  char *csver = NULL ;
+  char *dataset = NULL ;
+  char *file = NULL ;
 
   gboolean ok = zMapGFFFormatMandatory(blixem_data->over_write, 
                                        blixem_data->line,
                                        sequence_name,
-                                       g_quark_to_string(featureset_id),
+                                       featureset_name,
                                        SO_region,
                                        blixem_data->features_min,
                                        blixem_data->features_max,
@@ -1653,13 +1660,48 @@ static void writeBAMLine(ZMapBlixemData blixem_data, const GQuark featureset_id,
 
   if (ok)
     {
-      g_string_append_printf(attribute, "dataType=short-read") ;
+      char *url_str = blixem_data->sequence_map->getSourceURL(featureset_name) ;
+
+      if (url_str)
+        {
+          int error = 0 ;
+          ZMapURL url = url_parse(url_str, &error) ;
+
+          if (url && url->query)
+            {
+              csver = zMapURLGetQueryValue(url->query, "--csver_remote") ;
+              dataset = zMapURLGetQueryValue(url->query, "--dataset") ;
+              file = zMapURLGetQueryValue(url->query, "--file") ;
+
+              xfree(url) ;
+            }
+
+          g_free(url_str) ;
+        }
+
+      ok = (csver && dataset && file) ;
+    }
+
+  if (ok)
+    {
+      char *file_unescaped = g_uri_unescape_string(file, NULL) ;
+
+      if (!file_unescaped)
+        file_unescaped = g_strdup(file) ;
+
+      g_string_append_printf(attribute,
+                             "command=bam_get -start%%3D%d -end%%3D%d -gff_version%%3D3 -gff_source%%3D%s -dataset%%3D%s -chr%%3D%s -csver%%3D%s -file%%3D%s",
+                             blixem_data->features_min, blixem_data->features_max, featureset_name, 
+                             dataset, sequence_name, csver, file_unescaped) ;
+
       zMapGFFFormatAppendAttribute(blixem_data->line, attribute, FALSE, FALSE) ;
       g_string_append_c(blixem_data->line, '\n') ;
       g_string_truncate(attribute, (gsize)0);
 
       zMapGFFOutputWriteLineToGIO(blixem_data->gff_channel, &(blixem_data->errorMsg),
                                   blixem_data->line, TRUE) ;
+
+      g_free(file_unescaped) ;
     }
 }
 
