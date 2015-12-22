@@ -1659,19 +1659,24 @@ static void writeBAMLine(ZMapBlixemData blixem_data, const GQuark featureset_id,
 
   if (ok)
     {
-      ZMapConfigSource source = blixem_data->sequence_map->getSource(featureset_name) ;
+      char *url_str = NULL;
 
-      if (source && source->url)
+      ZMapConfigIniContext context = zMapConfigIniContextProvide(blixem_data->sequence_map->config_file, ZMAPCONFIG_FILE_USER) ;
+
+      if (context && zMapConfigIniContextGetString(context, featureset_name, ZMAPSTANZA_SOURCE_CONFIG, 
+                                                   ZMAPSTANZA_SOURCE_URL, &url_str))
         {
           int error = 0 ;
-          ZMapURL url = url_parse(source->url, &error) ;
+          ZMapURL url = url_parse(url_str, &error) ;
 
           if (url && url->query)
             {
-              csver = zMapURLGetQueryValue(url->query, "--csver") ;
+              csver = zMapURLGetQueryValue(url->query, "--csver_remote") ;
               dataset = zMapURLGetQueryValue(url->query, "--dataset") ;
               file = zMapURLGetQueryValue(url->query, "--file") ;
             }
+
+          g_free(url_str) ;
         }
 
       ok = (csver && dataset && file) ;
@@ -1679,10 +1684,15 @@ static void writeBAMLine(ZMapBlixemData blixem_data, const GQuark featureset_id,
 
   if (ok)
     {
+      char *file_unescaped = g_uri_unescape_string(file, NULL) ;
+
+      if (!file_unescaped)
+        file_unescaped = g_strdup(file) ;
+
       g_string_append_printf(attribute,
-                             "command=bam_get -start=%d -end=%d -gff_version=3 -gff_source=%s -dataset=%s -chr=%s -csver=%s -file=%s",
+                             "command=bam_get -start%%3D%d -end%%3D%d -gff_version%%3D3 -gff_source%%3D%s -dataset%%3D%s -c%%3Dr%%3D%s -csver%%3D%s -file%%3D%s",
                              blixem_data->features_min, blixem_data->features_max, featureset_name, 
-                             dataset, sequence_name, csver, file) ;
+                             dataset, sequence_name, csver, file_unescaped) ;
 
       zMapGFFFormatAppendAttribute(blixem_data->line, attribute, FALSE, FALSE) ;
       g_string_append_c(blixem_data->line, '\n') ;
@@ -1690,6 +1700,8 @@ static void writeBAMLine(ZMapBlixemData blixem_data, const GQuark featureset_id,
 
       zMapGFFOutputWriteLineToGIO(blixem_data->gff_channel, &(blixem_data->errorMsg),
                                   blixem_data->line, TRUE) ;
+
+      g_free(file_unescaped) ;
     }
 }
 
