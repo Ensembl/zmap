@@ -54,6 +54,7 @@
 #include <ZMap/zmapConfigStrings.hpp>
 #include <ZMap/zmapThreads.hpp>
 #include <ZMap/zmapGFF.hpp>
+#include <ZMap/zmapUrlUtils.hpp>
 
 /* private header for this module */
 #include <zmapView_P.hpp>
@@ -1659,12 +1660,9 @@ static void writeBAMLine(ZMapBlixemData blixem_data, const GQuark featureset_id,
 
   if (ok)
     {
-      char *url_str = NULL;
+      char *url_str = blixem_data->sequence_map->getSourceURL(featureset_name) ;
 
-      ZMapConfigIniContext context = zMapConfigIniContextProvide(blixem_data->sequence_map->config_file, ZMAPCONFIG_FILE_USER) ;
-
-      if (context && zMapConfigIniContextGetString(context, featureset_name, ZMAPSTANZA_SOURCE_CONFIG, 
-                                                   ZMAPSTANZA_SOURCE_URL, &url_str))
+      if (url_str)
         {
           int error = 0 ;
           ZMapURL url = url_parse(url_str, &error) ;
@@ -1674,6 +1672,8 @@ static void writeBAMLine(ZMapBlixemData blixem_data, const GQuark featureset_id,
               csver = zMapURLGetQueryValue(url->query, "--csver_remote") ;
               dataset = zMapURLGetQueryValue(url->query, "--dataset") ;
               file = zMapURLGetQueryValue(url->query, "--file") ;
+
+              xfree(url) ;
             }
 
           g_free(url_str) ;
