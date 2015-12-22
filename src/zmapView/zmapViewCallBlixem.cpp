@@ -1690,7 +1690,7 @@ static void writeBAMLine(ZMapBlixemData blixem_data, const GQuark featureset_id,
         file_unescaped = g_strdup(file) ;
 
       g_string_append_printf(attribute,
-                             "command=bam_get -start%%3D%d -end%%3D%d -gff_version%%3D3 -gff_source%%3D%s -dataset%%3D%s -c%%3Dr%%3D%s -csver%%3D%s -file%%3D%s",
+                             "command=bam_get -start%%3D%d -end%%3D%d -gff_version%%3D3 -gff_source%%3D%s -dataset%%3D%s -chr%%3D%s -csver%%3D%s -file%%3D%s",
                              blixem_data->features_min, blixem_data->features_max, featureset_name, 
                              dataset, sequence_name, csver, file_unescaped) ;
 
