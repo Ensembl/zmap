@@ -1,9 +1,0 @@
-
-This directory contains scripts automated building of zmap by the Annosoft developers at the Sanger Institute. To build zmap manually, see the src/README file.
-
-The documentation from this file has been moved to
-
-     http://mediawiki.internal.sanger.ac.uk/index.php/Annotools:_Automated_build_system
-
-This wiki page now contains all the build system documentation.
-
