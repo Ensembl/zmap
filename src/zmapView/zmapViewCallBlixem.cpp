@@ -1635,13 +1635,19 @@ static void writeRequestedHomologyList(ZMapBlixemData blixem_data)
  * particular source/region */
 static void writeBAMLine(ZMapBlixemData blixem_data, const GQuark featureset_id, GString *attribute)
 {
+  zMapReturnIfFail(blixem_data && blixem_data->sequence_map) ;
+
   const char *sequence_name = g_quark_to_string(blixem_data->block->original_id) ;
   static const char * SO_region = "region" ;
+  const char *featureset_name = g_quark_to_string(featureset_id) ;
+  char *csver = NULL ;
+  char *dataset = NULL ;
+  char *file = NULL ;
 
   gboolean ok = zMapGFFFormatMandatory(blixem_data->over_write, 
                                        blixem_data->line,
                                        sequence_name,
-                                       g_quark_to_string(featureset_id),
+                                       featureset_name,
                                        SO_region,
                                        blixem_data->features_min,
                                        blixem_data->features_max,
@@ -1653,7 +1659,31 @@ static void writeBAMLine(ZMapBlixemData blixem_data, const GQuark featureset_id,
 
   if (ok)
     {
-      g_string_append_printf(attribute, "dataType=short-read") ;
+      ZMapConfigSource source = blixem_data->sequence_map->getSource(featureset_name) ;
+
+      if (source && source->url)
+        {
+          int error = 0 ;
+          ZMapURL url = url_parse(source->url, &error) ;
+
+          if (url && url->query)
+            {
+              csver = zMapURLGetQueryValue(url->query, "--csver") ;
+              dataset = zMapURLGetQueryValue(url->query, "--dataset") ;
+              file = zMapURLGetQueryValue(url->query, "--file") ;
+            }
+        }
+
+      ok = (csver && dataset && file) ;
+    }
+
+  if (ok)
+    {
+      g_string_append_printf(attribute,
+                             "command=bam_get -start=%d -end=%d -gff_version=3 -gff_source=%s -dataset=%s -chr=%s -csver=%s -file=%s",
+                             blixem_data->features_min, blixem_data->features_max, featureset_name, 
+                             dataset, sequence_name, csver, file) ;
+
       zMapGFFFormatAppendAttribute(blixem_data->line, attribute, FALSE, FALSE) ;
       g_string_append_c(blixem_data->line, '\n') ;
       g_string_truncate(attribute, (gsize)0);
