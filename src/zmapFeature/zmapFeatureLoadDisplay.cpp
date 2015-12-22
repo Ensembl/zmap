@@ -406,7 +406,7 @@ void ZMapFeatureSequenceMapStructType::removeSource(const char *source_name_cstr
 
 
 /* Get the ZMapConfigSource struct for the given source name. */
-ZMapConfigSource ZMapFeatureSequenceMapStructType::getSource(string source_name)
+ZMapConfigSource ZMapFeatureSequenceMapStructType::getSource(string &source_name)
 {
   ZMapConfigSource result = NULL ;
 
