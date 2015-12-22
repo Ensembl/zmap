@@ -405,6 +405,23 @@ void ZMapFeatureSequenceMapStructType::removeSource(const char *source_name_cstr
 }
 
 
+/* Get the ZMapConfigSource struct for the given source name. */
+ZMapConfigSource ZMapFeatureSequenceMapStructType::getSource(string source_name)
+{
+  ZMapConfigSource result = NULL ;
+
+  if (sources)
+    {
+      map<string, ZMapConfigSource>::iterator iter = sources->find(source_name) ;
+
+      if (iter != sources->end())
+        result = iter->second ;
+    }
+
+  return result ;
+}
+
+
 /* Get the list of ZMapConfigSource structs from our sources map, returned in a glist. */
 GList* ZMapFeatureSequenceMapStructType::getSources()
 {
