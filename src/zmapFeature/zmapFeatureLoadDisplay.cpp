@@ -405,6 +405,50 @@ void ZMapFeatureSequenceMapStructType::removeSource(const char *source_name_cstr
 }
 
 
+/* Get the ZMapConfigSource struct for the given source name. */
+ZMapConfigSource ZMapFeatureSequenceMapStructType::getSource(const string &source_name)
+{
+  ZMapConfigSource result = NULL ;
+
+  if (sources)
+    {
+      map<string, ZMapConfigSource>::iterator iter = sources->find(source_name) ;
+
+      if (iter != sources->end())
+        result = iter->second ;
+    }
+
+  return result ;
+}
+
+
+/* Get the url of the given source. Checks for a cached source and if it's not cached then
+ * attempts to look up the source details in the config file. The result should be free'd
+ * with g_free. Returns null if not found. */
+char* ZMapFeatureSequenceMapStructType::getSourceURL(const string &source_name)
+{
+  char *result = NULL ;
+
+  ZMapConfigSource source = getSource(source_name) ;
+
+  if (source)
+    result = source->url ;
+
+  if (!result)
+    {
+      ZMapConfigIniContext context = zMapConfigIniContextProvide(config_file, ZMAPCONFIG_FILE_NONE) ;
+
+      if (context)
+        {
+          zMapConfigIniContextGetString(context, source_name.c_str(), ZMAPSTANZA_SOURCE_CONFIG, 
+                                        ZMAPSTANZA_SOURCE_URL, &result) ;
+        }
+    }
+
+  return result ;
+}
+
+
 /* Get the list of ZMapConfigSource structs from our sources map, returned in a glist. */
 GList* ZMapFeatureSequenceMapStructType::getSources()
 {
