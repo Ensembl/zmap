@@ -206,10 +206,7 @@ enum
     BLIX_SELECTED,                          /* Blixem all matches for selected features in this column. */
     BLIX_EXPANDED,                          /* selected features expanded into hidden underlying data */
     BLIX_SET,                               /* Blixem all matches for all features in this column. */
-    BLIX_MULTI_SETS,                        /* Blixem all matches for all features in the list of columns in the blixem config file. */
-    BLIX_SEQ_COVERAGE,                      /* Blixem a coverage column: find the real data column */
-    BLIX_SEQ_COVERAGE_MULTISET,             /* Blixem a coverage column and associated columns */
-    /*BLIX_SEQ_SET */                         /* Blixem a paired read featureset */
+    BLIX_MULTI_SETS                         /* Blixem all matches for all features in the list of columns in the blixem config file. */
   } ;
 
 #define BLIX_SEQ                10000       /* Blixem short reads data base menu index */
@@ -515,7 +512,7 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
   /* Some parts of the menu are feature type specific so retrieve the feature item info
    * from the canvas item. */
   feature = zMapWindowCanvasItemGetFeature(item);
-  zMapReturnIfFail(window && feature && button_event) ;
+  zMapReturnIfFail(window && window->context_map && feature && button_event) ;
   feature_set = (ZMapFeatureSet)(feature->parent);
 
   style = *feature->style;
@@ -613,9 +610,12 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
     {
       menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuNonHomolFeature(NULL, NULL, menu_data)) ;
     }
-  else if (zMapStyleIsPfetchable(style))
+  else
     {
       menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuBlixCommon(NULL, NULL, menu_data)) ;
+
+      if (!window->context_map->isSeqFeatureSet(feature_set && feature_set->unique_id))
+        menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuBlixCommonNonBAM(NULL, NULL, menu_data)) ;
 
       menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuBlixTop(NULL, NULL, menu_data)) ;
 
@@ -626,12 +626,10 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
       else
         {
           menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDNAHomol(NULL, NULL, menu_data)) ;
-          menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDNAHomolFeature(NULL, NULL, menu_data)) ;
+
+          if (!window->context_map->isSeqFeatureSet(feature_set && feature_set->unique_id))
+            menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDNAHomolFeature(NULL, NULL, menu_data)) ;
         }
-    }
-  else if (zMapStyleBlixemType(style) != ZMAPSTYLE_BLIXEM_INVALID)
-    {
-      menu_sets = g_list_append(menu_sets,  zmapWindowMakeMenuDNAHomolFeature(NULL, NULL, menu_data)) ;
     }
 
   /* list all short reads data, temp access till we get wiggle plots running */
@@ -749,7 +747,7 @@ void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
   ZMapFeatureSet feature_set = NULL ;
   ZMapGUIMenuItem seq_menus = NULL ;
 
-  zMapReturnIfFail(window && button_event && container_set) ;
+  zMapReturnIfFail(window && window->context_map && button_event && container_set) ;
 
   menu_title = (char *) g_quark_to_string(container_set->original_id);
 
@@ -793,9 +791,14 @@ void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
             {
               menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuNonHomolFeature(NULL, NULL, cbdata)) ;
             }
-          else if (zMapStyleIsPfetchable(*feature->style))
+          else
             {
               menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuBlixColCommon(NULL, NULL, cbdata)) ;
+
+              if (!(window->context_map->isSeqFeatureSet(feature_set->unique_id)))
+                {
+                  menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuBlixColCommonNonBAM(NULL, NULL, cbdata)) ;
+                }
 
               if (feature->feature.homol.type == ZMAPHOMOL_X_HOMOL)
                 {
@@ -803,13 +806,11 @@ void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
                 }
               else
                 {
-                  menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDNAHomolFeature(NULL, NULL, cbdata)) ;
                   menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDNAHomol(NULL, NULL, cbdata)) ;
+
+                  if (!window->context_map->isSeqFeatureSet(feature_set && feature_set->unique_id))
+                    menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDNAHomolFeature(NULL, NULL, cbdata)) ;
                 }
-            }
-          else if (zMapStyleBlixemType(*feature->style) != ZMAPSTYLE_BLIXEM_INVALID)
-            {
-              menu_sets = g_list_append(menu_sets,  zmapWindowMakeMenuDNAHomolFeature(NULL, NULL, cbdata)) ;
             }
 
           if ((seq_menus = zmapWindowMakeMenuBlixemBAM(NULL, NULL, cbdata)))
@@ -3482,6 +3483,22 @@ ZMapGUIMenuItem zmapWindowMakeMenuBlixCommon(int *start_index_inout,
     {
       {ZMAPGUI_MENU_NORMAL, BLIXEM_MENU_STR " - all matches for this column",
        BLIX_SET, blixemMenuCB, NULL, "A"},
+      {ZMAPGUI_MENU_NONE,   NULL,                                        0, NULL,         NULL}
+    } ;
+
+  zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
+
+  return menu ;
+}
+
+
+/* Common blixem ops that must be in top level of menu (non-bam columns). */
+ZMapGUIMenuItem zmapWindowMakeMenuBlixCommonNonBAM(int *start_index_inout,
+                                                   ZMapGUIMenuItemCallbackFunc callback_func,
+                                                   gpointer callback_data)
+{
+  static ZMapGUIMenuItemStruct menu[] =
+    {
       {ZMAPGUI_MENU_NORMAL, BLIXEM_MENU_STR " - all matches for selected features",
        BLIX_SELECTED, blixemMenuCB, NULL, "<shift>A"},
       {ZMAPGUI_MENU_NONE,   NULL,                                        0, NULL,         NULL}
@@ -3519,6 +3536,22 @@ ZMapGUIMenuItem zmapWindowMakeMenuBlixColCommon(int *start_index_inout,
     {
       {ZMAPGUI_MENU_NORMAL, BLIXEM_OPS_STR "/" BLIXEM_MENU_STR " - all matches for this column",
        BLIX_SET, blixemMenuCB, NULL, "A"},
+      {ZMAPGUI_MENU_NONE,   NULL,                                        0, NULL,         NULL}
+    } ;
+
+  zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
+
+  return menu ;
+}
+
+
+/* Common blixem ops that must be at top of column sub-menu for blixem (non-bam columns only). */
+ZMapGUIMenuItem zmapWindowMakeMenuBlixColCommonNonBAM(int *start_index_inout,
+                                                      ZMapGUIMenuItemCallbackFunc callback_func,
+                                                      gpointer callback_data)
+{
+  static ZMapGUIMenuItemStruct menu[] =
+    {
       {ZMAPGUI_MENU_NORMAL, BLIXEM_OPS_STR "/" BLIXEM_MENU_STR " - all matches for selected features",
        BLIX_SELECTED, blixemMenuCB, NULL, "<shift>A"},
       {ZMAPGUI_MENU_NONE,   NULL,                                        0, NULL,         NULL}
@@ -3680,24 +3713,6 @@ ZMapGUIMenuItem zmapWindowMakeMenuBlixemBAM(int *start_index_inout,
           zMapLogWarning("cannot find column for featureset %s",g_quark_to_string(fset_id));
           /* rather than asserting */
           }
-    }
-
-  if (blixem_col && m)
-    {
-      m->type = ZMAPGUI_MENU_NORMAL;
-      m->name = g_strdup_printf("Blixem %s", blixem_col);
-      m->id = BLIX_SEQ_COVERAGE;
-      m->callback_func = blixemMenuCB;
-      m++;
-    }
-
-  if (blixem_col && m)
-    {
-      m->type = ZMAPGUI_MENU_NORMAL;
-      m->name = g_strdup_printf("Blixem %s - associated columns", blixem_col);
-      m->id = BLIX_SEQ_COVERAGE_MULTISET;
-      m->callback_func = blixemMenuCB;
-      m++;
     }
 
   /* add sub menu */
@@ -4066,7 +4081,7 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
   ZMapWindowAlignSetType requested_homol_set = ZMAPWINDOW_ALIGNCMD_INVALID ;
   GList *seq_sets = NULL;
 
-  if (!menu_data)
+  if (!menu_data || !menu_data->window || !menu_data->window->context_map)
     return ;
 
   switch(menu_item_id)
@@ -4082,29 +4097,13 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
       break;
     case BLIX_SET:
       requested_homol_set = ZMAPWINDOW_ALIGNCMD_SET ;
-      break;
+      if (menu_data->feature_set && menu_data->window->context_map->isSeqFeatureSet(menu_data->feature_set->unique_id))
+        seq_sets = add_column_featuresets(menu_data->window->context_map,seq_sets,menu_data->req_id,FALSE);
+      break ;
     case BLIX_MULTI_SETS:
       requested_homol_set = ZMAPWINDOW_ALIGNCMD_MULTISET ;
-      break;
-
-    case BLIX_SEQ_COVERAGE_MULTISET: /* fall through */
-    case BLIX_SEQ_COVERAGE:                /* blixem from a selected item in a coverage featureset */
-#if RESTRICT_TO_MARK
-      if (!zmapWindowMarkIsSet(menu_data->window->mark))
-        {
-          zMapMessage("You must set the mark first to select this option","");
-        }
-      else
-#endif
-        {
-          /*! \todo #warning if we ever have paired reads data in a virtual featureset we need to expand that here */
-          seq_sets = add_column_featuresets(menu_data->window->context_map,seq_sets,menu_data->req_id,FALSE);
-
-          if (menu_item_id == BLIX_SEQ_COVERAGE_MULTISET)
-            requested_homol_set = ZMAPWINDOW_ALIGNCMD_MULTISET ;
-          else
-            requested_homol_set = ZMAPWINDOW_ALIGNCMD_SET ;
-        }
+      if (menu_data->feature_set && menu_data->window->context_map->isSeqFeatureSet(menu_data->feature_set->unique_id))
+        seq_sets = add_column_featuresets(menu_data->window->context_map,seq_sets,menu_data->req_id,FALSE);
       break;
 
 #if 0
