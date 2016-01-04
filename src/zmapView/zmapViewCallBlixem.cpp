@@ -1707,11 +1707,14 @@ static void writeBAMLine(ZMapBlixemData blixem_data, const GQuark featureset_id,
               args = g_strdup("") ;
             }
 
-          /*! \todo Need to replace start and end in the url with the blixem scope */
+          /* Replace start and end in the url with the blixem scope. */
+          /* Actually, for now just append them to the end as this works for bam_get and it's
+           * hard to program this more generically because we don't know whether the script has 
+           * start/end args anyway. */
           g_string_append_printf(attribute,
-                                 "command=%s %s", // -start%%3D%d -end%%3D%d",
-                                 url->path, args) ; //blixem_data->features_min,
-                                                           //blixem_data->features_max) ;
+                                 "command=%s %s --start%%3D%d --end%%3D%d",
+                                 url->path, args, 
+                                 blixem_data->features_min, blixem_data->features_max) ;
           g_free(args) ;
         }
       else if (url->scheme == SCHEME_FILE)
