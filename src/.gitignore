@@ -16,6 +16,7 @@ AceConn/*
 # ensembl_ref_but_no_build is used by autogen.sh and configure.ac
 ensc-core/*
 !ensc-core/README_ZMAP
+!ensc-core/src
 ensembl_ref_but_no_build
 
 htslib/*
