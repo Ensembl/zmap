@@ -614,7 +614,7 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
     {
       menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuBlixCommon(NULL, NULL, menu_data)) ;
 
-      if (!window->context_map->isSeqFeatureSet(feature_set && feature_set->unique_id))
+      if (feature_set && !window->context_map->isSeqFeatureSet(feature_set->unique_id))
         menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuBlixCommonNonBAM(NULL, NULL, menu_data)) ;
 
       menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuBlixTop(NULL, NULL, menu_data)) ;
@@ -627,7 +627,7 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
         {
           menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDNAHomol(NULL, NULL, menu_data)) ;
 
-          if (!window->context_map->isSeqFeatureSet(feature_set && feature_set->unique_id))
+          if (feature_set && !window->context_map->isSeqFeatureSet(feature_set->unique_id))
             menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDNAHomolFeature(NULL, NULL, menu_data)) ;
         }
     }
@@ -808,7 +808,7 @@ void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
                 {
                   menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDNAHomol(NULL, NULL, cbdata)) ;
 
-                  if (!window->context_map->isSeqFeatureSet(feature_set && feature_set->unique_id))
+                  if (feature_set && !window->context_map->isSeqFeatureSet(feature_set->unique_id))
                     menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDNAHomolFeature(NULL, NULL, cbdata)) ;
                 }
             }
