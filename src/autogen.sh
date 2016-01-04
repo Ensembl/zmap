@@ -205,8 +205,8 @@ while getopts ":adefghinuvz" opt ; do
 	v  ) verbose='-v' ;;
 	z  ) install[$aceconn_key]='no'
              install[$ensc_core_key]='no'
-             install[$gb_tools_key]='no'
-             install[$htslib_key]='no'
+             install[$gb_tools_key]='yes'
+             install[$htslib_key]='yes'
              install[$zeromq_key]='no' ;;
 	\? ) zmap_message_exit "Bad arg flag: $usage" ;;
     esac
@@ -240,58 +240,66 @@ zmap_message_out "starting installing external libraries:  ${!dir[*]}"
 for i in "${!install[@]}"
   do
 
-  zmap_message_out "starting install of $i....."
+  if [[ "${install[$i]}" == "no" ]] ; then
 
-  if [[ "${install[$i]}" == "yes" ]] ; then
+    zmap_message_out "library $i not requested so will not be installed....."
 
-      clean_lib "${repos[$i]}" "${dir[$i]}"
+  else
 
-  fi
+    zmap_message_out "starting install of $i....."
 
-  if [[ "${install[$i]}" == "yes" || "${install[$i]}" == "maybe" ]] ; then
+    if [[ "${install[$i]}" == "yes" ]] ; then
 
-      if [[ ! -f "./${dir[$i]}/${test_file[$i]}" ]] ; then
+        clean_lib "${repos[$i]}" "${dir[$i]}"
 
-          fetch_lib "$git_host:$git_root/${repos[$i]}" "${dir[$i]}" "${branch[$i]}"
+    fi
 
-      fi
+    if [[ "${install[$i]}" == "yes" || "${install[$i]}" == "maybe" ]] ; then
 
-  fi
+        if [[ ! -f "./${dir[$i]}/${test_file[$i]}" ]] ; then
 
-  # Special case post-processing for some libraries....
-  case $i in
+            fetch_lib "$git_host:$git_root/${repos[$i]}" "${dir[$i]}" "${branch[$i]}"
 
-    # If the gbtools autogen.sh script exists then run that. This is necessary
-    # for gbtools to create its gbtools_version.m4 file.
-    $gb_tools_key )
-    if [ -e "./${dir[$i]}/autogen.sh" ] ; then
+        fi
 
-        cur_dir=`pwd`
-	cd $BASE_DIR/gbtools
-	./autogen.sh
-	cd $cur_dir
+    fi
+
+    # Special case post-processing for some libraries....
+    case $i in
+
+      # If the gbtools autogen.sh script exists then run that. This is necessary
+      # for gbtools to create its gbtools_version.m4 file.
+      $gb_tools_key )
+        if [ -e "./${dir[$i]}/autogen.sh" ] ; then
+
+          cur_dir=`pwd`
+    	cd $BASE_DIR/gbtools
+    	./autogen.sh
+  	cd $cur_dir
 	
-    fi ;;
+      fi ;;
 
-    # We must have htslib (currently) or we fail.
-    $htslib_key )
-    if [[ ! -f "${dir[$i]}/${test_file[$i]}" ]] ; then
+      # We must have htslib (currently) or we fail.
+      $htslib_key )
+      if [[ ! -f "${dir[$i]}/${test_file[$i]}" ]] ; then
 
-        zmap_message_exit "Aborting.....htslib is not available so ZMap cannot be built."
+          zmap_message_exit "Aborting.....htslib is not available so ZMap cannot be built."
 
-    fi ;;
+      fi ;;
 
-#    # We must have zeromq (currently) or we fail.
-#    $zeromq_key )
-#    if [[ ! -f "${dir[$i]}/${test_file[$i]}" ]] ; then
-#
-#        zmap_message_exit "Aborting.....zeromq is not available so ZMap cannot be built."
-#
-#    fi ;;
+  #    # We must have zeromq (currently) or we fail.
+  #    $zeromq_key )
+  #    if [[ ! -f "${dir[$i]}/${test_file[$i]}" ]] ; then
+  #
+  #        zmap_message_exit "Aborting.....zeromq is not available so ZMap cannot be built."
+  #
+  #    fi ;;
 
-  esac
+    esac
 
-  zmap_message_out "finished install of $i....."
+    zmap_message_out "finished install of $i....."
+
+  fi
 
   done
 
