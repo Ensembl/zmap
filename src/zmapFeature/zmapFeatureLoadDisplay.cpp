@@ -431,8 +431,8 @@ char* ZMapFeatureSequenceMapStructType::getSourceURL(const string &source_name)
 
   ZMapConfigSource source = getSource(source_name) ;
 
-  if (source)
-    result = source->url ;
+  if (source && source->url)
+    result = g_strdup(source->url) ;
 
   if (!result)
     {
