@@ -55,6 +55,7 @@
 #include <ZMap/zmapThreads.hpp>
 #include <ZMap/zmapGFF.hpp>
 #include <ZMap/zmapUrlUtils.hpp>
+#include <ZMap/zmapGFFStringUtils.hpp>
 
 /* private header for this module */
 #include <zmapView_P.hpp>
@@ -1641,11 +1642,9 @@ static void writeBAMLine(ZMapBlixemData blixem_data, const GQuark featureset_id,
   static const char * SO_region = "region" ;
   const char *featureset_name = g_quark_to_string(featureset_id) ;
 
-  /* Various params from the source url about the fetch command to be run */
-  char *script = NULL ;
-  char *csver = NULL ;
-  char *dataset = NULL ;
-  char *file = NULL ;
+  /* We'll check if the source has a script or file that we can pass to blixem in our custom
+     'command' or 'file' gff tags */
+  ZMapURL url = NULL ;
 
   gboolean ok = zMapGFFFormatMandatory(blixem_data->over_write, 
                                        blixem_data->line,
@@ -1662,62 +1661,77 @@ static void writeBAMLine(ZMapBlixemData blixem_data, const GQuark featureset_id,
 
   if (ok)
     {
+      /* Check if the url contains a script that we can pass as a command */
       char *url_str = blixem_data->sequence_map->getSourceURL(featureset_name) ;
 
       if (url_str)
         {
           int error = 0 ;
-          ZMapURL url = url_parse(url_str, &error) ;
-
-          if (url && url->query)
-            {
-              script = g_strdup(url->path) ;
-              csver = zMapURLGetQueryValue(url->query, "--csver_remote") ;
-              dataset = zMapURLGetQueryValue(url->query, "--dataset") ;
-              file = zMapURLGetQueryValue(url->query, "--file") ;
-
-              xfree(url) ;
-            }
-
+          url = url_parse(url_str, &error) ;
           g_free(url_str) ;
         }
-
-      ok = (csver && dataset && file) ;
     }
 
-  if (ok)
+  if (ok && url && url->path)
     {
-      char *file_unescaped = g_uri_unescape_string(file, NULL) ;
+      if (url->scheme == SCHEME_PIPE)
+        {
+          char *args = NULL ;
 
-      if (!file_unescaped)
-        file_unescaped = g_strdup(file) ;
+          if (url->query)
+            {
+              /* Unescape the args in the url */
+              args = g_uri_unescape_string(url->query, NULL) ;
+              if (!args)
+                args = g_strdup(url->query) ;
 
-      g_string_append_printf(attribute,
-                             "command=%s -start%%3D%d -end%%3D%d -gff_version%%3D3 -gff_source%%3D%s -dataset%%3D%s -chr%%3D%s -csver%%3D%s -file%%3D%s",
-                             script, blixem_data->features_min, blixem_data->features_max, featureset_name, 
-                             dataset, sequence_name, csver, file_unescaped) ;
+              /* Escape gff special chars */
+              char *tmp = zMapGFFEscape(args) ;
 
-      zMapGFFFormatAppendAttribute(blixem_data->line, attribute, FALSE, FALSE) ;
-      g_string_append_c(blixem_data->line, '\n') ;
-      g_string_truncate(attribute, (gsize)0);
+              if (tmp)
+                {
+                  g_free(args) ;
+                  args = tmp ;
+                }
 
-      zMapGFFOutputWriteLineToGIO(blixem_data->gff_channel, &(blixem_data->errorMsg),
-                                  blixem_data->line, TRUE) ;
+              /* Replace & between args with a space */
+              if (zMapGFFStringUtilsSubstringReplace(args, "&", " ", &tmp))
+                {
+                  g_free(args) ;
+                  args = tmp ;
+                  tmp = NULL ;
+                }
+            }
+          else
+            {
+              args = g_strdup("") ;
+            }
 
-      g_free(file_unescaped) ;
+          /*! \todo Need to replace start and end in the url with the blixem scope */
+          g_string_append_printf(attribute,
+                                 "command=%s %s", // -start%%3D%d -end%%3D%d",
+                                 url->path, args) ; //blixem_data->features_min,
+                                                           //blixem_data->features_max) ;
+          g_free(args) ;
+        }
+      else if (url->scheme == SCHEME_FILE)
+        {
+          g_string_append_printf(attribute, "file=%s", url->path) ;
+        }
+
+      if (attribute->len > 0)
+        {
+          zMapGFFFormatAppendAttribute(blixem_data->line, attribute, FALSE, FALSE) ;
+          g_string_append_c(blixem_data->line, '\n') ;
+          g_string_truncate(attribute, (gsize)0);
+
+          zMapGFFOutputWriteLineToGIO(blixem_data->gff_channel, &(blixem_data->errorMsg),
+                                      blixem_data->line, TRUE) ;
+        }
     }
 
-  if (script)
-    g_free(script) ;
-
-  if (csver)
-    g_free(csver) ;
-
-  if (dataset)
-    g_free(dataset) ;
-
-  if (file)
-    g_free(file) ;
+  if (url)
+    xfree(url) ;
 }
 
 
