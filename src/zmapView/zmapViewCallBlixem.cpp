@@ -1640,6 +1640,9 @@ static void writeBAMLine(ZMapBlixemData blixem_data, const GQuark featureset_id,
   const char *sequence_name = g_quark_to_string(blixem_data->block->original_id) ;
   static const char * SO_region = "region" ;
   const char *featureset_name = g_quark_to_string(featureset_id) ;
+
+  /* Various params from the source url about the fetch command to be run */
+  char *script = NULL ;
   char *csver = NULL ;
   char *dataset = NULL ;
   char *file = NULL ;
@@ -1668,6 +1671,7 @@ static void writeBAMLine(ZMapBlixemData blixem_data, const GQuark featureset_id,
 
           if (url && url->query)
             {
+              script = g_strdup(url->path) ;
               csver = zMapURLGetQueryValue(url->query, "--csver_remote") ;
               dataset = zMapURLGetQueryValue(url->query, "--dataset") ;
               file = zMapURLGetQueryValue(url->query, "--file") ;
@@ -1689,8 +1693,8 @@ static void writeBAMLine(ZMapBlixemData blixem_data, const GQuark featureset_id,
         file_unescaped = g_strdup(file) ;
 
       g_string_append_printf(attribute,
-                             "command=bam_get -start%%3D%d -end%%3D%d -gff_version%%3D3 -gff_source%%3D%s -dataset%%3D%s -chr%%3D%s -csver%%3D%s -file%%3D%s",
-                             blixem_data->features_min, blixem_data->features_max, featureset_name, 
+                             "command=%s -start%%3D%d -end%%3D%d -gff_version%%3D3 -gff_source%%3D%s -dataset%%3D%s -chr%%3D%s -csver%%3D%s -file%%3D%s",
+                             script, blixem_data->features_min, blixem_data->features_max, featureset_name, 
                              dataset, sequence_name, csver, file_unescaped) ;
 
       zMapGFFFormatAppendAttribute(blixem_data->line, attribute, FALSE, FALSE) ;
@@ -1702,6 +1706,18 @@ static void writeBAMLine(ZMapBlixemData blixem_data, const GQuark featureset_id,
 
       g_free(file_unescaped) ;
     }
+
+  if (script)
+    g_free(script) ;
+
+  if (csver)
+    g_free(csver) ;
+
+  if (dataset)
+    g_free(dataset) ;
+
+  if (file)
+    g_free(file) ;
 }
 
 
