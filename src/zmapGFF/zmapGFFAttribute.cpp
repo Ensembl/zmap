@@ -58,8 +58,6 @@ static const char *sEquals = "=" ;
 static const char *sSemicolon = ";" ;
 static const char *sSpace = " " ;
 
-static char* removeAllEscapedCharacters(const char * const sInput ) ;
-
 
 /*
  * Return the name stored as a string (not necessarily the same as the
@@ -995,7 +993,7 @@ gboolean zMapAttParseURL(ZMapGFFAttribute pAttribute, char** const sOut)
 
   if (strlen(sValue))
     {
-      *sOut = removeAllEscapedCharacters(sValue) ;
+      *sOut = zMapGFFUnescape(sValue) ;
       bResult = TRUE ;
     }
   else
@@ -1085,7 +1083,7 @@ gboolean zMapAttParseNote(ZMapGFFAttribute pAttribute, char ** const sOut)
 
   if (strlen(sValue))
     {
-      *sOut = removeAllEscapedCharacters(sValue) ;
+      *sOut = zMapGFFUnescape(sValue) ;
       bResult = TRUE ;
     }
   else
@@ -1768,11 +1766,33 @@ gboolean zMapAttParseReadPairID(ZMapGFFAttribute pAttribute, GQuark * const pgqO
 
 
 /*
+ * Escape all special characters permitted by GFF3 in the
+ * input string and return a newly allocated string containing the
+ * result.
+ */
+char* zMapGFFEscape(const char * const sInput )
+{
+  char *sResult = NULL, *sOut1 = NULL, *sOut2 = NULL, *sOut3 = NULL ;
+  gboolean bReplaced = FALSE ;
+
+  bReplaced = zMapGFFStringUtilsSubstringReplace(sInput, sEquals,    sEscapedEquals,    &sOut1) ;
+  bReplaced = zMapGFFStringUtilsSubstringReplace(sOut1,  sComma,     sEscapedComma,     &sOut2) ;
+  g_free(sOut1) ;                                                                       
+  bReplaced = zMapGFFStringUtilsSubstringReplace(sOut2,  sSemicolon, sEscapedSemicolon, &sOut3) ;
+  g_free(sOut2) ;                                                                       
+  bReplaced = zMapGFFStringUtilsSubstringReplace(sOut3,  sSpace,     sEscapedSpace,     &sResult) ;
+  g_free(sOut3) ;
+
+  return sResult ;
+}
+
+
+/*
  * Remove all of the escaped characters permitted by GFF3 from the
  * input string and return a newly allocated string containing the
  * result.
  */
-static char* removeAllEscapedCharacters(const char * const sInput )
+char* zMapGFFUnescape(const char * const sInput )
 {
   char *sResult = NULL, *sOut1 = NULL, *sOut2 = NULL, *sOut3 = NULL ;
   gboolean bReplaced = FALSE ;
