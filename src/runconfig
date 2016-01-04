@@ -30,9 +30,10 @@ fi
 
 clean_dirs=''
 
-. $BASE_DIR/../scripts/zmap_functions.sh || { echo "Failed to load zmap_functions.sh"; exit 1; }
+# Load our common script functions for messaging etc.
+#
+. $BASE_DIR/sh_functions.sh || { echo "Failed to load sh_functions.sh"; exit 1; }
 set -o history
-. $BASE_DIR/../scripts/build_config.sh   || { echo "Failed to load build_config.sh";   exit 1; }
 
 
 zmap_message_out "Start of script."
@@ -162,8 +163,9 @@ LDFLAGS_param="LDFLAGS=$LDFLAGS_args"
 # Export any settings we need to be passed on.
 export PKG_CONFIG_PATH
 
+zmap_message_out "PKG_CONFIG_PATH is set to: $PKG_CONFIG_PATH"
 
-zmap_message_out "Running " \
+zmap_message_out "Running configure as:  " \
     $BASE_DIR/configure \
     $INSTALL_DIR \
     $COMMON_CONFIGURE_ARGS \

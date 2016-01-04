@@ -54,8 +54,6 @@
 #include <ZMap/zmapConfigStrings.hpp>
 #include <ZMap/zmapThreads.hpp>
 #include <ZMap/zmapGFF.hpp>
-#include <ZMap/zmapUrlUtils.hpp>
-#include <ZMap/zmapGFFStringUtils.hpp>
 
 /* private header for this module */
 #include <zmapView_P.hpp>
@@ -1661,74 +1659,15 @@ static void writeBAMLine(ZMapBlixemData blixem_data, const GQuark featureset_id,
 
   if (ok)
     {
-      /* Check if the url contains a script that we can pass as a command */
-      char *url_str = blixem_data->sequence_map->getSourceURL(featureset_name) ;
+      g_string_append_printf(attribute, "dataType=short-read") ;
+      zMapGFFFormatAppendAttribute(blixem_data->line, attribute, FALSE, FALSE) ;
+      g_string_append_c(blixem_data->line, '\n') ;
+      g_string_truncate(attribute, (gsize)0);
 
-      if (url_str)
-        {
-          int error = 0 ;
-          url = url_parse(url_str, &error) ;
-          g_free(url_str) ;
-        }
+      zMapGFFOutputWriteLineToGIO(blixem_data->gff_channel, &(blixem_data->errorMsg),
+                                  blixem_data->line, TRUE) ;
     }
-
-  if (ok && url && url->path)
-    {
-      if (url->scheme == SCHEME_PIPE)
-        {
-          char *args = NULL ;
-
-          if (url->query)
-            {
-              /* Unescape the args in the url */
-              args = g_uri_unescape_string(url->query, NULL) ;
-              if (!args)
-                args = g_strdup(url->query) ;
-
-              /* Escape gff special chars */
-              char *tmp = zMapGFFEscape(args) ;
-
-              if (tmp)
-                {
-                  g_free(args) ;
-                  args = tmp ;
-                }
-
-              /* Replace & between args with a space */
-              if (zMapGFFStringUtilsSubstringReplace(args, "&", " ", &tmp))
-                {
-                  g_free(args) ;
-                  args = tmp ;
-                  tmp = NULL ;
-                }
-            }
-          else
-            {
-              args = g_strdup("") ;
-            }
-
-          /*! \todo Need to replace start and end in the url with the blixem scope */
-          g_string_append_printf(attribute,
-                                 "command=%s %s", // -start%%3D%d -end%%3D%d",
-                                 url->path, args) ; //blixem_data->features_min,
-                                                           //blixem_data->features_max) ;
-          g_free(args) ;
-        }
-      else if (url->scheme == SCHEME_FILE)
-        {
-          g_string_append_printf(attribute, "file=%s", url->path) ;
-        }
-
-      if (attribute->len > 0)
-        {
-          zMapGFFFormatAppendAttribute(blixem_data->line, attribute, FALSE, FALSE) ;
-          g_string_append_c(blixem_data->line, '\n') ;
-          g_string_truncate(attribute, (gsize)0);
-
-          zMapGFFOutputWriteLineToGIO(blixem_data->gff_channel, &(blixem_data->errorMsg),
-                                      blixem_data->line, TRUE) ;
-        }
-    }
+}
 
   if (url)
     xfree(url) ;
