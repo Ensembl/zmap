@@ -1967,6 +1967,8 @@ void zmapWindowStateRevCompRegion(ZMapWindow window, double *a, double *b);
 
 void zmapWindowHighlightEvidenceCB(GList *evidence, gpointer user_data) ;
 
+GList * zmapWindowAddColumnFeaturesets(ZMapFeatureContextMap map, GList *glist, GQuark column_id, gboolean unique_id) ;
+
 /* Malcolms.... */
 void foo_bug_set(void *key, const char *id) ;
 

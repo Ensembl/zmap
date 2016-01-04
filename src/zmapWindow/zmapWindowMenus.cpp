@@ -3961,7 +3961,7 @@ GQuark related_column(ZMapFeatureContextMap map,GQuark fset_id)
 
 
 
-GList * add_column_featuresets(ZMapFeatureContextMap map, GList *glist, GQuark column_id, gboolean unique_id)
+GList * zmapWindowAddColumnFeaturesets(ZMapFeatureContextMap map, GList *glist, GQuark column_id, gboolean unique_id)
 {
   ZMapFeatureColumn column = NULL ;
   GList *l = NULL;
@@ -4014,7 +4014,7 @@ static void requestShortReadsCB(int menu_item_id, gpointer callback_data)
   if(menu_item_id == REQUEST_SELECTED)
     {
       /* this is for a column related to a coverage featureset so we get several featuresets */
-      req_list = add_column_featuresets(menu_data->context_map,req_list,menu_data->req_id,TRUE);
+      req_list = zmapWindowAddColumnFeaturesets(menu_data->context_map,req_list,menu_data->req_id,TRUE);
     }
   else if (menu_item_id == REQUEST_ALL_SEQ)
     {
@@ -4032,7 +4032,7 @@ static void requestShortReadsCB(int menu_item_id, gpointer callback_data)
             }
 
           if(req_id)
-            req_list = add_column_featuresets(menu_data->context_map,req_list,req_id,TRUE);
+            req_list = zmapWindowAddColumnFeaturesets(menu_data->context_map,req_list,req_id,TRUE);
         }
     }
   else
@@ -4098,12 +4098,12 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
     case BLIX_SET:
       requested_homol_set = ZMAPWINDOW_ALIGNCMD_SET ;
       if (menu_data->feature_set && menu_data->window->context_map->isSeqFeatureSet(menu_data->feature_set->unique_id))
-        seq_sets = add_column_featuresets(menu_data->window->context_map,seq_sets,menu_data->req_id,FALSE);
+        seq_sets = zmapWindowAddColumnFeaturesets(menu_data->window->context_map,seq_sets,menu_data->req_id,FALSE);
       break ;
     case BLIX_MULTI_SETS:
       requested_homol_set = ZMAPWINDOW_ALIGNCMD_MULTISET ;
       if (menu_data->feature_set && menu_data->window->context_map->isSeqFeatureSet(menu_data->feature_set->unique_id))
-        seq_sets = add_column_featuresets(menu_data->window->context_map,seq_sets,menu_data->req_id,FALSE);
+        seq_sets = zmapWindowAddColumnFeaturesets(menu_data->window->context_map,seq_sets,menu_data->req_id,FALSE);
       break;
 
 #if 0
