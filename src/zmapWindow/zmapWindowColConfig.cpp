@@ -929,7 +929,7 @@ static void loaded_page_reorder(NotebookPage notebook_page)
   save_reposition = loaded_page_data->reposition;
 
   loaded_page_data->apply_now  = TRUE;
-  loaded_page_data->reposition = FALSE;
+  loaded_page_data->reposition = TRUE;
 
 
   /* Do the reorder */
