@@ -691,18 +691,10 @@ static gint colOrderCB(gconstpointer a, gconstpointer b,gpointer user_data)
   ZMapFeatureColumn pa = NULL,pb = NULL;
   map<GQuark, ZMapFeatureColumn> *columns = (map<GQuark, ZMapFeatureColumn>*) user_data;
 
-  if (columns)
+  if (columns && a && b)
     {
-      GQuark quark1 = (GQuark)GPOINTER_TO_INT(a) ;
-      GQuark quark2 = (GQuark)GPOINTER_TO_INT(b) ;
-      map<GQuark, ZMapFeatureColumn>::iterator iter1 = columns->find(quark1) ;
-      map<GQuark, ZMapFeatureColumn>::iterator iter2 = columns->find(quark2) ;
-
-      if (iter1 != columns->end())
-        pa = iter1->second ;
-
-      if (iter2 != columns->end())
-        pb = iter2->second ;
+      pa = (ZMapFeatureColumn)a ;
+      pb = (ZMapFeatureColumn)b ;
 
       if(pa && pb)
         {

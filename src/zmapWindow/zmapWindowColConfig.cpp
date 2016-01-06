@@ -322,6 +322,8 @@ static ZMapStyleColumnDisplayState get_state_from_tree_store_value(GtkTreeModel 
 
 static GList* tree_view_get_selected_featuresets(LoadedPageData page_data) ;
 
+static GList* getFeaturesetStructsFromIDs(GList *featureset_ids, ZMapFeatureContext context) ;
+
 
 static GtkItemFactoryEntry menu_items_G[] =
   {
@@ -607,6 +609,29 @@ static void loaded_page_apply_visibility(LoadedPageData loaded_page_data)
 }
 
 
+static gboolean setColumnOrder(const GQuark column_id, 
+                               std::map<GQuark, ZMapFeatureColumn> &columns, 
+                               int *i)
+{
+  gboolean columns_changed = FALSE ;
+  ZMapFeatureColumn column = NULL ;
+          
+  std::map<GQuark, ZMapFeatureColumn>::iterator col_iter = columns.find(column_id) ;
+
+  if (col_iter != columns.end())
+    column = col_iter->second ;
+                  
+  if (column && column->order != *i)
+    {
+      column->order = *i ;
+      *i += 1 ;
+
+      columns_changed = TRUE ;
+    }
+
+  return columns_changed ;
+}
+
 /* Reorder the columns based on their order in the tree */
 static void loaded_page_apply_reorder_columns(LoadedPageData page_data)
 {
@@ -629,25 +654,27 @@ static void loaded_page_apply_reorder_columns(LoadedPageData page_data)
       GtkTreeIter iter;
       int i = 0 ;
 
+      /* Add default columns first */
+      columns_changed |= setColumnOrder(zMapStyleCreateID(ZMAP_FIXED_STYLE_STRAND_SEPARATOR), columns, &i) ;
+      columns_changed |= setColumnOrder(zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME), columns, &i) ;
+      columns_changed |= setColumnOrder(zMapStyleCreateID(ZMAP_FIXED_STYLE_3FRAME), columns, &i) ;
+      columns_changed |= setColumnOrder(zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME), columns, &i) ;
+      columns_changed |= setColumnOrder(zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME), columns, &i) ;
+      columns_changed |= setColumnOrder(zMapStyleCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME), columns, &i) ;
+      columns_changed |= setColumnOrder(zMapStyleCreateID(ZMAP_FIXED_STYLE_HAND_BUILT_NAME), columns, &i) ;
+      columns_changed |= setColumnOrder(zMapStyleCreateID(ZMAP_FIXED_STYLE_ORF_NAME), columns, &i) ;
+      //columns_changed |= setColumnOrder(zMapStyleCreateID(ZMAP_FIXED_STYLE_LOCUS_NAME), columns, &i) ;
+      //columns_changed |= setColumnOrder(zMapStyleCreateID(ZMAP_FIXED_STYLE_GFF_NAME), columns, &i) ;
+      //columns_changed |= setColumnOrder(zMapStyleCreateID(ZMAP_FIXED_STYLE_SCALE_NAME), columns, &i) ;
+      //columns_changed |= setColumnOrder(zMapStyleCreateID(ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME), columns, &i) ;
+      //columns_changed |= setColumnOrder(zMapStyleCreateID(ZMAP_FIXED_STYLE_ASSEMBLY_PATH_NAME), columns, &i) ;
+
       if (gtk_tree_model_get_iter_first(model, &iter))
         {
           do
             {
               GQuark column_id = tree_model_get_column_id(model, &iter, TRUE) ;
-              ZMapFeatureColumn column = NULL ;
-          
-              std::map<GQuark, ZMapFeatureColumn>::iterator col_iter = columns.find(column_id) ;
-
-              if (col_iter != columns.end())
-                column = col_iter->second ;
-                  
-              if (column)
-                {
-                  column->order = i ;
-                  ++i ;
-
-                  columns_changed = TRUE ;
-                }
+              columns_changed |= setColumnOrder(column_id, columns, &i) ;
             } while (gtk_tree_model_iter_next(model, &iter)) ;
         }
 
@@ -2271,8 +2298,21 @@ static void loaded_cols_panel_create_tree_row(LoadedPageData page_data,
 
   zMapReturnIfFail(page_data && page_data->configure_data && column && store) ;
 
-  /* Only add a row if this column exists */
-  if (container_fwd || container_rev)
+  /* Only add a row if this column exists. Ignore default columns */
+  if ((container_fwd || container_rev) &&
+      column->column_id != g_quark_from_string(ZMAP_FIXED_STYLE_STRAND_SEPARATOR) &&
+      column->column_id != g_quark_from_string(ZMAP_FIXED_STYLE_DNA_NAME) &&
+      column->column_id != g_quark_from_string(ZMAP_FIXED_STYLE_3FRAME) &&
+      column->column_id != g_quark_from_string(ZMAP_FIXED_STYLE_3FT_NAME) &&
+      column->column_id != g_quark_from_string(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME) &&
+      column->column_id != g_quark_from_string(ZMAP_FIXED_STYLE_SCRATCH_NAME) &&
+      column->column_id != g_quark_from_string(ZMAP_FIXED_STYLE_HAND_BUILT_NAME) &&
+      column->column_id != g_quark_from_string(ZMAP_FIXED_STYLE_ORF_NAME))
+      //column->column_id != g_quark_from_string(ZMAP_FIXED_STYLE_LOCUS_NAME) &&
+      //column->column_id != g_quark_from_string(ZMAP_FIXED_STYLE_GFF_NAME) &&
+      //column->column_id != g_quark_from_string(ZMAP_FIXED_STYLE_SCALE_NAME) &&
+      //column->column_id != g_quark_from_string(ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME) &&
+      //column->column_id != g_quark_from_string(ZMAP_FIXED_STYLE_ASSEMBLY_PATH_NAME) &&
     {
       /* Create a new row in the list store */
       GtkTreeIter iter ;
@@ -2945,7 +2985,14 @@ static void loaded_page_apply_visibility_tree_row(LoadedPageData loaded_page_dat
         {
           ZMapWindowContainerFeatureSet container = (ZMapWindowContainerFeatureSet)(column_group);;
 
-          GList *feature_sets = container ? zmapWindowContainerFeatureSetGetFeatureSets(container) : NULL ;
+          GList *feature_sets = NULL ;
+          GList *featureset_ids = NULL ;
+
+          if (container)
+            featureset_ids = zmapWindowContainerFeatureSetGetFeatureSets(container) ;
+      
+          if (featureset_ids)
+            feature_sets = getFeaturesetStructsFromIDs(featureset_ids, loaded_page_data->window->feature_context) ;
 
           for (GList *item = feature_sets; item; item = item->next)
             {
@@ -2984,6 +3031,9 @@ static void loaded_page_apply_visibility_tree_row(LoadedPageData loaded_page_dat
               if(loaded_page_data->reposition)
                 zmapWindowFullReposition(window->feature_root_group,TRUE,"show button");
             }
+          
+          if (feature_sets)
+            g_list_free(feature_sets) ;
         }
       else
         {
