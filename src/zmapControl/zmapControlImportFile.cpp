@@ -1279,44 +1279,41 @@ static void importFileCB(gpointer cb_data)
           std::string script_err("");
           const char *script = fileTypeGetPipeScript(file_type, script_err) ;
 
-          std::string args("") ;
-          args += "--file=" ;          args += file_txt ;
-          args += "&--chr=" ;          args += sequence_txt ;
-          args += "&--start=" ;        args += req_start ;
-          args += "&--end=" ;          args += req_end ;
-          args += "&--gff_seqname=" ;  args += req_sequence_txt ;
-          args += "&--gff_source=" ;   args += source_txt ;
-          args += "&--strand=" ;       args += strand ;
+          GString *args = g_string_new("") ;
+
+          g_string_append_printf(args, "--file=%s&--chr=%s&--start=%d&--end=%d&--gff_seqname=%s&--gff_source=%s",
+                                 file_txt, sequence_txt, req_start, req_end, req_sequence_txt, source_txt) ;
+
+          if (file_type == ZMAPSOURCE_FILE_BIGWIG)
+            g_string_append_printf(args, "&--strand=%d", strand) ;
 
           if (remap_features)
-            {
-              /* These args are only required when remapping */
-              args += "&--csver_remote=" ; args += assembly_txt ;
-              args += "&--dataset=" ;      args += dataset_txt ;
-            }
+            g_string_append_printf(args, "&--csver_remote=%s&--dataset=%s", assembly_txt, dataset_txt) ;
 
           if (script)
             {
               /* Ok, create the server for this pipe scripe */
-              server = sequence_map->addPipeSource(file_txt, script, args.c_str()) ;
+              server = sequence_map->createPipeSource(file_txt, script, args->str) ;
               create_source_data = TRUE ;
             }
           else if (!remap_features)
             {
-              /* No script; if not remapping features, we could load directly with htslib
+              /* No script; if not remapping features, we can load directly with htslib
                * instead. There are a couple of problems with this, though:
                * - the given source name will be ignored and therefore the source_data won't
                *   be linked correctly. This means it won't be recognised as a bam.
                * - blixem won't work (until it can load bam files directly, or unless the user
                *   has preconfigured the source in the blixem config). */
               zMapLogWarning("%s", "Pipe script not availble; using htslib") ;
-              server = sequence_map->addFileSource(file_txt) ;
+              server = sequence_map->createFileSource(file_txt) ;
             }
           else
             {
               err_msg = "Cannot remap features: " ;
               err_msg += script_err ;
             }
+
+          g_string_free(args, TRUE) ;
         }
 
       if (create_source_data)
