@@ -587,34 +587,16 @@ static void createNewSourceCB(const char *source_name,
   zMapReturnIfFail(main_data && main_data->orig_sequence_map) ;
 
   ZMapFeatureSequenceMap sequence_map = main_data->orig_sequence_map ;
-
   GError *tmp_error = NULL ;
 
-  ZMapConfigSource source = g_new0(ZMapConfigSourceStruct, 1) ;
+  sequence_map->createSource(source_name, url, featuresets, biotypes, &tmp_error) ;
 
-  source->url = g_strdup(url.c_str()) ;
-      
-  if (featuresets && *featuresets)
-    source->featuresets = g_strdup(featuresets) ;
-      
-  /* Add the new source to the view */
-  std::string source_name_str(source_name) ;
-  sequence_map->addSource(source_name_str, source, &tmp_error) ;
-
-  /* Update the sources list */
+  /* Update the list of sources shown in the dialog to include the new source */
   if (!tmp_error)
-    {
-      sequence_map->setFlag(ZMAPFLAG_SAVE_SOURCES, TRUE) ;
-      updateSourcesList(main_data, sequence_map) ;
-    }
+    updateSourcesList(main_data, sequence_map) ;
 
   if (tmp_error)
-    {
-      zMapConfigSourceDestroy(source) ;
-      source = NULL ;
-
-      g_propagate_error(error, tmp_error) ;
-    }
+    g_propagate_error(error, tmp_error) ;
 }
 
 

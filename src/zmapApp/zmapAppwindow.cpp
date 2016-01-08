@@ -158,7 +158,9 @@ gboolean zmapMainMakeAppWindow(int argc, char *argv[], ZMapAppContext app_contex
   gtk_box_pack_start(GTK_BOX(vbox), menubar, FALSE, TRUE, 0);
 
   if (app_context->default_sequence)
-    app_context->default_sequence->constructSources(NULL, NULL) ;
+    {
+      app_context->default_sequence->constructSources(NULL, NULL) ;
+    }
 
   connect_frame = zmapMainMakeConnect(app_context, app_context->default_sequence) ;
   gtk_box_pack_start(GTK_BOX(vbox), connect_frame, TRUE, TRUE, 0);

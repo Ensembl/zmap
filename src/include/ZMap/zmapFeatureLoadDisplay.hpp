@@ -303,10 +303,16 @@ typedef struct ZMapFeatureSequenceMapStructType
   void constructSources(const char *config_str, char **stylesfile) ;
   bool updateContext(_ZMapConfigIniContextStruct *context, ZMapConfigIniFileType file_type) ;
 
-  void addSource(const std::string &source_name, _ZMapConfigSourceStruct *source, GError **error) ;
-  ZMapConfigSource addFileSource(const char *file) ;
-  ZMapConfigSource addPipeSource(const char *file, const char *script, const char *args) ;
+  ZMapConfigSource createSource(const char *source_name, const char *url, 
+                                const char *featuresets, const char *biotypes, GError **error) ;
+  ZMapConfigSource createSource(const char *source_name, const std::string &url, 
+                                const char *featuresets, const char *biotypes, GError **error) ;
+  ZMapConfigSource createFileSource(const char *source_name, const char *file) ;
+  ZMapConfigSource createPipeSource(const char *source_name, const char *file, const char *script, const char *args) ;
   void removeSource(const char *source_name_cstr, GError **error) ;
+
+private:
+  void addSource(const std::string &source_name, _ZMapConfigSourceStruct *source, GError **error) ;
 
 } ZMapFeatureSequenceMapStruct, *ZMapFeatureSequenceMap ;
 
