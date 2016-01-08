@@ -1293,7 +1293,7 @@ static void importFileCB(gpointer cb_data)
           if (script)
             {
               /* Ok, create the server for this pipe scripe */
-              server = sequence_map->createPipeSource(file_txt, script, args->str) ;
+              server = sequence_map->addPipeSource(file_txt, script, args->str) ;
               create_source_data = TRUE ;
             }
           else if (!remap_features)
@@ -1305,7 +1305,7 @@ static void importFileCB(gpointer cb_data)
                * - blixem won't work (until it can load bam files directly, or unless the user
                *   has preconfigured the source in the blixem config). */
               zMapLogWarning("%s", "Pipe script not availble; using htslib") ;
-              server = sequence_map->createFileSource(file_txt) ;
+              server = sequence_map->addFileSource(file_txt) ;
             }
           else
             {
