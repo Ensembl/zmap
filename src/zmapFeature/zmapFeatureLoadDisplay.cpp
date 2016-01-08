@@ -419,8 +419,61 @@ void ZMapFeatureSequenceMapStructType::addSource(const string &source_name,
 }
 
 
+ZMapConfigSource ZMapFeatureSequenceMapStructType::createSource(const char *source_name, const std::string &url, 
+                                                                const char *featuresets,
+                                                                const char *biotypes,
+                                                                GError **error)
+{
+  return createSource(source_name, url.c_str(), featuresets, biotypes, error) ;
+}
+
+
+ZMapConfigSource ZMapFeatureSequenceMapStructType::createSource(const char *source_name,
+                                                                const char *url,
+                                                                const char *featuresets,
+                                                                const char *biotypes,
+                                                                GError **error)
+{
+  ZMapConfigSource source = NULL ;
+  zMapReturnValIfFail(url, source) ;
+
+  GError *tmp_error = NULL ;
+  source = g_new0(ZMapConfigSourceStruct, 1) ;
+     
+  source->url = g_strdup(url) ;
+      
+  if (featuresets && *featuresets)
+    source->featuresets = g_strdup(featuresets) ;
+
+  if (biotypes && *biotypes)
+    source->biotypes = g_strdup(biotypes) ;
+
+  /* Add the new source to the view */
+  std::string source_name_str(source_name) ;
+
+  addSource(source_name_str, source, &tmp_error) ;
+
+  /* Indicate that there are changes that need saving */
+  if (!tmp_error)
+    {
+      setFlag(ZMAPFLAG_SAVE_SOURCES, TRUE) ;
+    }
+
+  if (tmp_error)
+    {
+      zMapConfigSourceDestroy(source) ;
+      source = NULL ;
+
+      g_propagate_error(error, tmp_error) ;
+    }
+
+  return source ;
+}
+
+
 /* Create a file source and add it to our list of user-created sources. */
-ZMapConfigSource ZMapFeatureSequenceMapStructType::addFileSource(const char *file)
+ZMapConfigSource ZMapFeatureSequenceMapStructType::createFileSource(const char *source_name_in, 
+                                                                    const char *file)
 {
   ZMapConfigSource src = NULL ;
   zMapReturnValIfFail(file, src) ;
@@ -434,8 +487,8 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::addFileSource(const char *fil
   if (strncasecmp(file, "http://", 7) != 0 && strncasecmp(file, "ftp://", 6) != 0)
     src->url = g_strdup_printf("file:///%s", file) ;
 
-  /* Add the source to our list. Use the filename as the source name */
-  string source_name(file) ;
+  /* Add the source to our list. Use the filename as the source name if none given */
+  string source_name(source_name_in ? source_name_in : file) ;
   GError *error = NULL ;
 
   addSource(source_name, src, &error) ;
@@ -451,9 +504,10 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::addFileSource(const char *fil
 
 
 /* Create a pipe source and add it to our list of user-created sources. */
-ZMapConfigSource ZMapFeatureSequenceMapStructType::addPipeSource(const char *file,
-                                                                 const char *script,
-                                                                 const char *args)
+ZMapConfigSource ZMapFeatureSequenceMapStructType::createPipeSource(const char *source_name_in, 
+                                                                    const char *file,
+                                                                    const char *script,
+                                                                    const char *args)
 {
   ZMapConfigSource src = NULL ;
   zMapReturnValIfFail(file && script, src) ;
@@ -469,8 +523,8 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::addPipeSource(const char *fil
   else
     src->url = g_strdup_printf("pipe:///%s", script) ;
 
-  /* Add the source to our list. Use the filename as the source name */
-  string source_name(file) ;
+  /* Add the source to our list. Use the filename as the source name if none given */
+  string source_name(source_name_in ? source_name_in : file) ;
   GError *error = NULL ;
 
   addSource(source_name, src, &error) ;
