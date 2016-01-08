@@ -5609,7 +5609,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
         char* column_name = zMapWindowGetHotColumnName(window) ;
         GQuark column_id = zMapStyleCreateID(column_name) ;
 
-        if (window->context_map->isSeqFeatureSet(column_id))
+        if (window->context_map->isSeqColumn(column_id))
           seq_sets = zmapWindowAddColumnFeaturesets(window->context_map, seq_sets, column_id, TRUE);
 
         zmapWindowCallBlixem(window, focus_item, requested_homol_set, NULL, seq_sets, 0.0, 0.0) ;

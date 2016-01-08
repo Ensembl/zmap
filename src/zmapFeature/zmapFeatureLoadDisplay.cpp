@@ -124,7 +124,7 @@ ZMapFeatureColumn ZMapFeatureContextMapStructType::getSetColumn(GQuark set_id)
 
         column->order = zMapFeatureColumnOrderNext(FALSE);
 
-        gff_source = (ZMapFeatureSource)g_hash_table_lookup(source_2_sourcedata,GUINT_TO_POINTER(set_id));
+        gff_source = getSource(set_id) ;
         column->column_desc = name;
 
         column->featuresets_unique_ids = g_list_append(column->featuresets_unique_ids,GUINT_TO_POINTER(set_id));
@@ -192,6 +192,7 @@ GList *ZMapFeatureContextMapStructType::getColumnFeatureSets(GQuark column_id, g
 /* from column_id return whether if is configured from seq-data= featuresets (coverage side) */
 gboolean ZMapFeatureContextMapStructType::isCoverageColumn(GQuark column_id)
 {
+  gboolean result = FALSE ;
   ZMapFeatureSource src;
   GList *fsets;
 
@@ -199,18 +200,24 @@ gboolean ZMapFeatureContextMapStructType::isCoverageColumn(GQuark column_id)
 
   for (; fsets ; fsets = fsets->next)
     {
-      src = (ZMapFeatureSource)g_hash_table_lookup(source_2_sourcedata,fsets->data);
+      GQuark fset_id = (GQuark)GPOINTER_TO_INT(fsets->data) ;
+      src = getSource(fset_id) ;
+
       if(src && src->related_column)
-      return TRUE;
+        {
+          result = TRUE;
+          break ;
+        }
     }
 
-  return FALSE;
+  return result;
 }
 
 
 /* from column_id return whether it is configured from seq-data= featuresets (data side) */
 gboolean ZMapFeatureContextMapStructType::isSeqColumn(GQuark column_id)
 {
+  gboolean result = FALSE ;
   ZMapFeatureSource src;
   GList *fsets;
 
@@ -218,24 +225,77 @@ gboolean ZMapFeatureContextMapStructType::isSeqColumn(GQuark column_id)
 
   for (; fsets ; fsets = fsets->next)
     {
-      src = (ZMapFeatureSource)g_hash_table_lookup(source_2_sourcedata,fsets->data);
+      GQuark fset_id = (GQuark)GPOINTER_TO_INT(fsets->data) ;
+      src = getSource(fset_id) ;
+
       if(src && src->is_seq)
-      return TRUE;
+        {
+          result = TRUE;
+          break ;
+        }
     }
 
-  return FALSE;
+  return result;
 }
 
 
 gboolean ZMapFeatureContextMapStructType::isSeqFeatureSet(GQuark fset_id)
 {
-  ZMapFeatureSource src = (ZMapFeatureSource)g_hash_table_lookup(source_2_sourcedata,GUINT_TO_POINTER(fset_id));
-  //zMapLogWarning("feature is_seq: %s -> %p", g_quark_to_string(fset_id),src);
+  gboolean result = FALSE ;
+  ZMapFeatureSource src = getSource(fset_id) ;
 
   if(src && src->is_seq)
-    return TRUE;
-  return FALSE;
+    result = TRUE;
 
+  return result;
+}
+
+
+ZMapFeatureSource ZMapFeatureContextMapStructType::getSource(GQuark fset_id)
+{
+  ZMapFeatureSource src = NULL ;
+  zMapReturnValIfFail(fset_id, src) ;
+
+  src = (ZMapFeatureSource)g_hash_table_lookup(source_2_sourcedata, GUINT_TO_POINTER(fset_id)) ;
+
+  return src ;
+}
+
+
+void ZMapFeatureContextMapStructType::setSource(GQuark fset_id, ZMapFeatureSource src)
+{
+  zMapReturnIfFail(fset_id) ;
+  
+  if (getSource(fset_id))
+    g_hash_table_replace(source_2_sourcedata, GUINT_TO_POINTER(fset_id), src) ;
+  else
+    g_hash_table_insert(source_2_sourcedata, GUINT_TO_POINTER(fset_id), src) ;
+}
+
+
+ZMapFeatureSource ZMapFeatureContextMapStructType::createSource(const GQuark fset_id, 
+                                                                const GQuark source_id,
+                                                                const GQuark source_text,
+                                                                const GQuark style_id,
+                                                                const GQuark related_column,
+                                                                const GQuark maps_to,
+                                                                const bool is_seq)
+{
+  ZMapFeatureSource src = NULL ;
+  zMapReturnValIfFail(fset_id, src) ;
+  
+  src = g_new0(ZMapFeatureSourceStruct, 1) ;
+  
+  src->source_id = source_id ;
+  src->source_text = source_text ; 
+  src->style_id = style_id ;
+  src->related_column = related_column ;
+  src->maps_to = maps_to ;
+  src->is_seq = is_seq ;
+
+  setSource(fset_id, src) ;
+  
+  return src ;
 }
 
 
@@ -359,13 +419,14 @@ void ZMapFeatureSequenceMapStructType::addSource(const string &source_name,
 }
 
 
-/* Add a file source to our list of user-created sources. */
-void ZMapFeatureSequenceMapStructType::addFileSource(const char *file)
+/* Create a file source and add it to our list of user-created sources. */
+ZMapConfigSource ZMapFeatureSequenceMapStructType::addFileSource(const char *file)
 {
-  zMapReturnIfFail(file) ;
+  ZMapConfigSource src = NULL ;
+  zMapReturnValIfFail(file, src) ;
 
   /* Create the new source */
-  ZMapConfigSource src = g_new0(ZMapConfigSourceStruct, 1) ;
+  src = g_new0(ZMapConfigSourceStruct, 1) ;
 
   src->group = SOURCE_GROUP_START ;        // default_value
   src->featuresets = g_strdup(ZMAP_DEFAULT_FEATURESETS) ;
@@ -384,6 +445,43 @@ void ZMapFeatureSequenceMapStructType::addFileSource(const char *file)
       zMapLogWarning("Error creating source for file '%s': %s", file, error->message) ;
       g_error_free(error) ;
     }
+
+  return src ;
+}
+
+
+/* Create a pipe source and add it to our list of user-created sources. */
+ZMapConfigSource ZMapFeatureSequenceMapStructType::addPipeSource(const char *file,
+                                                                 const char *script,
+                                                                 const char *args)
+{
+  ZMapConfigSource src = NULL ;
+  zMapReturnValIfFail(file && script, src) ;
+
+  /* Create the new source */
+  src = g_new0(ZMapConfigSourceStruct, 1) ;
+
+  src->group = SOURCE_GROUP_START ;        // default_value
+  src->featuresets = g_strdup(ZMAP_DEFAULT_FEATURESETS) ;
+
+  if (args)
+    src->url = g_strdup_printf("pipe:///%s?%s", script, args) ;
+  else
+    src->url = g_strdup_printf("pipe:///%s", script) ;
+
+  /* Add the source to our list. Use the filename as the source name */
+  string source_name(file) ;
+  GError *error = NULL ;
+
+  addSource(source_name, src, &error) ;
+
+  if (error)
+    {
+      zMapLogWarning("Error creating source for file '%s': %s", file, error->message) ;
+      g_error_free(error) ;
+    }
+
+  return src ;
 }
 
 

@@ -159,23 +159,6 @@ void zMapViewGetVisible(ZMapViewWindow view_window, double *top, double *bottom)
 }
 
 
-
-ZMapFeatureSource zMapViewGetFeatureSetSource(ZMapView view, GQuark f_id)
-{
-  ZMapFeatureSource src;
-
-  src = (ZMapFeatureSource)g_hash_table_lookup(view->context_map.source_2_sourcedata,GUINT_TO_POINTER(f_id)) ;
-
-  return src ;
-}
-
-void zMapViewSetFeatureSetSource(ZMapView view, GQuark f_id, ZMapFeatureSource src)
-{
-  g_hash_table_replace(view->context_map.source_2_sourcedata,GUINT_TO_POINTER(f_id), src) ;
-
-  return ;
-}
-
 void zMapViewSetFlag(ZMapView view, ZMapFlag flag, const gboolean value)
 {
   zMapReturnIfFail(view && view->view_sequence && flag >= 0 && flag < ZMAPFLAG_NUM_FLAGS) ;

@@ -196,6 +196,7 @@ char *zMapViewGetLoadStatusStr(ZMapView view,
                                char **loading_sources_out, char **empty_sources_out, char **failed_sources_out) ;
 GtkWidget *zMapViewGetXremote(ZMapView view) ;
 gboolean zMapViewGetFeaturesSpan(ZMapView zmap_view, int *start, int *end) ;
+ZMapFeatureContextMap zMapViewGetContextMap(ZMapView view) ;
 ZMapWindow zMapViewGetWindow(ZMapViewWindow view_window) ;
 ZMapFeatureContext zMapViewGetContext(ZMapViewWindow view_window) ;
 ZMapView zMapViewGetView(ZMapViewWindow view_window) ;
@@ -214,8 +215,6 @@ gboolean zMapViewProcessRemoteRequest(ZMapViewWindow view_window,
 gpointer zMapViewFindView(ZMapView view, gpointer view_id) ;
 
 ZMapFeatureSequenceMap zMapViewGetSequenceMap(ZMapView zmap_view);
-ZMapFeatureSource zMapViewGetFeatureSetSource(ZMapView view, GQuark f_id);
-void zMapViewSetFeatureSetSource(ZMapView view, GQuark f_id, ZMapFeatureSource src);
 void zMapViewSetFlag(ZMapView view, ZMapFlag flag, const gboolean value) ;
 gboolean zMapViewGetFlag(ZMapView view, ZMapFlag flag) ;
 
