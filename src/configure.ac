@@ -42,7 +42,7 @@ AC_CHECK_PROG(GLIB_GENMARSHAL, glib-genmarshal, glib-genmarshal)
 
 # Check for C++11 language support
 #
-#AX_CXX_COMPILE_STDCXX_0X()
+AX_CXX_COMPILE_STDCXX_0X()
 
 
 # External libraries

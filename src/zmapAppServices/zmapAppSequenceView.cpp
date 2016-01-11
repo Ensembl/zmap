@@ -51,7 +51,7 @@ using namespace std;
 
 
 /* Columns in the list of sources */
-typedef enum {SourceColumn_NAME, SourceColumn_TYPE, SourceColumn_TOTAL} SourceColumn;
+enum class SourceColumn {NAME, TYPE, TOTAL} ;
 
 /* Data we need in callbacks. */
 typedef struct MainFrameStructName
@@ -255,9 +255,7 @@ static void updateSourcesList(MainFrame main_data, ZMapFeatureSequenceMap sequen
       gtk_list_store_clear(store) ;
 
       /* Loop through all of the sources */
-      for (map<string, ZMapConfigSource>::const_iterator source_iter = sources->begin(); 
-           source_iter != sources->end(); 
-           ++source_iter)
+      for (auto source_iter = sources->begin(); source_iter != sources->end(); ++source_iter)
         {
           string source_type = sourceGetType(source_iter->second) ;
 
@@ -266,8 +264,8 @@ static void updateSourcesList(MainFrame main_data, ZMapFeatureSequenceMap sequen
           gtk_list_store_append(store, &store_iter);
 
           gtk_list_store_set(store, &store_iter, 
-                             SourceColumn_NAME, source_iter->first.c_str(),
-                             SourceColumn_TYPE, source_type.c_str(),
+                             SourceColumn::NAME, source_iter->first.c_str(),
+                             SourceColumn::TYPE, source_type.c_str(),
                              -1);
         }
     }
@@ -278,7 +276,7 @@ static void updateSourcesList(MainFrame main_data, ZMapFeatureSequenceMap sequen
 /* Create the list widget to show all of the existing source names */
 static GtkWidget* createListWidget(ZMapFeatureSequenceMap sequence_map, MainFrame main_data)
 {
-  GtkListStore *store = gtk_list_store_new((gint)(SourceColumn_TOTAL),
+  GtkListStore *store = gtk_list_store_new((gint)(SourceColumn::TOTAL),
                                            G_TYPE_STRING, G_TYPE_STRING) ;
 
   GtkTreeView *tree_view = GTK_TREE_VIEW(gtk_tree_view_new_with_model(GTK_TREE_MODEL(store))) ;
@@ -296,8 +294,8 @@ static GtkWidget* createListWidget(ZMapFeatureSequenceMap sequence_map, MainFram
   gtk_tree_selection_set_mode(tree_selection, GTK_SELECTION_MULTIPLE);
 
   GtkCellRenderer *renderer = gtk_cell_renderer_text_new();
-  createTreeViewColumn(tree_view, "Name", renderer, "text", SourceColumn_NAME) ;
-  createTreeViewColumn(tree_view, "Type", renderer, "text", SourceColumn_TYPE) ;
+  createTreeViewColumn(tree_view, "Name", renderer, "text", SourceColumn::NAME) ;
+  createTreeViewColumn(tree_view, "Type", renderer, "text", SourceColumn::TYPE) ;
 
   return GTK_WIDGET(tree_view) ;
 }
@@ -638,7 +636,7 @@ static void removeSourceCB(GtkWidget *widget, gpointer cb_data)
           gtk_tree_model_get_iter(model, &iter, path) ;
 
           char *source_name = NULL ;
-          gtk_tree_model_get(model, &iter, SourceColumn_NAME, &source_name, -1) ;
+          gtk_tree_model_get(model, &iter, SourceColumn::NAME, &source_name, -1) ;
 
           if (source_name)
             {

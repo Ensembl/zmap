@@ -20,9 +20,9 @@ AM_CPPFLAGS = \
 @LIBCURL_CPPFLAGS@ \
 $(NULL)
 
-#AM_CXXFLAGS = \
-#-std=c++0x \
-#$(NULL)
+AM_CXXFLAGS = \
+-std=c++0x \
+$(NULL)
 
 INCLUDE_COMMON = -I$(top_srcdir) -I$(top_srcdir)/include -I.
 
