@@ -507,7 +507,8 @@ gboolean zMapStr2Int(const char *str, int *int_out)
           if (retval <= INT_MAX || retval >= INT_MIN)
             {
               if (int_out)
-        *int_out = (int)retval ;
+                *int_out = (int)retval ;
+
               result = TRUE ;
             }
         }

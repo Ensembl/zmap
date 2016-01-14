@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 #
 #
-#  File: scripts/zmap_SO_header.pl
+#  File: zmap_SO_header.pl
 #  Author: Steve Miller (sm23\@sanger.ac.uk)
 #  Copyright (c) 2006-2013: Genome Research Ltd.
 #-------------------------------------------------------------------
@@ -75,16 +75,16 @@ $destination_file = "zmapGFF/zmapSOData_P.hpp" ;
 #
 # Define the filenames to parse.
 #
-$sofa_file            = "../scripts/SOFA.obo" ;
-$so_xp_file           = "../scripts/so-xp.obo";
-$so_xp_simple_file    = "../scripts/so-xp-simple.obo" ;
-$so_hack_file         = "../scripts/so-hack.obo" ; 
+$sofa_file            = "./SOFA.obo" ;
+$so_xp_file           = "./so-xp.obo";
+$so_xp_simple_file    = "./so-xp-simple.obo" ;
+$so_hack_file         = "./so-hack.obo" ; 
 
 #
 # Define the filenames for the SO-to-ZMapStyleMode files. 
 # 
-$so_to_mode_map_file           = "../scripts/so_to_mode_map.txt";
-$so_to_mode_map_hack_file      = "../scripts/so_to_mode_map_hack.txt";
+$so_to_mode_map_file           = "./so_to_mode_map.txt";
+$so_to_mode_map_hack_file      = "./so_to_mode_map_hack.txt";
 
 #
 # Define URLs at which to find files.

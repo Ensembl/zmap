@@ -1581,9 +1581,15 @@ ZMapGUIMenuItem zmapWindowMakeMenuBlixTop(int *start_index_inout,
 ZMapGUIMenuItem zmapWindowMakeMenuBlixCommon(int *start_index_inout,
 					     ZMapGUIMenuItemCallbackFunc callback_func,
 					     gpointer callback_data) ;
+ZMapGUIMenuItem zmapWindowMakeMenuBlixCommonNonBAM(int *start_index_inout,
+                                                   ZMapGUIMenuItemCallbackFunc callback_func,
+                                                   gpointer callback_data) ;
 ZMapGUIMenuItem zmapWindowMakeMenuBlixColCommon(int *start_index_inout,
 						ZMapGUIMenuItemCallbackFunc callback_func,
 						gpointer callback_data) ;
+ZMapGUIMenuItem zmapWindowMakeMenuBlixColCommonNonBAM(int *start_index_inout,
+                                                      ZMapGUIMenuItemCallbackFunc callback_func,
+                                                      gpointer callback_data) ;
 ZMapGUIMenuItem zmapWindowMakeMenuNonHomolFeature(int *start_index_inout,
 						  ZMapGUIMenuItemCallbackFunc callback_func,
 						  gpointer callback_data) ;
@@ -1960,6 +1966,8 @@ void zmapWindowStateRevCompRegion(ZMapWindow window, double *a, double *b);
 void zmapWindowStateRevCompRegion(ZMapWindow window, double *a, double *b);
 
 void zmapWindowHighlightEvidenceCB(GList *evidence, gpointer user_data) ;
+
+GList * zmapWindowAddColumnFeaturesets(ZMapFeatureContextMap map, GList *glist, GQuark column_id, gboolean unique_id) ;
 
 /* Malcolms.... */
 void foo_bug_set(void *key, const char *id) ;

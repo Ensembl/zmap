@@ -46,6 +46,16 @@ struct _ZMapConfigSourceStruct ;
 struct ZMapFeatureAnyStructType ;
 
 
+/* Possible file types for a file or pipe source */
+typedef enum
+  {
+    ZMAPSOURCE_FILE_NONE,
+    ZMAPSOURCE_FILE_GFF,
+    ZMAPSOURCE_FILE_BAM,
+    ZMAPSOURCE_FILE_BIGWIG
+  } ZMapSourceFileType;
+
+
 /* Overview:
  * 
  * A "Featureset" is a set of one type of features (e.g. EST alignments from mouse),
@@ -162,7 +172,6 @@ typedef struct ZMapFeatureContextMapStructType
 {
   /* All the styles known to the view or window.
    * Maps the style's unique_id (GQuark) to ZMapFeatureTypeStyle. */
-  //GHashTable *styles ;
   ZMapStyleTree styles ;
 
   /* All the columns that ZMap will display.
@@ -235,6 +244,14 @@ typedef struct ZMapFeatureContextMapStructType
   bool updateContextColumns(_ZMapConfigIniContextStruct *context, ZMapConfigIniFileType file_type) ;
   bool updateContextColumnGroups(_ZMapConfigIniContextStruct *context, ZMapConfigIniFileType file_type) ;
 
+  ZMapFeatureSource getSource(GQuark fset_id) ;
+  ZMapFeatureSource createSource(const GQuark fset_id, 
+                                 const GQuark source_id, const GQuark source_text, const GQuark style_id,
+                                 const GQuark related_column, const GQuark maps_to, const bool is_seq) ;
+
+private:
+  void setSource(GQuark fset_id, ZMapFeatureSource src) ;
+
 } ZMapFeatureContextMapStruct, *ZMapFeatureContextMap ;
 
 
@@ -279,14 +296,23 @@ typedef struct ZMapFeatureSequenceMapStructType
   gboolean getFlag(ZMapFlag flag) ;
   void setFlag(ZMapFlag flag, const gboolean value) ;
 
+  ZMapConfigSource getSource(const std::string &source_name) ;
+  char* getSourceURL(const std::string &source_name) ;
   GList* getSources() ;
   void constructSources(const char *filename, const char *config_str, char **stylesfile) ;
   void constructSources(const char *config_str, char **stylesfile) ;
   bool updateContext(_ZMapConfigIniContextStruct *context, ZMapConfigIniFileType file_type) ;
 
-  void addSource(const std::string &source_name, _ZMapConfigSourceStruct *source, GError **error) ;
-  void addFileSource(const char *file) ;
+  ZMapConfigSource createSource(const char *source_name, const char *url, 
+                                const char *featuresets, const char *biotypes, GError **error) ;
+  ZMapConfigSource createSource(const char *source_name, const std::string &url, 
+                                const char *featuresets, const char *biotypes, GError **error) ;
+  ZMapConfigSource createFileSource(const char *source_name, const char *file) ;
+  ZMapConfigSource createPipeSource(const char *source_name, const char *file, const char *script, const char *args) ;
   void removeSource(const char *source_name_cstr, GError **error) ;
+
+private:
+  void addSource(const std::string &source_name, _ZMapConfigSourceStruct *source, GError **error) ;
 
 } ZMapFeatureSequenceMapStruct, *ZMapFeatureSequenceMap ;
 

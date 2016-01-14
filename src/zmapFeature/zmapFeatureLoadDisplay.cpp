@@ -124,7 +124,7 @@ ZMapFeatureColumn ZMapFeatureContextMapStructType::getSetColumn(GQuark set_id)
 
         column->order = zMapFeatureColumnOrderNext(FALSE);
 
-        gff_source = (ZMapFeatureSource)g_hash_table_lookup(source_2_sourcedata,GUINT_TO_POINTER(set_id));
+        gff_source = getSource(set_id) ;
         column->column_desc = name;
 
         column->featuresets_unique_ids = g_list_append(column->featuresets_unique_ids,GUINT_TO_POINTER(set_id));
@@ -192,6 +192,7 @@ GList *ZMapFeatureContextMapStructType::getColumnFeatureSets(GQuark column_id, g
 /* from column_id return whether if is configured from seq-data= featuresets (coverage side) */
 gboolean ZMapFeatureContextMapStructType::isCoverageColumn(GQuark column_id)
 {
+  gboolean result = FALSE ;
   ZMapFeatureSource src;
   GList *fsets;
 
@@ -199,18 +200,24 @@ gboolean ZMapFeatureContextMapStructType::isCoverageColumn(GQuark column_id)
 
   for (; fsets ; fsets = fsets->next)
     {
-      src = (ZMapFeatureSource)g_hash_table_lookup(source_2_sourcedata,fsets->data);
+      GQuark fset_id = (GQuark)GPOINTER_TO_INT(fsets->data) ;
+      src = getSource(fset_id) ;
+
       if(src && src->related_column)
-      return TRUE;
+        {
+          result = TRUE;
+          break ;
+        }
     }
 
-  return FALSE;
+  return result;
 }
 
 
 /* from column_id return whether it is configured from seq-data= featuresets (data side) */
 gboolean ZMapFeatureContextMapStructType::isSeqColumn(GQuark column_id)
 {
+  gboolean result = FALSE ;
   ZMapFeatureSource src;
   GList *fsets;
 
@@ -218,24 +225,77 @@ gboolean ZMapFeatureContextMapStructType::isSeqColumn(GQuark column_id)
 
   for (; fsets ; fsets = fsets->next)
     {
-      src = (ZMapFeatureSource)g_hash_table_lookup(source_2_sourcedata,fsets->data);
+      GQuark fset_id = (GQuark)GPOINTER_TO_INT(fsets->data) ;
+      src = getSource(fset_id) ;
+
       if(src && src->is_seq)
-      return TRUE;
+        {
+          result = TRUE;
+          break ;
+        }
     }
 
-  return FALSE;
+  return result;
 }
 
 
 gboolean ZMapFeatureContextMapStructType::isSeqFeatureSet(GQuark fset_id)
 {
-  ZMapFeatureSource src = (ZMapFeatureSource)g_hash_table_lookup(source_2_sourcedata,GUINT_TO_POINTER(fset_id));
-  //zMapLogWarning("feature is_seq: %s -> %p", g_quark_to_string(fset_id),src);
+  gboolean result = FALSE ;
+  ZMapFeatureSource src = getSource(fset_id) ;
 
   if(src && src->is_seq)
-    return TRUE;
-  return FALSE;
+    result = TRUE;
 
+  return result;
+}
+
+
+ZMapFeatureSource ZMapFeatureContextMapStructType::getSource(GQuark fset_id)
+{
+  ZMapFeatureSource src = NULL ;
+  zMapReturnValIfFail(fset_id, src) ;
+
+  src = (ZMapFeatureSource)g_hash_table_lookup(source_2_sourcedata, GUINT_TO_POINTER(fset_id)) ;
+
+  return src ;
+}
+
+
+void ZMapFeatureContextMapStructType::setSource(GQuark fset_id, ZMapFeatureSource src)
+{
+  zMapReturnIfFail(fset_id) ;
+  
+  if (getSource(fset_id))
+    g_hash_table_replace(source_2_sourcedata, GUINT_TO_POINTER(fset_id), src) ;
+  else
+    g_hash_table_insert(source_2_sourcedata, GUINT_TO_POINTER(fset_id), src) ;
+}
+
+
+ZMapFeatureSource ZMapFeatureContextMapStructType::createSource(const GQuark fset_id, 
+                                                                const GQuark source_id,
+                                                                const GQuark source_text,
+                                                                const GQuark style_id,
+                                                                const GQuark related_column,
+                                                                const GQuark maps_to,
+                                                                const bool is_seq)
+{
+  ZMapFeatureSource src = NULL ;
+  zMapReturnValIfFail(fset_id, src) ;
+  
+  src = g_new0(ZMapFeatureSourceStruct, 1) ;
+  
+  src->source_id = source_id ;
+  src->source_text = source_text ; 
+  src->style_id = style_id ;
+  src->related_column = related_column ;
+  src->maps_to = maps_to ;
+  src->is_seq = is_seq ;
+
+  setSource(fset_id, src) ;
+  
+  return src ;
 }
 
 
@@ -359,13 +419,67 @@ void ZMapFeatureSequenceMapStructType::addSource(const string &source_name,
 }
 
 
-/* Add a file source to our list of user-created sources. */
-void ZMapFeatureSequenceMapStructType::addFileSource(const char *file)
+ZMapConfigSource ZMapFeatureSequenceMapStructType::createSource(const char *source_name, const std::string &url, 
+                                                                const char *featuresets,
+                                                                const char *biotypes,
+                                                                GError **error)
 {
-  zMapReturnIfFail(file) ;
+  return createSource(source_name, url.c_str(), featuresets, biotypes, error) ;
+}
+
+
+ZMapConfigSource ZMapFeatureSequenceMapStructType::createSource(const char *source_name,
+                                                                const char *url,
+                                                                const char *featuresets,
+                                                                const char *biotypes,
+                                                                GError **error)
+{
+  ZMapConfigSource source = NULL ;
+  zMapReturnValIfFail(url, source) ;
+
+  GError *tmp_error = NULL ;
+  source = g_new0(ZMapConfigSourceStruct, 1) ;
+     
+  source->url = g_strdup(url) ;
+      
+  if (featuresets && *featuresets)
+    source->featuresets = g_strdup(featuresets) ;
+
+  if (biotypes && *biotypes)
+    source->biotypes = g_strdup(biotypes) ;
+
+  /* Add the new source to the view */
+  std::string source_name_str(source_name) ;
+
+  addSource(source_name_str, source, &tmp_error) ;
+
+  /* Indicate that there are changes that need saving */
+  if (!tmp_error)
+    {
+      setFlag(ZMAPFLAG_SAVE_SOURCES, TRUE) ;
+    }
+
+  if (tmp_error)
+    {
+      zMapConfigSourceDestroy(source) ;
+      source = NULL ;
+
+      g_propagate_error(error, tmp_error) ;
+    }
+
+  return source ;
+}
+
+
+/* Create a file source and add it to our list of user-created sources. */
+ZMapConfigSource ZMapFeatureSequenceMapStructType::createFileSource(const char *source_name_in, 
+                                                                    const char *file)
+{
+  ZMapConfigSource src = NULL ;
+  zMapReturnValIfFail(file, src) ;
 
   /* Create the new source */
-  ZMapConfigSource src = g_new0(ZMapConfigSourceStruct, 1) ;
+  src = g_new0(ZMapConfigSourceStruct, 1) ;
 
   src->group = SOURCE_GROUP_START ;        // default_value
   src->featuresets = g_strdup(ZMAP_DEFAULT_FEATURESETS) ;
@@ -373,8 +487,8 @@ void ZMapFeatureSequenceMapStructType::addFileSource(const char *file)
   if (strncasecmp(file, "http://", 7) != 0 && strncasecmp(file, "ftp://", 6) != 0)
     src->url = g_strdup_printf("file:///%s", file) ;
 
-  /* Add the source to our list. Use the filename as the source name */
-  string source_name(file) ;
+  /* Add the source to our list. Use the filename as the source name if none given */
+  string source_name(source_name_in ? source_name_in : file) ;
   GError *error = NULL ;
 
   addSource(source_name, src, &error) ;
@@ -384,6 +498,44 @@ void ZMapFeatureSequenceMapStructType::addFileSource(const char *file)
       zMapLogWarning("Error creating source for file '%s': %s", file, error->message) ;
       g_error_free(error) ;
     }
+
+  return src ;
+}
+
+
+/* Create a pipe source and add it to our list of user-created sources. */
+ZMapConfigSource ZMapFeatureSequenceMapStructType::createPipeSource(const char *source_name_in, 
+                                                                    const char *file,
+                                                                    const char *script,
+                                                                    const char *args)
+{
+  ZMapConfigSource src = NULL ;
+  zMapReturnValIfFail(file && script, src) ;
+
+  /* Create the new source */
+  src = g_new0(ZMapConfigSourceStruct, 1) ;
+
+  src->group = SOURCE_GROUP_START ;        // default_value
+  src->featuresets = g_strdup(ZMAP_DEFAULT_FEATURESETS) ;
+
+  if (args)
+    src->url = g_strdup_printf("pipe:///%s?%s", script, args) ;
+  else
+    src->url = g_strdup_printf("pipe:///%s", script) ;
+
+  /* Add the source to our list. Use the filename as the source name if none given */
+  string source_name(source_name_in ? source_name_in : file) ;
+  GError *error = NULL ;
+
+  addSource(source_name, src, &error) ;
+
+  if (error)
+    {
+      zMapLogWarning("Error creating source for file '%s': %s", file, error->message) ;
+      g_error_free(error) ;
+    }
+
+  return src ;
 }
 
 
@@ -402,6 +554,50 @@ void ZMapFeatureSequenceMapStructType::removeSource(const char *source_name_cstr
       g_set_error(error, g_quark_from_string("ZMap"), 99,
                   "Source '%s' does not exist", source_name_cstr) ;
     }
+}
+
+
+/* Get the ZMapConfigSource struct for the given source name. */
+ZMapConfigSource ZMapFeatureSequenceMapStructType::getSource(const string &source_name)
+{
+  ZMapConfigSource result = NULL ;
+
+  if (sources)
+    {
+      map<string, ZMapConfigSource>::iterator iter = sources->find(source_name) ;
+
+      if (iter != sources->end())
+        result = iter->second ;
+    }
+
+  return result ;
+}
+
+
+/* Get the url of the given source. Checks for a cached source and if it's not cached then
+ * attempts to look up the source details in the config file. The result should be free'd
+ * with g_free. Returns null if not found. */
+char* ZMapFeatureSequenceMapStructType::getSourceURL(const string &source_name)
+{
+  char *result = NULL ;
+
+  ZMapConfigSource source = getSource(source_name) ;
+
+  if (source && source->url)
+    result = g_strdup(source->url) ;
+
+  if (!result)
+    {
+      ZMapConfigIniContext context = zMapConfigIniContextProvide(config_file, ZMAPCONFIG_FILE_NONE) ;
+
+      if (context)
+        {
+          zMapConfigIniContextGetString(context, source_name.c_str(), ZMAPSTANZA_SOURCE_CONFIG, 
+                                        ZMAPSTANZA_SOURCE_URL, &result) ;
+        }
+    }
+
+  return result ;
 }
 
 
@@ -647,18 +843,10 @@ static gint colOrderCB(gconstpointer a, gconstpointer b,gpointer user_data)
   ZMapFeatureColumn pa = NULL,pb = NULL;
   map<GQuark, ZMapFeatureColumn> *columns = (map<GQuark, ZMapFeatureColumn>*) user_data;
 
-  if (columns)
+  if (columns && a && b)
     {
-      GQuark quark1 = (GQuark)GPOINTER_TO_INT(a) ;
-      GQuark quark2 = (GQuark)GPOINTER_TO_INT(b) ;
-      map<GQuark, ZMapFeatureColumn>::iterator iter1 = columns->find(quark1) ;
-      map<GQuark, ZMapFeatureColumn>::iterator iter2 = columns->find(quark2) ;
-
-      if (iter1 != columns->end())
-        pa = iter1->second ;
-
-      if (iter2 != columns->end())
-        pb = iter2->second ;
+      pa = (ZMapFeatureColumn)a ;
+      pb = (ZMapFeatureColumn)b ;
 
       if(pa && pb)
         {

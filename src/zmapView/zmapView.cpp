@@ -1168,6 +1168,16 @@ char *zMapViewGetLoadStatusStr(ZMapView view,
 }
 
 
+ZMapFeatureContextMap zMapViewGetContextMap(ZMapView view)
+{
+  ZMapFeatureContextMap context_map = NULL ;
+
+  zMapReturnValIfFail((view), context_map) ;
+
+  context_map = &view->context_map ;
+
+  return context_map ;
+}
 
 ZMapWindow zMapViewGetWindow(ZMapViewWindow view_window)
 {

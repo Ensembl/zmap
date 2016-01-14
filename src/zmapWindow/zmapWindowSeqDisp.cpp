@@ -489,10 +489,13 @@ void zmapWindowFeatureShowTranslation(ZMapWindow window, ZMapFeature feature)
 
                   dest_start = (dest_start + 2) / 3 ;
 
-                  dest_ptr = (seq + dest_start) - 1 ;
+                  if (seq && dest_start >= 0)
+                    {
+                      dest_ptr = (seq + dest_start) - 1 ;
 
-                  /* Copy the src sequence to the dest sequence. */
-                  memcpy(dest_ptr, current_exon->peptide, strlen(current_exon->peptide)) ;
+                      /* Copy the src sequence to the dest sequence. */
+                      memcpy(dest_ptr, current_exon->peptide, strlen(current_exon->peptide)) ;
+                    }
                 }
             }
           while ((exon_list_member = g_list_next(exon_list_member))) ;

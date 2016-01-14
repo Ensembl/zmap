@@ -5589,6 +5589,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
       {
         ZMapWindowAlignSetType requested_homol_set = ZMAPWINDOW_ALIGNCMD_INVALID ;
         FooCanvasItem *focus_item  ;
+        GList *seq_sets = NULL;
 
         /* User just pressed a key so pass in focus item if there is one. */
         focus_item = zmapWindowFocusGetHotItem(window->focus) ;
@@ -5604,7 +5605,14 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
         else if (key_event->keyval == GDK_A)
           requested_homol_set = ZMAPWINDOW_ALIGNCMD_FEATURES ;
 
-        zmapWindowCallBlixem(window, focus_item, requested_homol_set, NULL, NULL, 0.0, 0.0) ;
+        /* Check if it's a BAM column and if so add the column's featuresets to the seq_sets list */
+        char* column_name = zMapWindowGetHotColumnName(window) ;
+        GQuark column_id = zMapStyleCreateID(column_name) ;
+
+        if (window->context_map->isSeqColumn(column_id))
+          seq_sets = zmapWindowAddColumnFeaturesets(window->context_map, seq_sets, column_id, TRUE);
+
+        zmapWindowCallBlixem(window, focus_item, requested_homol_set, NULL, seq_sets, 0.0, 0.0) ;
 
         break ;
       }

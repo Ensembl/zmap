@@ -365,26 +365,17 @@ static void importCB(gpointer cb_data, guint callback_action, GtkWidget *window)
   ZMap zmap = (ZMap)cb_data ;
   ZMapViewWindow vw ;
   ZMapFeatureSequenceMap sequence_map ;
-  ZMapFeatureSequenceMap view_seq ;
   int start=0, end=0 ;
 
   zMapReturnIfFail(zmap && zmap->focus_viewwindow) ;
 
   vw = zmap->focus_viewwindow ;
 
-  view_seq = zMapViewGetSequenceMap( zMapViewGetView(vw) );
-
-  /* get view sequence and coords */
-  sequence_map = g_new0(ZMapFeatureSequenceMapStruct,1);
-  sequence_map->start = view_seq->start;
-  sequence_map->end = view_seq->end;
-  sequence_map->sequence = view_seq->sequence;
-  sequence_map->dataset = view_seq->dataset ;
-  sequence_map->config_file = view_seq->config_file;
+  sequence_map = zMapViewGetSequenceMap( zMapViewGetView(vw) );
 
   /* limit to mark if set */
-  start = view_seq->start;
-  end   = view_seq->end;
+  start = sequence_map->start;
+  end   = sequence_map->end;
 
   if(zMapWindowMarkIsSet(zMapViewGetWindow(vw)))
     {
@@ -402,7 +393,8 @@ static void importCB(gpointer cb_data, guint callback_action, GtkWidget *window)
       end = store ;
     }
 
-  /* need sequence_map to set default seq coords and map sequence name */
+  /* need sequence_map to set default seq coords and map sequence name, and to store the
+   * resulting ZMapConfigSource struct for the new source that is created */
   zMapControlImportFile(controlImportFileCB, cb_data, sequence_map, start, end);
 
   return ;
@@ -748,37 +740,19 @@ static void createNewSourceCB(const char *source_name,
   zMapReturnIfFail(zmap && zmap->focus_viewwindow) ;
 
   ZMapView zmap_view = zMapViewGetView(zmap->focus_viewwindow) ;
-
+  ZMapFeatureSequenceMap sequence_map = zMapViewGetSequenceMap(zmap_view) ;
   GError *tmp_error = NULL ;
 
-  ZMapConfigSource source = g_new0(ZMapConfigSourceStruct, 1) ;
-     
-  source->url = g_strdup(url.c_str()) ;
-      
-  if (featuresets && *featuresets)
-    source->featuresets = g_strdup(featuresets) ;
-      
-  /* Add the new source to the view */
-  std::string source_name_str(source_name) ;
-  ZMapFeatureSequenceMap sequence_map = zMapViewGetSequenceMap(zmap_view) ;
-
   if (sequence_map)
-    sequence_map->addSource(source_name_str, source, &tmp_error) ;
-
-  /* Connect to the new source */
-  if (!tmp_error)
-    zMapViewSetUpServerConnection(zmap_view, source, &tmp_error) ;
-
-  /* Indicate that there are changes that need saving */
-  if (!tmp_error)
-    zMapViewSetFlag(zmap_view, ZMAPFLAG_SAVE_SOURCES, TRUE) ;
-
-  if (tmp_error)
     {
-      zMapConfigSourceDestroy(source) ;
-      source = NULL ;
+      ZMapConfigSource source = sequence_map->createSource(source_name, url, featuresets, biotypes, &tmp_error) ;
 
-      g_propagate_error(error, tmp_error) ;
+      /* Connect to the new source */
+      if (!tmp_error)
+        zMapViewSetUpServerConnection(zmap_view, source, &tmp_error) ;
+
+      if (tmp_error)
+        g_propagate_error(error, tmp_error) ;
     }
 }
 

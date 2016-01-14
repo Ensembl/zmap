@@ -54,6 +54,8 @@ char** zMapGFFStringUtilsTokenizer02(char, char, const char * const , unsigned i
 void zMapGFFStringUtilsArrayDelete(char**, unsigned int, void(*)(void*)) ;
 char * zMapGFFStringUtilsSubstring(const char* const, const char* const, void*(*local_malloc)(size_t)) ;
 gboolean zMapGFFStringUtilsSubstringReplace(const char * const, const char * const, const char * const, char ** ) ;
+char* zMapGFFEscape(const char * const sInput ) ;
+char* zMapGFFUnescape(const char * const sInput ) ;
 
 
 
