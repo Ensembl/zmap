@@ -1,3 +1,9 @@
+2016-01-14  zmap  <zmap@sanger.ac.uk>
+ ZMap version 2.4.1-132-gfe75a70 - Update RT and git commit reports
+ src/ChangeLog                                  |  350 ++++++++++++++++++++++++
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt |    2 +-
+ 2 files changed, 351 insertions(+), 1 deletions(-)
+
 2016-01-14  Gemma Guest  <gb10@sanger.ac.uk>
  Update release notes - DOC
  docs/user/release_notes.shtml |   21 +++++++++++++++++++++
