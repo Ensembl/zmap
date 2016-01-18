@@ -208,7 +208,7 @@ endif
 # If we have gbtools in a subdirectory, add the .a file, otherwise
 # look for a locally installed version
 if USE_GBTOOLS
-zmap_LDADD += $(top_builddir)/gbtools/libgbtools.a            
+zmap_LDADD += $(top_builddir)/gbtools/.libs/libgbtools.a            
 else
 zmap_LDADD += -lgbtools
 endif
