@@ -17,27 +17,40 @@ Authors:  Ed Griffiths    <edgrif@sanger.ac.uk>
 
 ABOUT ZMAP
 ----------
-ZMap is a genome browser written in C with the aim of providing fast access to high volume data. Data may be requested from a variety of disparate sources in parallel and cached locally allowing new tracks to be loaded or the view of current data adjusted without delay. Multiple views of the data may be presented and tracks configured for different levels of detail.
+ZMap is a genome browser written in C with the aim of providing fast access to
+high volume data. Data may be requested from a variety of disparate sources in
+parallel and cached locally allowing new tracks to be loaded or the view of
+current data adjusted without delay. Multiple views of the data may be
+presented and tracks configured for different levels of detail.
 
-ZMap forms part of the Otterlace genome annotation system used by the HAVANA group at the Wellcome Trust Sanger Institute. ZMap interfaces seamlessly with the SeqTools package - SeqTools includes Blixem and Dotter, which can be called from within ZMap to give a detailed nucleotide-level view of alignments.
+ZMap forms part of the Otterlace genome annotation system used by the HAVANA
+group at the Wellcome Trust Sanger Institute. ZMap interfaces seamlessly with
+the SeqTools package - SeqTools includes Blixem and Dotter, which can be
+called from within ZMap to give a detailed nucleotide-level view of
+alignments.
 
-ZMap may also be used as a standalone browser taking data either from external soruces or from simple GFF files held locally.
+ZMap may also be used as a standalone browser taking data either from external
+soruces or from simple GFF files held locally.
 
 
 INSTALLATION
 ------------
-Briefly, the shell commands `./configure; make; make install' should configure, build, and install this package on Linux, Mac OS X or Windows (under Cygwin). See the platform-specific INSTALL.xxx files for more details.
+Briefly, the shell commands `./configure; make; make install' should
+configure, build, and install this package on Linux, Mac OS X or Windows
+(under Cygwin). See the platform-specific INSTALL.xxx files for more details.
 
 
 USAGE
 -----
-To simply open ZMap on a GFF file, run zmap as follows. GFF versions 2 and 3 are supported.
+To simply open ZMap on a GFF file, run zmap as follows. GFF versions 2 and 3
+are supported.
 
    zmap <file1> [<file2>...]
 
 Run zmap with the --help argument to see further usage information.
 
-Help pages can also be accessed from within the programs using the 'Help' menu.
+Help pages can also be accessed from within the programs using the 'Help'
+menu.
 
 Sample data and examples can be found in the 'examples' directory, e.g.
 
