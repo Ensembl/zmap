@@ -194,6 +194,7 @@
 #define ZMAPSTANZA_APP_SEQUENCE_SERVERS  "sequence-server"
 #define ZMAPSTANZA_APP_PFETCH_LOCATION   "pfetch"
 #define ZMAPSTANZA_APP_COOKIE_JAR        "cookie-jar"
+#define ZMAPSTANZA_APP_PROXY             "proxy"
 #define ZMAPSTANZA_APP_PORT              "port"
 #define ZMAPSTANZA_APP_PFETCH_MODE       "pfetch-mode"
 #define ZMAPSTANZA_APP_LOCALE            "locale"

@@ -301,6 +301,11 @@ void zmapWindowPfetchEntry(ZMapWindow window, char *sequence_name)
                              "cookie-jar", prefs.cookie_jar,
                              NULL);
 
+      if(prefs.proxy)
+        PFetchHandleSettings(pfetch,
+                             "proxy",      prefs.proxy,
+                             NULL);
+
       if (prefs.location)
         g_free(prefs.location);
       if (prefs.cookie_jar)

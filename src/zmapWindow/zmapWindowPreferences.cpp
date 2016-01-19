@@ -60,6 +60,12 @@ gboolean zmapWindowGetPFetchUserPrefs(char *config_file, PFetchUserPrefsStruct *
           pfetch->cookie_jar = tmp_string ;
         }
 
+      if (zMapConfigIniContextGetFilePath(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+                                          ZMAPSTANZA_APP_PROXY, &tmp_string))
+        {
+          pfetch->proxy = tmp_string ;
+        }
+
       if (zMapConfigIniContextGetInt(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
                                           ZMAPSTANZA_APP_PORT, &tmp_int))
         {

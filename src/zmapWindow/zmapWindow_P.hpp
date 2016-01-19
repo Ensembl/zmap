@@ -1053,6 +1053,7 @@ typedef struct
 {
   char    *location;
   char    *cookie_jar;
+  char    *proxy;
   char    *mode;
   int      port;
   gboolean full_record;
