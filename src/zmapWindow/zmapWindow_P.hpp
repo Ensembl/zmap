@@ -706,7 +706,6 @@ typedef struct
 
   ZMapFeature feature;                    /* only used in item callbacks */
   ZMapFeatureSet feature_set ;            /* Only used in column callbacks... */
-  GQuark req_id;					/* set to request if any */
   ZMapWindowContainerFeatureSet container_set;  /* we can get a/the featureset from this */
                                                 /* be good to loose the featureset member */
                                                 /* is this true: column contains mixed features */
@@ -1531,12 +1530,18 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
 ZMapGUIMenuItem zmapWindowMakeMenuSearchListOps(int *start_index_inout,
 						ZMapGUIMenuItemCallbackFunc callback_func,
 						gpointer callback_data) ;
-ZMapGUIMenuItem zmapWindowMakeMenuBlixemBAM(int *start_index_inout,
-					    ZMapGUIMenuItemCallbackFunc callback_func,
-					    gpointer callback_data) ;
-ZMapGUIMenuItem zmapWindowMakeMenuRequestBAM(int *start_index_inout,
-					     ZMapGUIMenuItemCallbackFunc callback_func,
-					     gpointer callback_data) ;
+ZMapGUIMenuItem zmapWindowMakeMenuBlixemBAMFeatureset(int *start_index_inout,
+                                                      ZMapGUIMenuItemCallbackFunc callback_func,
+                                                      gpointer callback_data) ;
+ZMapGUIMenuItem zmapWindowMakeMenuBlixemBAMColumn(int *start_index_inout,
+                                                  ZMapGUIMenuItemCallbackFunc callback_func,
+                                                  gpointer callback_data) ;
+ZMapGUIMenuItem zmapWindowMakeMenuRequestBAMFeatureset(int *start_index_inout,
+                                                       ZMapGUIMenuItemCallbackFunc callback_func,
+                                                       gpointer callback_data) ;
+ZMapGUIMenuItem zmapWindowMakeMenuRequestBAMColumn(int *start_index_inout,
+                                                   ZMapGUIMenuItemCallbackFunc callback_func,
+                                                   gpointer callback_data) ;
 
 ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
 				       ZMapGUIMenuItemCallbackFunc callback_func,

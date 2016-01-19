@@ -45,6 +45,7 @@
 #include <ZMap/zmap.hpp>
 
 #include <string.h>
+#include <list>
 
 #include <ZMap/zmapUtils.hpp>
 #include <ZMap/zmapString.hpp>
@@ -147,7 +148,8 @@ typedef enum {
 /* Strings/enums for invoking blixem. */
 #define BLIXEM_MENU_STR            "Blixem"
 #define BLIXEM_OPS_STR             BLIXEM_MENU_STR " - more options"
-#define BLIXEM_READS_STR           BLIXEM_MENU_STR " paired reads data"
+#define BLIXEM_READS_STR           "Paired reads data"
+#define BLIXEM_ALL_READS_STR       "All paired reads data"
 
 #define BLIXEM_DNA_STR             "DNA"
 #define BLIXEM_DNAS_STR            BLIXEM_DNA_STR "s"
@@ -190,7 +192,6 @@ typedef enum {
 
 #define PAIRED_READS_RELATED       "Request %s paired reads"
 #define PAIRED_READS_ALL           "Request all paired reads"
-#define PAIRED_READS_DATA          "Request paired reads data"
 
 #define COLUMN_COLOUR                        "Edit Style"
 #define COLUMN_STYLE_OPTS                "Choose Style"
@@ -206,13 +207,17 @@ enum
     BLIX_SELECTED,                          /* Blixem all matches for selected features in this column. */
     BLIX_EXPANDED,                          /* selected features expanded into hidden underlying data */
     BLIX_SET,                               /* Blixem all matches for all features in this column. */
-    BLIX_MULTI_SETS                         /* Blixem all matches for all features in the list of columns in the blixem config file. */
+    BLIX_MULTI_SETS,                        /* Blixem all matches for all features in the list of columns in the blixem config file. */
+    BLIX_READS,                             /* Blixem related reads data for a coverage featureset. */
+    BLIX_ALL_READS,                         /* Blixem all related reads data for a coverage column. */
   } ;
 
-#define BLIX_SEQ                10000       /* Blixem short reads data base menu index */
-#define REQUEST_SELECTED 20000        /* data related to selected featureset in column */
-#define REQUEST_ALL_SEQ 20001                /* all data related to coverage featuresets in column */
-#define REQUEST_SEQ        20002                /* request SR data from mark from menu */
+
+enum
+  {
+    ZMAPREADS_SELECTED,                     /* Load related reads data for a coverage featureset. */
+    ZMAPREADS_ALL                           /* Load all related reads data for a coverage column. */
+  } ;
 
 
 /* Choose which way a transcripts dna is exported... */
@@ -426,6 +431,9 @@ static void offsetTextAttr(gpointer data, gpointer user_data) ;
 
 static ZMapWindowContainerFeatureSet getScratchContainerFeatureset(ZMapWindow window) ;
 
+static GQuark selectedFeaturesetRelatedBAMData(ItemMenuCBData menu_data) ;
+static bool selectedColumnRelatedBAMData(ItemMenuCBData menu_data, std::list<GQuark> *fset_ids_out) ;
+
 
 
 
@@ -506,7 +514,6 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
   ZMapFeatureTypeStyle style = NULL ;
   ZMapFeatureSet feature_set = NULL ;
   ZMapWindowContainerFeatureSet container_set = NULL ;
-  ZMapGUIMenuItem seq_menus = NULL ;
 
 
   /* Some parts of the menu are feature type specific so retrieve the feature item info
@@ -632,9 +639,12 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
         }
     }
 
-  /* list all short reads data, temp access till we get wiggle plots running */
-  if ((seq_menus = zmapWindowMakeMenuBlixemBAM(NULL, NULL, menu_data)))
-      menu_sets = g_list_append(menu_sets, seq_menus) ;
+  /* Add blixem options for coverage columns that have related BAM data */
+  if (selectedFeaturesetRelatedBAMData(menu_data))
+    menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuBlixemBAMFeatureset(NULL, NULL, menu_data)) ;
+
+  if (selectedColumnRelatedBAMData(menu_data, NULL))
+    menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuBlixemBAMColumn(NULL, NULL, menu_data)) ;
 
   if (zMapStyleIsPfetchable(style))
     menu_sets = g_list_append(menu_sets, makeMenuPfetchOps(NULL, NULL, menu_data)) ;
@@ -686,9 +696,12 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
       menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuStyle(NULL, NULL, menu_data, style, feature->mode));
   }
 
-  /* list all short reads data, temp access till we get wiggle plots running */
-  if ((seq_menus = zmapWindowMakeMenuRequestBAM(NULL, NULL, menu_data)))
-    menu_sets = g_list_append(menu_sets, seq_menus) ;
+  /* Add column configuration options for coverage columns that have related BAM data */
+  if (selectedFeaturesetRelatedBAMData(menu_data))
+    menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuRequestBAMFeatureset(NULL, NULL, menu_data)) ;
+
+  if (selectedColumnRelatedBAMData(menu_data, NULL))
+    menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuRequestBAMColumn(NULL, NULL, menu_data)) ;
 
   menu_sets = g_list_append(menu_sets, separator) ;
 
@@ -745,7 +758,6 @@ void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
   ItemMenuCBData cbdata = NULL ;
   ZMapFeature feature = NULL ;
   ZMapFeatureSet feature_set = NULL ;
-  ZMapGUIMenuItem seq_menus = NULL ;
 
   zMapReturnIfFail(window && window->context_map && button_event && container_set) ;
 
@@ -813,8 +825,13 @@ void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
                 }
             }
 
-          if ((seq_menus = zmapWindowMakeMenuBlixemBAM(NULL, NULL, cbdata)))
-            menu_sets = g_list_append(menu_sets, seq_menus) ;
+
+          /* Add blixem options for coverage columns that have related BAM data */
+          if (selectedFeaturesetRelatedBAMData(cbdata))
+            menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuBlixemBAMFeatureset(NULL, NULL, cbdata)) ;
+
+          if (selectedColumnRelatedBAMData(cbdata, NULL))
+            menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuBlixemBAMColumn(NULL, NULL, cbdata)) ;
         }
 
       menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuFeatureOps(NULL, NULL, cbdata)) ;
@@ -836,8 +853,13 @@ void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
                         zmapWindowMakeMenuBump(NULL, NULL, cbdata,
                                                zmapWindowContainerFeatureSetGetBumpMode((ZMapWindowContainerFeatureSet)item))) ;
 
-      if ((seq_menus = zmapWindowMakeMenuRequestBAM(NULL, NULL, cbdata)))
-        menu_sets = g_list_append(menu_sets, seq_menus);
+
+      /* Add column configuration options for coverage columns that have related BAM data */
+      if (selectedFeaturesetRelatedBAMData(cbdata))
+        menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuRequestBAMFeatureset(NULL, NULL, cbdata)) ;
+
+      if (selectedColumnRelatedBAMData(cbdata, NULL))
+        menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuRequestBAMColumn(NULL, NULL, cbdata)) ;
 
       menu_sets = g_list_append(menu_sets, separator) ;
 
@@ -3636,279 +3658,84 @@ ZMapGUIMenuItem zmapWindowMakeMenuProteinHomol(int *start_index_inout,
 }
 
 
-/* This function creates a Blixem BAM menu. */
-ZMapGUIMenuItem zmapWindowMakeMenuBlixemBAM(int *start_index_inout,
-                                            ZMapGUIMenuItemCallbackFunc callback_func,
-                                            gpointer callback_data)
+/* If the selected featureset is a coverage featureset with a related BAM featureset, then
+ * return the ID of the BAM featureset; otherwise return 0  */
+static GQuark selectedFeaturesetRelatedBAMData(ItemMenuCBData menu_data)
 {
-  /* get a list of featuresets from the window's context_map */
-  static ZMapGUIMenuItem menu = NULL;
-  static int n_menu = 0;
-  ItemMenuCBData cbdata  = (ItemMenuCBData)callback_data;
-  ZMapGUIMenuItem m = NULL ;
-  GList *fs_list = NULL , *fsl = NULL ;
-  int n_sets = 0 ;
-  int i = 0;
-  char * related = NULL;        /* req data from coverage */
-  char * blixem_col = NULL;        /* blixem related from coverage or directly from real data */
-  GQuark fset_id = 0, req_id = 0;
+  GQuark result = 0 ;
 
-  if (!cbdata || !cbdata->window || !cbdata->window->context_map )
-    return menu ;
-
-  fs_list = cbdata->window->context_map->seq_data_featuresets;
-  n_sets = g_list_length(fs_list);
-
-  if (!n_sets)
-    return menu ;
-
-  if(n_menu < n_sets)
+  if (menu_data && menu_data->feature_set)
     {
-      /* as this derives from config data read on creating the view
-       * it will not change unless we reconfig and open another view
-       * alloc enough for all views
-       */
-      if(menu)
+      GQuark fset_id = ((ZMapFeatureSet) (menu_data->feature_set))->unique_id;
+      GQuark related_fset_id = related_column(menu_data->window->context_map,fset_id);
+
+      if(related_fset_id)
+        result = related_fset_id ;
+    }
+
+  return result ;
+}
+
+
+/* If the selected column has any featuresets with related BAM featuresets, then
+ * add the IDs of the BAM featuresets to the list and return TRUE; otherwise return FALSE */
+static bool selectedColumnRelatedBAMData(ItemMenuCBData menu_data, std::list<GQuark> *fset_ids_out)
+{
+  bool result = FALSE ;
+
+  if (menu_data && menu_data->container_set)
+    {
+      GList *l = zmapWindowContainerFeatureSetGetFeatureSets(menu_data->container_set);
+      for(;l; l = l->next)
         {
-          for(m = menu; m->type != ZMAPGUI_MENU_NONE ;m++)
-            g_free((void *)(m->name));
+          GQuark fset_id = GPOINTER_TO_UINT(l->data);
+          GQuark related_fset_id = related_column(menu_data->window->context_map,fset_id);
 
-          g_free(menu);
-        }
-
-      m = menu = g_new0(ZMapGUIMenuItemStruct, n_sets * 2 + 2 + 2 + 1 + 6);
-      /* main menu, sub menu, two extra items plus terminator, plus 6 just to be sure */
-    }
-
-  /* add request from coverage items and blixem from coverage and real data */
-  if(cbdata->feature)
-    {
-      fset_id = ((ZMapFeatureSet) (cbdata->feature->parent))->unique_id;
-      req_id = related_column(cbdata->window->context_map,fset_id);
-
-      if(req_id)
-        related = get_menu_string(req_id,'-');
-    }
-
-  if(related)
-    {
-      blixem_col = related;
-      cbdata->req_id = req_id;
-      /* if we click on a coverage column we blixem the data column which contains featuresets */
-    }
-  else if(cbdata->window->context_map->isSeqFeatureSet(fset_id))
-    {
-      /* if we click on a data column we blixem that not the featureset as we may have several featuresets in the column */
-      /* can get the column from the menu_data->container_set or from the featureset_2_column... */
-      /* can't remember how reliable is the container */
-      ZMapFeatureSetDesc f2c ;
-
-      if ((f2c = (ZMapFeatureSetDesc)g_hash_table_lookup(cbdata->window->context_map->featureset_2_column,GUINT_TO_POINTER(fset_id))))
-          {
-          cbdata->req_id = f2c->column_id;
-          blixem_col = get_menu_string(f2c->column_ID,'-');
-          }
-      else
-          {
-          zMapLogWarning("cannot find column for featureset %s",g_quark_to_string(fset_id));
-          /* rather than asserting */
-          }
-    }
-
-  /* add sub menu */
-  if (m)
-    {
-      m->type = ZMAPGUI_MENU_BRANCH;
-      m->name = g_strdup(BLIXEM_OPS_STR "/" BLIXEM_READS_STR);
-      m->id = 0;
-      m->callback_func = NULL;
-      m++;
-
-      for(i = 0, fsl = fs_list;i < n_sets; i++, fsl = fsl->next)
-        {
-          const gchar *fset;
-          GQuark req_id;
-          ZMapFeatureSetDesc f2c;
-
-          m->type = ZMAPGUI_MENU_NORMAL;
-
-          f2c = (ZMapFeatureSetDesc)g_hash_table_lookup(cbdata->window->context_map->featureset_2_column,fsl->data);
-          if(f2c)
+          if(related_fset_id)
             {
-              fset = get_menu_string(f2c->feature_src_ID,'/');
-
-              req_id = related_column(cbdata->window->context_map,GPOINTER_TO_UINT(fsl->data));
-
-              if(!req_id)                /* don't include coverage data */
-                {
-                  m->name = g_strdup_printf(BLIXEM_OPS_STR "/" BLIXEM_READS_STR"/%s", fset);
-                  m->id = BLIX_SEQ + i;
-                  m->callback_func = blixemMenuCB;
-                  m++;
-                }
+              result = TRUE ;
+          
+              if (fset_ids_out)
+                fset_ids_out->push_back(related_fset_id) ;
+              else
+                break ; // just want to know if any have a related fset so exit after one is found
             }
         }
-
-      m->type = ZMAPGUI_MENU_NONE;
-      m->name = NULL;
     }
 
-  /* this overrides data in the menus as given in the args, but index and func are always NULL */
-  if (menu)
-    zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
+  return result ;
+}
+
+
+/* This function creates Blixem BAM menu entries for the selected featureset. */
+ZMapGUIMenuItem zmapWindowMakeMenuBlixemBAMFeatureset(int *start_index_inout,
+                                                      ZMapGUIMenuItemCallbackFunc callback_func,
+                                                      gpointer callback_data)
+{
+  static ZMapGUIMenuItemStruct menu[] =
+    {
+      {ZMAPGUI_MENU_NORMAL, BLIXEM_OPS_STR "/" BLIXEM_READS_STR, BLIX_READS, blixemMenuCB, NULL, "<Ctrl>A"},
+
+      {ZMAPGUI_MENU_NONE,   NULL,                                            0, NULL,         NULL}
+    } ;
+
+  zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
 
   return menu;
 }
 
-
-
-ZMapGUIMenuItem zmapWindowMakeMenuRequestBAM(int *start_index_inout,
-                                             ZMapGUIMenuItemCallbackFunc callback_func,
-                                             gpointer callback_data)
+/* This function creates Blixem BAM menu entries for the selected column. */
+ZMapGUIMenuItem zmapWindowMakeMenuBlixemBAMColumn(int *start_index_inout,
+                                                  ZMapGUIMenuItemCallbackFunc callback_func,
+                                                  gpointer callback_data)
 {
-  /* get a list of featuresets from the window's context_map */
-  static ZMapGUIMenuItem menu = NULL;
-  static int n_menu = 0;
-  ItemMenuCBData cbdata  = (ItemMenuCBData)callback_data;
-  ZMapGUIMenuItem m;
-  GList *fs_list = NULL, *fsl = NULL ;
-  int n_sets = 0;
-  int i = 0;
-  char * related = NULL;        /* req data from coverage */
-  char * blixem_col = NULL;        /* blixem related from coverage or directly from real data */
-  GQuark fset_id = 0,
-    req_id = 0;
-
-  if (!cbdata || !cbdata->window || !cbdata->window->context_map )
-    return menu ;
-
-  fs_list = cbdata->window->context_map->seq_data_featuresets;
-  n_sets = g_list_length(fs_list) ;
-
-  if (!n_sets)
-    return menu ;
-
-  if(n_menu < n_sets)
+  static ZMapGUIMenuItemStruct menu[] =
     {
-      /* as this derives from config data read on creating the view
-       * it will not change unless we reconfig and open another view
-       * alloc enough for all views
-       */
-      if(menu)
-        {
-          for(m = menu; m->type != ZMAPGUI_MENU_NONE ;m++)
-            g_free((void *)(m->name));
+      {ZMAPGUI_MENU_NORMAL, BLIXEM_OPS_STR "/" BLIXEM_READS_STR, BLIX_ALL_READS, blixemMenuCB, NULL, "<Ctrl>A"},
 
-          g_free(menu);
-        }
-      m = menu = g_new0(ZMapGUIMenuItemStruct, n_sets * 2 + 2 + 2 + 1 + 6);
-      /* main menu, sub menu, two extra items plus terminator, plus 6 just to be sure */
-    }
+      {ZMAPGUI_MENU_NONE,   NULL,                                            0, NULL,         NULL}
+    } ;
 
-  /* add request from coverage items and blixem from coverage and real data */
-  if(cbdata->feature)
-    {
-      fset_id = ((ZMapFeatureSet) (cbdata->feature->parent))->unique_id;
-      req_id = related_column(cbdata->window->context_map,fset_id);
-
-      if(req_id)
-        related = get_menu_string(req_id,'-');
-    }
-
-  if(related)
-    {
-      blixem_col = related;
-      cbdata->req_id = req_id;
-      /* if we click on a coverage column we blixem the data column which contains featuresets */
-    }
-  else if(cbdata->window->context_map->isSeqFeatureSet(fset_id))
-    {
-      /* if we click on a data column we blixem that not the featureset as we may have several featuresets in the column */
-      /* can get the column from the menu_data->container_set or from the featureset_2_column... */
-      /* can't remember how reliable is the container */
-      ZMapFeatureSetDesc f2c ;
-
-      if ((f2c = (ZMapFeatureSetDesc)g_hash_table_lookup(cbdata->window->context_map->featureset_2_column,GUINT_TO_POINTER(fset_id))))
-          {
-          cbdata->req_id = f2c->column_id;
-          blixem_col = get_menu_string(f2c->column_ID,'-');
-          }
-      else
-          {
-          zMapLogWarning("cannot find column for featureset %s",g_quark_to_string(fset_id));
-          /* rather than asserting */
-          }
-    }
-
-  if (related)
-    {
-      m->type = ZMAPGUI_MENU_NORMAL;
-      m->name = g_strdup_printf(COLUMN_CONFIG_STR "/" PAIRED_READS_RELATED, related);
-      m->id = REQUEST_SELECTED;
-      m->callback_func = requestShortReadsCB;
-      m++;
-    }
-
-  /* add menu item for all data in column id any of them have related featuresets */
-  /* can't trigger off selected feature as we don't always have one */
-  {
-    GQuark fset = 0 ;
-    GList *l = NULL ;
-
-    l = zmapWindowContainerFeatureSetGetFeatureSets(cbdata->container_set);
-    for(;l; l = l->next)
-      {
-        fset = GPOINTER_TO_UINT(l->data);
-        if(related_column(cbdata->window->context_map,fset))
-          {
-            m->type = ZMAPGUI_MENU_NORMAL;
-            m->name = g_strdup(COLUMN_CONFIG_STR "/" PAIRED_READS_ALL);
-            m->id = REQUEST_ALL_SEQ;
-            m->callback_func = requestShortReadsCB;
-            m++;
-            /* found one, so we can request all, don't do it twice */
-            break;
-          }
-      }
-  }
-
-
-  /* add sub menu */
-  m->type = ZMAPGUI_MENU_BRANCH;
-  m->name = g_strdup(COLUMN_CONFIG_STR "/" PAIRED_READS_DATA);
-  m->id = 0;
-  m->callback_func = NULL;
-  m++;
-
-  for(i = 0, fsl = fs_list;i < n_sets; i++, fsl = fsl->next)
-    {
-      const gchar *fset;
-      GQuark req_id;
-      ZMapFeatureSetDesc f2c;
-
-      m->type = ZMAPGUI_MENU_NORMAL;
-
-      f2c = (ZMapFeatureSetDesc)g_hash_table_lookup(cbdata->window->context_map->featureset_2_column,fsl->data);
-      if(f2c)
-        {
-          fset = get_menu_string(f2c->feature_src_ID,'/');
-
-          req_id = related_column(cbdata->window->context_map,GPOINTER_TO_UINT(fsl->data));
-
-          if(!req_id)                /* don't include coverage data */
-            {
-              m->name = g_strdup_printf(COLUMN_CONFIG_STR "/" PAIRED_READS_DATA"/%s", fset);
-              m->id = REQUEST_SEQ + i;
-              m->callback_func = requestShortReadsCB;
-              m++;
-            }
-        }
-    }
-
-  m->type = ZMAPGUI_MENU_NONE;
-  m->name = NULL;
-
-  /* this overrides data in the menus as given in the args, but index and func are always NULL */
   zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
 
   return menu;
@@ -3916,27 +3743,40 @@ ZMapGUIMenuItem zmapWindowMakeMenuRequestBAM(int *start_index_inout,
 
 
 
-/* return string with / instead of _ */
-static char *get_menu_string(GQuark set_quark, char disguise)
+ZMapGUIMenuItem zmapWindowMakeMenuRequestBAMFeatureset(int *start_index_inout,
+                                                       ZMapGUIMenuItemCallbackFunc callback_func,
+                                                       gpointer callback_data)
 {
-  char *p = NULL ;
-  char *seq_set = NULL ;
-
-  seq_set = g_strdup ((char *) g_quark_to_string(GPOINTER_TO_UINT(set_quark)));
-
-  for(p = seq_set ; *p ;p++)
+  static ZMapGUIMenuItemStruct menu[] =
     {
-      /* _ adds an accelerator and gives us a GTK error */
-      /* / is what we'd prefer as that what we use on the menus but that would create a menu structure */
-      /* the problem is using the menu text for presentation and also for structure */
-      /*  Gthanks GLib */
+      {ZMAPGUI_MENU_NORMAL, COLUMN_CONFIG_STR "/" PAIRED_READS_RELATED, ZMAPREADS_SELECTED, 
+       requestShortReadsCB, NULL, "<Ctrl>A"},
 
-      if(*p == '_')        /* / is there for menus, we want featuresets without escaping names*/
-        *p = disguise;
-    }
+      {ZMAPGUI_MENU_NONE,   NULL,                                            0, NULL,         NULL}
+    } ;
 
-  return(seq_set);
+  zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
+
+  return menu;
 }
+
+ZMapGUIMenuItem zmapWindowMakeMenuRequestBAMColumn(int *start_index_inout,
+                                                   ZMapGUIMenuItemCallbackFunc callback_func,
+                                                   gpointer callback_data)
+{
+  static ZMapGUIMenuItemStruct menu[] =
+    {
+      {ZMAPGUI_MENU_NORMAL, COLUMN_CONFIG_STR "/" PAIRED_READS_ALL, ZMAPREADS_ALL, 
+       requestShortReadsCB, NULL, "<Ctrl>A"},
+
+      {ZMAPGUI_MENU_NONE,   NULL,                                            0, NULL,         NULL}
+    } ;
+
+  zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
+
+  return menu;
+}
+
 
 
 /* does a featureset have a related one?
@@ -3998,7 +3838,6 @@ static void requestShortReadsCB(int menu_item_id, gpointer callback_data)
 {
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
   GList *l = NULL ;
-  int i = 0 ;
   GList *req_list = NULL;
 
   if (!menu_data)
@@ -4011,12 +3850,13 @@ static void requestShortReadsCB(int menu_item_id, gpointer callback_data)
     }
   else
 #endif
-  if(menu_item_id == REQUEST_SELECTED)
+  if(menu_item_id == ZMAPREADS_SELECTED)
     {
       /* this is for a column related to a coverage featureset so we get several featuresets */
-      req_list = zmapWindowAddColumnFeaturesets(menu_data->context_map,req_list,menu_data->req_id,TRUE);
+      GQuark req_id = selectedFeaturesetRelatedBAMData(menu_data) ;
+      req_list = zmapWindowAddColumnFeaturesets(menu_data->context_map, req_list, req_id, TRUE);
     }
-  else if (menu_item_id == REQUEST_ALL_SEQ)
+  else if (menu_item_id == ZMAPREADS_ALL)
     {
       GQuark fset_id,req_id;
       ZMapFeatureSource src;
@@ -4033,21 +3873,6 @@ static void requestShortReadsCB(int menu_item_id, gpointer callback_data)
 
           if(req_id)
             req_list = zmapWindowAddColumnFeaturesets(menu_data->context_map,req_list,req_id,TRUE);
-        }
-    }
-  else
-    /* legacy menu */
-    {
-      for(i = menu_item_id - REQUEST_SEQ,
-            l = menu_data->window->context_map->seq_data_featuresets;
-          i && l; l = l->next, i--)
-        {
-          continue;
-        }
-
-      if(l)
-        {        /* this is a featureset not a column ! */
-          req_list = g_list_prepend(req_list,l->data);
         }
     }
 
@@ -4098,55 +3923,22 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
     case BLIX_SET:
       requested_homol_set = ZMAPWINDOW_ALIGNCMD_SET ;
       if (menu_data->feature_set && menu_data->window->context_map->isSeqFeatureSet(menu_data->feature_set->unique_id))
-        seq_sets = zmapWindowAddColumnFeaturesets(menu_data->window->context_map,seq_sets,menu_data->req_id,FALSE);
+        {
+          GQuark req_id = selectedFeaturesetRelatedBAMData(menu_data) ;
+          seq_sets = zmapWindowAddColumnFeaturesets(menu_data->window->context_map,seq_sets,req_id,FALSE);
+        }
       break ;
     case BLIX_MULTI_SETS:
       requested_homol_set = ZMAPWINDOW_ALIGNCMD_MULTISET ;
       if (menu_data->feature_set && menu_data->window->context_map->isSeqFeatureSet(menu_data->feature_set->unique_id))
-        seq_sets = zmapWindowAddColumnFeaturesets(menu_data->window->context_map,seq_sets,menu_data->req_id,FALSE);
-      break;
-
-#if 0
-    default:
-      break;
-#else
-    default:
-      if(menu_item_id >= BLIX_SEQ)      /* one or more sets starting from BLIX_SEQ */
         {
-          GList *l;
-          int i;
-
-#if RESTRICT_TO_MARK
-          if (!zmapWindowMarkIsSet(menu_data->window->mark))
-            {
-              zMapMessage("You must set the mark first to select this option","");
-            }
-          else
-#endif
-            {
-              for (i = menu_item_id - BLIX_SEQ, l = menu_data->window->context_map->seq_data_featuresets ;
-                   i && l ;
-                   l = l->next, i--)
-                {
-                  continue ;
-                }
-
-              if (l)
-                {
-                  ZMapFeatureSetDesc src ;
-
-                  src = (ZMapFeatureSetDesc)g_hash_table_lookup(menu_data->window->context_map->featureset_2_column,l->data);
-                  if(src)
-                    {
-                      seq_sets = g_list_prepend (seq_sets,GUINT_TO_POINTER(src->feature_src_ID));
-                      requested_homol_set = ZMAPWINDOW_ALIGNCMD_SET ;
-                    }
-                }
-            }
-
-          break ;
+          GQuark req_id = selectedFeaturesetRelatedBAMData(menu_data) ;
+          seq_sets = zmapWindowAddColumnFeaturesets(menu_data->window->context_map, seq_sets, req_id, FALSE);
         }
-#endif
+      break;
+
+    default:
+      break;
     }
 
 
