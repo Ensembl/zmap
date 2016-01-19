@@ -69,6 +69,7 @@ static list<string>* ensemblGetList(const char *host,
 typedef enum
 {
   ZMAPENSEMBLUTILS_ERROR_CONNECT,
+  ZMAPENSEMBLUTILS_ERROR_RESULTS
 } ZMapEnsemblUtilsError ;
 
 
@@ -144,24 +145,52 @@ static list<string>* ensemblGetList(const char *host,
   pthread_mutex_lock(&mutex) ;
 
   MYSQL *mysql = mysql_init(NULL) ;
-  mysql_real_connect(mysql, host, user, passwd, dbname, port, NULL, 0) ;
+
+  /* on unix, localhost will connect via a local socket by default and ignore the port. If the
+   * user has specified a port then force mysql to use it by setting the protocol to TCP (this is
+   * necessary if using ssh tunnels). */
+  if (mysql && host && port && !strcmp(host, "localhost"))
+    {
+      const mysql_protocol_type arg = MYSQL_PROTOCOL_TCP ;
+      const int status = mysql_options(mysql, MYSQL_OPT_PROTOCOL, &arg) ;
+
+      if (status != 0)
+        zMapLogWarning("Error setting mysql protocol to TCP for %s:%d", host, port) ;
+    }
 
   if (mysql)
     {
-      result = new list<string> ;
+      mysql_real_connect(mysql, host, user, passwd, dbname, port, NULL, 0) ;
+    }
 
+  if (mysql)
+    {
       mysql_real_query(mysql, query.c_str(), query.size()) ;
 
       MYSQL_RES *mysql_results = mysql_store_result(mysql) ;
 
-      MYSQL_ROW mysql_row = mysql_fetch_row(mysql_results) ;
-
-      while (mysql_row)
+      if (mysql_results)
         {
-          string string_val(mysql_row[0]) ;
-          result->push_back(string_val) ;
+          result = new list<string> ;
 
-          mysql_row = mysql_fetch_row(mysql_results) ;
+          MYSQL_ROW mysql_row = mysql_fetch_row(mysql_results) ;
+
+          while (mysql_row)
+            {
+              string string_val(mysql_row[0]) ;
+              result->push_back(string_val) ;
+
+              mysql_row = mysql_fetch_row(mysql_results) ;
+            }
+        }
+      else
+        {
+          if (dbname)
+            g_set_error(error, ZMAP_ENSEMBLUTILS_ERROR, ZMAPENSEMBLUTILS_ERROR_RESULTS,
+                        "No results returned from database '%s'", dbname) ;
+          else
+            g_set_error(error, ZMAP_ENSEMBLUTILS_ERROR, ZMAPENSEMBLUTILS_ERROR_RESULTS,
+                        "No results returned from host '%s:%d'", host, port) ;
         }
     }
   else
