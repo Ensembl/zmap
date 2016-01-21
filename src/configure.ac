@@ -318,21 +318,6 @@ AC_ARG_ENABLE(profile,
         AS_HELP_STRING(--enable-profile,enable profiling debug info compilation (no)),
         prof=$enableval, prof=no)
 
-# um....what's this all about.....-O2 should _not_ be the default....
-#if test "x$prof" = "xyes"; then
-#   CFLAGS="$CFLAGS -pg -g";
-#elif test "x$deb" = "xyes"; then
-#   CFLAGS="$CFLAGS -g";
-#else
-#   CFLAGS="$CFLAGS -O2";
-#fi
-
-CFLAGS="$CFLAGS -g";
-
-# flags that we could potentially use for warnings are:
-#     -Wpedantic -Wall -Wextra
-#
-CXXFLAGS='-g'
 
 AC_SUBST(PKG_CONFIG)
 AC_SUBST(CFLAGS)
