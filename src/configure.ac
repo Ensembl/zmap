@@ -584,13 +584,9 @@ zmapWindow/Makefile
 zmapXML/Makefile
 include/Makefile
 libzmapfoocanvas/Makefile
-libpfetch/Makefile
-libpfetch/tests/Makefile
-libcurlobject/Makefile
 zmap.pc
 dotZMap:dotZmap.in
 ])
-
 
 
 # We've decided not to the doxygen stuff, no one uses it.

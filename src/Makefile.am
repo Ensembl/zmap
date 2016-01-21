@@ -34,7 +34,7 @@ if USE_GBTOOLS
 OPTIONAL_SUBDIRS = gbtools
 endif
 
-SUBDIRS = $(OPTIONAL_SUBDIRS) libpfetch libcurlobject libzmapfoocanvas
+SUBDIRS = $(OPTIONAL_SUBDIRS) libzmapfoocanvas
 
 if USE_ACECONN
 SUBDIRS += AceConn
@@ -115,7 +115,8 @@ pkgconfig_DATA = zmap.pc
 
 noinst_LTLIBRARIES = libZMapApp.la libZMap.la libZMapAppServices.la \
                      libZMapThr.la libZMapRemoteControl.la libZMapXML.la libZMapUtils.la \
-                     libzmapfoocanvas.la libPFetch.la libZMapServers.la
+                     libzmapfoocanvas.la libZMapServers.la
+
 
 libZMapApp_la_SOURCES =
 libZMapApp_la_LIBADD  = zmapApp/libZMapApp.la
@@ -153,9 +154,6 @@ libZMapUtils_la_LIBADD  = zmapUtils/libZMapUtils.la
 libZMapServers_la_SOURCES = 
 libZMapServers_la_LIBADD  = zmapServer/libZMapServers.la
 
-libPFetch_la_SOURCES = 
-libPFetch_la_LIBADD  = libpfetch/libpfetch.la libcurlobject/libcurlobject.la
-
 libzmapfoocanvas_la_SOURCES =
 libzmapfoocanvas_la_LIBADD  = libzmapfoocanvas/libzmapfoocanvas.la
 
@@ -187,8 +185,7 @@ zmap_LDADD =                                                 \
 	$(top_builddir)/.libs/libZMapXML.a                   \
 	$(top_builddir)/.libs/libZMapUtils.a                 \
 	$(top_builddir)/.libs/libZMapServers.a               \
-	$(top_builddir)/.libs/libzmapfoocanvas.a             \
-	$(top_builddir)/.libs/libPFetch.a
+	$(top_builddir)/.libs/libzmapfoocanvas.a 
 
 
 if USE_ACECONN
@@ -290,16 +287,18 @@ remotecontrol_LINK         = $(CXX)  $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFL
 check_LTLIBRARIES = libcheckZMap.la
 
 libcheckZMap_la_DEPENDENCIES = $(noinst_LTLIBRARIES) $(libcheckZMap_la_LIBADD)
+
 libcheckZMap_la_SOURCES =
 #libcheckZMap_la_LDFLAGS = -all-static
+
 libcheckZMap_la_LIBADD  = \
-libpfetch/tests/libcheckPFetch.la          \
 zmapFeature/tests/libcheckZMapFeature.la   \
 zmapFeature/tests/libcheckZMapFeature_P.la \
 zmapFeature/tests/libcheckZMapStyle.la     \
 zmapFeature/tests/libcheckZMapStyle_P.la   \
 zmapUtils/tests/libcheckZMapUtilsConfig.la \
 $(NULL)
+
 
 TESTS = check_zmap
 
@@ -313,12 +312,12 @@ check_zmap_DEPENDENCIES = $(check_LTLIBRARIES)
 check_zmap_LINK         = $(zmap_LINK)
 check_zmap_LDADD        = @CHECK_LIBS@ -lcheckZMap $(zmap_LDADD)
 check_zmap_CFLAGS       = @CHECK_CFLAGS@ $(INCLUDE_COMMON) \
--I$(top_srcdir)/libpfetch   \
 -I$(top_srcdir)/zmapFeature \
 -I$(top_srcdir)/zmapUtils   \
 -DCHECK_ZMAP_LOG_TO_FILE    \
 -DCHECK_ZMAP_LOG=\"$(check_zmap_LOG_FILE)\"  \
 $(NULL)
+
 
 # DISTCHECK_CONFIGURE_FLAGS = --enable-gtk-doc
 
