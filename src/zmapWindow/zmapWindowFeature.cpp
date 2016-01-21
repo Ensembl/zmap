@@ -36,6 +36,8 @@
 
 #include <ZMap/zmap.hpp>
 
+
+#include <gbtools/gbtools.hpp>
 #include <ZMap/zmapFASTA.hpp>
 #include <ZMap/zmapUtils.hpp>
 #include <ZMap/zmapPeptide.hpp>
@@ -43,7 +45,6 @@
 #include <zmapWindow_P.hpp>
 #include <zmapWindowContainerUtils.hpp>
 #include <zmapWindowCanvasItem.hpp>
-#include <libpfetch/libpfetch.h>
 #include <zmapWindowContainerFeatureSet_I.hpp>
 
 
@@ -270,6 +271,7 @@ void zmapWindowPfetchEntry(ZMapWindow window, char *sequence_name)
   if((zmapWindowGetPFetchUserPrefs(window->sequence->config_file, &prefs)) && (prefs.location != NULL))
     {
       GType pfetch_type = PFETCH_TYPE_HTTP_HANDLE;
+      GError *fetch_error = NULL ;
 
       if(prefs.mode && strncmp(prefs.mode, "pipe", 4) == 0)
         pfetch_type = PFETCH_TYPE_PIPE_HANDLE;
@@ -316,8 +318,12 @@ void zmapWindowPfetchEntry(ZMapWindow window, char *sequence_name)
        * thread safe so lock round it...should locks be in pfetch code ?? */
       zMapThreadForkLock();   // see zmapThreads.c
 
-      if(PFetchHandleFetch(pfetch, sequence_name) == PFETCH_STATUS_FAILED)
-              zMapWarning("Error fetching sequence '%s'", sequence_name);
+      if(PFetchHandleFetch(pfetch, sequence_name, &fetch_error) == PFETCH_STATUS_FAILED)
+        {
+          zMapWarning("Error fetching sequence '%s':%s", sequence_name, fetch_error->message) ;
+
+          g_error_free(fetch_error) ;
+        }
 
       zMapThreadForkUnlock();
     }
