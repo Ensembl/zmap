@@ -195,6 +195,7 @@ gboolean zMapStyleInheritAllStyles(GHashTable *style_set)
 void zMapStyleSetSubStyle(ZMapFeatureTypeStyle style, gpointer data)
 {
   ZMapStyleTree *styles = (ZMapStyleTree*)data ;
+
   zMapReturnIfFail(style && styles) ;
 
   for(int i = 0;i < ZMAPSTYLE_SUB_FEATURE_MAX;i++)
@@ -204,6 +205,8 @@ void zMapStyleSetSubStyle(ZMapFeatureTypeStyle style, gpointer data)
           style->sub_style[i] = styles->find_style(style->sub_features[i]);
         }
     }
+
+  return ;
 }
 
 
