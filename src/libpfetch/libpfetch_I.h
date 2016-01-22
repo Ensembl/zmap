@@ -225,7 +225,7 @@ typedef struct _pfetchHandleHttpStruct
   char *cookie_jar_location;
   char *proxy;
   unsigned int http_port;
-  gboolean verbose;
+  gboolean debug;
   long ipresolve;
 
   unsigned int request_counter;

@@ -1344,7 +1344,7 @@ static void pfetch_http_handle_set_property(GObject *gobject, guint param_id,
       pfetch->ipresolve = g_value_get_long(value);
       break;
     case PFETCH_VERBOSE:
-      pfetch->verbose = g_value_get_boolean(value);
+      pfetch->debug = g_value_get_boolean(value);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID(gobject, param_id, pspec);
@@ -1374,7 +1374,7 @@ static void pfetch_http_handle_get_property(GObject *gobject, guint param_id,
       g_value_set_long(value, pfetch->ipresolve);
       break;
     case PFETCH_VERBOSE:
-      g_value_set_boolean(value, pfetch->verbose);
+      g_value_set_boolean(value, pfetch->debug);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID(gobject, param_id, pspec);
@@ -1398,7 +1398,7 @@ static PFetchStatus pfetch_http_fetch(PFetchHandle handle, char *sequence)
                     "url",   PFETCH_HANDLE(pfetch)->location,
                     "port",  pfetch->http_port,
                     "ipresolve", pfetch->ipresolve,
-                    "verbose", pfetch->verbose,
+                    "verbose", pfetch->debug,
                     /* request */
                     "postfields",  pfetch->post_data,   
                     "cookiefile",  pfetch->cookie_jar_location,
