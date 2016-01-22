@@ -199,6 +199,8 @@ CURLObjectStatus CURLObjectPerform(CURLObject curl_object, gboolean use_multi)
     {
       if(use_multi)
 	{
+          curl_easy_setopt(curl_object->easy, CURLOPT_VERBOSE, curl_object->debug) ;
+
 #ifdef PROGRESS_INTERNAL
 	  curl_easy_setopt(curl_object->easy, CURLOPT_PROGRESSFUNCTION, curl_object_progress_func);
 
@@ -279,10 +281,6 @@ static void curl_object_class_init(CURLObjectClass curl_object_class)
   gobject_class->get_property = curl_object_get_property;
 
   /* --- Behaviour options --- */
-  g_object_class_install_property(gobject_class, CURLOPT_PORT,
-				  g_param_spec_uint("port", "port",
-						    "port",
-						    80, 65535, 80, CURL_PARAM_STATIC_WO));
   g_object_class_install_property(gobject_class, CURLOPT_VERBOSE,
 				  g_param_spec_boolean("verbose", "verbose",
 						       "The verbose information will be sent to stderr, or the stream set with CURLOPT_STDERR",

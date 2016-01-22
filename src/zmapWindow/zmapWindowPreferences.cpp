@@ -84,13 +84,13 @@ gboolean zmapWindowGetPFetchUserPrefs(char *config_file, PFetchUserPrefsStruct *
         }
 
       if(zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
-                                        ZMAPSTANZA_APP_LIBCURL_DEBUG, &tmp_bool))
+                                        ZMAPSTANZA_APP_CURL_DEBUG, &tmp_bool))
         {
           pfetch->verbose = tmp_bool ;
         }
 
       if(zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
-                                       ZMAPSTANZA_APP_PFETCH_MODE, &tmp_string))
+                                       ZMAPSTANZA_APP_CURL_IPRESOLVE, &tmp_string))
         {
           /* Valid values are "ipv4" or "ipv6" (case insensitive) */
           if (tmp_string && strlen(tmp_string) == 4)
