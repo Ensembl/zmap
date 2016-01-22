@@ -1,3 +1,66 @@
+2016-01-22  Gemma Guest  <gb10@sanger.ac.uk>
+ Add new config to docs - DOC
+ docs/user/configuration.shtml |    6 +++++-
+ 1 files changed, 5 insertions(+), 1 deletions(-)
+
+2016-01-22  Gemma Guest  <gb10@sanger.ac.uk>
+ Rename variable - TRIVIAL
+ src/libpfetch/libpfetch.c   |    6 +++---
+ src/libpfetch/libpfetch_I.h |    2 +-
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+2016-01-22  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix to previous - WIP
+ src/libcurlobject/libcurlobject.c |    2 --
+ 1 files changed, 0 insertions(+), 2 deletions(-)
+
+2016-01-22  Gemma Guest  <gb10@sanger.ac.uk>
+ Minor fixes to previous - WIP
+ src/include/ZMap/zmapConfigStrings.hpp   |    4 ++--
+ src/libcurlobject/libcurlobject.c        |    6 ++----
+ src/zmapConfig/zmapConfigLoader.cpp      |    4 ++--
+ src/zmapWindow/zmapWindowPreferences.cpp |    4 ++--
+ 4 files changed, 8 insertions(+), 10 deletions(-)
+
+2016-01-22  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix compile error - WIP
+ src/zmapWindow/zmapWindowPreferences.cpp |    5 +++--
+ 1 files changed, 3 insertions(+), 2 deletions(-)
+
+2016-01-22  Gemma Guest  <gb10@sanger.ac.uk>
+ Add libcurl verbose and ipresolve config options - NEW FEATURE 'libcurl'
+ src/include/ZMap/zmapConfigStrings.hpp   |    2 +
+ src/libcurlobject/libcurlobject.c        |   10 ++++
+ src/libpfetch/libpfetch.c                |   82 +++++++++++++++++-------------
+ src/libpfetch/libpfetch_I.h              |    4 ++
+ src/zmapConfig/zmapConfigLoader.cpp      |    2 +
+ src/zmapWindow/zmapWindowFeature.cpp     |    2 +
+ src/zmapWindow/zmapWindowPreferences.cpp |   30 ++++++++++-
+ src/zmapWindow/zmapWindow_P.hpp          |    2 +
+ 8 files changed, 96 insertions(+), 38 deletions(-)
+
+2016-01-19  Gemma Guest  <gb10@sanger.ac.uk>
+ Add proxy config to zmap - WIP
+ src/include/ZMap/zmapConfigStrings.hpp   |    1 +
+ src/libcurlobject/libcurlobject.c        |    5 +++
+ src/libpfetch/libpfetch.c                |   43 +++++++++++++++++++++++++++++-
+ src/libpfetch/libpfetch_I.h              |    2 +
+ src/zmapWindow/zmapWindowFeature.cpp     |    5 +++
+ src/zmapWindow/zmapWindowPreferences.cpp |    6 ++++
+ src/zmapWindow/zmapWindow_P.hpp          |    1 +
+ 7 files changed, 62 insertions(+), 1 deletions(-)
+
+2016-01-19  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix problems using localhost for ensembl db - RT 510659
+ src/zmapServer/ensembl/ensemblUtils.cpp |   45 +++++++++++++++++++++++++-----
+ 1 files changed, 37 insertions(+), 8 deletions(-)
+
+2016-01-15  zmap  <zmap@sanger.ac.uk>
+ ZMap version 2.4.1-133-gd1df089 - Update RT and git commit reports
+ src/ChangeLog                                  |    6 ++++++
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt |    2 +-
+ 2 files changed, 7 insertions(+), 1 deletions(-)
+
 2016-01-14  zmap  <zmap@sanger.ac.uk>
  ZMap version 2.4.1-132-gfe75a70 - Update RT and git commit reports
  src/ChangeLog                                  |  350 ++++++++++++++++++++++++
