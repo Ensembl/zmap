@@ -199,8 +199,6 @@ CURLObjectStatus CURLObjectPerform(CURLObject curl_object, gboolean use_multi)
     {
       if(use_multi)
 	{
-          curl_easy_setopt(curl_object->easy, CURLOPT_VERBOSE, curl_object->debug) ;
-
 #ifdef PROGRESS_INTERNAL
 	  curl_easy_setopt(curl_object->easy, CURLOPT_PROGRESSFUNCTION, curl_object_progress_func);
 
