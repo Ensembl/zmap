@@ -293,12 +293,14 @@ void zmapWindowPfetchEntry(ZMapWindow window, char *sequence_name)
                            "full",        prefs.full_record,
                            "pfetch",      prefs.location,
                            "isoform-seq", TRUE,
+                           "verbose",     prefs.verbose,
                            NULL);
 
       if(PFETCH_IS_HTTP_HANDLE(pfetch))
         PFetchHandleSettings(pfetch,
                              "port",       prefs.port,
                              "cookie-jar", prefs.cookie_jar,
+                             "ipresolve",  prefs.ipresolve,
                              NULL);
 
       if(prefs.proxy)

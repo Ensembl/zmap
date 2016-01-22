@@ -1057,6 +1057,8 @@ typedef struct
   char    *mode;
   int      port;
   gboolean full_record;
+  gboolean verbose;
+  long     ipresolve;
 } PFetchUserPrefsStruct;
 
 typedef struct

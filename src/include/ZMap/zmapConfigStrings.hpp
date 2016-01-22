@@ -204,6 +204,8 @@
 #define ZMAPSTANZA_APP_LEGACY_STYLES     "legacy-styles"
 #define ZMAPSTANZA_APP_STYLE_FROM_METHOD "stylename-from-methodname"
 #define ZMAPSTANZA_APP_XREMOTE_DEBUG     "xremote-debug"
+#define ZMAPSTANZA_APP_LIBCURL_DEBUG     "libcurl-debug"
+#define ZMAPSTANZA_APP_LIBCURL_IPRESOLVE "libcurl-ipresolve"
 #define ZMAPSTANZA_APP_COLUMNS           "columns"
 #define ZMAPSTANZA_APP_SOURCES           "sources"
 #define ZMAPSTANZA_APP_REPORT_THREAD     "thread-fail-silent"

@@ -35,18 +35,22 @@
 #include <ZMap/zmapConfigStrings.hpp>
 #include <zmapWindow_P.hpp>
 
+#include <curl/curl.h>
+
 
 gboolean zmapWindowGetPFetchUserPrefs(char *config_file, PFetchUserPrefsStruct *pfetch)
 {
   ZMapConfigIniContext context = NULL;
   gboolean result = FALSE;
+
+  pfetch->ipresolve = CURL_IPRESOLVE_WHATEVER ;
+  pfetch->port = 80;
   
   if((context = zMapConfigIniContextProvide(config_file, ZMAPCONFIG_FILE_NONE)))
     {
       char *tmp_string;
       int tmp_int ;
-
-      pfetch->port = 80; //default
+      gboolean tmp_bool ;
 
       if (zMapConfigIniContextGetFilePath(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
                                         ZMAPSTANZA_APP_PFETCH_LOCATION, &tmp_string))
@@ -76,6 +80,28 @@ gboolean zmapWindowGetPFetchUserPrefs(char *config_file, PFetchUserPrefsStruct *
                                        ZMAPSTANZA_APP_PFETCH_MODE, &tmp_string))
         {
           pfetch->mode = (tmp_string ? tmp_string : g_strdup("http"));
+        }
+
+      if(zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+                                        ZMAPSTANZA_APP_LIBCURL_DEBUG, &tmp_bool))
+        {
+          pfetch->verbose = tmp_bool ;
+        }
+
+      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+                                       ZMAPSTANZA_APP_PFETCH_MODE, &tmp_string))
+        {
+          /* Valid values are "ipv4" or "ipv6" (case insensitive) */
+          if (tmp_string && strlen(tmp_string) == 4)
+            {
+              if (strncasecmp(tmp_string, "ipv4", 4) == 0)
+                pfetch->ipresolve = CURL_IPRESOLVE_V4 ;
+              else if (strncasecmp(tmp_string, "ipv6", 4) == 0)
+                pfetch->ipresolve = CURL_IPRESOLVE_V6 ;
+            }
+
+          if (tmp_string)
+            g_free(tmp_string) ;
         }
 
       pfetch->full_record = TRUE;

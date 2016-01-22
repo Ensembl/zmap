@@ -1255,6 +1255,19 @@ static void pfetch_http_handle_class_init(PFetchHandleHttpClass pfetch_class)
 						      "pfetch proxy",
 						      "", PFETCH_PARAM_STATIC_RW));
 
+  g_object_class_install_property(gobject_class,
+				  PFETCH_IPRESOLVE,
+				  g_param_spec_long("ipresolve", "ipresolve",
+                                                    "Specify whether libcurl should use IPv4, IPv6, or either",
+                                                    0, 2, CURL_IPRESOLVE_WHATEVER,
+                                                    PFETCH_PARAM_STATIC_RW));
+
+  g_object_class_install_property(gobject_class,
+				  PFETCH_VERBOSE,
+				  g_param_spec_boolean("verbose", "verbose",
+                                                       "Verbose output",
+                                                       FALSE, PFETCH_PARAM_STATIC_RW));
+
 
 #ifdef DEBUG_DONT_INCLUDE
   handle_class->reader = test_reader;
@@ -1327,6 +1340,12 @@ static void pfetch_http_handle_set_property(GObject *gobject, guint param_id,
       
       pfetch->proxy = g_value_dup_string(value);
       break;
+    case PFETCH_IPRESOLVE:
+      pfetch->ipresolve = g_value_get_long(value);
+      break;
+    case PFETCH_VERBOSE:
+      pfetch->verbose = g_value_get_boolean(value);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID(gobject, param_id, pspec);
       break;
@@ -1351,6 +1370,12 @@ static void pfetch_http_handle_get_property(GObject *gobject, guint param_id,
     case PFETCH_PROXY:
       g_value_set_string(value, pfetch->proxy);
       break;
+    case PFETCH_IPRESOLVE:
+      g_value_set_long(value, pfetch->ipresolve);
+      break;
+    case PFETCH_VERBOSE:
+      g_value_set_boolean(value, pfetch->verbose);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID(gobject, param_id, pspec);
       break;
@@ -1366,42 +1391,27 @@ static PFetchStatus pfetch_http_fetch(PFetchHandle handle, char *sequence)
 
   if((pfetch->post_data = build_post_data(pfetch, sequence)))
     {
-      if (pfetch->proxy)
-        CURLObjectSet(pfetch->curl_object,
-                      /* general settings */
-                      "debug", PFETCH_HANDLE(pfetch)->opts.debug,
-                      "post",  TRUE,
-                      "url",   PFETCH_HANDLE(pfetch)->location,
-                      "port",  pfetch->http_port,
-                      /* request */
-                      "postfields",  pfetch->post_data,   
-                      "cookiefile",  pfetch->cookie_jar_location,
-                      "proxy",  pfetch->proxy,
-                      /* functions */
-                      "writefunction",  http_curl_write_func,
-                      "writedata",      pfetch,
-                      "headerfunction", http_curl_header_func,
-                      "headerdata",     pfetch,
-                      /* end of options */
-                      NULL);
-      else
-        CURLObjectSet(pfetch->curl_object,
-		    /* general settings */
-		    "debug", PFETCH_HANDLE(pfetch)->opts.debug,
-		    "post",  TRUE,
-		    "url",   PFETCH_HANDLE(pfetch)->location,
-		    "port",  pfetch->http_port,
-		    /* request */
-		    "postfields",  pfetch->post_data,   
-		    "cookiefile",  pfetch->cookie_jar_location,
-		    /* functions */
-		    "writefunction",  http_curl_write_func,
-		    "writedata",      pfetch,
-		    "headerfunction", http_curl_header_func,
-		    "headerdata",     pfetch,
-		    /* end of options */
-		    NULL);
+      CURLObjectSet(pfetch->curl_object,
+                    /* general settings */
+                    "debug", PFETCH_HANDLE(pfetch)->opts.debug,
+                    "post",  TRUE,
+                    "url",   PFETCH_HANDLE(pfetch)->location,
+                    "port",  pfetch->http_port,
+                    "ipresolve", pfetch->ipresolve,
+                    "verbose", pfetch->verbose,
+                    /* request */
+                    "postfields",  pfetch->post_data,   
+                    "cookiefile",  pfetch->cookie_jar_location,
+                    /* functions */
+                    "writefunction",  http_curl_write_func,
+                    "writedata",      pfetch,
+                    "headerfunction", http_curl_header_func,
+                    "headerdata",     pfetch,
+                    /* end of options */
+                    NULL);
 
+      if (pfetch->proxy)
+        CURLObjectSet(pfetch->curl_object, "proxy",  pfetch->proxy) ;
       
       pfetch->request_counter++;
       if(CURLObjectPerform(pfetch->curl_object, TRUE) == CURL_STATUS_FAILED)
@@ -1434,10 +1444,10 @@ static PFetchStatus pfetch_http_fetch(PFetchHandle handle, char *sequence)
 		    "post",  TRUE,
 		    "url",   PFETCH_HANDLE(pfetch)->location,
 		    "port",  pfetch->http_port,
+		    "proxy",  pfetch->proxy,
 		    /* request */
 		    "postfields",  pfetch->post_data,   
 		    "cookiefile",  pfetch->cookie_jar_location,
-		    "proxy",  pfetch->proxy,
 		    /* functions */
 		    "writefunction",  http_curl_write_func,
 		    "writedata",      pfetch,
