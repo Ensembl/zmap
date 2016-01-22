@@ -1,3 +1,10 @@
+2016-01-22  zmap  <zmap@sanger.ac.uk>
+ ZMap version 2.4.1-133-gd1df089 - Update RT and git commit reports
+ src/ChangeLog                                  |   63 ++++++++++++++++++++++++
+ src/build/release_docs/GIT_COMMITS.txt         |    3 +
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt |   12 ++++-
+ 3 files changed, 77 insertions(+), 1 deletions(-)
+
 2016-01-22  Gemma Guest  <gb10@sanger.ac.uk>
  Add new config to docs - DOC
  docs/user/configuration.shtml |    6 +++++-
