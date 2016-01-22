@@ -36,6 +36,7 @@
 #include <zmapWindow_P.hpp>
 
 #include <curl/curl.h>
+#include <string.h>
 
 
 gboolean zmapWindowGetPFetchUserPrefs(char *config_file, PFetchUserPrefsStruct *pfetch)
@@ -94,9 +95,9 @@ gboolean zmapWindowGetPFetchUserPrefs(char *config_file, PFetchUserPrefsStruct *
           /* Valid values are "ipv4" or "ipv6" (case insensitive) */
           if (tmp_string && strlen(tmp_string) == 4)
             {
-              if (strncasecmp(tmp_string, "ipv4", 4) == 0)
+              if (g_ascii_strncasecmp(tmp_string, "ipv4", 4) == 0)
                 pfetch->ipresolve = CURL_IPRESOLVE_V4 ;
-              else if (strncasecmp(tmp_string, "ipv6", 4) == 0)
+              else if (g_ascii_strncasecmp(tmp_string, "ipv6", 4) == 0)
                 pfetch->ipresolve = CURL_IPRESOLVE_V6 ;
             }
 
