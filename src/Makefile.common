@@ -68,7 +68,5 @@ LIBS_ZMAP = $(top_builddir)/.libs/libZMapApp.a \
 	$(top_builddir)/.libs/libZMapUtils.la \
 	$(top_builddir)/.libs/libzmapfoocanvas.a \
 	$(top_builddir)/.libs/libzmapfoocanvas.la \
-	$(top_builddir)/.libs/libPFetch.a \
-	$(top_builddir)/.libs/libPFetch.la \
 	$(NULL)
 
