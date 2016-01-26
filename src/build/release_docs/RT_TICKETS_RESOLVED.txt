@@ -1,5 +1,5 @@
 
-Request Tracker Tickets Resolved from 11/11/2015 to 22/01/2016
+Request Tracker Tickets Resolved from 11/11/2015 to 26/01/2016
 
 ticket/326083
 id: ticket/326083

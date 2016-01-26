@@ -1,3 +1,20 @@
+2016-01-26  Gemma Guest  <gb10@sanger.ac.uk>
+ Add config to set cainfo file for curl - WIP
+ src/include/ZMap/zmapConfigStrings.hpp   |    1 +
+ src/libcurlobject/libcurlobject.c        |    6 ++++++
+ src/libpfetch/libpfetch.c                |   27 ++++++++++++++++++++++++++-
+ src/libpfetch/libpfetch_I.h              |    2 ++
+ src/zmapConfig/zmapConfigLoader.cpp      |    1 +
+ src/zmapWindow/zmapWindowFeature.cpp     |    1 +
+ src/zmapWindow/zmapWindowPreferences.cpp |    6 ++++++
+ src/zmapWindow/zmapWindow_P.hpp          |    1 +
+ 8 files changed, 44 insertions(+), 1 deletions(-)
+
+2016-01-22  zmap  <zmap@sanger.ac.uk>
+ ZMap version 2.4.1-133-gd1df089 - Update RT and git commit reports
+ src/ChangeLog |    7 +++++++
+ 1 files changed, 7 insertions(+), 0 deletions(-)
+
 2016-01-22  zmap  <zmap@sanger.ac.uk>
  ZMap version 2.4.1-133-gd1df089 - Update RT and git commit reports
  src/ChangeLog                                  |   63 ++++++++++++++++++++++++
