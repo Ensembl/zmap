@@ -1263,6 +1263,13 @@ static void pfetch_http_handle_class_init(PFetchHandleHttpClass pfetch_class)
                                                     PFETCH_PARAM_STATIC_RW));
 
   g_object_class_install_property(gobject_class,
+				  PFETCH_CAINFO,
+				  g_param_spec_string("cainfo", "cainfo",
+                                                      "Specify the location of the cainfo file libcurl should",
+                                                      NULL,
+                                                      PFETCH_PARAM_STATIC_RW));
+
+  g_object_class_install_property(gobject_class,
 				  PFETCH_VERBOSE,
 				  g_param_spec_boolean("verbose", "verbose",
                                                        "Verbose output",
@@ -1315,6 +1322,11 @@ static void pfetch_http_handle_finalize(GObject *gobject)
 
   pfetch->proxy = NULL;
 
+  if(pfetch->cainfo)
+    g_free(pfetch->cainfo);
+
+  pfetch->cainfo = NULL;
+
   return ;
 }
 
@@ -1339,6 +1351,12 @@ static void pfetch_http_handle_set_property(GObject *gobject, guint param_id,
 	g_free(pfetch->proxy);
       
       pfetch->proxy = g_value_dup_string(value);
+      break;
+    case PFETCH_CAINFO:
+      if(pfetch->cainfo)
+	g_free(pfetch->cainfo);
+      
+      pfetch->cainfo = g_value_dup_string(value);
       break;
     case PFETCH_IPRESOLVE:
       pfetch->ipresolve = g_value_get_long(value);
@@ -1369,6 +1387,9 @@ static void pfetch_http_handle_get_property(GObject *gobject, guint param_id,
       break;
     case PFETCH_PROXY:
       g_value_set_string(value, pfetch->proxy);
+      break;
+    case PFETCH_CAINFO:
+      g_value_set_string(value, pfetch->cainfo);
       break;
     case PFETCH_IPRESOLVE:
       g_value_set_long(value, pfetch->ipresolve);
@@ -1411,7 +1432,10 @@ static PFetchStatus pfetch_http_fetch(PFetchHandle handle, char *sequence)
                     NULL);
 
       if (pfetch->proxy)
-        CURLObjectSet(pfetch->curl_object, "proxy",  pfetch->proxy) ;
+        CURLObjectSet(pfetch->curl_object, "proxy",  pfetch->proxy, NULL) ;
+
+      if (pfetch->cainfo)
+        CURLObjectSet(pfetch->curl_object, "cainfo",  pfetch->cainfo, NULL) ;
       
       pfetch->request_counter++;
       if(CURLObjectPerform(pfetch->curl_object, TRUE) == CURL_STATUS_FAILED)
@@ -1445,6 +1469,7 @@ static PFetchStatus pfetch_http_fetch(PFetchHandle handle, char *sequence)
 		    "url",   PFETCH_HANDLE(pfetch)->location,
 		    "port",  pfetch->http_port,
 		    "proxy",  pfetch->proxy,
+		    "cainfo",  pfetch->cainfo,
 		    /* request */
 		    "postfields",  pfetch->post_data,   
 		    "cookiefile",  pfetch->cookie_jar_location,

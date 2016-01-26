@@ -206,6 +206,7 @@
 #define ZMAPSTANZA_APP_XREMOTE_DEBUG     "xremote-debug"
 #define ZMAPSTANZA_APP_CURL_DEBUG        "curl-debug"
 #define ZMAPSTANZA_APP_CURL_IPRESOLVE    "ipresolve"
+#define ZMAPSTANZA_APP_CURL_CAINFO       "cainfo"
 #define ZMAPSTANZA_APP_COLUMNS           "columns"
 #define ZMAPSTANZA_APP_SOURCES           "sources"
 #define ZMAPSTANZA_APP_REPORT_THREAD     "thread-fail-silent"

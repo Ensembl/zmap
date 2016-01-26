@@ -301,6 +301,7 @@ void zmapWindowPfetchEntry(ZMapWindow window, char *sequence_name)
                              "port",       prefs.port,
                              "cookie-jar", prefs.cookie_jar,
                              "ipresolve",  prefs.ipresolve,
+                             "cainfo",  prefs.cainfo,
                              NULL);
 
       if(prefs.proxy)

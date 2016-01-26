@@ -457,6 +457,11 @@ static void curl_object_class_init(CURLObjectClass curl_object_class)
                                                     0, 2, CURL_IPRESOLVE_WHATEVER,
                                                     CURL_PARAM_STATIC_WO));
 
+  g_object_class_install_property(gobject_class, CURLOPT_CAINFO,
+				  g_param_spec_string("cainfo", "cainfo",
+                                                      "Specify the location of the cainfo file libcurl should use",
+                                                      NULL, CURL_PARAM_STATIC_WO));
+
   /* --- Connection options --- */
   g_object_class_install_property(gobject_class, CURLOPT_TIMEOUT,
 				  g_param_spec_long("timeout", "timeout",
@@ -657,6 +662,7 @@ static void curl_object_set_property(GObject      *gobject,
     case CURLOPT_COOKIEFILE:
     case CURLOPT_PROXY:
     case CURLOPT_IPRESOLVE:
+    case CURLOPT_CAINFO:
       if(G_IS_PARAM_SPEC_STRING(pspec))
 	{
 	  char *str;

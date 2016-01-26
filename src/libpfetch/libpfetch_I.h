@@ -60,6 +60,7 @@ enum
     PFETCH_COOKIE_JAR,
     PFETCH_PROXY,
     PFETCH_IPRESOLVE,
+    PFETCH_CAINFO,
     PFETCH_VERBOSE,
     PFETCH_URL,			/* same as location */
     PFETCH_POST,
@@ -224,6 +225,7 @@ typedef struct _pfetchHandleHttpStruct
   char *post_data;
   char *cookie_jar_location;
   char *proxy;
+  char *cainfo;
   unsigned int http_port;
   gboolean debug;
   long ipresolve;

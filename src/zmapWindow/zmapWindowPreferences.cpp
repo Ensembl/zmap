@@ -71,6 +71,12 @@ gboolean zmapWindowGetPFetchUserPrefs(char *config_file, PFetchUserPrefsStruct *
           pfetch->proxy = tmp_string ;
         }
 
+      if (zMapConfigIniContextGetFilePath(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+                                          ZMAPSTANZA_APP_CURL_CAINFO, &tmp_string))
+        {
+          pfetch->cainfo = tmp_string ;
+        }
+
       if (zMapConfigIniContextGetInt(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
                                           ZMAPSTANZA_APP_PORT, &tmp_int))
         {
