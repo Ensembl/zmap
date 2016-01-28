@@ -274,13 +274,16 @@ typedef struct ZMapFullExonStructType
 } ZMapFullExonStruct, *ZMapFullExon ;
 
 
-// This tells us information about the start/end boundaries of sub-blocks within an alignment block.
+// This tells us information about the start/end boundaries of sub-blocks within an alignment.
+// within and between blocks.
 #define ZMAP_ALIGN_BLOCK_BOUNDARY_LIST(_)                               \
-  _(ALIGN_BLOCK_BOUNDARY_INVALID,  , "invalid",  "invalid mode "                                 , "") \
-  _(ALIGN_BLOCK_BOUNDARY_EDGE,     , "edge",     "Starts/ends a feature" , "") \
-  _(ALIGN_BLOCK_BOUNDARY_DELETION, , "deletion", "Abuts a deletion." , "") \
-  _(ALIGN_BLOCK_BOUNDARY_INTRON,   , "intron",   "Abuts an intron."  , "") \
-  _(ALIGN_BLOCK_BOUNDARY_MATCH,    , "match",    "Abuts another alignment block"  , "")
+  _(ALIGN_BLOCK_BOUNDARY_INVALID,      , "invalid",      "invalid mode "                                 , "") \
+  _(ALIGN_BLOCK_BOUNDARY_EDGE,         , "edge",         "Starts/ends a feature" , "") \
+  _(ALIGN_BLOCK_BOUNDARY_DELETION,     , "deletion",     "Abuts a deletion." , "") \
+  _(ALIGN_BLOCK_BOUNDARY_MATCH,        , "match",        "Abuts another alignment block"  , "") \
+  _(ALIGN_BLOCK_BOUNDARY_INTRON,       , "intron",       "Abuts an intron."  , "") \
+  _(ALIGN_BLOCK_BOUNDARY_UNSEQUENCED,  , "unsequenced",  "Abuts unsequenced bases."  , "") \
+  _(ALIGN_BLOCK_BOUNDARY_MISSING,      , "missing",      "Abuts missing bases."  , "")
 
 ZMAP_DEFINE_ENUM(AlignBlockBoundaryType, ZMAP_ALIGN_BLOCK_BOUNDARY_LIST) ;
 
@@ -654,7 +657,7 @@ typedef struct ZMapHomolStructType
   char *sequence ;                                          /* sequence if given in GFF */
 
   /* The coords in this array are start/end pairs for sub blocks and start < end always. */
-  GArray *align ;                                          /* of AlignBlock, if null, align is ungapped. */
+  GArray *align ;                                          /* of ZMapAlignBlock, if null align is ungapped. */
 
 } ZMapHomolStruct, *ZMapHomol ;
 
@@ -693,8 +696,9 @@ typedef struct ZMapTranscriptStructType
   int query_start, query_end ;                              /* Start/end in match sequence. */
   ZMapStrand query_strand ;                                 /* Which strand of the homol was
                                                                aligned to the sequence. */
-  // STICK NEW ARRAY HERE.....NEED TO FILL IN FROM VULGAR IF AVAILABLE....   
-  GArray *exon_aligns ;                                     // Array of arrays of gaps in exons.
+
+  GArray *exon_aligns ;                                     // Array of arrays of gaps in exons,
+                                                            // one gap array per exon, e.g. for vulgar align.
 
   const char *vulgar_str ;
 
