@@ -1,5 +1,5 @@
 
-include $(top_srcdir)/Makefile.zmap
+include $(top_srcdir)/Makefile.common
 
 # disabled tests for now....we aren't even using them....
 SUBDIRS = . tests
