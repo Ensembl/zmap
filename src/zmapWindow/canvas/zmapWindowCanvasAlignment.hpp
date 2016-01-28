@@ -38,24 +38,31 @@ typedef enum
   {
     GAP_BOX,                                                /* Match box. */
     GAP_HLINE,                                              /* Drawing a match boundary where there is no gap. */
-    GAP_VLINE,                                              /* Drawing gap line between matches. */
-    GAP_VLINE_INTRON                                        /* Um...don't know... */
+    GAP_VLINE,                                              /* Drawing gap line between
+                                                               matches. */
+    GAP_VLINE_INTRON,                                       /* Intron in the match. */
+    GAP_VLINE_UNSEQUENCED,                                  // Unsequenced section in a match,
+                                                            // e.g. gap between readpairs.
+    GAP_VLINE_MISSING                                       // Missing sequence between two matches.
+
+
 } GappedAlignFeaturesType ;
 
 
-typedef struct _AlignGapStruct
+struct AlignGapStruct
 {
-  int y1,y2;                                                /* in pixel coords from feature y1 */
+  int y1, y2 ;                                              /* in pixel coords from feature y1 */
 
   GappedAlignFeaturesType type ;                            /* See GAP_XXXX above... */
 
-  gboolean edge;                                            /* for squashed short reads: edge blocks are diff colour */
+  ColinearityType colinearity ;                             // colinear type if gap type is GAP_VLINE_INTRON
 
-  struct _AlignGapStruct *next;
+  gboolean edge ;                                           /* for squashed short reads: edge blocks are diff colour */
 
-} AlignGapStruct, *AlignGap;
+  AlignGapStruct *next ;
+} ;
 
-
+typedef AlignGapStruct *AlignGap ;
 
 
 void zMapWindowCanvasAlignmentInit(void);

@@ -39,6 +39,7 @@
 
 #include <ZMap/zmapStyle.hpp>
 #include <ZMap/zmapSkipList.hpp>
+#include <zmapWindowCanvasDraw.hpp>
 #include <zmapWindowCanvasFeatureset.hpp>
 
 /* would love to get rid of canvas item... */
@@ -172,6 +173,8 @@ typedef struct ZMapWindowFeaturesetItemClassStructType
   size_t set_struct_size[FEATURE_N_TYPE];
 
 
+  // THESE SHOULD ALL BE MOVED INTO THE FEATURESET STRUCT ITSELF SO THAT THEY CAN BE PER SCREEN.
+  //
   /* Cached colourmaps/colours for drawing, provides default colours for all feature drawing. */
   GdkColormap *colour_map ;                                 /* This is a per-screen resource
                                                                so multi-screen operation would need multiple values. */
@@ -325,7 +328,12 @@ typedef struct ZMapWindowFeaturesetItemStructType
 
   gpointer deferred ;		  /* buffer for deferred paints, eg constructed polyline */
 
+  // Colour stuff....
+  //
+  GdkColormap *colour_map ;     
 
+  // colinear colours, this is a per-colormap and therefore per-screen resource.
+  ZMapCanvasDrawColinearColours colinear_colours ;
 
   /* Feature colours....Gosh...all seems a mish-mash....... */
 

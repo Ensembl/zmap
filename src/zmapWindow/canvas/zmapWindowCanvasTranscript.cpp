@@ -115,6 +115,12 @@ static void transcriptPaintFeature(ZMapWindowFeaturesetItem featureset,
 
   zMapReturnIfFail(featureset && feature && feature->feature && drawable && expose) ;
 
+  // Allocate colours for colinear lines if not allocated.
+  if (!(featureset->colinear_colours))
+    {
+      featureset->colinear_colours = zMapCanvasDrawAllocColinearColours(gdk_gc_get_colormap(featureset->gc)) ;
+    }
+
   foo = (FooCanvasItem *) featureset;
   tr = (ZMapWindowCanvasTranscript) feature;
   real_feature = feature->feature ;
@@ -319,6 +325,7 @@ static void transcriptPaintFeature(ZMapWindowFeaturesetItem featureset,
             }
 
           zMapCanvasDrawBoxGapped(drawable,
+                                  featureset->colinear_colours,
                                   fill_set, outline_set, ufill, outline,
                                   featureset, feature,
                                   x1, x2, tr->gapped) ;
@@ -346,6 +353,7 @@ static void transcriptPaintFeature(ZMapWindowFeaturesetItem featureset,
            */
 #ifdef USE_DRAWING_BUG_HACK
           zMap_draw_line_hack(drawable, featureset, cx1_5, cy1, cx2, cy1_5) ;
+
           zMap_draw_line_hack(drawable, featureset, cx2, cy1_5+1, cx1_5, cy2) ;
 #else
           zMap_draw_line(drawable, featureset, cx1_5, cy1, cx2, (featureset->draw_truncation_glyphs
@@ -367,7 +375,7 @@ static void transcriptPaintFeature(ZMapWindowFeaturesetItem featureset,
           c.pixel = outline;
           gdk_gc_set_foreground (featureset->gc, &c);
 
-          zMap_draw_broken_line(drawable, featureset, cx2, cy1, cx1_5, cy2);
+          zMapDrawDashedLine(drawable, featureset, cx2, cy1, cx1_5, cy2);
         }
       else if(tr->sub_type == TRANSCRIPT_INTRON_END_NOT_FOUND)
         {
@@ -383,7 +391,7 @@ static void transcriptPaintFeature(ZMapWindowFeaturesetItem featureset,
           c.pixel = outline;
           gdk_gc_set_foreground (featureset->gc, &c);
 
-          zMap_draw_broken_line(drawable, featureset, cx1_5, cy1, cx2, cy2);
+          zMapDrawDashedLine(drawable, featureset, cx1_5, cy1, cx2, cy2);
         }
     }
 

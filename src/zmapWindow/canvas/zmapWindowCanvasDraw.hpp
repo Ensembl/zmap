@@ -71,15 +71,24 @@
   ((COORD) < 0 ? 0 : ((COORD) > ZMAP_WINDOW_MAX_WINDOW ? ZMAP_WINDOW_MAX_WINDOW : (COORD)))
 
 
+typedef struct ColinearColoursStructType *ZMapCanvasDrawColinearColours ;
+
+
 
 gboolean zMapWindowCanvasCalcHorizCoords(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
                                          double *x1_out, double *x2_out) ;
 int zMap_draw_line(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset,
                    gint cx1, gint cy1, gint cx2, gint cy2) ;
+
 void zMap_draw_line_hack(GdkDrawable* drawable, ZMapWindowFeaturesetItem featureset,
                                 gint x1, gint y1, gint x2, gint y2) ;
-int zMap_draw_broken_line(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset,
-                          gint cx1, gint cy1, gint cx2, gint cy2) ;
+
+int zMapDrawThickLine(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset,
+                         gint cx1, gint cy1, gint cx2, gint cy2) ;
+int zMapDrawDashedLine(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset,
+                       gint cx1, gint cy1, gint cx2, gint cy2) ;
+int zMapDrawDottedLine(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset,
+                       gint cx1, gint cy1, gint cx2, gint cy2) ;
 int zMap_draw_rect(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset,
                    gint cx1, gint cy1, gint cx2, gint cy2, gboolean fill_flag) ;
 gboolean zMapCanvasFeaturesetDrawBoxMacro(ZMapWindowFeaturesetItem featureset,
@@ -89,13 +98,21 @@ gboolean zMapCanvasFeaturesetDrawBoxMacro(ZMapWindowFeaturesetItem featureset,
 void zMapCanvasFeaturesetDrawSpliceHighlights(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
                                               GdkDrawable *drawable, double x1, double x2) ;
 
+GdkColor *zMapCanvasDrawGetColinearColour(int end_1, int start_2, int threshold) ;
 
 gboolean zMapCanvasDrawBoxGapped(GdkDrawable *drawable,
+                                 ZMapCanvasDrawColinearColours colinear_colours,
                                  int fill_set, int outline_set,
                                  gulong ufill, gulong outline,
                                  ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
                                  double x1, double x2,
                                  AlignGap gapped) ;
+
+ZMapCanvasDrawColinearColours zMapCanvasDrawAllocColinearColours(GdkColormap *colour_map) ;
+GdkColor *zMapCanvasDrawGetColinearColour(ZMapCanvasDrawColinearColours colinear_colours, int end_1, int start_2, int threshold) ;
+ColinearityType zMapCanvasDrawGetColinearity(int end_1, int start_2, int threshold) ;
+GdkColor *zMapCanvasDrawGetColinearGdkColor(ZMapCanvasDrawColinearColours colinear_colours, ColinearityType ct) ;
+void zMapCanvasDrawFreeColinearColours(ZMapCanvasDrawColinearColours colinear_colours) ;
 
 
 #endif /* !ZMAP_CANVAS_DRAW_H */
