@@ -157,8 +157,8 @@ char** zMapGFFStringUtilsTokenizer(char cDelim, const char * const sTarg, unsign
                      void*(*local_malloc)(size_t), void(*local_free)(void*), char *sBuff)
 {
   static const char cSpace = ' ';
-  unsigned int iLength = 0,
-    iTokLen = 0,
+  int iLength = 0 ;
+  unsigned int iTokLen = 0,
     iNumTokens = 0 ;
   char *sPosLast = (char *) sTarg,
     *sPos = NULL,

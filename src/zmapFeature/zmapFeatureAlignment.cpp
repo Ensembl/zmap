@@ -2801,8 +2801,10 @@ static gboolean alignStrVulgarCanon2Exons(AlignStrCanonical canon,
 
   if (result)
     {
-
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      // debugging output.
       zMapFeatureAlignmentPrintExonsAligns(exons, introns, aligns) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
       *exons_out = exons ;
       *introns_out = introns ;

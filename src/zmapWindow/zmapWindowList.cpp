@@ -1314,10 +1314,11 @@ static void select_item_in_view(ZMapWindowList window_list, FooCanvasItem *input
 static ZMapWindowList findReusableList(GPtrArray *window_list)
 {
   ZMapWindowList reusable_window = NULL ;
-  int i ;
 
   if (window_list && window_list->len)
     {
+      guint i ;
+
       for (i = 0 ; i < window_list->len ; i++)
         {
           GtkWidget *list_widg ;

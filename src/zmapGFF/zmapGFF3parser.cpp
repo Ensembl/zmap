@@ -264,7 +264,7 @@ ZMapGFFParser zMapGFFCreateParser_V3(char *sequence, int features_start, int fea
  */
 void zMapGFFDestroyParser_V3(ZMapGFFParser pParserBase)
 {
-  unsigned int iValue ;
+  int iValue ;
   zMapReturnIfFail(pParserBase) ;
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
 
@@ -288,9 +288,9 @@ void zMapGFFDestroyParser_V3(ZMapGFFParser pParserBase)
       if (pParser->pSeqData)
         {
           for (iValue=0; iValue<pParser->nSequenceRecords; ++iValue)
-          {
-            zMapGFFSequenceDestroy(&pParser->pSeqData[iValue]) ;
-          }
+            {
+              zMapGFFSequenceDestroy(&pParser->pSeqData[iValue]) ;
+            }
         }
       g_free(pParser->pSeqData) ;
     }
@@ -1492,7 +1492,8 @@ static gboolean parseDirective_SEQUENCE_REGION(ZMapGFFParser pParserBase, const 
   static const char *sFmt = "%*s%1000s%d%d" ;
   gboolean bResult = TRUE ;
   char sBuf[1001] = "" ;
-  int  iFields, iStart = 0, iEnd = 0 ;
+  unsigned int  iFields ;
+  int iStart = 0, iEnd = 0 ;
 
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
 
@@ -1578,7 +1579,7 @@ static gboolean parseDirective_SEQUENCE_REGION(ZMapGFFParser pParserBase, const 
 static gboolean parseDirective_FEATURE_ONTOLOGY(ZMapGFFParser pParserBase , const char * const line)
 {
   static const char* sFmt = "%*s%1000s" ;
-  static const unsigned int iExpectedFields = 1 ;
+  static const int iExpectedFields = 1 ;
   gboolean bResult = TRUE ;
   char sBuf[1001] = "" ;
 
@@ -1642,7 +1643,7 @@ static gboolean parseDirective_FEATURE_ONTOLOGY(ZMapGFFParser pParserBase , cons
 static gboolean parseDirective_ATTRIBUTE_ONTOLOGY(ZMapGFFParser pParserBase, const char * const line)
 {
   static const char* sFmt = "%*s%1000s" ;
-  static const unsigned int iExpectedFields = 1 ;
+  static const int iExpectedFields = 1 ;
   gboolean bResult = TRUE ;
   char sBuf[1001] = "" ;
 
@@ -1706,7 +1707,7 @@ static gboolean parseDirective_ATTRIBUTE_ONTOLOGY(ZMapGFFParser pParserBase, con
 static gboolean parseDirective_SOURCE_ONTOLOGY(ZMapGFFParser pParserBase, const char * const line)
 {
   static const char* sFmt = "%*s%1000s" ;
-  static const unsigned int iExpectedFields = 1 ;
+  static const int iExpectedFields = 1 ;
   gboolean bResult = TRUE ;
   char sBuf[1001] = "" ;
 
@@ -1771,7 +1772,7 @@ static gboolean parseDirective_SOURCE_ONTOLOGY(ZMapGFFParser pParserBase, const 
 static gboolean parseDirective_SPECIES(ZMapGFFParser pParserBase, const char * const line)
 {
   static const char* sFmt = "%*s%1000s" ;
-  static const unsigned int iExpectedFields = 1 ;
+  static const int iExpectedFields = 1 ;
   gboolean bResult = TRUE ;
   char sBuf[1001] = "" ;
 
@@ -1838,7 +1839,7 @@ static gboolean parseDirective_SPECIES(ZMapGFFParser pParserBase, const char * c
 static gboolean parseDirective_GENOME_BUILD(ZMapGFFParser pParserBase, const char * const line)
 {
   static const char* sFmt = "%*s%1000s%1000s" ;
-  static const unsigned int iExpectedFields = 2 ;
+  static const int iExpectedFields = 2 ;
   gboolean bResult = TRUE ;
   char sBuf01[1001] = "" , sBuf02[1001] = "" ;
 

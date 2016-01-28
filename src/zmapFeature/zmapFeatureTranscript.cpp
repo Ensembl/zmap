@@ -466,7 +466,7 @@ bool zMapFeatureTranscriptHasAlignParts(ZMapFeature feature)
 }
 
 // exon_index from zero.
-GArray *zMapFeatureTranscriptGetAlignParts(ZMapFeature feature, int exon_index)
+GArray *zMapFeatureTranscriptGetAlignParts(ZMapFeature feature, guint exon_index)
 {
   GArray *exon_aligns = NULL ;
 
@@ -1069,7 +1069,7 @@ void zmapFeatureTranscriptCopyFeature(ZMapFeature orig_feature, ZMapFeature new_
   // nested copy, it's a list of lists...
   if (orig_feature->feature.transcript.exon_aligns != NULL)
     {
-      int i ;
+      guint i ;
       GArray *orig_array_aligns, *new_array_aligns ;
 
       orig_array_aligns = orig_feature->feature.transcript.exon_aligns ;
@@ -1080,7 +1080,7 @@ void zmapFeatureTranscriptCopyFeature(ZMapFeature orig_feature, ZMapFeature new_
       for (i = 0 ; i < orig_array_aligns->len ; i++)
         {
           GArray *orig_aligns, *new_aligns ;
-          int j ;
+          guint j ;
 
           orig_aligns = g_array_index(orig_array_aligns, GArray *, i) ;
 
@@ -1122,7 +1122,7 @@ void zmapFeatureTranscriptDestroyFeature(ZMapFeature feature)
 
   if (feature->feature.transcript.exon_aligns)
     {
-      int i ;
+      guint i ;
 
       for (i = 0 ; i < feature->feature.transcript.exon_aligns->len ; i++)
         {

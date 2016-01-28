@@ -966,12 +966,12 @@ static ZMapXMLElement parserFetchNewElement(ZMapXMLParser parser,
                                             const XML_Char *name)
 {
   ZMapXMLElement element = NULL;
-  int i = 0, save = -1;
+  int save = -1;
 
   if (!parser->elements)
     return element ;
 
-  for (i = 0; i < parser->elements->len; i++)
+  for (unsigned int i = 0; i < parser->elements->len; i++)
     {
       /* This is hideous. Ed has a written a zMap_g_array_index, but it auto expands  */
       if (((&(g_array_index(parser->elements, zmapXMLElementStruct, i))))->dirty == TRUE)

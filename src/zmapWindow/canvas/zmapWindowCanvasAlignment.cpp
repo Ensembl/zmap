@@ -743,13 +743,13 @@ ZMapFeatureSubPart zMapWindowCanvasGetGappedSubPart(GArray *aligns_array, ZMapSt
 {
   ZMapFeatureSubPart sub_part = NULL ;
   ZMapAlignBlock ab, prev_ab ;
-  int i = 0, match_num = 0, gap_num = 0 ;
+  int match_num = 0, gap_num = 0 ;
 
 
   match_num = aligns_array->len ;
   gap_num = match_num - 1 ;
   prev_ab = NULL ;
-  for (i = 0 ; !sub_part && i < aligns_array->len ; i++)
+  for (guint i = 0 ; !sub_part && i < aligns_array->len ; i++)
     {
       /* in the original foo based code
        * match n corresponds to the match block indexed from 1

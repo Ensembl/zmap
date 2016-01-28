@@ -254,7 +254,7 @@ gboolean zMap_g_list_cond_foreach(GList *glist, ZMapGFuncCond func, gpointer use
  * Returns the list unaltered if the element could not be moved.
  *
  *  */
-GList *zMap_g_list_move(GList *glist, gpointer user_data, gint new_index)
+GList *zMap_g_list_move(GList *glist, gpointer user_data, guint new_index)
 {
   GList *new_list = glist ;
 
@@ -601,7 +601,7 @@ GList *zMap_g_list_remove_quarks(GList *quark_target_list, GList *quarks)
 
 /* MH17: this function is only ever called with nth == 0 */
 /* Returns nth hash table element, elements start with the zero'th. */
-gpointer zMap_g_hash_table_nth(GHashTable *hash_table, int nth)
+gpointer zMap_g_hash_table_nth(GHashTable *hash_table, guint nth)
 {
   gpointer entry = NULL ;
 
@@ -888,7 +888,7 @@ gpointer zMap_g_array_element(GArray **array_inout, guint index)
 {
   gpointer element_ptr = NULL ;
   GArray *an_array = *array_inout ;
-  gint new_length, element_size ;
+  guint new_length, element_size ;
 
   new_length = index + 1 ;				    /* Note it's a zero-based index. */
 
@@ -1089,7 +1089,7 @@ gchar *zMap_g_quark_to_string(ZMapQuarkSet quark_set, GQuark quark)
  *  */
 void zMap_g_quark_destroy_set(ZMapQuarkSet quark_set)
 {
-  int i ;
+  guint i ;
 
   g_hash_table_destroy(quark_set->g_quark_ht) ;
 

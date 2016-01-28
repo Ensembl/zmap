@@ -225,10 +225,10 @@ typedef struct
  *
  *  */
 #define zMapGUITestModifiers(EVENT, MODS) \
-  (((EVENT)->state & (MODS)) == (MODS))
+  (((EVENT)->state & (unsigned)(MODS)) == (unsigned)(MODS))
 
 #define zMapGUITestModifiersOnly(EVENT, MODS) \
-  (((EVENT)->state | (MODS)) == ((EVENT)->state & (MODS)))
+  (((EVENT)->state | (unsigned)(MODS)) == ((EVENT)->state & (unsigned)(MODS)))
 
 
 

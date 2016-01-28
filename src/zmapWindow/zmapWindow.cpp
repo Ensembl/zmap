@@ -1723,7 +1723,7 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
                                gboolean replace_highlight_item, gboolean highlight_same_names,
                                gboolean highlight_sub_part, ZMapWindowDisplayStyle display_style)
 {
-  static const int max_variation_str_len = 20 ;
+  static const size_t max_variation_str_len = 20 ;
   char *p = NULL ;
   GString *temp_string ;
   ZMapWindowCanvasItem top_canvas_item;
@@ -3311,7 +3311,7 @@ static void sendClientEvent(ZMapWindow window, FeatureSetsState feature_sets, gp
 static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer cb_data)
 {
   gboolean event_handled = FALSE ;
-  int i ;
+  guint i ;
 
   zMapReturnValIfFail(event, event_handled) ;
 

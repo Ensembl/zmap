@@ -1581,6 +1581,6 @@ GList* zMapFeatureTranscriptGetEvidence(ZMapFeature feature) ;
 void zMapFeatureTranscriptSetEvidence(GList *evidence, gpointer data) ;
 ZMapFeature zMapFeatureTranscriptShallowCopy(ZMapFeature src) ;
 bool zMapFeatureTranscriptHasAlignParts(ZMapFeature feature) ;
-GArray *zMapFeatureTranscriptGetAlignParts(ZMapFeature feature, int exon_index) ;
+GArray *zMapFeatureTranscriptGetAlignParts(ZMapFeature feature, guint exon_index) ;
 
 #endif /* ZMAP_FEATURE_H */
