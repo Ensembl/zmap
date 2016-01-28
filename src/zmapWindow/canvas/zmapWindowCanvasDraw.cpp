@@ -42,6 +42,14 @@
 
 
 
+// Struct for holding colinear colours....
+typedef struct ColinearColoursStructType
+{
+  GdkColor colinear_gdk[COLINEARITY_N_TYPE] ;
+
+} ColinearColoursStruct ;
+
+
 
 /* For highlighting of common splices across columns. */
 typedef struct HighlightDataStructType
@@ -53,16 +61,11 @@ typedef struct HighlightDataStructType
   ZMapBoundaryType boundary_type ;                          /* 5' or 3' */
   double x1, x2 ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  gulong splice_pixel ;                                    /* splice colour. */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 } HighlightDataStruct, *HighlightData ;
 
 
-
+static int drawLine(GdkDrawable *drawable, GdkGC *gc, ZMapWindowFeaturesetItem featureset,
+                    gint cx1, gint cy1, gint cx2, gint cy2) ;
 static void highlightSplice(gpointer data, gpointer user_data) ;
 
 
@@ -414,20 +417,67 @@ int zMap_draw_line(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset,
 }
 
 
-/* these are less common than solid lines */
-int zMap_draw_broken_line(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset,
-                          gint cx1, gint cy1, gint cx2, gint cy2)
+/* draw thick lines (for intra-block gaps....) */
+int zMapDrawThickLine(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset,
+                      gint cx1, gint cy1, gint cx2, gint cy2)
 {
   int ret = 0 ;
+
   zMapReturnValIfFail(featureset && drawable, ret);
 
-  gdk_gc_set_line_attributes(featureset->gc, 1, GDK_LINE_ON_OFF_DASH,GDK_CAP_BUTT, GDK_JOIN_MITER);
+  gdk_gc_set_line_attributes(featureset->gc, 5, GDK_LINE_SOLID, GDK_CAP_BUTT, GDK_JOIN_MITER) ;
 
   ret = zMap_draw_line(drawable, featureset, cx1, cy1, cx2, cy2);
 
-  gdk_gc_set_line_attributes(featureset->gc, 1, GDK_LINE_SOLID,GDK_CAP_BUTT, GDK_JOIN_MITER);
+  gdk_gc_set_line_attributes(featureset->gc, 1, GDK_LINE_SOLID, GDK_CAP_BUTT, GDK_JOIN_MITER) ;
 
   return ret;
+}
+
+
+/* Draw a bog standard default dashed line instead of a solid one. */
+int zMapDrawDashedLine(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset,
+                       gint cx1, gint cy1, gint cx2, gint cy2)
+{
+  int ret = 0 ;
+
+  zMapReturnValIfFail(featureset && drawable, 0) ;
+
+  gdk_gc_set_line_attributes(featureset->gc, 1, GDK_LINE_ON_OFF_DASH, GDK_CAP_BUTT, GDK_JOIN_MITER) ;
+
+  ret = zMap_draw_line(drawable, featureset, cx1, cy1, cx2, cy2) ;
+
+  gdk_gc_set_line_attributes(featureset->gc, 1, GDK_LINE_SOLID, GDK_CAP_BUTT, GDK_JOIN_MITER) ;
+
+  return ret;
+}
+
+/* Draw a dotted line, tedious because we have to query current GC values, set values to draw
+ * dotted, draw and then reset to previous values. */
+int zMapDrawDottedLine(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset,
+                       gint cx1, gint cy1, gint cx2, gint cy2)
+{
+  int ret = 0 ;
+  static GdkGC *copy_gc = NULL ;
+  enum {DOTTED_LIST_LEN = 2, OFFSET = 4, DOT = 4, SPACE = 8} ;
+  gint8 dotted[DOTTED_LIST_LEN] = {DOT, SPACE} ;
+
+  zMapReturnValIfFail(featureset && drawable, 0) ;
+
+  // Cache the gc for dotted lines, too expensive to remake every function call.
+  if (!copy_gc)
+    copy_gc = gdk_gc_new(drawable) ;
+
+  // we do the setting each time because featureset->gc may be different each time.
+  gdk_gc_copy(copy_gc, featureset->gc) ;
+
+  gdk_gc_set_line_attributes(copy_gc, OFFSET, GDK_LINE_ON_OFF_DASH, GDK_CAP_BUTT, GDK_JOIN_MITER) ;
+
+  gdk_gc_set_dashes(copy_gc, DOT, dotted, DOTTED_LIST_LEN) ;
+
+  ret = drawLine(drawable, copy_gc, featureset, cx1, cy1, cx2, cy2) ;
+
+  return ret ;
 }
 
 
@@ -438,6 +488,7 @@ int zMap_draw_rect(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset,
                    gint cx1, gint cy1, gint cx2, gint cy2, gboolean fill_flag)
 {
   int result = 0 ;
+
   zMapReturnValIfFail(featureset && drawable, result) ;
 
   /* as our rectangles are all aligned to H and V we can clip easily */
@@ -615,6 +666,7 @@ gboolean zMapCanvasFeaturesetDrawBoxMacro(ZMapWindowFeaturesetItem featureset,
 
 
 gboolean zMapCanvasDrawBoxGapped(GdkDrawable *drawable,
+                                 ZMapCanvasDrawColinearColours colinear_colours,
                                  int fill_set, int outline_set,
                                  gulong ufill, gulong outline,
                                  ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
@@ -688,20 +740,67 @@ gboolean zMapCanvasDrawBoxGapped(GdkDrawable *drawable,
             zMap_draw_line(drawable, featureset, cx1, gy1, cx2 - 1, gy2);/* GDK foible */
             break;
           }
-        case GAP_VLINE_INTRON:      /* fall through */
-        case GAP_VLINE:/* y coords differ, x is the same */
-          if (!outline_set)/* must be or else we are up the creek! */
+
+
+        case GAP_VLINE:
+        case GAP_VLINE_INTRON:
+        case GAP_VLINE_UNSEQUENCED:
+        case GAP_VLINE_MISSING:
+          {
+            if (!outline_set)/* must be or else we are up the creek! */
+              break;
+
+            gx = (cx1 + cx2) / 2;
+            c.pixel = outline;
+            gdk_gc_set_foreground (featureset->gc, &c);
+
+            switch(ag->type)
+              {
+              case GAP_VLINE:
+                zMapDrawThickLine(drawable, featureset, gx, gy1, gx, gy2);
+                break ;
+
+              case GAP_VLINE_INTRON:
+
+                if (ag->colinearity)
+                  {
+                    GdkColor *colour ;
+
+                    colour = zMapCanvasDrawGetColinearGdkColor(colinear_colours, ag->colinearity) ;
+                    gdk_gc_set_foreground(featureset->gc, colour) ;
+
+                     /* line is drawn one pixel too long at the top. I hate doing this but I haven't
+                     * worked out what is going on  here yet !!! */
+                    if (!feature->left)
+                      gy1++ ;
+                  }
+
+                /* draw line between boxes, don't overlap the pixels */
+                zMap_draw_line(drawable, featureset, gx, gy1, gx, gy2) ;
+
+                break ;
+
+              case GAP_VLINE_MISSING:
+                zMapDrawDashedLine(drawable, featureset, gx, gy1, gx, gy2) ;
+                break ;
+
+              case GAP_VLINE_UNSEQUENCED:
+                zMapDrawDottedLine(drawable, featureset, gx, gy1, gx, gy2) ;
+                break ;
+
+              default:
+                zMapWarnIfReached() ;
+                break ;
+              }
+
             break;
+          }
 
-          gx = (cx1 + cx2) / 2;
-          c.pixel = outline;
-          gdk_gc_set_foreground (featureset->gc, &c);
-
-          if (ag->type == GAP_VLINE_INTRON)
-            zMap_draw_broken_line(drawable, featureset, gx, gy1, gx, gy2);
-          else
-            zMap_draw_line(drawable, featureset, gx, gy1, gx, gy2);
-          break;
+        default:
+          {
+            zMapWarnIfReached() ;
+            break ;
+          }
 
         } /* switch statement */
 
@@ -710,6 +809,113 @@ gboolean zMapCanvasDrawBoxGapped(GdkDrawable *drawable,
 
   return result ;
 }
+
+
+
+// Colinear colours package..could be generalised to do other colours too.....
+//
+
+// Init the colours package, the application needs to hang on to this for all drawing to a
+// particular widget.
+//
+// Colours are a per-colourmap resource and the returned object give colinear colours for only the
+// original colourmap.
+//
+ZMapCanvasDrawColinearColours zMapCanvasDrawAllocColinearColours(GdkColormap *colour_map)
+{
+  ZMapCanvasDrawColinearColours colinear_colours = NULL ;
+  const char *colours[] = { "black", "red", "orange", "green" } ;
+
+  zMapReturnValIfFail((colour_map), NULL) ;
+
+  colinear_colours = g_new0(ColinearColoursStruct, 1) ;
+
+  /* cache the colours for colinear lines */
+  for (int i = 1 ; i < COLINEARITY_N_TYPE ; i++)
+    {
+      GdkColor *colour;
+
+      colour = &(colinear_colours->colinear_gdk[i]) ;
+
+      gdk_color_parse(colours[i], colour) ;
+
+      if (!gdk_colormap_alloc_color(colour_map, colour, FALSE, FALSE))
+        {
+          zMapLogWarning("Could not allocate colinear line colour: %s", colours[i]) ;
+
+          zMapCanvasDrawFreeColinearColours(colinear_colours) ;
+          colinear_colours = NULL ;
+
+          break ;
+        }
+    }
+
+  return colinear_colours ;
+}
+
+
+// Given coords between sub-features return the colour of the colinearity line 
+// between sub-features.
+// 
+GdkColor *zMapCanvasDrawGetColinearColour(ZMapCanvasDrawColinearColours colinear_colours,
+                                          int end_1, int start_2, int threshold)
+{
+  GdkColor *colinear_colour = NULL ;
+  ColinearityType ct ;
+
+  ct = zMapCanvasDrawGetColinearity(end_1, start_2, threshold) ;
+
+  colinear_colour = zMapCanvasDrawGetColinearGdkColor(colinear_colours, ct) ;
+
+  return colinear_colour ;
+}
+
+// Given a end/start/threshold return the type of colinearity for the gap
+// represented by the  end -> start  coords.
+ColinearityType zMapCanvasDrawGetColinearity(int end_1, int start_2, int threshold)
+{
+  ColinearityType ct = COLINEAR_PERFECT ;
+  int diff = 0 ;
+
+  diff = (start_2 - end_1) - 1 ;
+  if (diff < 0)
+    diff = -diff ;
+
+  if (diff > threshold)
+    {
+      if (start_2 < end_1)
+        ct = COLINEAR_NOT ;
+      else
+        ct = COLINEAR_IMPERFECT ;
+    }
+
+  return ct ;
+}
+
+
+// Given a ColinearityType return the corresponding GdkColor struct.
+// 
+GdkColor *zMapCanvasDrawGetColinearGdkColor(ZMapCanvasDrawColinearColours colinear_colours, ColinearityType ct)
+{
+  GdkColor *colinear_colour = NULL ;
+
+  colinear_colour = &(colinear_colours->colinear_gdk[ct]) ;
+
+  return colinear_colour ;
+}
+
+
+void zMapCanvasDrawFreeColinearColours(ZMapCanvasDrawColinearColours colinear_colours)
+{
+  zMapReturnIfFail((colinear_colours)) ;
+
+  g_free(colinear_colours) ;
+
+  return ;
+}
+
+
+
 
 
 
@@ -782,6 +988,80 @@ void zMapCanvasFeaturesetDrawSpliceHighlights(ZMapWindowFeaturesetItem featurese
 /*
  *             Internal routines
  */
+
+
+/* clip to expose region */
+/* erm,,, clip to visible scroll region: else rectangles would get extra edges */
+static int drawLine(GdkDrawable *drawable, GdkGC *gc, ZMapWindowFeaturesetItem featureset,
+                    gint cx1, gint cy1, gint cx2, gint cy2)
+{
+  /* for H or V lines we can clip easily */
+
+  if(cy1 > featureset->clip_y2)
+    return 0;
+  if(cy2 < featureset->clip_y1)
+    return 0;
+
+
+#if 0
+  /*
+    the problem is long vertical lines that wrap round
+    we don't draw big horizontal ones
+  */
+  if(cx1 > featureset->clip_x2)
+    return;
+  if(cx2 < featureset->clip_x1)
+    {
+      /* this will return if we expose part of a line that runs TR to BL
+       * we'd have to swap x1 and x2 round for the comparison to work
+       */
+      return;
+    }
+#endif
+
+
+  if(cx1 == cx2)        /* is vertical */
+    {
+#if 0
+      /*
+        the problem is long vertical lines that wrap round
+        we don't draw big horizontal ones
+      */
+      if(cx1 < featureset->clip_x1)
+        cx1 = featureset->clip_x1;
+      if(cx2 > featureset->clip_x2)
+        cx2 = featureset->clip_x2;
+#endif
+
+      if(cy1 < featureset->clip_y1)
+        cy1 = featureset->clip_y1;
+      if(cy2 > featureset->clip_y2)
+        cy2 = featureset->clip_y2 ;
+    }
+  else
+    {
+      double dx = cx2 - cx1;
+      double dy = cy2 - cy1;
+
+      if(cy1 < featureset->clip_y1)
+        {
+          /* need to round to get partial lines joining up neatly */
+          cx1 += round(dx * (featureset->clip_y1 - cy1) / dy);
+          cy1 = featureset->clip_y1;
+        }
+      if(cy2 > featureset->clip_y2)
+        {
+          cx2 -= round(dx * (cy2 - featureset->clip_y2) / dy);
+          cy2 = featureset->clip_y2;
+        }
+
+    }
+
+  gdk_draw_line (drawable, gc, cx1, cy1, cx2, cy2) ;
+
+  return 1;
+}
+
 
 
 static void highlightSplice(gpointer data, gpointer user_data)

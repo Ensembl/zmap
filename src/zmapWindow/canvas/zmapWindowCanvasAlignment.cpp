@@ -83,12 +83,6 @@ static AlignGap makeGapped(ZMapFeature feature, double offset, FooCanvasItem *fo
 static ZMapWindowCanvasGlyph truncation_glyph_alignment_start_G = NULL ;
 static ZMapWindowCanvasGlyph truncation_glyph_alignment_end_G = NULL ;
 
-/* optimise setting of colours, thes have to be GdkParsed and mapped to the canvas */
-/* we has a flag to set these on the first draw operation which requires map and relaise of the
-   canvas to have occured */
-static gboolean decoration_set_G = FALSE;
-static GdkColor colinear_gdk_G[COLINEARITY_N_TYPE];
-
 static AlignGap align_gap_free_G = NULL;
 
 static long n_block_alloc = 0;
@@ -155,18 +149,17 @@ GList* zMapWindowCanvasAlignmentGetAllMatchBlocks(FooCanvasItem *item)
 
 
 /* given an alignment sub-feature return the colour or the colinearity line to the next sub-feature */
-static GdkColor *zmapWindowCanvasAlignmentGetFwdColinearColour(ZMapWindowCanvasAlignment align)
+static GdkColor *getFwdColinearColour(ZMapWindowCanvasAlignment align)
 {
+  GdkColor *colinear_colour = NULL ;
   ZMapWindowCanvasAlignment next = NULL ;
-  int diff = 0;
   int start2 = 0, end1 = 0;
   int threshold = 0 ;
-  ColinearityType ct = COLINEAR_PERFECT;
   ZMapHomol h1,h2;
 
   zMapReturnValIfFail(align && align->feature.feature, NULL) ;
+
   next = (ZMapWindowCanvasAlignment) align->feature.right ;
-  threshold = (int) zMapStyleGetWithinAlignError(*align->feature.feature->style);
 
   /* apparently this works thro revcomp:
    *
@@ -184,21 +177,15 @@ static GdkColor *zmapWindowCanvasAlignmentGetFwdColinearColour(ZMapWindowCanvasA
       h2 = &align->feature.feature->feature.homol;
       h1 = &next->feature.feature->feature.homol;
     }
+
   end1 = h1->y2;
   start2 = h2->y1;
-  diff = start2 - end1 - 1;
-  if (diff < 0)
-    diff = -diff;
+  threshold = (int)zMapStyleGetWithinAlignError(*align->feature.feature->style) ;
 
-  if (diff > threshold)
-    {
-      if (start2 < end1)
-        ct = COLINEAR_NOT;
-      else
-        ct = COLINEAR_IMPERFECT;
-    }
+  colinear_colour = zMapCanvasDrawGetColinearColour(ZMAP_WINDOW_FEATURESET_ITEM(align)->colinear_colours,
+                                                    end1, start2, threshold) ;
 
-  return &colinear_gdk_G[ct];
+  return colinear_colour ;
 }
 
 
@@ -207,7 +194,6 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
                                                   GdkDrawable *drawable,
                                                   GdkEventExpose *expose)
 {
-  static const char *colours[] = { "black", "red", "orange", "green" } ;
   ZMapWindowCanvasAlignment align = (ZMapWindowCanvasAlignment)feature ;
   FooCanvasItem *foo = (FooCanvasItem *)featureset ;
   ZMapFeatureTypeStyle homology = NULL,
@@ -231,6 +217,14 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
 
   zMapReturnIfFail(featureset && feature && feature->feature && drawable && expose) ;
 
+
+  // Allocate colours for colinear lines if not allocated.
+  if (!(featureset->colinear_colours))
+    {
+      featureset->colinear_colours = zMapCanvasDrawAllocColinearColours(gdk_gc_get_colormap(featureset->gc)) ;
+    }
+
+
   /* Find featureset style. */
   style = *(feature->feature->style) ;
 
@@ -248,8 +242,8 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
   zMapWindowCanvasCalcHorizCoords(featureset, feature, &x1, &x2) ;
 
   /* Get some canvas coordinates. */
-  foo_canvas_w2c (foo->canvas, x1, 0, &cx1, NULL);
-  foo_canvas_w2c (foo->canvas, x2, 0, &cx2, NULL);
+  foo_canvas_w2c(foo->canvas, x1, 0, &cx1, NULL);
+  foo_canvas_w2c(foo->canvas, x2, 0, &cx2, NULL);
 
 
   /* ouch...can't we do this earlier.....rather than return here..... */
@@ -406,6 +400,7 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
         }
 
       zMapCanvasDrawBoxGapped(drawable,
+                              featureset->colinear_colours,
                               fill_set, outline_set, ufill, outline,
                               featureset, feature,
                               x1, x2, align->gapped) ;
@@ -434,24 +429,6 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
    */
   if (featureset->bumped)
     {
-      if (!decoration_set_G)
-        {
-          int i;
-          GdkColor colour;
-          gulong pixel;
-          FooCanvasItem *foo = (FooCanvasItem *) featureset;
-
-          /* cache the colours for colinear lines */
-          for (i = 1; i < COLINEARITY_N_TYPE; i++)
-            {
-              gdk_color_parse(colours[i],&colour);
-              pixel = zMap_gdk_color_to_rgba(&colour);
-              colinear_gdk_G[i].pixel = foo_canvas_get_color_pixel(foo->canvas,pixel);
-            }
-
-          decoration_set_G = TRUE;
-        }
-
       /* add some decorations */
       if (!align->bump_set)/* set up glyph data once only */
         {
@@ -547,18 +524,16 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
               if (cy2 < expose->area.y)
                 continue;
 
-              colour = zmapWindowCanvasAlignmentGetFwdColinearColour((ZMapWindowCanvasAlignment) feat);
+              colour = getFwdColinearColour((ZMapWindowCanvasAlignment) feat) ;
+              gdk_gc_set_foreground(featureset->gc, colour) ;
 
               /* draw line between boxes, don't overlap the pixels */
-              gdk_gc_set_foreground(featureset->gc, colour);
-
 
               /* The bit about clobbering the "first feature's y2" above seems to mean the first
                * line is drawn one pixel too long at the top. I hate doing this but I haven't
                * worked out what is going on  here yet !!! */
               if (!feature->left)
                 cy1++ ;
-
 
               zMap_draw_line(drawable, featureset, cx1, cy1, cx2, cy2) ;
 
@@ -1102,6 +1077,10 @@ static void align_gap_free(AlignGap ag)
  * So it's a bit slack trusting an external program but ZMap has been doing that for a long time.
  * "roll on CIGAR strings" which prevent this kind of problem
  *
+ * EG - Actually acedb arrays are always sorted and now most of our data is CIGAR-derived so we should
+ * be ok.
+ * 
+ * 
  * NOTE that sorting a GArray might sort the data structures themselves, so schoolboy error kind
  * of slow.  If they do need to be sorted then the place is in zmapGFF2Parser.c/loadGaps() Sorting
  * is interesting here as the display optimisation would produce a completely wrong picture if it
@@ -1118,27 +1097,32 @@ static AlignGap makeGapped(ZMapFeature feature, double offset, FooCanvasItem *fo
                            int start, int end,
                            GArray *align_gaps, gboolean is_forward)
 {
-  int i;
-  AlignGap ag = NULL ;
-  AlignGap last_box = NULL;
-  AlignGap last_ag = NULL;
-  AlignGap display_ag = NULL;
+  AlignGap display_ag = NULL ;
+  int fy1 ;
   GArray *gaps ;
-  ZMapAlignBlock ab;
-  int cy1,cy2,fy1;
   int n ;
-  gboolean edge;
+  int i ;
+  AlignGap last_box, last_ag ;
+  int prev_q2, next_q1 ;
+  int threshold ;
 
-  zMapReturnValIfFail(foo && feature, display_ag) ;
+  zMapReturnValIfFail(foo && feature, NULL) ;
 
   foo_canvas_w2c(foo->canvas, 0, start + offset, NULL, &fy1);
+
+  threshold = (int)zMapStyleGetWithinAlignError(*(feature->style)) ;
 
   gaps = align_gaps ;
   n = align_gaps->len ;
 
-  for (i = 0; i < n ;i++)
+  for (i = 0, prev_q2 = 0, next_q1 = 0, last_box = NULL, last_ag = NULL ; i < n ; i++)
     {
-      ab = &g_array_index(gaps, ZMapAlignBlockStruct, i);
+      AlignGap ag = NULL ;
+      ZMapAlignBlock ab ;
+      int cy1, cy2 ;
+      gboolean edge ;
+
+      ab = &g_array_index(gaps, ZMapAlignBlockStruct, i) ;
 
       /* get pixel coords of block relative to feature y1, +1 to cover all of last base on cy2 */
       foo_canvas_w2c(foo->canvas, 0, ab->t1 + offset, NULL, &cy1);
@@ -1154,7 +1138,7 @@ static AlignGap makeGapped(ZMapFeature feature, double offset, FooCanvasItem *fo
               last_box->edge = TRUE;
 
               if (last_box->y2 - last_box->y1 > 2)
-                last_box = NULL;/* force a new box if the colours are visible */
+                last_box = NULL ;                           /* force a new box if the colours are visible */
             }
 
           edge = FALSE;
@@ -1162,7 +1146,7 @@ static AlignGap makeGapped(ZMapFeature feature, double offset, FooCanvasItem *fo
           if (i == (n-1) && (feature->flags.squashed_end))
             {
               if (last_box && last_box->y2 - last_box->y1 > 2)
-                last_box = NULL;/* force a new box if the colours are visible */
+                last_box = NULL ;                           /* force a new box if the colours are visible */
 
               edge = TRUE;
             }
@@ -1174,24 +1158,36 @@ static AlignGap makeGapped(ZMapFeature feature, double offset, FooCanvasItem *fo
             {
               /* extend last box and add a line where last box ended */
               ag = align_gap_alloc();
+              last_ag->next = ag;
+
               ag->y1 = last_box->y2;
               ag->y2 = last_box->y2;
               ag->type = GAP_HLINE;
-              last_ag->next = ag;
+
               last_ag = ag;
               last_box->y2 = cy2;
             }
-
           else if (last_box->y2 < cy1 - 1)
             {
               /* visible gap between boxes: add a colinear line */
-              AlignBlockBoundaryType boundary_type = (is_forward ? ab->start_boundary : ab->end_boundary);
-              ag = align_gap_alloc();
-              ag->y1 = last_box->y2;
-              ag->y2 = cy1;
-              ag->type = (boundary_type == ALIGN_BLOCK_BOUNDARY_INTRON ? GAP_VLINE_INTRON : GAP_VLINE);
-              last_ag->next = ag;
-              last_ag = ag;
+              AlignBlockBoundaryType boundary_type = (is_forward ? ab->start_boundary : ab->end_boundary) ;
+
+              ag = align_gap_alloc() ;
+              last_ag->next = ag ;
+
+              ag->y1 = last_box->y2 ;
+              ag->y2 = cy1 ;
+
+              ag->type = (boundary_type == ALIGN_BLOCK_BOUNDARY_INTRON ? GAP_VLINE_INTRON : GAP_VLINE) ;
+
+              if (ag->type == GAP_VLINE_INTRON)
+                {
+                  next_q1 = ab->q1 ;
+
+                  ag->colinearity = zMapCanvasDrawGetColinearity(prev_q2, next_q1, threshold) ;
+                }
+
+              last_ag = ag ;
             }
 
           if (last_box->y2 < cy1)
@@ -1219,6 +1215,7 @@ static AlignGap makeGapped(ZMapFeature feature, double offset, FooCanvasItem *fo
             display_ag = ag;
         }
 
+      prev_q2 = ab->q2 ;
     }
 
   return display_ag ;
