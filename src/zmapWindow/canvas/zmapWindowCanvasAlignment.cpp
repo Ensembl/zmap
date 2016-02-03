@@ -65,7 +65,7 @@ static double alignmentPoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeatur
                              double item_x, double item_y, int cx, int cy,
                              double local_x, double local_y, double x_off) ;
 static gboolean hasNCSplices(ZMapFeature left, ZMapFeature right, gboolean *left_nc, gboolean *right_nc) ;
-
+static GdkColor *getFwdColinearColour(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasAlignment align) ;
 
 static void align_gap_free(AlignGap ag) ;
 static AlignGap align_gap_alloc(void) ;
@@ -149,7 +149,7 @@ GList* zMapWindowCanvasAlignmentGetAllMatchBlocks(FooCanvasItem *item)
 
 
 /* given an alignment sub-feature return the colour or the colinearity line to the next sub-feature */
-static GdkColor *getFwdColinearColour(ZMapWindowCanvasAlignment align)
+static GdkColor *getFwdColinearColour(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasAlignment align)
 {
   GdkColor *colinear_colour = NULL ;
   ZMapWindowCanvasAlignment next = NULL ;
@@ -182,7 +182,7 @@ static GdkColor *getFwdColinearColour(ZMapWindowCanvasAlignment align)
   start2 = h2->y1;
   threshold = (int)zMapStyleGetWithinAlignError(*align->feature.feature->style) ;
 
-  colinear_colour = zMapCanvasDrawGetColinearColour(ZMAP_WINDOW_FEATURESET_ITEM(align)->colinear_colours,
+  colinear_colour = zMapCanvasDrawGetColinearColour(ZMAP_WINDOW_FEATURESET_ITEM(featureset)->colinear_colours,
                                                     end1, start2, threshold) ;
 
   return colinear_colour ;
@@ -524,7 +524,7 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
               if (cy2 < expose->area.y)
                 continue;
 
-              colour = getFwdColinearColour((ZMapWindowCanvasAlignment) feat) ;
+              colour = getFwdColinearColour(featureset, (ZMapWindowCanvasAlignment) feat) ;
               gdk_gc_set_foreground(featureset->gc, colour) ;
 
               /* draw line between boxes, don't overlap the pixels */
