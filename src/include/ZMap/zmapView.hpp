@@ -34,6 +34,8 @@
 #ifndef ZMAPVIEW_H
 #define ZMAPVIEW_H
 
+#include <string>
+
 #include <gtk/gtk.h>
 
 #include <ZMap/zmapConfigIni.hpp>
@@ -43,6 +45,8 @@
 #include <ZMap/zmapXMLHandler.hpp>
 #include <ZMap/zmapUrl.hpp>
 #include <ZMap/zmapAppRemote.hpp>
+#include <ZMap/zmapConfigStanzaStructs.hpp>
+#include <ZMap/zmapFeatureLoadDisplay.hpp>
 
 
 /* Opaque type, represents an instance of a ZMapView. */
@@ -192,6 +196,7 @@ char *zMapViewGetLoadStatusStr(ZMapView view,
                                char **loading_sources_out, char **empty_sources_out, char **failed_sources_out) ;
 GtkWidget *zMapViewGetXremote(ZMapView view) ;
 gboolean zMapViewGetFeaturesSpan(ZMapView zmap_view, int *start, int *end) ;
+ZMapFeatureContextMap zMapViewGetContextMap(ZMapView view) ;
 ZMapWindow zMapViewGetWindow(ZMapViewWindow view_window) ;
 ZMapFeatureContext zMapViewGetContext(ZMapViewWindow view_window) ;
 ZMapView zMapViewGetView(ZMapViewWindow view_window) ;
@@ -210,11 +215,8 @@ gboolean zMapViewProcessRemoteRequest(ZMapViewWindow view_window,
 gpointer zMapViewFindView(ZMapView view, gpointer view_id) ;
 
 ZMapFeatureSequenceMap zMapViewGetSequenceMap(ZMapView zmap_view);
-ZMapFeatureSource zMapViewGetFeatureSetSource(ZMapView view, GQuark f_id);
-void zMapViewSetFeatureSetSource(ZMapView view, GQuark f_id, ZMapFeatureSource src);
 void zMapViewSetFlag(ZMapView view, ZMapFlag flag, const gboolean value) ;
 gboolean zMapViewGetFlag(ZMapView view, ZMapFlag flag) ;
-GList *zmapViewGetIniSources(char *config_file, char *config_str,char **stylesfile);
 
 gboolean zMapViewRequestServer(ZMapView view, ZMapFeatureBlock block_orig, GList *req_featuresets, GList *req_biotypes,
 			       gpointer server, /* ZMapConfigSource */
@@ -262,6 +264,11 @@ gboolean zMapViewExportConfig(ZMapView view, const ZMapViewExportType export_typ
                               char **filepath_inout, GError **error) ;
 
 gboolean zMapViewCheckIfUnsaved(ZMapView zmap_view) ;
+
+void zMapViewSetUpServerConnection(ZMapView zmap_view, ZMapConfigSource current_server, GError **error) ;
+
+void zMapViewAddSource(ZMapView view, const std::string &source_name, ZMapConfigSource source, GError **error) ;
+
 
 ZMAP_ENUM_TO_SHORT_TEXT_DEC(zMapView2Str, ZMapViewState) ;
 

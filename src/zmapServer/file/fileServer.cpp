@@ -160,6 +160,26 @@ static gboolean globalInit(void)
 /*
  *
  */
+static gboolean isFileScheme(const ZMapURLScheme scheme)
+{
+  return (scheme == SCHEME_FILE ||
+          scheme == SCHEME_HTTP ||
+#ifdef HAVE_SSL
+          scheme == SCHEME_HTTPS ||
+#endif
+          scheme == SCHEME_FTP) ;
+}
+
+static gboolean isRemoteFileScheme(const ZMapURLScheme scheme)
+{
+  return (scheme == SCHEME_HTTP ||
+#ifdef HAVE_SSL
+          scheme == SCHEME_HTTPS ||
+#endif
+          scheme == SCHEME_FTP) ;
+}
+
+
 static gboolean createConnection(void **server_out,
                                  char *config_file,
                                  ZMapURL url,
@@ -197,7 +217,7 @@ static gboolean createConnection(void **server_out,
   server->source_2_sourcedata = NULL ;
   server->featureset_2_column = NULL ;
 
-  if ((url->scheme != SCHEME_FILE) && (!(url->path) || !(*(url->path))))
+  if (!isFileScheme(url->scheme) || (!(url->path) || !(*(url->path))))
     {
       server->last_err_msg = g_strdup_printf("Connection failed because file url had wrong scheme or no path: %s.",
         url->url) ;
@@ -252,6 +272,11 @@ static gboolean createConnection(void **server_out,
                 }
             }
         }
+      else if (isRemoteFileScheme(server->scheme))
+        {
+          server->path = g_strdup(url->url) ;
+          result = TRUE ;
+        }
     }
 
 
@@ -274,7 +299,7 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
   /*
    * Test for errors.
    */
-  zMapReturnValIfFail(server && (server->scheme == SCHEME_FILE) && req_open , result ) ;
+  zMapReturnValIfFail(server && isFileScheme(server->scheme) && req_open , result ) ;
 
   /*
    * If the server has a file already we set an
@@ -304,7 +329,7 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
   /*
    * Create data source object (file or GIOChannel)
    */
-  server->data_source = zMapDataSourceCreate(server->path ) ;
+  server->data_source = zMapDataSourceCreate(server->path, &error) ;
   if (server->data_source != NULL )
     status = TRUE ;
 

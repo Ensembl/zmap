@@ -6,6 +6,27 @@
 <body>
 <h2>ZMap - Release Notes</h2>
 
+<h4>Version 2.5.0</h4>
+<ul>
+  <li>ZMap's main window (shown when you start ZMap without arguments) now has buttons which let you easily add sources for either an Ensembl database or a file. For Ensembl sources, you can search for a list of databases/featuresets/biotypes. The public host details are provided by default, or you can enter your own host. The sources can be saved to a config file for re-use.
+  <li>ZMap can now load files from ftp/http sources on startup, as well as from the Import dialog.
+  <li>Changes made on the Columns dialog can now be saved to the user preferences from the File->Save menu on the dialog.
+  <li>ZMap can now run Blixem on imported BAM file columns, as well as pre-configured ones.
+  <li>ZMap now validates the styles hierarchy and rejects any styles with cyclic dependencies.
+  <li>SIRT:501033 ZMap now supports pfetch over https.
+  <li>Add VULGAR string support to zmap (under-the-hood changes only as we don't display vulgar currently.)
+  <li>SIRT:501710 Fixed a bug with pfetch in zmap where a libcurl error condition was not being handled correctly.
+  <li>Fixed several bugs to do with styles/column configuration:
+  <ul>
+    <li>the Strand Separator was being moved to the wrong position when you reorder columns
+    <li>ZMap wasn't being redrawn correctly after reordering columns
+    <li>all configured columns were displaying on the Columns dialog even if not loaded
+    <li>transparent styles weren't working in the Edit Style dialog
+    <li>assigning a style was failing for columns with more than one style
+    <li>assigning a style was failing when the columns list is sorted or filtered
+  </ul>
+</ul>
+
 <h4>Version 2.4.1</h4>
 <ul>
   <li>Fix a bug loading BAM files that contain more than one sequence.

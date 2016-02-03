@@ -26,7 +26,7 @@
  *
  * Description: Implements the zmapStyle GObject
  *
- * Exported functions: See ZMap/zmapStyle.h
+ * Exported functions: See ZMap/zmapStyleTree.hpp
  *
  *-------------------------------------------------------------------
  */

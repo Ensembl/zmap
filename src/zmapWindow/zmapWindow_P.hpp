@@ -1001,7 +1001,6 @@ typedef struct ZMapWindowStructType
 
   ZMapWindowState state;	/* need to store this see revcomp, RT 229703 */
 
-  gboolean *flags ; /* array of flags from the view level */
   int *int_values ; /* array of int values from the view level */
 
   /* The display_forward_coords flag controls whether coords are displayed
@@ -1054,9 +1053,13 @@ typedef struct
 {
   char    *location;
   char    *cookie_jar;
+  char    *proxy;
+  char    *cainfo;
   char    *mode;
   int      port;
   gboolean full_record;
+  gboolean verbose;
+  long     ipresolve;
 } PFetchUserPrefsStruct;
 
 typedef struct
@@ -1582,9 +1585,15 @@ ZMapGUIMenuItem zmapWindowMakeMenuBlixTop(int *start_index_inout,
 ZMapGUIMenuItem zmapWindowMakeMenuBlixCommon(int *start_index_inout,
 					     ZMapGUIMenuItemCallbackFunc callback_func,
 					     gpointer callback_data) ;
+ZMapGUIMenuItem zmapWindowMakeMenuBlixCommonNonBAM(int *start_index_inout,
+                                                   ZMapGUIMenuItemCallbackFunc callback_func,
+                                                   gpointer callback_data) ;
 ZMapGUIMenuItem zmapWindowMakeMenuBlixColCommon(int *start_index_inout,
 						ZMapGUIMenuItemCallbackFunc callback_func,
 						gpointer callback_data) ;
+ZMapGUIMenuItem zmapWindowMakeMenuBlixColCommonNonBAM(int *start_index_inout,
+                                                      ZMapGUIMenuItemCallbackFunc callback_func,
+                                                      gpointer callback_data) ;
 ZMapGUIMenuItem zmapWindowMakeMenuNonHomolFeature(int *start_index_inout,
 						  ZMapGUIMenuItemCallbackFunc callback_func,
 						  gpointer callback_data) ;
@@ -1633,7 +1642,15 @@ void zmapWindowUpdateXRemoteDataFull(ZMapWindow window, ZMapFeatureAny feature_a
 /* UM....WHY ON EARTH IS THIS IN HERE....????? */
 ZMapXMLUtilsEventStack zMapFeatureAnyAsXMLEvents(ZMapFeature feature) ;
 
-gboolean zmapWindowFeaturesetSetStyle(GQuark style_id, ZMapFeatureSet feature_set, ZMapFeatureContextMap context_map, ZMapWindow window);
+gboolean zmapWindowFeaturesetSetStyle(GQuark style_id, 
+                                      ZMapFeatureSet feature_set, 
+                                      ZMapFeatureContextMap context_map, 
+                                      ZMapWindow window, 
+                                      const gboolean update_column = TRUE, 
+                                      const gboolean destroy_canvas_items = TRUE,
+                                      const gboolean redraw = TRUE);
+gboolean zmapWindowColumnAddStyle(const GQuark style_id, const GQuark column_id, ZMapFeatureContextMap context_map, ZMapWindow window) ;
+gboolean zmapWindowColumnRemoveStyle(const GQuark style_id, const GQuark column_id, ZMapFeatureContextMap context_map, ZMapWindow window) ;
 gboolean zmapWindowStyleDialogSetStyle(ZMapWindow window, ZMapFeatureTypeStyle style_in, ZMapFeatureSet feature_set, const gboolean create_child);
 void zmapWindowStyleDialogDestroy(ZMapWindow window);
 
@@ -1953,6 +1970,8 @@ void zmapWindowStateRevCompRegion(ZMapWindow window, double *a, double *b);
 void zmapWindowStateRevCompRegion(ZMapWindow window, double *a, double *b);
 
 void zmapWindowHighlightEvidenceCB(GList *evidence, gpointer user_data) ;
+
+GList * zmapWindowAddColumnFeaturesets(ZMapFeatureContextMap map, GList *glist, GQuark column_id, gboolean unique_id) ;
 
 /* Malcolms.... */
 void foo_bug_set(void *key, const char *id) ;

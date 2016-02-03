@@ -79,17 +79,17 @@ static const char * const ZMAP_BAM_SOURCE   = "zmap_bam2gff_conversion" ;
 /*
  * Create a ZMapDataSource object
  */
-ZMapDataSource zMapDataSourceCreate(const char * const file_name )
+ZMapDataSource zMapDataSourceCreate(const char * const file_name, GError **error_out)
 {
   static const char * open_mode = "r" ;
   ZMapDataSource data_source = NULL ;
   ZMapDataSourceType source_type = ZMAPDATASOURCE_TYPE_UNK ;
+  GError *error = NULL ;
   zMapReturnValIfFail(file_name && *file_name, data_source ) ;
 
   source_type = zMapDataSourceTypeFromFilename(file_name) ;
   if (source_type == ZMAPDATASOURCE_TYPE_GIO)
     {
-      GError *error = NULL ;
       ZMapDataSourceGIO file = NULL ;
       file = (ZMapDataSourceGIO) g_new0(ZMapDataSourceGIOStruct, 1) ;
       if (file != NULL)
@@ -102,8 +102,6 @@ ZMapDataSource zMapDataSourceCreate(const char * const file_name )
             }
           else
             {
-              if (error)
-                g_error_free(error) ;
               g_free(file) ;
             }
         }
@@ -116,7 +114,10 @@ ZMapDataSource zMapDataSourceCreate(const char * const file_name )
         {
           file->type = ZMAPDATASOURCE_TYPE_HTS ;
           file->hts_file = hts_open(file_name, open_mode);
-          file->hts_hdr = sam_hdr_read(file->hts_file) ;
+
+          if (file->hts_file)
+            file->hts_hdr = sam_hdr_read(file->hts_file) ;
+
           file->hts_rec = bam_init1() ;
           if (file->hts_file && file->hts_hdr && file->hts_rec)
             {
@@ -134,9 +135,14 @@ ZMapDataSource zMapDataSourceCreate(const char * const file_name )
               if (file->hts_rec)
                 bam_destroy1(file->hts_rec) ;
               g_free(file) ;
+
+              g_set_error(&error, g_quark_from_string("ZMap"), 99, "Failed to open file '%s'", file_name) ;
             }
         }
     }
+
+  if (error)
+    g_propagate_error(error_out, error) ;
 
   return data_source ;
 }

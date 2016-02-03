@@ -587,7 +587,7 @@ static void getWindowMark(ZMapWindow window, RemoteCommandRCType *command_rc_out
   else
     {
       /* Need to check for revcomp..... */
-      if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
+      if (zMapWindowGetFlag(window, ZMAPFLAG_REVCOMPED_FEATURES))
         {
           int seq_start, seq_end ;
 

@@ -147,6 +147,7 @@ void zMapWindowShowStyleDialog(ZMapWindow window,
 
   StyleChange my_data = g_new0(StyleChangeStruct,1);
 
+  my_data->style = style ;
   my_data->window = window;
   my_data->created_cb_func = created_cb_func ;
   my_data->cb_data = cb_data ;
@@ -202,13 +203,14 @@ void zmapWindowStyleDialogDestroy(ZMapWindow window)
 gboolean zmapWindowStyleDialogSetStyle(ZMapWindow window, ZMapFeatureTypeStyle style_in, 
                                        ZMapFeatureSet feature_set, const gboolean create_child)
 {
+  zMapReturnValIfFail(window, FALSE) ;
   StyleChange my_data = (StyleChange) window->style_window;
-  ZMapFeatureTypeStyle style = style_in;
-  GdkColor colour = {0} ;
-  GdkColor *fill_col = &colour, *border_col = &colour;
 
   if(!my_data)
     return FALSE;
+
+  ZMapFeatureTypeStyle style = style_in;
+  GdkColor *fill_col = &my_data->window->canvas_background, *border_col = &my_data->window->canvas_background;
 
   if (!style)
     {
@@ -258,6 +260,10 @@ gboolean zmapWindowStyleDialogSetStyle(ZMapWindow window, ZMapFeatureTypeStyle s
 
   if(style->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
     {
+      /* Default to background colour */
+      fill_col = &my_data->window->canvas_background ;
+      border_col = &my_data->window->canvas_background;
+
       zMapStyleGetColours(style, STYLE_PROP_TRANSCRIPT_CDS_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL, &fill_col, NULL, &border_col);
 
       gtk_color_button_set_color(GTK_COLOR_BUTTON(my_data->cds_fill_widget), fill_col) ;
@@ -275,13 +281,134 @@ gboolean zmapWindowStyleDialogSetStyle(ZMapWindow window, ZMapFeatureTypeStyle s
 }
 
 
+/* Sets the style in the given column to the style given by style_id  */
+gboolean zmapWindowColumnAddStyle(const GQuark style_id,
+                                  const GQuark column_id,
+                                  ZMapFeatureContextMap context_map,
+                                  ZMapWindow window)
+{
+  gboolean ok = FALSE ;
+  zMapReturnValIfFail(style_id && column_id && context_map, ok) ;
+
+  std::map<GQuark, ZMapFeatureColumn>::iterator col_iter = context_map->columns->find(column_id) ;
+  ZMapFeatureColumn column = NULL ;
+  
+  if (col_iter != context_map->columns->end())
+    column = col_iter->second ;
+
+  if(column)
+    {
+      gpointer styles_list_ptr = NULL ;
+      GList *styles_list = NULL ;
+
+      bool list_exists = g_hash_table_lookup_extended(context_map->column_2_styles, 
+                                                      GUINT_TO_POINTER(column_id),
+                                                      NULL,
+                                                      &styles_list_ptr);
+
+      if (list_exists && styles_list_ptr)
+        styles_list = (GList*)styles_list_ptr ;
+
+      /* Regenerate the column's style */
+      g_list_free(column->style_table);
+      column->style_table = NULL;
+      column->style = NULL;        /* must clear this to trigger style table calculation */
+      /* NOTE column->style_id is column specific not related to a featureset, set by config */
+
+      zMapWindowGetSetColumnStyle(window, style_id);
+
+      /* Check the style is not already in the list */
+      if (!styles_list || !g_list_find(styles_list, GUINT_TO_POINTER(style_id)))
+        {
+          /* Update the column_2_styles table */
+          styles_list = g_list_append(styles_list, GUINT_TO_POINTER(style_id)) ;
+
+          if (list_exists)
+            g_hash_table_replace(context_map->column_2_styles, GUINT_TO_POINTER(column_id), styles_list) ;
+          else
+            g_hash_table_insert(context_map->column_2_styles, GUINT_TO_POINTER(column_id), styles_list) ;
+        
+          ok = TRUE;
+        }
+    }
+
+  return ok ;
+}
+
+
+/* Remvoes the given style's association with the given column. Returns true unless there was a
+ * fatal error (note that we still return true if the style is not in the column and was not
+ * therefore removed) */
+gboolean zmapWindowColumnRemoveStyle(const GQuark style_id,
+                                     const GQuark column_id,
+                                     ZMapFeatureContextMap context_map,
+                                     ZMapWindow window)
+{
+  gboolean ok = TRUE ;
+  zMapReturnValIfFail(style_id && column_id && context_map, ok) ;
+
+  ZMapFeatureColumn column = NULL ;
+  std::map<GQuark, ZMapFeatureColumn>::iterator col_iter = context_map->columns->find(column_id) ;
+
+  if (col_iter != window->context_map->columns->end())
+    column = col_iter->second ;
+
+  if(column)
+    {
+      GList *styles_list = (GList *)g_hash_table_lookup(context_map->column_2_styles, GUINT_TO_POINTER(column_id));
+
+      if(styles_list)
+        {
+          /* Regenerate the column's style */
+          g_list_free(column->style_table);
+          column->style_table = NULL;
+          column->style = NULL;        /* must clear this to trigger style table calculation */
+          /* NOTE column->style_id is column specific not related to a featureset, set by config */
+
+          zMapWindowGetSetColumnStyle(window, style_id);
+
+          /* Remove the style from the column_2_styles hash table */
+          for(GList *c2s = styles_list ; c2s; c2s = c2s->next)
+            {
+              if(GPOINTER_TO_UINT(c2s->data) == style_id)
+                {
+                  /* Update the hash table with the new list (or remove it if it will be empty -
+                   * note that we must not delete_link if we're removing it because destroyList is
+                   * called on the list when it's removed from the table) */
+                  if (g_list_length(styles_list) > 1)
+                    {
+                      styles_list = g_list_delete_link(styles_list, c2s) ;
+                      g_hash_table_replace(context_map->column_2_styles, GUINT_TO_POINTER(column_id), styles_list) ;
+                    }
+                  else
+                    {
+                      g_hash_table_remove(context_map->column_2_styles, GUINT_TO_POINTER(column_id)) ;
+                    }
+
+                  break;
+                }
+            }
+
+          ok = TRUE;
+        }
+    }
+
+  return ok ;
+}
+
+
 /* Sets the style in the given feature_set to the style given by style_id  */
 gboolean zmapWindowFeaturesetSetStyle(GQuark style_id, 
                                       ZMapFeatureSet feature_set,
                                       ZMapFeatureContextMap context_map,
-                                      ZMapWindow window)
+                                      ZMapWindow window,
+                                      const gboolean update_column,
+                                      const gboolean destroy_canvas_items,
+                                      const gboolean redraw)
 {
   gboolean ok = FALSE ;
+  zMapReturnValIfFail(style_id && feature_set && context_map && window, ok) ;
+
   ZMapFeatureTypeStyle style;
   FooCanvasItem *set_item, *canvas_item;
   int set_strand, set_frame;
@@ -289,49 +416,32 @@ gboolean zmapWindowFeaturesetSetStyle(GQuark style_id,
 
   style = context_map->styles.find_style(style_id);
 
-  if(style)
+  if(style && update_column)
     {
-      ZMapFeatureColumn column;
       ZMapFeatureSource s2s;
-      ZMapFeatureSetDesc f2c;
-      GList *c2s;
 
       /* now tweak featureset & column styles in various places */
       s2s = (ZMapFeatureSource)g_hash_table_lookup(context_map->source_2_sourcedata,GUINT_TO_POINTER(feature_set->unique_id));
-      f2c = (ZMapFeatureSetDesc)g_hash_table_lookup(context_map->featureset_2_column,GUINT_TO_POINTER(feature_set->unique_id));
+      ZMapFeatureSetDesc f2c = (ZMapFeatureSetDesc)g_hash_table_lookup(context_map->featureset_2_column, GUINT_TO_POINTER(feature_set->unique_id));
+
       if(s2s && f2c)
         {
           s2s->style_id = style_id ;
-          column = (ZMapFeatureColumn)g_hash_table_lookup(context_map->columns,GUINT_TO_POINTER(f2c->column_id));
-          if(column)
-            {
+          ok = TRUE ;
 
-              c2s = (GList *)g_hash_table_lookup(context_map->column_2_styles,GUINT_TO_POINTER(f2c->column_id));
-              if(c2s)
-                {
-                  g_list_free(column->style_table);
-                  column->style_table = NULL;
-                  column->style = NULL;        /* must clear this to trigger style table calculation */
-                  /* NOTE column->style_id is column specific not related to a featureset, set by config */
+          if (ok && feature_set && feature_set->style)
+            zmapWindowColumnRemoveStyle(feature_set->style->unique_id, f2c->column_id, context_map, window) ;
 
-                  for( ; c2s; c2s = c2s->next)
-                    {
-                      if(GPOINTER_TO_UINT(c2s->data) == feature_set->style->unique_id)
-                        {
-                          c2s->data = GUINT_TO_POINTER(style_id);
-                          break;
-                        }
-                    }
-                  ok = TRUE;
-                }
-
-              zMapWindowGetSetColumnStyle(window, feature_set->unique_id);
-              window->flags[ZMAPFLAG_SAVE_FEATURESET_STYLE] = TRUE ;
-            }
+          if (ok)
+            ok = zmapWindowColumnAddStyle(style_id, f2c->column_id, context_map, window) ;
         }
     }
+  else if (style)
+    {
+      ok = TRUE ;
+    }
 
-  if (ok)
+  if (ok && destroy_canvas_items)
     {
       /* get current style strand and frame status and operate on 1 or more columns
        * NOTE that the FToIhash has diff hash tables per strand and frame
@@ -412,18 +522,26 @@ gboolean zmapWindowFeaturesetSetStyle(GQuark style_id,
 
             }
         }
-
-
-      feature_set->style = style;
-
-      zmapWindowRedrawFeatureSet(window, feature_set);        /* does a complex context thing */
-
-      zmapWindowColOrderColumns(window) ;        /* put this column (deleted then created) back into the right place */
-      zmapWindowFullReposition(window->feature_root_group,TRUE, "window style") ;                /* adjust sizing and shuffle left / right */
     }
-  else
+
+  if (ok)
     {
-      zMapWarning("cannot set new style","");
+      feature_set->style = style;
+      zMapWindowSetFlag(window, ZMAPFLAG_SAVE_FEATURESET_STYLE, TRUE) ;
+
+      if (redraw)
+        {
+          zmapWindowRedrawFeatureSet(window, feature_set);        /* does a complex context thing */
+
+          zmapWindowColOrderColumns(window) ;        /* put this column (deleted then created) back into the right place */
+          zmapWindowFullReposition(window->feature_root_group,TRUE, "window style") ;                /* adjust sizing and shuffle left / right */
+        }
+    }
+
+  if (!ok)
+    {
+      zMapWarning("Error setting new style '%s' for featureset '%s'",
+                  g_quark_to_string(style_id), g_quark_to_string(feature_set->unique_id));
     }
 
   return ok ;
@@ -622,10 +740,10 @@ static void createInfoWidgets(StyleChange my_data, GtkTable *table, const int co
 /* Create colour-button widgets for the standard feature colours */
 static void createColourWidgets(StyleChange my_data, GtkTable *table, int *row)
 {
-  GdkColor fill_colour;
-  GdkColor border_colour;
-  GdkColor *fill_col = &fill_colour;
-  GdkColor *border_col = &border_colour;
+  zMapReturnIfFail(my_data && my_data->window) ;
+
+  GdkColor *fill_col = &my_data->window->canvas_background;
+  GdkColor *border_col = &my_data->window->canvas_background;
   ZMapFeatureTypeStyle style = my_data->style;
   const int xpad = ZMAP_WINDOW_GTK_BUTTON_BOX_SPACING ;
   const int ypad = ZMAP_WINDOW_GTK_BUTTON_BOX_SPACING ;
@@ -660,10 +778,8 @@ static void createColourWidgets(StyleChange my_data, GtkTable *table, int *row)
 static void createCDSColourWidgets(StyleChange my_data, GtkTable *table, int *row)
 {
   ZMapFeatureTypeStyle style = my_data->style;
-  GdkColor fill_colour;
-  GdkColor border_colour;
-  GdkColor *fill_col = &fill_colour;
-  GdkColor *border_col = &border_colour;
+  GdkColor *fill_col = &my_data->window->canvas_background ;
+  GdkColor *border_col = &my_data->window->canvas_background ;
   const int xpad = ZMAP_WINDOW_GTK_BUTTON_BOX_SPACING ;
   const int ypad = ZMAP_WINDOW_GTK_BUTTON_BOX_SPACING ;
 
@@ -785,7 +901,7 @@ static void updateFeaturesets(StyleChange my_data, ZMapFeatureTypeStyle style)
         {
           /* just assign the new style to the specified featureset, if any */
           if (my_data->feature_set)
-            zmapWindowFeaturesetSetStyle(style->unique_id, my_data->feature_set, my_data->window->context_map, my_data->window);            
+            zmapWindowFeaturesetSetStyle(style->unique_id, my_data->feature_set, my_data->window->context_map, my_data->window);
         }
       else
         {

@@ -36,12 +36,16 @@
 
 #include <ZMap/zmap.hpp>
 
+#include <string>
+
 #include <stdlib.h>
 #include <stdio.h>
 
 #include <ZMap/zmapUtils.hpp>
 #include <ZMap/zmapUtilsGUI.hpp>
 #include <ZMap/zmapAppServices.hpp>
+#include <ZMap/zmapConfigStrings.hpp>
+#include <ZMap/zmapConfigStanzaStructs.hpp>
 #include <zmapControl_P.hpp>
 
 
@@ -63,6 +67,7 @@ typedef enum {
 
 
 static void newSequenceByConfigCB(gpointer cb_data, guint callback_action, GtkWidget *w) ;
+static void newSourceCB(gpointer cb_data, guint callback_action, GtkWidget *w) ;
 static void makeSequenceViewCB(ZMapFeatureSequenceMap sequence_map, gpointer user_data) ;
 static void closeSequenceDialogCB(GtkWidget *toplevel, gpointer user_data) ;
 static void closeCB(gpointer cb_data, guint callback_action, GtkWidget *w) ;
@@ -92,6 +97,7 @@ GtkItemFactory *item_factory;
 static GtkItemFactoryEntry menu_items[] = {
   { (char*)"/_File",                                NULL,                NULL,                              0,  (char*)"<Branch>" },
          { (char*)"/File/_New Sequence",                   NULL,                G_CALLBACK(newSequenceByConfigCB), 2,  NULL },
+         { (char*)"/File/New Source",                      NULL,                G_CALLBACK(newSourceCB),           0,  NULL },
          { (char*)"/File/sep1",                            NULL,                NULL,                              0,  (char*)"<Separator>" },
          { (char*)"/File/_Save",                           (char*)"<control>S", G_CALLBACK(exportCB),              SAVE_FEATURES, NULL },
          { (char*)"/File/Save _As",                        (char*)"<shift><control>S", G_CALLBACK(exportCB),       SAVE_FEATURES_AS, NULL },
@@ -359,26 +365,17 @@ static void importCB(gpointer cb_data, guint callback_action, GtkWidget *window)
   ZMap zmap = (ZMap)cb_data ;
   ZMapViewWindow vw ;
   ZMapFeatureSequenceMap sequence_map ;
-  ZMapFeatureSequenceMap view_seq ;
   int start=0, end=0 ;
 
   zMapReturnIfFail(zmap && zmap->focus_viewwindow) ;
 
   vw = zmap->focus_viewwindow ;
 
-  view_seq = zMapViewGetSequenceMap( zMapViewGetView(vw) );
-
-  /* get view sequence and coords */
-  sequence_map = g_new0(ZMapFeatureSequenceMapStruct,1);
-  sequence_map->start = view_seq->start;
-  sequence_map->end = view_seq->end;
-  sequence_map->sequence = view_seq->sequence;
-  sequence_map->dataset = view_seq->dataset ;
-  sequence_map->config_file = view_seq->config_file;
+  sequence_map = zMapViewGetSequenceMap( zMapViewGetView(vw) );
 
   /* limit to mark if set */
-  start = view_seq->start;
-  end   = view_seq->end;
+  start = sequence_map->start;
+  end   = sequence_map->end;
 
   if(zMapWindowMarkIsSet(zMapViewGetWindow(vw)))
     {
@@ -396,7 +393,8 @@ static void importCB(gpointer cb_data, guint callback_action, GtkWidget *window)
       end = store ;
     }
 
-  /* need sequence_map to set default seq coords and map sequence name */
+  /* need sequence_map to set default seq coords and map sequence name, and to store the
+   * resulting ZMapConfigSource struct for the new source that is created */
   zMapControlImportFile(controlImportFileCB, cb_data, sequence_map, start, end);
 
   return ;
@@ -724,6 +722,55 @@ static void newSequenceByConfigCB(gpointer cb_data, guint callback_action, GtkWi
   if (!(zmap->sequence_dialog))
     zmap->sequence_dialog = zMapAppGetSequenceView(makeSequenceViewCB, zmap, closeSequenceDialogCB, zmap,
                                                    zmap->default_sequence, FALSE) ;
+
+  return ;
+}
+
+
+/* Callback called when the create-source dialog has been ok'd to do the work to create the new
+ * source from the user-provided info. Returns true if successfully created the source.  */
+static void createNewSourceCB(const char *source_name, 
+                              const std::string &url, 
+                              const char *featuresets,
+                              const char *biotypes,
+                              gpointer user_data,
+                              GError **error)
+{
+  ZMap zmap = (ZMap)user_data ;
+  zMapReturnIfFail(zmap && zmap->focus_viewwindow) ;
+
+  ZMapView zmap_view = zMapViewGetView(zmap->focus_viewwindow) ;
+  ZMapFeatureSequenceMap sequence_map = zMapViewGetSequenceMap(zmap_view) ;
+  GError *tmp_error = NULL ;
+
+  if (sequence_map)
+    {
+      ZMapConfigSource source = sequence_map->createSource(source_name, url, featuresets, biotypes, &tmp_error) ;
+
+      /* Connect to the new source */
+      if (!tmp_error)
+        zMapViewSetUpServerConnection(zmap_view, source, &tmp_error) ;
+
+      if (tmp_error)
+        g_propagate_error(error, tmp_error) ;
+    }
+}
+
+
+/* Menu option callback to create a new source. */
+static void newSourceCB(gpointer cb_data, guint callback_action, GtkWidget *w)
+{
+  ZMap zmap = (ZMap)cb_data ;
+  zMapReturnIfFail(zmap) ;
+
+  if (!(zmap->sequence_dialog))
+    {
+      ZMapView view = zMapViewGetView(zmap->focus_viewwindow) ;
+
+      zmap->sequence_dialog = zMapAppCreateSource(zMapViewGetSequenceMap(view),
+                                                  createNewSourceCB,
+                                                  zmap) ;
+    }
 
   return ;
 }

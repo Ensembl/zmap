@@ -454,14 +454,17 @@ static void dnaMatchesToFeatures(ZMapWindow window, GList *match_list, ZMapFeatu
       g_hash_table_insert(window->context_map->column_2_styles,GUINT_TO_POINTER(f2c->column_id), glist);
     }
 
-  column = (ZMapFeatureColumn)g_hash_table_lookup(window->context_map->columns,GUINT_TO_POINTER(f2c->column_id));
-  if(!column)
+  if (window->context_map->columns)
     {
-      column = g_new0(ZMapFeatureColumnStruct,1);
-      column->unique_id = f2c->column_id;
-      column->style_table = g_list_prepend(NULL, (gpointer)  style);
-      /* the rest shoudl get filled in elsewhere */
-      g_hash_table_insert(window->context_map->columns, GUINT_TO_POINTER(f2c->column_id), column);
+      column = (*window->context_map->columns)[f2c->column_id] ;
+      if(!column)
+        {
+          column = g_new0(ZMapFeatureColumnStruct,1);
+          column->unique_id = f2c->column_id;
+          column->style_table = g_list_prepend(NULL, (gpointer)  style);
+          /* the rest shoudl get filled in elsewhere */
+          (*window->context_map->columns)[f2c->column_id] = column ;
+        }
     }
 
   fstyle.feature_set   = separator_featureset;
@@ -629,7 +632,7 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
           strand = ZMAPSTRAND_NONE ;
         }
 
-      if(search_data->window && search_data->window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
+      if(search_data->window && zMapWindowGetFlag(search_data->window, ZMAPFLAG_REVCOMPED_FEATURES))
         {
           /* switch the strand to fix rt bug # 77224 */
           switch(strand)
@@ -777,7 +780,7 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
         }
       else if (search_data->sequence_type == ZMAPSEQUENCE_PEPTIDE
                && (match_list = zMapPeptideMatchFindAll(dna, query_txt,
-                                                        search_data->window->flags[ZMAPFLAG_REVCOMPED_FEATURES],
+                                                        zMapWindowGetFlag(search_data->window, ZMAPFLAG_REVCOMPED_FEATURES),
                                                         strand, frame, start, end - start + 1,
                                                         search_data->max_errors, search_data->max_Ns, TRUE)))
         {
@@ -983,7 +986,7 @@ static void remapCoords(gpointer data, gpointer user_data)
   zmapWindowCoordPairToDisplay(search_data->window, match_data->ref_start, match_data->ref_end,
        &(match_data->screen_start), &(match_data->screen_end)) ;
 
-  if (search_data->window && search_data->window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
+  if (search_data->window && zMapWindowGetFlag(search_data->window, ZMAPFLAG_REVCOMPED_FEATURES))
     {
       /* switch the strand to fix rt bug # 77224 */
       switch(match_data->strand)

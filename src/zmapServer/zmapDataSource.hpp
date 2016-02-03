@@ -67,7 +67,7 @@ typedef struct ZMapDataSourceStruct_
  *            ZMapDataSourceGIO       GIOChannel, synchronous OR asynchronous
  *            ZMapDataSourceHTS       HTS file, synchronous only
  */
-ZMapDataSource zMapDataSourceCreate(const char * const file_name ) ;
+ZMapDataSource zMapDataSourceCreate(const char * const file_name, GError **error_out = NULL) ;
 ZMapDataSource zMapDataSourceCreateFromGIO(GIOChannel * const io_channel) ;
 gboolean zMapDataSourceIsOpen(ZMapDataSource const source) ;
 gboolean zMapDataSourceDestroy( ZMapDataSource *source) ;

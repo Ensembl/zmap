@@ -710,10 +710,10 @@ void zmapWindowContainerFeatureSetAugment(ZMapWindowContainerFeatureSet containe
    * be lost when we recreate the column after revcomp. */
   if (feature_set_unique_id == zMapStyleCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME))
     {
-      if (window->flags[ZMAPFLAG_ENABLE_ANNOTATION_INIT])
+      if (zMapWindowGetFlag(window, ZMAPFLAG_ENABLE_ANNOTATION_INIT))
         {
           /* The flag has been initialised so that overrides the display state */
-          if (window->flags[ZMAPFLAG_ENABLE_ANNOTATION])
+          if (zMapWindowGetFlag(window, ZMAPFLAG_ENABLE_ANNOTATION))
             style->col_display_state = ZMAPSTYLE_COLDISPLAY_SHOW ;
           else
             style->col_display_state = ZMAPSTYLE_COLDISPLAY_HIDE ;
@@ -723,11 +723,11 @@ void zmapWindowContainerFeatureSetAugment(ZMapWindowContainerFeatureSet containe
           /* The flag has not been initialised yet so use the display state and set the flag
            * from it. */
           if (style->col_display_state == ZMAPSTYLE_COLDISPLAY_HIDE)
-            window->flags[ZMAPFLAG_ENABLE_ANNOTATION] = FALSE ;
+            zMapWindowSetFlag(window, ZMAPFLAG_ENABLE_ANNOTATION, FALSE) ;
           else
-            window->flags[ZMAPFLAG_ENABLE_ANNOTATION] = TRUE ;
-
-          window->flags[ZMAPFLAG_ENABLE_ANNOTATION_INIT] = TRUE ;
+            zMapWindowSetFlag(window, ZMAPFLAG_ENABLE_ANNOTATION, TRUE) ;
+          
+          zMapWindowSetFlag(window, ZMAPFLAG_ENABLE_ANNOTATION_INIT, TRUE) ;
         }
     }
 

@@ -54,6 +54,8 @@
 #include <ZMap/zmapConfigStrings.hpp>
 #include <ZMap/zmapThreads.hpp>
 #include <ZMap/zmapGFF.hpp>
+#include <ZMap/zmapUrlUtils.hpp>
+#include <ZMap/zmapGFFStringUtils.hpp>
 
 /* private header for this module */
 #include <zmapView_P.hpp>
@@ -1105,10 +1107,7 @@ static gboolean setBlixemScope(ZMapBlixemData blixem_data)
       blixem_data->features_min = blixem_data->scope_min ;
       blixem_data->features_max = blixem_data->scope_max ;
 
-      if (is_mark && 
-          (blixem_data->features_from_mark ||
-           blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SEQ ||
-           blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SEQ_MULTISET))
+      if (is_mark && blixem_data->features_from_mark)
         {
           blixem_data->features_min = blixem_data->mark_start ;
           blixem_data->features_max = blixem_data->mark_end ;
@@ -1394,7 +1393,7 @@ static gboolean buildParamString(ZMapBlixemData blixem_data, char ** paramString
       int start, end ;
 
       start = end = blixem_data->position ;
-      if (blixem_data->view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
+      if (zMapViewGetRevCompStatus(blixem_data->view))
         zMapFeatureReverseComplementCoords(blixem_data->view->features, &start, &end) ;
 
       paramString[icount] = g_strdup("-s") ;
@@ -1434,7 +1433,7 @@ static gboolean buildParamString(ZMapBlixemData blixem_data, char ** paramString
       int start = blixem_data->window_start,
           end  = blixem_data->window_end ;
 
-      if (blixem_data->view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
+      if (zMapViewGetRevCompStatus(blixem_data->view))
         zMapFeatureReverseComplementCoords(blixem_data->view->features, &start, &end) ;
 
       paramString[icount] = g_strdup("-z") ;
@@ -1468,7 +1467,7 @@ static gboolean buildParamString(ZMapBlixemData blixem_data, char ** paramString
     }
 
   /* Start with reverse strand showing. */
-  if (status && blixem_data->view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
+  if (status && zMapViewGetRevCompStatus(blixem_data->view))
     {
       paramString[icount] = g_strdup("-r") ;
       ++icount ;
@@ -1612,7 +1611,9 @@ static void writeRequestedHomologyList(ZMapBlixemData blixem_data)
     }
   else if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SET)
     {
-      g_hash_table_foreach(blixem_data->feature_set->features, getAlignFeatureCB, blixem_data) ;
+      /* Exclude bam featuresets */
+      if (!blixem_data->view || !blixem_data->view->context_map.isSeqFeatureSet(blixem_data->feature_set->unique_id))
+        g_hash_table_foreach(blixem_data->feature_set->features, getAlignFeatureCB, blixem_data) ;
     }
   else if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_MULTISET)
     {
@@ -1635,13 +1636,20 @@ static void writeRequestedHomologyList(ZMapBlixemData blixem_data)
  * particular source/region */
 static void writeBAMLine(ZMapBlixemData blixem_data, const GQuark featureset_id, GString *attribute)
 {
+  zMapReturnIfFail(blixem_data && blixem_data->sequence_map) ;
+
   const char *sequence_name = g_quark_to_string(blixem_data->block->original_id) ;
   static const char * SO_region = "region" ;
+  const char *featureset_name = g_quark_to_string(featureset_id) ;
+
+  /* We'll check if the source has a script or file that we can pass to blixem in our custom
+     'command' or 'file' gff tags */
+  ZMapURL url = NULL ;
 
   gboolean ok = zMapGFFFormatMandatory(blixem_data->over_write, 
                                        blixem_data->line,
                                        sequence_name,
-                                       g_quark_to_string(featureset_id),
+                                       featureset_name,
                                        SO_region,
                                        blixem_data->features_min,
                                        blixem_data->features_max,
@@ -1653,14 +1661,80 @@ static void writeBAMLine(ZMapBlixemData blixem_data, const GQuark featureset_id,
 
   if (ok)
     {
-      g_string_append_printf(attribute, "dataType=short-read") ;
-      zMapGFFFormatAppendAttribute(blixem_data->line, attribute, FALSE, FALSE) ;
-      g_string_append_c(blixem_data->line, '\n') ;
-      g_string_truncate(attribute, (gsize)0);
+      /* Check if the url contains a script that we can pass as a command */
+      char *url_str = blixem_data->sequence_map->getSourceURL(featureset_name) ;
 
-      zMapGFFOutputWriteLineToGIO(blixem_data->gff_channel, &(blixem_data->errorMsg),
-                                  blixem_data->line, TRUE) ;
+      if (url_str)
+        {
+          int error = 0 ;
+          url = url_parse(url_str, &error) ;
+          g_free(url_str) ;
+        }
     }
+
+  if (ok && url && url->path)
+    {
+      if (url->scheme == SCHEME_PIPE)
+        {
+          char *args = NULL ;
+
+          if (url->query)
+            {
+              /* Unescape the args in the url */
+              args = g_uri_unescape_string(url->query, NULL) ;
+              if (!args)
+                args = g_strdup(url->query) ;
+
+              /* Escape gff special chars */
+              char *tmp = zMapGFFEscape(args) ;
+
+              if (tmp)
+                {
+                  g_free(args) ;
+                  args = tmp ;
+                }
+
+              /* Replace & between args with a space */
+              if (zMapGFFStringUtilsSubstringReplace(args, "&", " ", &tmp))
+                {
+                  g_free(args) ;
+                  args = tmp ;
+                  tmp = NULL ;
+                }
+            }
+          else
+            {
+              args = g_strdup("") ;
+            }
+
+          /* Replace start and end in the url with the blixem scope. */
+          /* Actually, for now just append them to the end as this works for bam_get and it's
+           * hard to program this more generically because we don't know whether the script has 
+           * start/end args anyway. */
+          g_string_append_printf(attribute,
+                                 "command=%s %s --start%%3D%d --end%%3D%d",
+                                 url->path, args, 
+                                 blixem_data->features_min, blixem_data->features_max) ;
+          g_free(args) ;
+        }
+      else if (url->scheme == SCHEME_FILE)
+        {
+          g_string_append_printf(attribute, "file=%s", url->path) ;
+        }
+
+      if (attribute->len > 0)
+        {
+          zMapGFFFormatAppendAttribute(blixem_data->line, attribute, FALSE, FALSE) ;
+          g_string_append_c(blixem_data->line, '\n') ;
+          g_string_truncate(attribute, (gsize)0);
+
+          zMapGFFOutputWriteLineToGIO(blixem_data->gff_channel, &(blixem_data->errorMsg),
+                                      blixem_data->line, TRUE) ;
+        }
+    }
+
+  if (url)
+    xfree(url) ;
 }
 
 
@@ -1676,23 +1750,23 @@ static void writeCoverageColumn(ZMapBlixemData blixem_data)
    * single selected featureset instead. */
   blixem_data->coverage_done = FALSE ;
 
-  if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SEQ_MULTISET)
-    {
-      /* Write out any associated bam featuresets */
-      if (blixem_data->assoc_featuresets)
-        g_list_foreach(blixem_data->assoc_featuresets, featureSetWriteBAMList, blixem_data) ;
-    }
+  /* Write out any associated bam featuresets */
+  if (blixem_data->assoc_featuresets)
+    g_list_foreach(blixem_data->assoc_featuresets, featureSetWriteBAMList, blixem_data) ;
   
-  if (!blixem_data->coverage_done ||
-      blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SEQ)
+  if (!blixem_data->coverage_done)
     {
-      /* Write out the selected bam featureset */
+      /* Write out the selected featureset(s) if it is bam */
       GList *l = NULL;
       GString *attribute = g_string_new(NULL) ;
       
       for(l = blixem_data->source; l ; l = l->next)
         {
-          writeBAMLine(blixem_data, GPOINTER_TO_UINT(l->data), attribute) ;
+          GQuark featureset_id = (GQuark)(GPOINTER_TO_UINT(l->data)) ;
+          GQuark unique_id = zMapFeatureSetCreateID(g_quark_to_string(featureset_id)) ;
+
+          if (blixem_data->view && blixem_data->view->context_map.isSeqFeatureSet(unique_id))
+            writeBAMLine(blixem_data, featureset_id, attribute) ;
         }
 
       /* Free our string buffer. */
@@ -1718,23 +1792,24 @@ static void getColumnGroupCB(gpointer key, gpointer data, gpointer user_data)
       GQuark group_featureset_id = zMapStyleCreateID(g_quark_to_string(group_featureset)) ;
 
       /* Check if the featureset is in this group. This is the given featureset for a
-       * regular multiset command or the list of sources for a BAM multiset command. */
+       * regular multiset command or the list of sources if given e.g. for a BAM multiset command. */
       gboolean found = FALSE ;
 
-      if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_MULTISET && 
-          blixem_data->feature_set &&
-          group_featureset_id == blixem_data->feature_set->unique_id)
+      if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_MULTISET)
         {
-          found = TRUE ;
-        }
-      else if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SEQ_MULTISET && blixem_data->source)
-        {
-          for (GList *item = blixem_data->source; item && !found; item = item->next)
+          if (blixem_data->source)
             {
-              GQuark featureset_id = (GQuark)GPOINTER_TO_INT(item->data) ;
-              featureset_id = zMapStyleCreateID(g_quark_to_string(featureset_id))  ;
-
-              found = (featureset_id == group_featureset_id) ;
+              for (GList *item = blixem_data->source; item && !found; item = item->next)
+                {
+                  GQuark featureset_id = (GQuark)GPOINTER_TO_INT(item->data) ;
+                  featureset_id = zMapStyleCreateID(g_quark_to_string(featureset_id))  ;
+                  
+                  found = (featureset_id == group_featureset_id) ;
+                }
+            }
+          else if (blixem_data->feature_set)
+            {
+              found = (blixem_data->feature_set->unique_id == group_featureset_id) ;
             }
         }
 
@@ -1879,8 +1954,7 @@ static void getAssocFeaturesets(ZMapBlixemData blixem_data)
 {
   zMapReturnIfFail(blixem_data) ;
 
-  if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_MULTISET ||
-      blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SEQ_MULTISET)
+  if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_MULTISET)
     {
       /* First, populate the list of column groups that the selected feature set is in */
       getColumnGroups(blixem_data) ;
@@ -1917,7 +1991,7 @@ static gboolean writeFeatureFiles(ZMapBlixemData blixem_data)
   const int end = blixem_data->features_max ; ;
 
   /* Rev-comp the coords if necessary */
-  if (blixem_data->view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
+  if (zMapViewGetRevCompStatus(blixem_data->view))
     zMapFeatureReverseComplementCoords(blixem_data->view->features, &blixem_data->features_min, &blixem_data->features_max) ;
 
   /* Write the headers */
@@ -2225,7 +2299,7 @@ static void writeFeatureLine(ZMapFeature feature, ZMapBlixemData  blixem_data)
   if (includeFeature(blixem_data, feature))
     {
       /* First, revcomp the feature if necessary */
-      if (blixem_data->view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
+      if (zMapViewGetRevCompStatus(blixem_data->view))
         zMapFeatureReverseComplement(blixem_data->view->features, feature) ;
 
       /* Unset any GFF attributes */
@@ -2248,7 +2322,7 @@ static void writeFeatureLine(ZMapFeature feature, ZMapBlixemData  blixem_data)
         }
 
       /* Undo any revcomp */
-      if (blixem_data->view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
+      if (zMapViewGetRevCompStatus(blixem_data->view))
         zMapFeatureReverseComplement(blixem_data->view->features, feature) ;
     }
 
@@ -2275,7 +2349,7 @@ static void featureSetWriteBAMList(gpointer data, gpointer user_data)
   if(feature_set)
     {
       /* check it's a bam type */
-      if (blixem_data->view && zMapFeatureIsSeqFeatureSet(&blixem_data->view->context_map, feature_set->unique_id))
+      if (blixem_data->view && blixem_data->view->context_map.isSeqFeatureSet(feature_set->unique_id))
         {
           /* Indicate that we've processed a valid featureset */
           blixem_data->coverage_done = TRUE ;
@@ -2302,7 +2376,7 @@ static void featureSetGetAlignList(gpointer data, gpointer user_data)
   ZMapFeatureSet feature_set = NULL ;
   GList *column_2_featureset = NULL ;
 
-  if (!blixem_data)
+  if (!blixem_data || !blixem_data->view)
     return ;
 
   canon_id = zMapFeatureSetCreateID((char *)g_quark_to_string(set_id)) ;
@@ -2311,8 +2385,10 @@ static void featureSetGetAlignList(gpointer data, gpointer user_data)
 
   if(feature_set)
     {
-      /* Check it's an alignment type */
-      if (feature_set->style && feature_set->style->mode == ZMAPSTYLE_MODE_ALIGNMENT)
+      /* Check it's an alignment type and is not a bam type */
+      if (feature_set->style && 
+          feature_set->style->mode == ZMAPSTYLE_MODE_ALIGNMENT &&
+          !blixem_data->view->context_map.isSeqFeatureSet(feature_set->unique_id))
         {
           /* Also check that it's the correct alignment type (dna/protein) - we don't want to
            * check every feature individually if we know it's not relevant.  */
@@ -2323,7 +2399,7 @@ static void featureSetGetAlignList(gpointer data, gpointer user_data)
   else
     {
       /* assuming a mis-config treat the set id as a column id */
-      column_2_featureset = zMapFeatureGetColumnFeatureSets(&blixem_data->view->context_map,canon_id,TRUE);
+      column_2_featureset = blixem_data->view->context_map.getColumnFeatureSets(canon_id,TRUE);
 
       if(!column_2_featureset)
         {
@@ -2336,7 +2412,10 @@ static void featureSetGetAlignList(gpointer data, gpointer user_data)
         {
           feature_set = (ZMapFeatureSet)g_hash_table_lookup(blixem_data->block->feature_sets, column_2_featureset->data) ;
           
-          if (feature_set && feature_set->style && feature_set->style->mode == ZMAPSTYLE_MODE_ALIGNMENT)
+          if (feature_set && 
+              feature_set->style && 
+              feature_set->style->mode == ZMAPSTYLE_MODE_ALIGNMENT &&
+              !blixem_data->view->context_map.isSeqFeatureSet(feature_set->unique_id))
             {
               g_hash_table_foreach(feature_set->features, getAlignFeatureCB, blixem_data) ;
             }
@@ -2434,7 +2513,7 @@ static gboolean writeFastAFile(ZMapBlixemData blixem_data)
           start = blixem_data->scope_min ;
           end = blixem_data->scope_max ;
 
-          if (blixem_data->view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
+          if (zMapViewGetRevCompStatus(blixem_data->view))
             zMapFeatureReverseComplementCoords(blixem_data->view->features, &start, &end) ;
 
           /* Write header as:   ">seq_name start end" so file is self describing, note that
@@ -2468,7 +2547,7 @@ static gboolean writeFastAFile(ZMapBlixemData blixem_data)
           end = blixem_data->scope_max ;
 
           dna = zMapFeatureGetDNA((ZMapFeatureAny)(blixem_data->block),
-                                  start, end, blixem_data->view->flags[ZMAPFLAG_REVCOMPED_FEATURES]) ;
+                                  start, end, zMapViewGetRevCompStatus(blixem_data->view)) ;
 
           total_chars = (end - start + 1) ;
 

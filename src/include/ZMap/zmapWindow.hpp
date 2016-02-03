@@ -48,7 +48,11 @@
 
 #define SCRATCH_FEATURE_NAME "temp_feature"
 
+
 class ZMapStyleTree ;
+struct ZMapFeatureSequenceMapStructType ;
+struct ZMapFeatureContextMapStructType ;
+
 
 /*! Opaque type, represents an individual ZMap window. */
 typedef struct ZMapWindowStructType *ZMapWindow ;
@@ -90,26 +94,6 @@ typedef enum
     ZMAP_WINDOW_3FRAME_ALL                                  /* 3 frame cols and translation display. */
   } ZMapWindow3FrameMode ;
 
-/* These flags are stored in an array in the ZMapView but the array is also passed to the window
- * level so they are accessible there */
-typedef enum
-  {
-    ZMAPFLAG_REVCOMPED_FEATURES,         /* True if the user has done a revcomp */
-    ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS, /* True if filtered columns should be highlighted */
-
-    ZMAPFLAG_SAVE_FEATURES,              /* True if there are new features that have not been saved */
-    ZMAPFLAG_SAVE_SCRATCH,               /* True if changes have been made in the scratch column
-                                          * that have not been "saved" to a real featureset */
-    ZMAPFLAG_SAVE_COLUMN_GROUPS,         /* True if there are unsaved changes to column groups */
-    ZMAPFLAG_SAVE_STYLES,                /* True if there are unsaved changes to styles */
-    ZMAPFLAG_SAVE_COLUMNS,               /* True if there are unsaved changes to the columns order */
-    ZMAPFLAG_SAVE_FEATURESET_STYLE,      /* True if featureset-style relationships have changed */
-
-    ZMAPFLAG_ENABLE_ANNOTATION,          /* True if we should enable editing via the annotation column */
-    ZMAPFLAG_ENABLE_ANNOTATION_INIT,     /* False until the enable-annotation flag has been initialised */
-
-    ZMAPFLAG_NUM_FLAGS                   /* Must be last in list */
-  } ZMapFlag;
 
 /* These int values are stored in an array in the ZMapView but the array is also passed to the
  * window level so that they are accessible there. */
@@ -350,9 +334,7 @@ typedef enum
     ZMAPWINDOW_ALIGNCMD_FEATURES,   /* all matches for selected features in this column. */
     ZMAPWINDOW_ALIGNCMD_EXPANDED,   /* selected features expanded into hidden underlying data */
     ZMAPWINDOW_ALIGNCMD_SET,        /* all matches for all features in this column. */
-    ZMAPWINDOW_ALIGNCMD_MULTISET,   /* all matches for all features in the list of columns in the blixem config file. */
-    ZMAPWINDOW_ALIGNCMD_SEQ,        /* a coverage column: find the real data column */
-    ZMAPWINDOW_ALIGNCMD_SEQ_MULTISET /* a coverage column plus associated columns */
+    ZMAPWINDOW_ALIGNCMD_MULTISET    /* all matches for all features in the list of columns in the blixem config file. */
   } ZMapWindowAlignSetType ;
 
 typedef struct ZMapWindowCallbackCommandAlignStructName
@@ -538,9 +520,9 @@ extern int focus_group_mask[];  /* indexed by ZMapWindowFocusType */
 
 void zMapWindowInit(ZMapWindowCallbacks callbacks) ;
 ZMapWindow zMapWindowCreate(GtkWidget *parent_widget,
-                            ZMapFeatureSequenceMap sequence, void *app_data,
-                            GList *feature_set_names, gboolean *flags, int *int_values) ;
-ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, ZMapFeatureSequenceMap sequence,
+                            ZMapFeatureSequenceMapStructType *sequence, void *app_data,
+                            GList *feature_set_names, int *int_values) ;
+ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, ZMapFeatureSequenceMapStructType *sequence,
                           void *app_data, ZMapWindow old,
                           ZMapFeatureContext features,
                           ZMapWindowLockType window_locking) ;
@@ -557,7 +539,7 @@ void zMapWindowSetCursor(ZMapWindow window, GdkCursor *cursor) ;
 
 void zMapWindowDisplayData(ZMapWindow window, ZMapWindowState state,
                            ZMapFeatureContext current_features, ZMapFeatureContext new_features,
-                           ZMapFeatureContextMap context_map,
+                           ZMapFeatureContextMapStructType *context_map,
                            GList *masked,
                            ZMapFeature highlight_feature,  gboolean splice_highlight,
                            gpointer loaded_cb_user_data) ;
@@ -748,5 +730,8 @@ void zMapWindowSetDisplayCoordinatesSlice(ZMapWindow window) ;
 void zMapWindowSetDisplayCoordinatesChrom(ZMapWindow window) ;
 void zMapWindowSetDisplayCoordinates(ZMapWindow window, ZMapWindowDisplayCoordinates display_coordinates) ;
 ZMapWindowDisplayCoordinates zMapWindowGetDisplayCoordinates(ZMapWindow window) ;
+
+void zMapWindowSetFlag(ZMapWindow window, ZMapFlag flag, const gboolean value) ;
+gboolean zMapWindowGetFlag(ZMapWindow window, ZMapFlag flag) ;
 
 #endif /* !ZMAP_WINDOW_H */

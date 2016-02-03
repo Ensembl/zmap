@@ -242,7 +242,7 @@ ZMapFeatureSet zmapViewScratchGetFeatureset(ZMapView view)
   ZMapFeatureSet feature_set = NULL;
 
   GQuark column_id = zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME);
-  GList *fs_list = zMapFeatureGetColumnFeatureSets(&view->context_map, column_id, TRUE);
+  GList *fs_list = view->context_map.getColumnFeatureSets(column_id, TRUE);
 
   /* There should be one (and only one) featureset in the column */
   if (g_list_length(fs_list) > 0)
@@ -1116,7 +1116,7 @@ static void handBuiltInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, Z
 
       if (context_map->columns)
         {
-          column = (ZMapFeatureColumn)g_hash_table_lookup(context_map->columns,GUINT_TO_POINTER(col_id));
+          column = (*context_map->columns)[col_id] ;
           if(!column)
             {
               column = g_new0(ZMapFeatureColumnStruct,1);
@@ -1126,7 +1126,7 @@ static void handBuiltInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, Z
               column->style_table = g_list_prepend(NULL, (gpointer)  style);
               column->order = zMapFeatureColumnOrderNext(FALSE) ;
               /* the rest shoudl get filled in elsewhere */
-              g_hash_table_insert(context_map->columns, GUINT_TO_POINTER(col_id), column);
+              (*context_map->columns)[col_id] = column ;
             }
         }
     }
@@ -1324,7 +1324,7 @@ void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, ZM
 
       if (context_map->columns)
         {
-          column = (ZMapFeatureColumn)g_hash_table_lookup(context_map->columns,GUINT_TO_POINTER(col_id));
+          column = (*context_map->columns)[col_id] ;
           if(!column)
             {
               column = g_new0(ZMapFeatureColumnStruct,1);
@@ -1334,7 +1334,7 @@ void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, ZM
               column->style_table = g_list_prepend(NULL, (gpointer)  style);
               column->order = zMapFeatureColumnOrderNext(FALSE);
               /* the rest shoudl get filled in elsewhere */
-              g_hash_table_insert(context_map->columns, GUINT_TO_POINTER(col_id), column);
+              (*context_map->columns)[col_id] = column ;
             }
         }
 
@@ -1440,7 +1440,7 @@ gboolean zmapViewScratchCopyFeatures(ZMapView view,
       if (!zMapViewGetFlag(view, ZMAPFLAG_ENABLE_ANNOTATION))
         zMapViewSetFlag(view, ZMAPFLAG_ENABLE_ANNOTATION, TRUE) ;
 
-      view->flags[ZMAPFLAG_SAVE_SCRATCH] = TRUE ;
+      zMapViewSetFlag(view, ZMAPFLAG_SAVE_SCRATCH, TRUE) ;
 
       EditOperation operation = g_new0(EditOperationStruct, 1);
 
@@ -1480,7 +1480,7 @@ gboolean zmapViewScratchSetCDS(ZMapView view,
    * column keys have no effect if the column is disabled.) */
   if (features && zMapViewGetFlag(view, ZMAPFLAG_ENABLE_ANNOTATION))
     {
-      view->flags[ZMAPFLAG_SAVE_SCRATCH] = TRUE ;
+      zMapViewSetFlag(view, ZMAPFLAG_SAVE_SCRATCH, TRUE) ;
 
       EditOperation operation = g_new0(EditOperationStruct, 1);
 
@@ -1531,7 +1531,7 @@ gboolean zmapViewScratchDeleteFeatures(ZMapView view,
    * column keys have no effect if the column is disabled.) */
   if (features && zMapViewGetFlag(view, ZMAPFLAG_ENABLE_ANNOTATION))
     {
-      view->flags[ZMAPFLAG_SAVE_SCRATCH] = TRUE ;
+      zMapViewSetFlag(view, ZMAPFLAG_SAVE_SCRATCH, TRUE) ;
 
       EditOperation operation = g_new0(EditOperationStruct, 1);
 
@@ -1570,7 +1570,7 @@ gboolean zmapViewScratchClear(ZMapView view)
       if (view->edit_list_start)
         {
           /* There will be nothing in the scratch column now so nothing needs saving */
-          view->flags[ZMAPFLAG_SAVE_SCRATCH] = FALSE ;
+          zMapViewSetFlag(view, ZMAPFLAG_SAVE_SCRATCH, FALSE) ;
 
           EditOperation operation = g_new0(EditOperationStruct, 1) ;
 
@@ -1597,7 +1597,7 @@ gboolean zmapViewScratchUndo(ZMapView view)
     {
       if (view->edit_list_end)
         {
-          view->flags[ZMAPFLAG_SAVE_SCRATCH] = TRUE ;
+          zMapViewSetFlag(view, ZMAPFLAG_SAVE_SCRATCH, TRUE) ;
 
           /* Special treatment if the last operation was a "clear" or "save" because these shift the start
            * pointer to be the same as the end pointer, so we need to move it back (to the start of
@@ -1663,7 +1663,7 @@ gboolean zmapViewScratchRedo(ZMapView view)
       /* Move the end pointer forward */
       if (view->edit_list_end && view->edit_list_end->next)
         {
-          view->flags[ZMAPFLAG_SAVE_SCRATCH] = TRUE ;
+          zMapViewSetFlag(view, ZMAPFLAG_SAVE_SCRATCH, TRUE) ;
           view->edit_list_end = view->edit_list_end->next ;
 
           /* For clear/save operations we need to move the start pointer to the same as the end pointer */
@@ -1675,7 +1675,7 @@ gboolean zmapViewScratchRedo(ZMapView view)
         }
       else if (!view->edit_list_end && view->edit_list)
         {
-          view->flags[ZMAPFLAG_SAVE_SCRATCH] = TRUE ;
+          zMapViewSetFlag(view, ZMAPFLAG_SAVE_SCRATCH, TRUE) ;
 
           /* If the list exists but start/end pointers are null then we had un-done the entire list,
            * so we just need to set the start/end pointers to the first item in the list */
@@ -1709,7 +1709,7 @@ gboolean zmapViewScratchSave(ZMapView view, ZMapFeature feature)
 {
   if (zMapViewGetFlag(view, ZMAPFLAG_ENABLE_ANNOTATION) && feature)
     {
-      view->flags[ZMAPFLAG_SAVE_SCRATCH] = TRUE ;
+      zMapViewSetFlag(view, ZMAPFLAG_SAVE_SCRATCH, TRUE) ;
 
       /* Save the cached feature name and featureset in the source feature (instead of the
        * temp feature name and featureset which are no longer needed now we're taking

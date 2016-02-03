@@ -173,24 +173,3 @@ int zMapFeatureVariationGetSections(const char *variation_str,
 
 
 
-//static gboolean variationIsMulti(const char *variation_str)
-//{
-//  gboolean result = FALSE ;
-//  zMapReturnValIfFail(variation_str && *variation_str != 0, result) ;
-//
-//  /* If the string contains more than one separator, it is a multiple variation */
-//  char *cp = strchr(variation_str, VARIATION_SEPARATOR_CHAR) ;
-//
-//  if (cp)
-//    {
-//
-//      cp = strchr(cp + 1, VARIATION_SEPARATOR_CHAR) ;
-//
-//      if (cp)
-//        result = TRUE ;
-//    }
-//
-//  return result ;
-//}
-
-

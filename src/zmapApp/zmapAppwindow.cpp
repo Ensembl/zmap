@@ -157,6 +157,11 @@ gboolean zmapMainMakeAppWindow(int argc, char *argv[], ZMapAppContext app_contex
   menubar = zmapMainMakeMenuBar(app_context) ;
   gtk_box_pack_start(GTK_BOX(vbox), menubar, FALSE, TRUE, 0);
 
+  if (app_context->default_sequence)
+    {
+      app_context->default_sequence->constructSources(NULL, NULL) ;
+    }
+
   connect_frame = zmapMainMakeConnect(app_context, app_context->default_sequence) ;
   gtk_box_pack_start(GTK_BOX(vbox), connect_frame, TRUE, TRUE, 0);
 
@@ -218,7 +223,7 @@ gboolean zmapMainMakeAppWindow(int argc, char *argv[], ZMapAppContext app_contex
           gboolean result ;
 
           result = zmapAppCreateZMap(app_context, app_context->default_sequence, &zmap, &view) ;
-
+          
           if (result && num_views > 1)
             {
               /* There is more than one sequence map. We've added the first already but add
@@ -229,6 +234,8 @@ gboolean zmapMainMakeAppWindow(int argc, char *argv[], ZMapAppContext app_contex
                 {
                   ZMapFeatureSequenceMap seq_map = (ZMapFeatureSequenceMap)(seq_map_item->data) ;
                   char *err_msg = NULL ;
+
+                  seq_map->constructSources(NULL, NULL) ;
 
                   zMapControlInsertView(zmap, seq_map, &err_msg) ;
 

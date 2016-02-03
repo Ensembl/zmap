@@ -1,11 +1,17 @@
 #!/bin/bash
 #
-# Noddy script to run configure as alphas + Roys machine are far from standard.
+# This script sets up various configure arguments for different machines,
+# e.g. if you use macports on the Mac then by default you need to point
+# configure at /opt/local.
+#
+# There is magic here, if you could be bothered you can just run configure
+# with the correct args from the command line and get the same result.
+#
 #
 #
 # PLEASE READ THIS BEFORE ALTERING THIS SCRIPT.....
 #
-# This script is called by the build scripts (in <zmap>/scripts) so you should
+# This script is called by our automatic build system (in <zmap>/scripts) so you should
 # NOT start adding command line flags and args or you will mess up the build !!!!
 #
 #
@@ -24,9 +30,10 @@ fi
 
 clean_dirs=''
 
-. $BASE_DIR/../scripts/zmap_functions.sh || { echo "Failed to load zmap_functions.sh"; exit 1; }
+# Load our common script functions for messaging etc.
+#
+. $BASE_DIR/sh_functions.sh || { echo "Failed to load sh_functions.sh"; exit 1; }
 set -o history
-. $BASE_DIR/../scripts/build_config.sh   || { echo "Failed to load build_config.sh";   exit 1; }
 
 
 zmap_message_out "Start of script."
@@ -70,6 +77,8 @@ case $opsys in
 	    # Now add LDFLAGS to args so they get through to configure.
 	    LDFLAGS_args="$LDFLAGS $LDFLAGS_args"
 
+	    CXXFLAGS='-g'
+
 	    ;; # end x86_64
 
 	* )
@@ -102,7 +111,7 @@ case $opsys in
             LDFLAGS_args="-rdynamic $LDFLAGS"
 
 
-	    CXXFLAGS='-g'
+	    CXXFLAGS='-std=c++0x -g'
 	    LDFLAGS="-g $LDFLAGS"
 
 
@@ -154,8 +163,9 @@ LDFLAGS_param="LDFLAGS=$LDFLAGS_args"
 # Export any settings we need to be passed on.
 export PKG_CONFIG_PATH
 
+zmap_message_out "PKG_CONFIG_PATH is set to: $PKG_CONFIG_PATH"
 
-zmap_message_out "Running " \
+zmap_message_out "Running configure as:  " \
     $BASE_DIR/configure \
     $INSTALL_DIR \
     $COMMON_CONFIGURE_ARGS \

@@ -257,7 +257,7 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
 
   window->seqLength = zmapWindowExt(window->sequence->start, window->sequence->end) ;
 
-  zmapWindowScaleCanvasSetRevComped(window->ruler, window->flags[ZMAPFLAG_REVCOMPED_FEATURES]) ;
+  zmapWindowScaleCanvasSetRevComped(window->ruler, zMapWindowGetFlag(window, ZMAPFLAG_REVCOMPED_FEATURES)) ;
 /*
  * MH17: after a revcomp we end up with 1-based coords if we have no official parent span
  * which is very confusing but valid. To display the ruler properly we need to use those coordinates
@@ -475,18 +475,26 @@ void zmapGetFeatureStack(ZMapWindowFeatureStack feature_stack,ZMapFeatureSet fea
 int get_featureset_column_index(ZMapFeatureContextMap map,GQuark featureset_id)
 {
   int index = 0;
-  ZMapFeatureColumn column;
+  ZMapFeatureColumn column = NULL ;
   ZMapFeatureSetDesc desc_set = NULL ;
   ZMapFeatureSource src = NULL ;
   GList *l;
 
   desc_set = (ZMapFeatureSetDesc) g_hash_table_lookup(map->featureset_2_column,GUINT_TO_POINTER(featureset_id));
+
   if(!desc_set)
     return 0;
+
   src = (ZMapFeatureSource) g_hash_table_lookup(map->source_2_sourcedata,GUINT_TO_POINTER(featureset_id));
+
   if(!src)
     return 0;
-  column = (ZMapFeatureColumn) g_hash_table_lookup(map->columns,GUINT_TO_POINTER(desc_set->column_id));
+
+  std::map<GQuark, ZMapFeatureColumn>::iterator col_iter = map->columns->find(desc_set->column_id) ;
+
+  if (col_iter != map->columns->end())
+    column = col_iter->second ;
+
   if(!column)
     return 0;
 
@@ -1236,7 +1244,11 @@ static FooCanvasGroup *find_or_create_column(ZMapCanvasData  canvas_data,
     {
       column_id = set_data->column_id;      /* the display column as a key */
       display_id = set_data->column_ID;
-      f_col = (ZMapFeatureColumn)g_hash_table_lookup(window->context_map->columns,GUINT_TO_POINTER(column_id));
+
+      std::map<GQuark, ZMapFeatureColumn>::iterator col_iter = window->context_map->columns->find(column_id) ;
+
+      if (col_iter != window->context_map->columns->end())
+        f_col = col_iter->second ;
     }
     /* else we use the original feature_set_id
        which should never happen as the view creates a 1-1 mapping regardless */
@@ -1693,7 +1705,7 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
             /* also set up column2styles */
             if(style)
               {
-                ZMapFeatureColumn f_col;
+                ZMapFeatureColumn f_col = NULL ;
                 ZMapFeatureSetDesc f2c;
 
                 /* createColumnFull() needs a style table, although the error is buried in zmapWindowUtils.c */
@@ -1704,7 +1716,12 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 
                 /* find_or_create_column() needs f_col->style */
                 f2c = (ZMapFeatureSetDesc)g_hash_table_lookup(window->context_map->featureset_2_column,GUINT_TO_POINTER(feature_set->unique_id));
-                f_col = (ZMapFeatureColumn)g_hash_table_lookup(window->context_map->columns,GUINT_TO_POINTER(f2c->column_id));
+
+                std::map<GQuark, ZMapFeatureColumn>::iterator col_iter = window->context_map->columns->find(f2c->column_id) ;
+
+                if (col_iter != window->context_map->columns->end())
+                  f_col = col_iter->second ;
+
                 if(f_col)
                   {
                     if(!f_col->style)

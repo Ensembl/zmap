@@ -708,6 +708,7 @@ static void createZMap(ZMapManager manager, ZMap zmap, gpointer view_id,
   sequence_map->start = start ;
   sequence_map->end = end ;
 
+  sequence_map->constructSources(NULL, NULL) ;
 
   if (sequence_map->sequence && (sequence_map->start < 1 || sequence_map->end < sequence_map->start))
     {

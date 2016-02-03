@@ -54,7 +54,9 @@ typedef enum
   ZMAPVIEW_ERROR_SOURCES_LOADING,
   ZMAPVIEW_ERROR_SERVERS,
   ZMAPVIEW_ERROR_CONTEXT_EMPTY,        /* no new features found when merging context */
-  ZMAPVIEW_ERROR_CONTEXT_SERIOUS       /* serious error when merging context */
+  ZMAPVIEW_ERROR_CONTEXT_SERIOUS,      /* serious error when merging context */
+  ZMAPVIEW_ERROR_CREATING_SOURCE,
+  ZMAPVIEW_ERROR_CONNECT
 } ZMapViewError ;
 
 
@@ -377,7 +379,6 @@ typedef struct _ZMapViewStruct
   gboolean columns_set;                   // if set from config style use config only
                                           // else use source featuresets in order as of old
 
-  gboolean flags[ZMAPFLAG_NUM_FLAGS] ;    /* boolean flags (also accessible from window level) */
   int int_values[ZMAPINT_NUM_VALUES] ;    /* int values (also accessible from window level) */
 
   /* Be good to get rid of this window stuff in any restructure..... */

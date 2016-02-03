@@ -159,29 +159,12 @@ void zMapViewGetVisible(ZMapViewWindow view_window, double *top, double *bottom)
 }
 
 
-
-ZMapFeatureSource zMapViewGetFeatureSetSource(ZMapView view, GQuark f_id)
-{
-  ZMapFeatureSource src;
-
-  src = (ZMapFeatureSource)g_hash_table_lookup(view->context_map.source_2_sourcedata,GUINT_TO_POINTER(f_id)) ;
-
-  return src ;
-}
-
-void zMapViewSetFeatureSetSource(ZMapView view, GQuark f_id, ZMapFeatureSource src)
-{
-  g_hash_table_replace(view->context_map.source_2_sourcedata,GUINT_TO_POINTER(f_id), src) ;
-
-  return ;
-}
-
 void zMapViewSetFlag(ZMapView view, ZMapFlag flag, const gboolean value)
 {
-  zMapReturnIfFail(view && flag >= 0 && flag < ZMAPFLAG_NUM_FLAGS) ;
+  zMapReturnIfFail(view && view->view_sequence && flag >= 0 && flag < ZMAPFLAG_NUM_FLAGS) ;
 
-  view->flags[flag] = value ;
-
+  view->view_sequence->setFlag(flag, value) ;
+  
   /* Perform any updates required for the particular flag that was set */
   switch (flag)
     {
@@ -201,9 +184,9 @@ void zMapViewSetFlag(ZMapView view, ZMapFlag flag, const gboolean value)
 gboolean zMapViewGetFlag(ZMapView view, ZMapFlag flag)
 {
   gboolean result = FALSE ;
-  zMapReturnValIfFail(view && flag >= 0 && flag < ZMAPFLAG_NUM_FLAGS, result) ;
+  zMapReturnValIfFail(view && view->view_sequence && flag >= 0 && flag < ZMAPFLAG_NUM_FLAGS, result) ;
 
-  result = view->flags[flag] ;
+  result = view->view_sequence->getFlag(flag) ;
 
   return result ;
 }
@@ -1106,7 +1089,7 @@ static ZMapGuiNotebookChapter makeChapter(ZMapGuiNotebook note_book_parent, ZMap
   tagvalue = zMapGUINotebookCreateTagValue(paragraph, VIEW_FILTERED,
                                            NULL,
 					   ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,
-					   "bool", view->flags[ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS]) ;
+					   "bool", zMapViewGetFlag(view, ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS)) ;
 
   return chapter ;
 }
@@ -1121,9 +1104,9 @@ static void readChapter(ZMapGuiNotebookChapter chapter, ZMapView view)
     {
       if (zMapGUINotebookGetTagValue(page, VIEW_FILTERED, "bool", &bool_value))
 	{
-	  if (view->flags[ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS] != bool_value)
+	  if (zMapViewGetFlag(view, ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS) != bool_value)
 	    {
-              view->flags[ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS] = bool_value ;
+              zMapViewSetFlag(view, ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS, bool_value) ;
               zMapViewUpdateColumnBackground(view);
 	    }
 	}

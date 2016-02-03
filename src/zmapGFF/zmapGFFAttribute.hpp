@@ -161,7 +161,10 @@ gboolean zMapAttParseSource(ZMapGFFAttribute, char ** const) ;
 gboolean zMapAttParseTargetV2(ZMapGFFAttribute, char ** const, char ** const ) ;
 gboolean zMapAttParseTarget(ZMapGFFAttribute, GQuark * const, int * const , int * const , ZMapStrand * const ) ;
 gboolean zMapAttParseURL(ZMapGFFAttribute, char** const ) ;
-gboolean zMapAttParseVulgarExonerate(ZMapGFFAttribute , GArray ** const, ZMapStrand , int, int, ZMapStrand, int, int) ;
+gboolean zMapAttParseVulgarExonerate(ZMapGFFAttribute ,
+                                     ZMapStrand , int, int, ZMapStrand, int, int,
+                                     GArray ** const exons_out, GArray ** const introns_out,
+                                     GArray ** const exon_aligns_out) ;
 gboolean zMapAttParseEnsemblVariation(ZMapGFFAttribute, char ** const ) ;
 gboolean zMapAttParseAlleleString(ZMapGFFAttribute, char ** const) ;
 gboolean zMapAttParseReadPairID(ZMapGFFAttribute, GQuark * const) ;

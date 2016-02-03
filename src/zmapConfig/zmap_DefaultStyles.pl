@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 #
 #
-#  File: scripts/zmap_DefaultStyles.pl
+#  File: zmap_DefaultStyles.pl
 #  Author: Steve Miller (sm23\@sanger.ac.uk)
 #  Copyright (c) 2006-2014: Genome Research Ltd.
 #-------------------------------------------------------------------

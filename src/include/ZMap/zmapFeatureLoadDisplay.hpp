@@ -32,8 +32,28 @@
 #ifndef ZMAP_FEATURE_LOAD_DISPLAY_H
 #define ZMAP_FEATURE_LOAD_DISPLAY_H
 
+#include <map>
+
 #include <ZMap/zmapStyle.hpp>
 #include <ZMap/zmapStyleTree.hpp>
+#include <ZMap/zmapConfigIni.hpp>
+
+#include <string>
+#include <map>
+
+
+struct _ZMapConfigSourceStruct ;
+struct ZMapFeatureAnyStructType ;
+
+
+/* Possible file types for a file or pipe source */
+typedef enum
+  {
+    ZMAPSOURCE_FILE_NONE,
+    ZMAPSOURCE_FILE_GFF,
+    ZMAPSOURCE_FILE_BAM,
+    ZMAPSOURCE_FILE_BIGWIG
+  } ZMapSourceFileType;
 
 
 /* Overview:
@@ -53,6 +73,27 @@
  * held in a ZMapFeatureContextMapStruct (again, not a good name).
  * 
  */
+
+
+typedef enum
+  {
+    ZMAPFLAG_REVCOMPED_FEATURES,         /* True if the user has done a revcomp */
+    ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS, /* True if filtered columns should be highlighted */
+
+    ZMAPFLAG_SAVE_FEATURES,              /* True if there are new features that have not been saved */
+    ZMAPFLAG_SAVE_SCRATCH,               /* True if changes have been made in the scratch column
+                                          * that have not been "saved" to a real featureset */
+    ZMAPFLAG_SAVE_COLUMN_GROUPS,         /* True if there are unsaved changes to column groups */
+    ZMAPFLAG_SAVE_STYLES,                /* True if there are unsaved changes to styles */
+    ZMAPFLAG_SAVE_COLUMNS,               /* True if there are unsaved changes to the columns order */
+    ZMAPFLAG_SAVE_SOURCES,               /* True if there are unsaved changes to the sources */
+    ZMAPFLAG_SAVE_FEATURESET_STYLE,      /* True if featureset-style relationships have changed */
+
+    ZMAPFLAG_ENABLE_ANNOTATION,          /* True if we should enable editing via the annotation column */
+    ZMAPFLAG_ENABLE_ANNOTATION_INIT,     /* False until the enable-annotation flag has been initialised */
+
+    ZMAPFLAG_NUM_FLAGS                   /* Must be last in list */
+  } ZMapFlag;
 
 
 /* Struct holding information about sets of features. Can be used to look up the
@@ -131,13 +172,12 @@ typedef struct ZMapFeatureContextMapStructType
 {
   /* All the styles known to the view or window.
    * Maps the style's unique_id (GQuark) to ZMapFeatureTypeStyle. */
-  //GHashTable *styles ;
   ZMapStyleTree styles ;
 
   /* All the columns that ZMap will display.
    * These may contain several featuresets each, They are in display order left to right.
    * Maps the column's unique_id (GQuark) to ZMapFeatureColumn */
-  GHashTable *columns ;
+  std::map<GQuark, ZMapFeatureColumn> *columns ;
 
 
   /* Mapping of a feature source to a column using ZMapFeatureSetDesc
@@ -191,6 +231,27 @@ typedef struct ZMapFeatureContextMapStructType
    * Maps the group unique_id (GQuark) to a GList of column unique ids (GQuark) */
   GHashTable *column_groups ;
 
+
+  gboolean isCoverageColumn(GQuark column_id) ;
+  gboolean isSeqColumn(GQuark column_id) ;
+  gboolean isSeqFeatureSet(GQuark fset_id) ;
+
+  ZMapFeatureColumn getSetColumn(GQuark set_id) ;
+  GList *getColumnFeatureSets(GQuark column_id, gboolean unique_id) ;
+  GList* getOrderedColumnsListIDs() ;
+  GList* getOrderedColumnsList() ;
+
+  bool updateContextColumns(_ZMapConfigIniContextStruct *context, ZMapConfigIniFileType file_type) ;
+  bool updateContextColumnGroups(_ZMapConfigIniContextStruct *context, ZMapConfigIniFileType file_type) ;
+
+  ZMapFeatureSource getSource(GQuark fset_id) ;
+  ZMapFeatureSource createSource(const GQuark fset_id, 
+                                 const GQuark source_id, const GQuark source_text, const GQuark style_id,
+                                 const GQuark related_column, const GQuark maps_to, const bool is_seq) ;
+
+private:
+  void setSource(GQuark fset_id, ZMapFeatureSource src) ;
+
 } ZMapFeatureContextMapStruct, *ZMapFeatureContextMap ;
 
 
@@ -216,24 +277,54 @@ typedef struct ZMapFeatureParserCacheStructType
 typedef struct ZMapFeatureSequenceMapStructType
 {
   char *config_file ;
-  GSList *file_list ;   /* list of filenames passed on command line */
   char *stylesfile ;    /* path to styles file given on command line or in config dir */
 
   GHashTable *cached_parsers ; /* filenames (as GQuarks) mapped to cached info about GFF parsing that
                                 * is in progress (ZMapFeatureParserCache) if parsing has already been started */
 
+  std::map<std::string, _ZMapConfigSourceStruct*> *sources ;
+
   char *dataset ;                                           /* e.g. human */
   char *sequence ;                                          /* e.g. chr6-18 */
   int start, end ;                                          /* chromosome coordinates */
+
+  gboolean flags[ZMAPFLAG_NUM_FLAGS] ;
+
+
+  ZMapFeatureSequenceMapStructType* copy() ;
+
+  gboolean getFlag(ZMapFlag flag) ;
+  void setFlag(ZMapFlag flag, const gboolean value) ;
+
+  ZMapConfigSource getSource(const std::string &source_name) ;
+  char* getSourceURL(const std::string &source_name) ;
+  GList* getSources() ;
+  void constructSources(const char *filename, const char *config_str, char **stylesfile) ;
+  void constructSources(const char *config_str, char **stylesfile) ;
+  bool updateContext(_ZMapConfigIniContextStruct *context, ZMapConfigIniFileType file_type) ;
+
+  ZMapConfigSource createSource(const char *source_name, const char *url, 
+                                const char *featuresets, const char *biotypes, GError **error) ;
+  ZMapConfigSource createSource(const char *source_name, const std::string &url, 
+                                const char *featuresets, const char *biotypes, GError **error) ;
+  ZMapConfigSource createFileSource(const char *source_name, const char *file) ;
+  ZMapConfigSource createPipeSource(const char *source_name, const char *file, const char *script, const char *args) ;
+  void removeSource(const char *source_name_cstr, GError **error) ;
+
+private:
+  void addSource(const std::string &source_name, _ZMapConfigSourceStruct *source, GError **error) ;
+
 } ZMapFeatureSequenceMapStruct, *ZMapFeatureSequenceMap ;
 
 
+void zMapFeatureUpdateContext(ZMapFeatureContextMap context_map,
+                              ZMapFeatureSequenceMap sequence_map,
+                              ZMapFeatureAnyStructType *feature_any, 
+                              ZMapConfigIniContext context, 
+                              ZMapConfigIniFileType file_type) ;
 
-ZMapFeatureColumn zMapFeatureGetSetColumn(ZMapFeatureContextMap map, GQuark set_id) ;
-gboolean zMapFeatureIsCoverageColumn(ZMapFeatureContextMap map, GQuark column_id) ;
-gboolean zMapFeatureIsSeqColumn(ZMapFeatureContextMap map, GQuark column_id) ;
-gboolean zMapFeatureIsSeqFeatureSet(ZMapFeatureContextMap map, GQuark fset_id) ;
-GList *zMapFeatureGetColumnFeatureSets(ZMapFeatureContextMap map, GQuark column_id, gboolean unique_id) ;
+
+
 
 #endif /* ZMAP_FEATURE_LOAD_DISPLAY_H */
 

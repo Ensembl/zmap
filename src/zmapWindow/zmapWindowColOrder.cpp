@@ -108,7 +108,10 @@ static void orderPositionColumns(ZMapWindow window)
     printf("%s: starting column ordering\n", __PRETTY_FUNCTION__);
 
   // Get the current order
-  GList *orig_columns = zMapFeatureGetOrderedColumnsList(window->context_map) ;
+  GList *orig_columns = NULL ;
+
+  if (window->context_map)
+    orig_columns = window->context_map->getOrderedColumnsList() ;
 
   // make a hash table of positions for easy lookup
   order_data.names_hash = g_hash_table_new(NULL,NULL);

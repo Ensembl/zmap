@@ -234,12 +234,15 @@ char *zmapWindowMakeColumnSelectionText(ZMapWindow window, double wx, double wy,
     }
   else if (selected_column)
     {
-      ZMapFeatureColumn gff ;
+      ZMapFeatureColumn gff = NULL ;
       GQuark column_id ;
 
       column_id = zmapWindowContainerFeaturesetGetColumnUniqueId(selected_column) ;
 
-      gff = (ZMapFeatureColumn)g_hash_table_lookup(window->context_map->columns, GUINT_TO_POINTER(column_id)) ;
+      std::map<GQuark, ZMapFeatureColumn>::iterator col_iter = window->context_map->columns->find(column_id) ;
+
+      if (col_iter != window->context_map->columns->end())
+        gff = col_iter->second ;
 
       if (gff && gff->column_desc)
         selection_txt = g_strdup(gff->column_desc) ;
@@ -269,7 +272,7 @@ char *zmapWindowMakeFeatureSelectionTextFromFeature(ZMapWindow window,
 
   text = g_string_sized_new(512) ;
   feature_coords = g_array_new(FALSE, FALSE, sizeof(FeatureCoordStruct)) ;
-  revcomped = window->flags[ZMAPFLAG_REVCOMPED_FEATURES] ;
+  revcomped = zMapWindowGetFlag(window, ZMAPFLAG_REVCOMPED_FEATURES) ;
 
   if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
     {
@@ -331,7 +334,7 @@ char *zmapWindowMakeFeatureSelectionTextFromSelection(ZMapWindow window, ZMapWin
 
   text = g_string_sized_new(512) ;
   feature_coords = g_array_new(FALSE, FALSE, sizeof(FeatureCoordStruct)) ;
-  revcomped = window->flags[ZMAPFLAG_REVCOMPED_FEATURES] ;
+  revcomped = zMapWindowGetFlag(window, ZMAPFLAG_REVCOMPED_FEATURES) ;
 
   /* If there are any focus items then make a selection string of their coords. */
   if ((selected = zmapWindowFocusGetFocusItems(window->focus)))

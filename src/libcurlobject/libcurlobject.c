@@ -245,7 +245,7 @@ CURLObjectStatus CURLObjectErrorMessage(CURLObject curl_object, char **message)
   if(message)
     {
       *message = NULL;
-      if(curl_object->last_easy_status)
+      if(curl_object->error_message)
 	*message = g_strdup(curl_object->error_message);
     }
 
@@ -434,6 +434,10 @@ static void curl_object_class_init(CURLObjectClass curl_object_class)
 				  g_param_spec_long("cookiesession", "cookiesession",
 						    "Start a new cookie session",
 						    0, 1, 0, CURL_PARAM_STATIC_WO));
+  g_object_class_install_property(gobject_class, CURLOPT_PROXY,
+				  g_param_spec_string("proxy", "proxy",
+						      "proxy",
+						      "", CURL_PARAM_STATIC_WO));
 #ifdef COOKIELIST
   g_object_class_install_property(gobject_class, CURLOPT_COOKIELIST,
 				  g_param_spec_string("cookielist", "cookielist",
@@ -447,6 +451,16 @@ static void curl_object_class_init(CURLObjectClass curl_object_class)
   /* --- FTP options --- */
   
   /* --- Protocol options --- */
+  g_object_class_install_property(gobject_class, CURLOPT_IPRESOLVE,
+				  g_param_spec_long("ipresolve", "ipresolve",
+                                                    "Specify whether libcurl should use IPv4, IPv6, or either",
+                                                    0, 2, CURL_IPRESOLVE_WHATEVER,
+                                                    CURL_PARAM_STATIC_WO));
+
+  g_object_class_install_property(gobject_class, CURLOPT_CAINFO,
+				  g_param_spec_string("cainfo", "cainfo",
+                                                      "Specify the location of the cainfo file libcurl should use",
+                                                      NULL, CURL_PARAM_STATIC_WO));
 
   /* --- Connection options --- */
   g_object_class_install_property(gobject_class, CURLOPT_TIMEOUT,
@@ -646,6 +660,9 @@ static void curl_object_set_property(GObject      *gobject,
     case CURLOPT_POST:
     case CURLOPT_HTTPGET:
     case CURLOPT_COOKIEFILE:
+    case CURLOPT_PROXY:
+    case CURLOPT_IPRESOLVE:
+    case CURLOPT_CAINFO:
       if(G_IS_PARAM_SPEC_STRING(pspec))
 	{
 	  char *str;
@@ -798,21 +815,24 @@ static gboolean curl_object_watch_func(GIOChannel  *source,
 				       gpointer     user_data)
 {
   CURLObject curl_object = CURL_OBJECT(user_data);
+  int running_handles = 0 ;
   gboolean call_again = FALSE;
     
   if((condition & G_IO_OUT) ||
      (condition & G_IO_IN))
     {
-      if((curl_object->last_multi_status = 
-	     curl_multi_perform(curl_object->multi, 
-				&call_again)) == CURLM_CALL_MULTI_PERFORM)
-	{
-	  while((curl_object->last_multi_status = 
-		 curl_multi_perform(curl_object->multi, 
-				    &call_again)) == CURLM_CALL_MULTI_PERFORM);
-	}
-      else if(!call_again)
-	g_warning("%s\n", "multi_perform returned !call_again");	
+      while((curl_object->last_multi_status = curl_multi_perform(curl_object->multi, &running_handles))
+            == CURLM_CALL_MULTI_PERFORM)
+        {
+          if(running_handles < 1)
+            {
+              g_warning("%s\n", "curl_multi_perform requested to run again, but has no remaining handles");
+              break ;
+            }
+        }
+ 
+      if (running_handles > 0)
+        call_again = TRUE ;
     }
   else if((condition & G_IO_HUP) ||
 	  (condition & G_IO_ERR) ||
