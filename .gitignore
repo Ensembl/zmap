@@ -13,3 +13,6 @@ autom4te.cache/
 compile
 depcomp
 Thumbs.db
+
+# I like to keep local notes about checkouts and what they are for....so I use a "NOTES" file...
+NOTES
