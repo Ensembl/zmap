@@ -264,7 +264,6 @@ void zmapWindowPfetchEntry(ZMapWindow window, char *sequence_name)
   PFetchData pfetch_data = g_new0(PFetchDataStruct, 1);
   PFetchHandle    pfetch = NULL;
   PFetchUserPrefsStruct prefs = {NULL};
-  gboolean  debug_pfetch = FALSE;
 
   zMapReturnIfFail(window && window->sequence );
 
@@ -291,11 +290,10 @@ void zmapWindowPfetchEntry(ZMapWindow window, char *sequence_name)
         }
 
       PFetchHandleSettings(pfetch,
-                           "debug",       debug_pfetch,
                            "full",        prefs.full_record,
                            "pfetch",      prefs.location,
                            "isoform-seq", TRUE,
-                           "verbose",     prefs.verbose,
+                           "debug",       prefs.verbose,
                            NULL);
 
       if(PFETCH_IS_HTTP_HANDLE(pfetch))
