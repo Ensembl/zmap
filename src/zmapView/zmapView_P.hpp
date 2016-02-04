@@ -297,29 +297,6 @@ ZMapViewConnection zmapViewRequestServer(ZMapView view, ZMapViewConnection view_
 					 int req_start, int req__end,
 					 gboolean dna_requested, gboolean terminate, gboolean show_warning) ;
 
-ZMapViewConnectionStepList zmapViewStepListCreate(StepListDispatchCB dispatch_func,
-						  StepListProcessDataCB request_func,
-						  StepListFreeDataCB free_func) ;
-void zmapViewStepListAddStep(ZMapViewConnectionStepList step_list, ZMapServerReqType request_type,
-			     StepListActionOnFailureType on_fail) ;
-ZMapViewConnectionRequest zmapViewStepListAddServerReq(ZMapViewConnectionStepList step_list,
-						       ZMapViewConnection view_con,
-						       ZMapServerReqType request_type,
-						       gpointer request_data,
-                                           StepListActionOnFailureType on_fail) ;
-ZMapViewConnectionStepList zmapViewConnectionStepListCreate(StepListDispatchCB dispatch_func,
-                                      StepListProcessDataCB process_func,
-                                      StepListFreeDataCB free_func);
-void zmapViewStepListIter(ZMapViewConnection view_con) ;
-void zmapViewStepListStepProcessRequest(ZMapViewConnection view_con, ZMapViewConnectionRequest request) ;
-ZMapViewConnectionRequest zmapViewStepListFindRequest(ZMapViewConnectionStepList step_list,
-						      ZMapServerReqType request_type, ZMapViewConnection connection) ;
-void zmapViewStepListStepConnectionDeleteAll(ZMapViewConnection connection) ;
-gboolean zmapViewStepListAreConnections(ZMapViewConnectionStepList step_list) ;
-gboolean zmapViewStepListIsNext(ZMapViewConnectionStepList step_list) ;
-void zmapViewStepDestroy(gpointer data, gpointer user_data) ;
-void zmapViewStepListDestroy(ZMapViewConnectionStepList step_list) ;
-
 void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req_featuresets, GList *req_biotypes,
 			  ZMapConfigSource server,
 			  int features_start, int features_end,

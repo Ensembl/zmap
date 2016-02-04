@@ -16,6 +16,7 @@ zmapViewScratch.cpp \
 zmapViewServer.cpp \
 zmapViewServer.hpp \
 zmapViewStepList.cpp \
+zmapViewStepList.hpp \
 zmapViewUtils.cpp \
 $(NULL)
 

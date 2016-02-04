@@ -35,8 +35,12 @@
 
 #include <glib.h>
 
-#include <ZMap/zmapServerProtocol.hpp>
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #include <zmapView_P.hpp>
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+#include <zmapViewServer.hpp>
 
 
 /* Used in stepListFindRequest() to search for a step or a connection. */
@@ -56,7 +60,10 @@ typedef struct
 } StepListDeleteStruct, *StepListDelete ;
 
 
+
+static void stepFindReq(gpointer data, gpointer user_data) ;
 static ZMapViewConnectionStep stepListFindStep(ZMapViewConnectionStepList step_list, ZMapServerReqType request_type) ;
+static void stepDestroy(gpointer data, gpointer user_data) ;
 
 
 
@@ -66,8 +73,10 @@ static ZMapViewConnectionStep stepListFindStep(ZMapViewConnectionStepList step_l
  */
 
 
+
+
 /*
- *            ZMapView external package-level functions.
+ *                  External package functions.
  */
 
 
@@ -242,20 +251,6 @@ void zmapViewStepListIter(ZMapViewConnection view_con)
 
 
 
-static void stepFindReq(gpointer data, gpointer user_data)
-{
-  ZMapViewConnectionStep step = (ZMapViewConnectionStep)data ;
-  StepListFind step_find = (StepListFind)user_data ;
-
-  if (!(step_find->request_type) || step->request == step_find->request_type)
-    {
-      step_find->step = step ;
-      step_find->request = step->connection_req;
-    }
-
-  return ;
-}
-
 /* Find a connections request in a given request step. */
 ZMapViewConnectionRequest zmapViewStepListFindRequest(ZMapViewConnectionStepList step_list,
 						      ZMapServerReqType request_type, ZMapViewConnection connection)
@@ -305,29 +300,6 @@ void zmapViewStepListStepProcessRequest(ZMapViewConnection view_con, ZMapViewCon
 
 
 /*                Step list funcs.                             */
-
-/* Free a step. */
-static void stepDestroy(gpointer data, gpointer user_data)
-{
-  ZMapViewConnectionStep step = (ZMapViewConnectionStep)data ;
-  ZMapViewConnectionStepList step_list = (ZMapViewConnectionStepList)user_data ;
-
-  if(step->connection_req)
-    {
-      /* Call users free func. */
-      if ((step_list->free_func))
-	step_list->free_func((ZMapServerReqAny)(step->connection_req->request_data)) ;
-
-      g_free(step->connection_req) ;
-    }
-
-  step->connection_req = NULL ;
-
-  g_free(step) ;
-
-  return ;
-}
-
 
 /* Free the list of steps. */
 
@@ -383,6 +355,21 @@ gboolean zmapViewStepListIsNext(ZMapViewConnectionStepList step_list)
  */
 
 
+static void stepFindReq(gpointer data, gpointer user_data)
+{
+  ZMapViewConnectionStep step = (ZMapViewConnectionStep)data ;
+  StepListFind step_find = (StepListFind)user_data ;
+
+  if (!(step_find->request_type) || step->request == step_find->request_type)
+    {
+      step_find->step = step ;
+      step_find->request = step->connection_req;
+    }
+
+  return ;
+}
+
+
 
 /* Find a connections request in a given request step. */
 static ZMapViewConnectionStep stepListFindStep(ZMapViewConnectionStepList step_list, ZMapServerReqType request_type)
@@ -401,5 +388,28 @@ static ZMapViewConnectionStep stepListFindStep(ZMapViewConnectionStepList step_l
 }
 
 
+
+
+/* Free a step. */
+static void stepDestroy(gpointer data, gpointer user_data)
+{
+  ZMapViewConnectionStep step = (ZMapViewConnectionStep)data ;
+  ZMapViewConnectionStepList step_list = (ZMapViewConnectionStepList)user_data ;
+
+  if(step->connection_req)
+    {
+      /* Call users free func. */
+      if ((step_list->free_func))
+	step_list->free_func((ZMapServerReqAny)(step->connection_req->request_data)) ;
+
+      g_free(step->connection_req) ;
+    }
+
+  step->connection_req = NULL ;
+
+  g_free(step) ;
+
+  return ;
+}
 
 

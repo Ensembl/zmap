@@ -24,9 +24,10 @@
  *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
  *      Gemma Barson (Sanger Institute, UK) gb10@sanger.ac.uk
  *
- * Description: 
+ * Description: Work in Progress, contains server related stuff that
+ *              has been hacked out of zmapView.c
  *
- * Exported functions: See XXXXXXXXXXXXX.h
+ * Exported functions: See zmapViewServer.hpp
  *
  *-------------------------------------------------------------------
  */
@@ -37,11 +38,19 @@
 
 #include <ZMap/zmapGLibUtils.hpp>
 
-// TEMP WHILE I FIX THIS UP....
+
+
+// TEMP WHILE I FIX THIS UP....some work required to move this out....
+//
 #include <zmapView_P.hpp>
 
 
+
+
 #include <zmapViewServer.hpp>
+
+
+
 
 /*
  * Session data, each connection has various bits of information recorded about it
@@ -231,6 +240,458 @@ void zMapServerDestroyLoadFeatures(LoadFeaturesData loaded_features)
 
 
 
+/*#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+aggghhhhhhhhhhhhhhhhhhH MALCOLM.......YOUVE CHANGED IT ALL BUT NOT CHANGED
+THE COMMENTS ETC ETC....HORRIBLE, HORRIBLE, HORRIBLE......
+
+  THIS FUNCTION NOW NEEDS TO BE SPLIT INTO TWO FUNCTIONS, ONE TO DO THE CURRENT
+  FUNCTIONS PURPOSE: used the passed in view or create a new one if needed
+
+  AND THE ORIGINAL "create" function.....
+#endif*/
+
+/* Allocate a connection and send over the request to get the sequence displayed. */
+/* NB: this is called from zmapViewLoadFeatures() and commandCB (for DNA only) */
+ZMapViewConnection zMapServerCreateViewConnection(ZMapView zmap_view,
+                                               ZMapViewConnection view_con,
+                                               ZMapFeatureContext context,
+                                               char *server_url, char *format,
+                                               int timeout, char *version,
+                                               gboolean req_styles,
+                                               char *styles_file,
+                                               GList *req_featuresets,
+                                               GList *req_biotypes,
+                                               gboolean dna_requested,
+                                               gint features_start, gint features_end,
+                                               gboolean terminate)
+{
+
+  ZMapThread thread ;
+  ConnectionData connect_data = NULL ;
+  gboolean existing = FALSE;
+  int url_parse_error ;
+  ZMapURL urlObj;
+
+  /* Parse the url and create connection. */
+  if (!(urlObj = url_parse(server_url, &url_parse_error)))
+    {
+      zMapLogWarning("GUI: url %s did not parse. Parse error < %s >",
+                     server_url, url_error(url_parse_error)) ;
+      return(NULL) ;
+    }
+
+  if (view_con)
+    {
+      // use existing connection if not busy
+      if (view_con->step_list)
+        view_con = NULL ;
+      else
+        existing = TRUE ;
+
+      //if (existing) printf("using existing connection %s\n",view_con->url);
+    }
+
+  if (!view_con)
+    {
+      /* Create the thread to service the connection requests, we give it a function that it will call
+       * to decode the requests we send it and a terminate function. */
+      if ((thread = zMapThreadCreate(zMapServerRequestHandler,
+                                     zMapServerTerminateHandler, zMapServerDestroyHandler)))
+        {
+          /* Create the connection struct. */
+          view_con = g_new0(ZMapViewConnectionStruct, 1) ;
+          view_con->parent_view = zmap_view ;
+          view_con->thread = thread ;
+          view_con->url = g_strdup(server_url) ;
+          //printf("create thread for %s\n",view_con->url);
+          view_con->thread_status = THREAD_STATUS_PENDING;
+
+          view_con->server = g_new0(ZMapViewSessionServerStruct, 1) ;
+
+          zMapServerSetScheme(view_con->server, SCHEME_INVALID) ;
+        }
+      else
+        {
+          /* reporting an error here woudl be good
+           * but the thread interafce does not apper to return its error code
+           * and was written to exit zmap in case of failure
+           * we need to pop up a messgae if (!view->thread_fail_silent)
+           * and also reply to otterlace if active
+           */
+          return(NULL);
+        }
+    }
+
+  if (view_con)
+    {
+      ZMapServerReqAny req_any;
+      StepListActionOnFailureType on_fail = REQUEST_ONFAIL_CANCEL_THREAD;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      // take out as now not needed and besides didn't work
+      if (terminate)
+        on_fail = REQUEST_ONFAIL_CONTINUE;  /* to get pipe server external script status */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+      view_con->curr_request = ZMAPTHREAD_REQUEST_EXECUTE ;
+
+      /* Set up the connection data for this view connection. */
+      view_con->request_data = connect_data = g_new0(ConnectionDataStruct, 1) ;
+
+      connect_data->curr_context = context ;
+
+      /* ie server->delayed -> called after startup */
+      if (terminate)
+        connect_data->dynamic_loading = TRUE ;
+
+      connect_data->column_2_styles = zMap_g_hashlist_create() ;
+      // better?      connect_data->column_2_styles = zmap_view->context_map.column_2_styles;
+
+      connect_data->featureset_2_column = zmap_view->context_map.featureset_2_column;
+      connect_data->source_2_sourcedata = zmap_view->context_map.source_2_sourcedata;
+
+      // we need to save this to tell otterlace when we've finished
+      // it also gets given to threads: when can we free it?
+      connect_data->feature_sets = req_featuresets;
+      //zMapLogWarning("request %d %s",g_list_length(req_featuresets),g_quark_to_string(GPOINTER_TO_UINT(req_featuresets->data)));
+
+
+      /* well actually no it's not come kind of iso violation.... */
+      /* the bad news is that these two little numbers have to tunnel through three distinct data
+         structures and layers of s/w to get to the pipe scripts.  Originally the request
+         coordinates were buried in blocks in the context supplied incidentally when requesting
+         features after extracting other data from the server.  Obviously done to handle multiple
+         blocks but it's another iso 7 violation  */
+
+      connect_data->start = features_start;
+      connect_data->end = features_end;
+
+      /* likewise this has to get copied through a series of data structs */
+      connect_data->sequence_map = zmap_view->view_sequence;
+
+      connect_data->display_after = ZMAP_SERVERREQ_FEATURES ;
+
+      /* This struct will needs to persist after the viewcon is gone so we can
+       * return information to the layer above us about feature loading. */
+      connect_data->loaded_features = zMapServerCreateLoadFeatures(NULL) ;
+
+
+      view_con->step_list = zmapViewConnectionStepListCreate(dispatchContextRequests,
+                                                             processDataRequests,
+                                                             freeDataRequest);
+
+      /* Record info. for this session. */
+      zmapViewSessionAddServer(view_con->server, urlObj, format) ;
+
+
+      /* Set up this connection in the step list. */
+      if (!existing)
+        {
+          req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_CREATE,
+                                            zmap_view->view_sequence->config_file,
+                                            urlObj, format, timeout, version) ;
+          zmapViewStepListAddServerReq(view_con->step_list, view_con, ZMAP_SERVERREQ_CREATE, req_any, on_fail) ;
+          req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_OPEN) ;
+          zmapViewStepListAddServerReq(view_con->step_list, view_con, ZMAP_SERVERREQ_OPEN, req_any, on_fail) ;
+          req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_GETSERVERINFO) ;
+          zmapViewStepListAddServerReq(view_con->step_list, view_con, ZMAP_SERVERREQ_GETSERVERINFO, req_any, on_fail) ;
+        }
+
+      //      if (req_featuresets)
+      // need to request all if none specified
+      {
+        req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_FEATURESETS, req_featuresets, req_biotypes, NULL) ;
+        zmapViewStepListAddServerReq(view_con->step_list, view_con, ZMAP_SERVERREQ_FEATURESETS, req_any, on_fail) ;
+
+        if(req_styles || styles_file)
+          {
+            req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_STYLES, req_styles, styles_file && *styles_file ? styles_file : NULL) ;
+            zmapViewStepListAddServerReq(view_con->step_list, view_con, ZMAP_SERVERREQ_STYLES, req_any, on_fail) ;
+          }
+        else
+          {
+            connect_data->curr_styles = &zmap_view->context_map.styles ;
+          }
+
+        req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_NEWCONTEXT, context) ;
+        zmapViewStepListAddServerReq(view_con->step_list, view_con, ZMAP_SERVERREQ_NEWCONTEXT, req_any, on_fail) ;
+
+        req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_FEATURES) ;
+        zmapViewStepListAddServerReq(view_con->step_list, view_con, ZMAP_SERVERREQ_FEATURES, req_any, on_fail) ;
+      }
+
+      if (dna_requested)
+        {
+          req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_SEQUENCE) ;
+          zmapViewStepListAddServerReq(view_con->step_list, view_con, ZMAP_SERVERREQ_SEQUENCE, req_any, on_fail) ;
+          connect_data->display_after = ZMAP_SERVERREQ_SEQUENCE ;
+          /* despite appearing before features in the GFF this gets requested afterwards */
+        }
+
+      if (terminate)
+        {
+          /* MH17 NOTE
+           * These calls are here in the order they should be executed in for clarity
+           * but the order chosen is defined in zmapViewConnectionStepListCreate()
+           * this code could be reordered without any effect
+           * the step list is operated as an array indexed by request type
+           */
+          req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_GETSTATUS) ;
+          zmapViewStepListAddServerReq(view_con->step_list, view_con, ZMAP_SERVERREQ_GETSTATUS, req_any, on_fail) ;
+          connect_data->display_after = ZMAP_SERVERREQ_GETSTATUS;
+
+
+          req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_TERMINATE) ;
+          zmapViewStepListAddServerReq(view_con->step_list, view_con, ZMAP_SERVERREQ_TERMINATE, req_any, on_fail ) ;
+        }
+
+      if (!existing)
+        zmap_view->connection_list = g_list_append(zmap_view->connection_list, view_con) ;
+
+      /* Start the connection to the source. */
+      zmapViewStepListIter(view_con) ;
+    }
+  else
+    {
+      zMapLogWarning("GUI: url %s looks ok (host: %s\tport: %d)"
+                     "but could not connect to server.",
+                     urlObj->url,
+                     urlObj->host,
+                     urlObj->port) ;
+    }
+
+  return view_con ;
+}
+
+
+/* Final destroy of a connection, by the time we get here the thread has
+ * already been destroyed. */
+void zMapServerDestroyViewConnection(ZMapView view, ZMapViewConnection view_conn)
+{
+  if (view->sequence_server == view_conn)
+    view->sequence_server = NULL ;
+
+  g_free(view_conn->url) ;
+
+  if (view_conn->request_data)
+    {
+      /* There is more to do here but proceed carefully, sometimes parts of the code are still
+       * referring to this because of asynchronous returns from zmapWindow and other code. */
+      ConnectionData connect_data = (ConnectionData)(view_conn->request_data) ;
+
+      if (connect_data->loaded_features)
+        {
+          zMapServerDestroyLoadFeatures(connect_data->loaded_features) ;
+
+          connect_data->loaded_features = NULL ;
+        }
+
+      if (connect_data->error)
+        {
+          g_error_free(connect_data->error) ;
+          connect_data->error = NULL ;
+        }
+
+      g_free(connect_data) ;
+      view_conn->request_data = NULL ;
+    }
+
+
+  if (view_conn->step_list)
+    {
+      zmapViewStepListDestroy(view_conn->step_list) ;
+      view_conn->step_list = NULL ;
+    }
+
+  /* Need to destroy the types array here.......errrrr...so why not do it ???? */
+
+  zmapViewSessionFreeServer(view_conn->server) ;
+
+  g_free(view_conn->server) ;
+
+  g_free(view_conn) ;
+
+  return ;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+ *            ZMapView external package-level functions.
+ */
+
+
+
+
+
+
+
+
+
+
+
+/*
+ * Server Session stuff: holds information about data server connections.
+ *
+ * NOTE: the list of connection session data is dynamic, as a server
+ * connection is terminated the session data is free'd too so the final
+ * list may be very short or not even have any connections at all.
+ */
+
+/* Record initial details for a session, these are known when the session is created. */
+void zmapViewSessionAddServer(ZMapViewSessionServer server_data, ZMapURL url, char *format)
+{
+  server_data->scheme = url->scheme ;
+  server_data->url = g_strdup(url->url) ;
+  server_data->protocol = g_strdup(url->protocol) ;
+
+  if (format)
+    server_data->format = g_strdup(format) ;
+
+  switch(url->scheme)
+    {
+    case SCHEME_ACEDB:
+      {
+	server_data->scheme_data.acedb.host = g_strdup(url->host) ;
+	server_data->scheme_data.acedb.port = url->port ;
+	server_data->scheme_data.acedb.database = g_strdup(url->path) ;
+	break ;
+      }
+    case SCHEME_PIPE:
+      {
+	server_data->scheme_data.pipe.path = g_strdup(url->path) ;
+	server_data->scheme_data.pipe.query = g_strdup(url->query) ;
+	break ;
+      }
+
+    case SCHEME_FILE:
+      {
+	// mgh: file:// is now handled by pipe://, but as this is a view struct it is unchanged
+	// consider also DAS, which is still known as a file://
+	server_data->scheme_data.file.path = g_strdup(url->path) ;
+	break ;
+      }
+    case SCHEME_ENSEMBL:
+      {
+        server_data->scheme_data.ensembl.host = g_strdup(url->host) ;
+        server_data->scheme_data.ensembl.port = url->port ;
+        break ;
+      }
+    default:
+      {
+	/* other schemes not currently supported so mark as invalid. */
+	server_data->scheme = SCHEME_INVALID ;
+	break ;
+      }
+    }
+
+  return ;
+}
+
+/* Record dynamic details for a session which can only be found out by later interrogation
+ * of the server. */
+void zmapViewSessionAddServerInfo(ZMapViewSessionServer session_data, ZMapServerReqGetServerInfo session)
+{
+  if (session->data_format_out)
+    session_data->format = g_strdup(session->data_format_out) ;
+
+
+  switch(session_data->scheme)
+    {
+    case SCHEME_ACEDB:
+      {
+	session_data->scheme_data.acedb.database = g_strdup(session->database_path_out) ;
+	break ;
+      }
+    case SCHEME_FILE:
+      {
+
+	break ;
+      }
+    case SCHEME_PIPE:
+      {
+
+	break ;
+      }
+    case SCHEME_ENSEMBL:
+      {
+
+        break ;
+      }
+    default:
+      {
+
+	break ;
+      }
+    }
+
+  return ;
+}
+
+
+/* Free all the session data, NOTE: we did not allocate the original struct
+ * so we do not free it. */
+void zmapViewSessionFreeServer(ZMapViewSessionServer server_data)
+{
+  g_free(server_data->url) ;
+  g_free(server_data->protocol) ;
+  g_free(server_data->format) ;
+
+  switch(server_data->scheme)
+    {
+    case SCHEME_ACEDB:
+      {
+	g_free(server_data->scheme_data.acedb.host) ;
+	g_free(server_data->scheme_data.acedb.database) ;
+	break ;
+      }
+    case SCHEME_FILE:
+      {
+	g_free(server_data->scheme_data.file.path) ;
+	break ;
+      }
+    case SCHEME_PIPE:
+      {
+	g_free(server_data->scheme_data.pipe.path) ;
+	g_free(server_data->scheme_data.pipe.query) ;
+	break ;
+      }
+    case SCHEME_ENSEMBL:
+      {
+        g_free(server_data->scheme_data.ensembl.host) ;
+        break ;
+      }
+    default:
+      {
+	/* no action currently. */
+	break ;
+      }
+    }
+
+  return ;
+}
+
+
+
+
+
+/*
+ *               Internal routines.
+ */
 
 
 
@@ -791,457 +1252,6 @@ static void freeDataRequest(ZMapServerReqAny req_any)
 
   return ;
 }
-
-
-/*#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-aggghhhhhhhhhhhhhhhhhhH MALCOLM.......YOUVE CHANGED IT ALL BUT NOT CHANGED
-THE COMMENTS ETC ETC....HORRIBLE, HORRIBLE, HORRIBLE......
-
-  THIS FUNCTION NOW NEEDS TO BE SPLIT INTO TWO FUNCTIONS, ONE TO DO THE CURRENT
-  FUNCTIONS PURPOSE: used the passed in view or create a new one if needed
-
-  AND THE ORIGINAL "create" function.....
-#endif*/
-
-/* Allocate a connection and send over the request to get the sequence displayed. */
-/* NB: this is called from zmapViewLoadFeatures() and commandCB (for DNA only) */
-ZMapViewConnection zMapServerCreateViewConnection(ZMapView zmap_view,
-                                               ZMapViewConnection view_con,
-                                               ZMapFeatureContext context,
-                                               char *server_url, char *format,
-                                               int timeout, char *version,
-                                               gboolean req_styles,
-                                               char *styles_file,
-                                               GList *req_featuresets,
-                                               GList *req_biotypes,
-                                               gboolean dna_requested,
-                                               gint features_start, gint features_end,
-                                               gboolean terminate)
-{
-
-  ZMapThread thread ;
-  ConnectionData connect_data = NULL ;
-  gboolean existing = FALSE;
-  int url_parse_error ;
-  ZMapURL urlObj;
-
-  /* Parse the url and create connection. */
-  if (!(urlObj = url_parse(server_url, &url_parse_error)))
-    {
-      zMapLogWarning("GUI: url %s did not parse. Parse error < %s >",
-                     server_url, url_error(url_parse_error)) ;
-      return(NULL) ;
-    }
-
-  if (view_con)
-    {
-      // use existing connection if not busy
-      if (view_con->step_list)
-        view_con = NULL ;
-      else
-        existing = TRUE ;
-
-      //if (existing) printf("using existing connection %s\n",view_con->url);
-    }
-
-  if (!view_con)
-    {
-      /* Create the thread to service the connection requests, we give it a function that it will call
-       * to decode the requests we send it and a terminate function. */
-      if ((thread = zMapThreadCreate(zMapServerRequestHandler,
-                                     zMapServerTerminateHandler, zMapServerDestroyHandler)))
-        {
-          /* Create the connection struct. */
-          view_con = g_new0(ZMapViewConnectionStruct, 1) ;
-          view_con->parent_view = zmap_view ;
-          view_con->thread = thread ;
-          view_con->url = g_strdup(server_url) ;
-          //printf("create thread for %s\n",view_con->url);
-          view_con->thread_status = THREAD_STATUS_PENDING;
-
-          view_con->server = g_new0(ZMapViewSessionServerStruct, 1) ;
-
-          zMapServerSetScheme(view_con->server, SCHEME_INVALID) ;
-        }
-      else
-        {
-          /* reporting an error here woudl be good
-           * but the thread interafce does not apper to return its error code
-           * and was written to exit zmap in case of failure
-           * we need to pop up a messgae if (!view->thread_fail_silent)
-           * and also reply to otterlace if active
-           */
-          return(NULL);
-        }
-    }
-
-  if (view_con)
-    {
-      ZMapServerReqAny req_any;
-      StepListActionOnFailureType on_fail = REQUEST_ONFAIL_CANCEL_THREAD;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      // take out as now not needed and besides didn't work
-      if (terminate)
-        on_fail = REQUEST_ONFAIL_CONTINUE;  /* to get pipe server external script status */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-      view_con->curr_request = ZMAPTHREAD_REQUEST_EXECUTE ;
-
-      /* Set up the connection data for this view connection. */
-      view_con->request_data = connect_data = g_new0(ConnectionDataStruct, 1) ;
-
-      connect_data->curr_context = context ;
-
-      /* ie server->delayed -> called after startup */
-      if (terminate)
-        connect_data->dynamic_loading = TRUE ;
-
-      connect_data->column_2_styles = zMap_g_hashlist_create() ;
-      // better?      connect_data->column_2_styles = zmap_view->context_map.column_2_styles;
-
-      connect_data->featureset_2_column = zmap_view->context_map.featureset_2_column;
-      connect_data->source_2_sourcedata = zmap_view->context_map.source_2_sourcedata;
-
-      // we need to save this to tell otterlace when we've finished
-      // it also gets given to threads: when can we free it?
-      connect_data->feature_sets = req_featuresets;
-      //zMapLogWarning("request %d %s",g_list_length(req_featuresets),g_quark_to_string(GPOINTER_TO_UINT(req_featuresets->data)));
-
-
-      /* well actually no it's not come kind of iso violation.... */
-      /* the bad news is that these two little numbers have to tunnel through three distinct data
-         structures and layers of s/w to get to the pipe scripts.  Originally the request
-         coordinates were buried in blocks in the context supplied incidentally when requesting
-         features after extracting other data from the server.  Obviously done to handle multiple
-         blocks but it's another iso 7 violation  */
-
-      connect_data->start = features_start;
-      connect_data->end = features_end;
-
-      /* likewise this has to get copied through a series of data structs */
-      connect_data->sequence_map = zmap_view->view_sequence;
-
-      connect_data->display_after = ZMAP_SERVERREQ_FEATURES ;
-
-      /* This struct will needs to persist after the viewcon is gone so we can
-       * return information to the layer above us about feature loading. */
-      connect_data->loaded_features = zMapServerCreateLoadFeatures(NULL) ;
-
-
-      view_con->step_list = zmapViewConnectionStepListCreate(dispatchContextRequests,
-                                                             processDataRequests,
-                                                             freeDataRequest);
-
-      /* Record info. for this session. */
-      zmapViewSessionAddServer(view_con->server, urlObj, format) ;
-
-
-      /* Set up this connection in the step list. */
-      if (!existing)
-        {
-          req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_CREATE,
-                                            zmap_view->view_sequence->config_file,
-                                            urlObj, format, timeout, version) ;
-          zmapViewStepListAddServerReq(view_con->step_list, view_con, ZMAP_SERVERREQ_CREATE, req_any, on_fail) ;
-          req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_OPEN) ;
-          zmapViewStepListAddServerReq(view_con->step_list, view_con, ZMAP_SERVERREQ_OPEN, req_any, on_fail) ;
-          req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_GETSERVERINFO) ;
-          zmapViewStepListAddServerReq(view_con->step_list, view_con, ZMAP_SERVERREQ_GETSERVERINFO, req_any, on_fail) ;
-        }
-
-      //      if (req_featuresets)
-      // need to request all if none specified
-      {
-        req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_FEATURESETS, req_featuresets, req_biotypes, NULL) ;
-        zmapViewStepListAddServerReq(view_con->step_list, view_con, ZMAP_SERVERREQ_FEATURESETS, req_any, on_fail) ;
-
-        if(req_styles || styles_file)
-          {
-            req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_STYLES, req_styles, styles_file && *styles_file ? styles_file : NULL) ;
-            zmapViewStepListAddServerReq(view_con->step_list, view_con, ZMAP_SERVERREQ_STYLES, req_any, on_fail) ;
-          }
-        else
-          {
-            connect_data->curr_styles = &zmap_view->context_map.styles ;
-          }
-
-        req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_NEWCONTEXT, context) ;
-        zmapViewStepListAddServerReq(view_con->step_list, view_con, ZMAP_SERVERREQ_NEWCONTEXT, req_any, on_fail) ;
-
-        req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_FEATURES) ;
-        zmapViewStepListAddServerReq(view_con->step_list, view_con, ZMAP_SERVERREQ_FEATURES, req_any, on_fail) ;
-      }
-
-      if (dna_requested)
-        {
-          req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_SEQUENCE) ;
-          zmapViewStepListAddServerReq(view_con->step_list, view_con, ZMAP_SERVERREQ_SEQUENCE, req_any, on_fail) ;
-          connect_data->display_after = ZMAP_SERVERREQ_SEQUENCE ;
-          /* despite appearing before features in the GFF this gets requested afterwards */
-        }
-
-      if (terminate)
-        {
-          /* MH17 NOTE
-           * These calls are here in the order they should be executed in for clarity
-           * but the order chosen is defined in zmapViewConnectionStepListCreate()
-           * this code could be reordered without any effect
-           * the step list is operated as an array indexed by request type
-           */
-          req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_GETSTATUS) ;
-          zmapViewStepListAddServerReq(view_con->step_list, view_con, ZMAP_SERVERREQ_GETSTATUS, req_any, on_fail) ;
-          connect_data->display_after = ZMAP_SERVERREQ_GETSTATUS;
-
-
-          req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_TERMINATE) ;
-          zmapViewStepListAddServerReq(view_con->step_list, view_con, ZMAP_SERVERREQ_TERMINATE, req_any, on_fail ) ;
-        }
-
-      if (!existing)
-        zmap_view->connection_list = g_list_append(zmap_view->connection_list, view_con) ;
-
-      /* Start the connection to the source. */
-      zmapViewStepListIter(view_con) ;
-    }
-  else
-    {
-      zMapLogWarning("GUI: url %s looks ok (host: %s\tport: %d)"
-                     "but could not connect to server.",
-                     urlObj->url,
-                     urlObj->host,
-                     urlObj->port) ;
-    }
-
-  return view_con ;
-}
-
-
-/* Final destroy of a connection, by the time we get here the thread has
- * already been destroyed. */
-void zMapServerDestroyViewConnection(ZMapView view, ZMapViewConnection view_conn)
-{
-  if (view->sequence_server == view_conn)
-    view->sequence_server = NULL ;
-
-  g_free(view_conn->url) ;
-
-  if (view_conn->request_data)
-    {
-      /* There is more to do here but proceed carefully, sometimes parts of the code are still
-       * referring to this because of asynchronous returns from zmapWindow and other code. */
-      ConnectionData connect_data = (ConnectionData)(view_conn->request_data) ;
-
-      if (connect_data->loaded_features)
-        {
-          zMapServerDestroyLoadFeatures(connect_data->loaded_features) ;
-
-          connect_data->loaded_features = NULL ;
-        }
-
-      if (connect_data->error)
-        {
-          g_error_free(connect_data->error) ;
-          connect_data->error = NULL ;
-        }
-
-      g_free(connect_data) ;
-      view_conn->request_data = NULL ;
-    }
-
-
-  if (view_conn->step_list)
-    {
-      zmapViewStepListDestroy(view_conn->step_list) ;
-      view_conn->step_list = NULL ;
-    }
-
-  /* Need to destroy the types array here.......errrrr...so why not do it ???? */
-
-  zmapViewSessionFreeServer(view_conn->server) ;
-
-  g_free(view_conn->server) ;
-
-  g_free(view_conn) ;
-
-  return ;
-}
-
-
-
-
-
-
-
-
-
-/*
- *            ZMapView external package-level functions.
- */
-
-
-
-
-
-
-
-
-
-
-
-/*
- * Server Session stuff: holds information about data server connections.
- *
- * NOTE: the list of connection session data is dynamic, as a server
- * connection is terminated the session data is free'd too so the final
- * list may be very short or not even have any connections at all.
- */
-
-/* Record initial details for a session, these are known when the session is created. */
-void zmapViewSessionAddServer(ZMapViewSessionServer server_data, ZMapURL url, char *format)
-{
-  server_data->scheme = url->scheme ;
-  server_data->url = g_strdup(url->url) ;
-  server_data->protocol = g_strdup(url->protocol) ;
-
-  if (format)
-    server_data->format = g_strdup(format) ;
-
-  switch(url->scheme)
-    {
-    case SCHEME_ACEDB:
-      {
-	server_data->scheme_data.acedb.host = g_strdup(url->host) ;
-	server_data->scheme_data.acedb.port = url->port ;
-	server_data->scheme_data.acedb.database = g_strdup(url->path) ;
-	break ;
-      }
-    case SCHEME_PIPE:
-      {
-	server_data->scheme_data.pipe.path = g_strdup(url->path) ;
-	server_data->scheme_data.pipe.query = g_strdup(url->query) ;
-	break ;
-      }
-
-    case SCHEME_FILE:
-      {
-	// mgh: file:// is now handled by pipe://, but as this is a view struct it is unchanged
-	// consider also DAS, which is still known as a file://
-	server_data->scheme_data.file.path = g_strdup(url->path) ;
-	break ;
-      }
-    case SCHEME_ENSEMBL:
-      {
-        server_data->scheme_data.ensembl.host = g_strdup(url->host) ;
-        server_data->scheme_data.ensembl.port = url->port ;
-        break ;
-      }
-    default:
-      {
-	/* other schemes not currently supported so mark as invalid. */
-	server_data->scheme = SCHEME_INVALID ;
-	break ;
-      }
-    }
-
-  return ;
-}
-
-/* Record dynamic details for a session which can only be found out by later interrogation
- * of the server. */
-void zmapViewSessionAddServerInfo(ZMapViewSessionServer session_data, ZMapServerReqGetServerInfo session)
-{
-  if (session->data_format_out)
-    session_data->format = g_strdup(session->data_format_out) ;
-
-
-  switch(session_data->scheme)
-    {
-    case SCHEME_ACEDB:
-      {
-	session_data->scheme_data.acedb.database = g_strdup(session->database_path_out) ;
-	break ;
-      }
-    case SCHEME_FILE:
-      {
-
-	break ;
-      }
-    case SCHEME_PIPE:
-      {
-
-	break ;
-      }
-    case SCHEME_ENSEMBL:
-      {
-
-        break ;
-      }
-    default:
-      {
-
-	break ;
-      }
-    }
-
-  return ;
-}
-
-
-/* Free all the session data, NOTE: we did not allocate the original struct
- * so we do not free it. */
-void zmapViewSessionFreeServer(ZMapViewSessionServer server_data)
-{
-  g_free(server_data->url) ;
-  g_free(server_data->protocol) ;
-  g_free(server_data->format) ;
-
-  switch(server_data->scheme)
-    {
-    case SCHEME_ACEDB:
-      {
-	g_free(server_data->scheme_data.acedb.host) ;
-	g_free(server_data->scheme_data.acedb.database) ;
-	break ;
-      }
-    case SCHEME_FILE:
-      {
-	g_free(server_data->scheme_data.file.path) ;
-	break ;
-      }
-    case SCHEME_PIPE:
-      {
-	g_free(server_data->scheme_data.pipe.path) ;
-	g_free(server_data->scheme_data.pipe.query) ;
-	break ;
-      }
-    case SCHEME_ENSEMBL:
-      {
-        g_free(server_data->scheme_data.ensembl.host) ;
-        break ;
-      }
-    default:
-      {
-	/* no action currently. */
-	break ;
-      }
-    }
-
-  return ;
-}
-
-
-
-
-
-/*
- *               Internal routines.
- */
-
-
-
 
 
 // get 1-1 mapping of featureset names to style id except when configured differently
