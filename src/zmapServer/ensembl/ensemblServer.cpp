@@ -1408,7 +1408,7 @@ static ZMapFeature makeFeatureBaseAlign(EnsemblServer server,
     source = Analysis_getGFFSource(analysis) ;
 
   if (!source || *source == '\0')
-    BaseAlignFeature_getDbName((BaseAlignFeature*)rsf) ;
+    source = BaseAlignFeature_getDbName((BaseAlignFeature*)rsf) ;
 
   feature = makeFeature(server, (SeqFeature*)rsf, feature_name_id, feature_name,
                         feature_mode, source, NULL, match_start, match_end,
