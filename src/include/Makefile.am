@@ -19,6 +19,7 @@ ZMap/zmapControlImportFile.hpp \
 ZMap/zmapDAS.hpp \
 ZMap/zmapDNA.hpp \
 ZMap/zmapDraw.hpp \
+ZMap/zmapEnsemblUtils.hpp \
 ZMap/zmapEnum.hpp \
 ZMap/zmapFASTA.hpp \
 ZMap/zmapFeature.hpp \
