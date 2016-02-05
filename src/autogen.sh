@@ -62,7 +62,11 @@ function fetch_lib
 
     git clone $3 $1 $tmp_dir || zmap_message_exit "could not clone $1 into $PWD/$tmp_dir"
 
-    cp -rf ./$tmp_dir/* ./$2
+    # Copy the entire contents of the temp directory to the destination directory. Note that 
+    # the dot on the end of the source directory is essential for including hidden files. We
+    # need to include the hidden .git directory so that we can determine the correct git version
+    # number for the library.
+    cp -rf ./$tmp_dir/. ./$2
 
     rm -rf ./$tmp_dir
 
