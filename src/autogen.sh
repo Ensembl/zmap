@@ -66,10 +66,6 @@ function fetch_lib
 
     rm -rf ./$tmp_dir
 
-    # SHOULD WE BE DOING THIS ????? NOT TOO SURE....
-    # Make sure the placeholder files (.gitignore, README) are their original zmap versions
-    #git checkout ./$2/
-
     zmap_message_out "Finished cloning $1 into $2"
 
 }
