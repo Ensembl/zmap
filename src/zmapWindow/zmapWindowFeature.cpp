@@ -54,7 +54,7 @@
 
 #define PFETCH_READ_SIZE 80        /* about a line */
 #define PFETCH_FAILED_PREFIX "PFetch failed:"
-#define PFETCH_TITLE_FORMAT "ZMap - pfetch %s\"%s\""
+#define PFETCH_TITLE_FORMAT "pfetch %s\"%s\""
 #define PFETCH_FULL_RECORD_ARG "-F "
 
 
@@ -264,16 +264,23 @@ void zmapWindowPfetchEntry(ZMapWindow window, char *sequence_name)
   PFetchData pfetch_data = g_new0(PFetchDataStruct, 1);
   PFetchHandle    pfetch = NULL;
   PFetchUserPrefsStruct prefs = {NULL};
+  GString *pfetch_args_str ;
 
   zMapReturnIfFail(window && window->sequence );
 
   if((zmapWindowGetPFetchUserPrefs(window->sequence->config_file, &prefs)) && (prefs.location != NULL))
     {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       GType pfetch_type = PFETCH_TYPE_HTTP_HANDLE;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+      GType pfetch_type ;
       GError *fetch_error = NULL ;
 
       if(prefs.mode && strncmp(prefs.mode, "pipe", 4) == 0)
-        pfetch_type = PFETCH_TYPE_PIPE_HANDLE;
+        pfetch_type = PFETCH_TYPE_PIPE_HANDLE ;
+      else
+        pfetch_type = PFETCH_TYPE_HTTP_HANDLE ;
 
       pfetch_data->pfetch = pfetch = PFetchHandleNew(pfetch_type);
 
@@ -297,17 +304,19 @@ void zmapWindowPfetchEntry(ZMapWindow window, char *sequence_name)
                            NULL);
 
       if(PFETCH_IS_HTTP_HANDLE(pfetch))
-        PFetchHandleSettings(pfetch,
-                             "port",       prefs.port,
-                             "cookie-jar", prefs.cookie_jar,
-                             "ipresolve",  prefs.ipresolve,
-                             "cainfo",  prefs.cainfo,
-                             NULL);
+        {
+          PFetchHandleSettings(pfetch,
+                               "port",       prefs.port,
+                               "cookie-jar", prefs.cookie_jar,
+                               "ipresolve",  prefs.ipresolve,
+                               "cainfo",  prefs.cainfo,
+                               NULL);
 
-      if(prefs.proxy)
-        PFetchHandleSettings(pfetch,
-                             "proxy",      prefs.proxy,
-                             NULL);
+          if(prefs.proxy)
+            PFetchHandleSettings(pfetch,
+                                 "proxy",      prefs.proxy,
+                                 NULL);
+        }
 
       if (prefs.location)
         g_free(prefs.location);
@@ -320,11 +329,19 @@ void zmapWindowPfetchEntry(ZMapWindow window, char *sequence_name)
 
       g_signal_connect(G_OBJECT(pfetch), "closed", G_CALLBACK(pfetch_closed_func), pfetch_data);
 
+      pfetch_args_str = g_string_new("") ;
+
+      g_string_append_printf(pfetch_args_str, "%s", sequence_name) ;
+
+
+      // WHY IS THIS LOCK STUFF HERE.....SHOULD BE IN A LOWER LAYER....AND...THEY ARE ONLY NEEDED
+      // FOR THE PIPE VERSION...SORT THIS OUT....
+
       /* It would seem that PFetchHandleFetch() calls g_spawn_async_with_pipes() which is not
        * thread safe so lock round it...should locks be in pfetch code ?? */
       zMapThreadForkLock();   // see zmapThreads.c
 
-      if(PFetchHandleFetch(pfetch, sequence_name, &fetch_error) == PFETCH_STATUS_FAILED)
+      if(PFetchHandleFetch(pfetch, pfetch_args_str->str, &fetch_error) == PFETCH_STATUS_FAILED)
         {
           zMapWarning("Error fetching sequence '%s':%s", sequence_name, fetch_error->message) ;
 
@@ -332,6 +349,9 @@ void zmapWindowPfetchEntry(ZMapWindow window, char *sequence_name)
         }
 
       zMapThreadForkUnlock();
+
+
+      g_string_free(pfetch_args_str, TRUE) ;
     }
   else
     {
