@@ -150,10 +150,7 @@ static gboolean getAllDNAPepAlignFeatures(EnsemblServer server, GetFeaturesData 
 static gboolean getAllRepeatFeatures(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 static gboolean getAllTranscripts(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 static gboolean getAllPredictionTranscripts(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
-
-#ifdef NOT_USED
 static gboolean getAllGenes(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
-#endif
 
 static const char* featureGetSOTerm(SeqFeature *rsf) ;
 
@@ -174,11 +171,8 @@ static ZMapFeature makeFeatureBaseAlign(EnsemblServer server, BaseAlignFeature *
 static ZMapFeature makeFeatureRepeat(EnsemblServer server, RepeatFeature *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 static ZMapFeature makeFeatureTranscript(EnsemblServer server, Transcript *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 static ZMapFeature makeFeaturePredictionTranscript(EnsemblServer server, PredictionTranscript *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
-
-#ifdef NOT_USED
 static ZMapFeature makeFeatureGene(EnsemblServer server, Gene *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 static void geneAddTranscripts(EnsemblServer server, Gene *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
-#endif
 
 static void transcriptAddExons(EnsemblServer server, ZMapFeature feature, Vector *exons) ;
 
@@ -771,7 +765,6 @@ static gboolean getAllPredictionTranscripts(EnsemblServer server,
 }
 
 
-#ifdef NOT_USED
 static gboolean getAllGenes(EnsemblServer server,
                             GetFeaturesData get_features_data,
                             ZMapFeatureBlock feature_block)
@@ -804,7 +797,7 @@ static gboolean getAllGenes(EnsemblServer server,
 
   for (i = 0; i < num_element && result; ++i)
     {
-      Gene *sf = Vector_getElementAt(features,i);
+      Gene *sf = (Gene*)Vector_getElementAt(features,i);
       Gene *rsf = (Gene*)SeqFeature_transform((SeqFeature*)sf,"chromosome",NULL,NULL);
 
       if (rsf)
@@ -820,7 +813,6 @@ static gboolean getAllGenes(EnsemblServer server,
 
   return result;
 }
-#endif
 
 
 /* A bit of a lash up for now, we need the parent->child mapping for a sequence and since
@@ -1159,8 +1151,6 @@ static ZMapFeature makeFeatureRepeat(EnsemblServer server,
 }
 
 
-#ifdef NOT_USED
-/* gb10: probably don't need these but leaving them here for now */
 static ZMapFeature makeFeatureGene(EnsemblServer server,
                                    Gene *rsf,
                                    GetFeaturesData get_features_data,
@@ -1183,14 +1173,13 @@ static void geneAddTranscripts(EnsemblServer server, Gene *rsf, GetFeaturesData 
       int i = 0 ;
       for (i = 0; i < Vector_getNumElement(transcripts); ++i)
         {
-          Transcript *transcript = Vector_getElementAt(transcripts, i);
+          Transcript *transcript = (Transcript*)Vector_getElementAt(transcripts, i);
           makeFeatureTranscript(server, transcript, get_features_data, feature_block) ;
         }
 
       //Vector_free(transcripts) ;
     }
 }
-#endif
 
 
 static ZMapFeature makeFeatureTranscript(EnsemblServer server,
@@ -1722,9 +1711,9 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
       getAllDNAAlignFeatures(server, get_features_data, feature_block) ;
       getAllDNAPepAlignFeatures(server, get_features_data, feature_block) ;
       getAllRepeatFeatures(server, get_features_data, feature_block) ;
-      getAllTranscripts(server, get_features_data, feature_block) ;
+      getAllGenes(server, get_features_data, feature_block) ;
+      //getAllTranscripts(server, get_features_data, feature_block) ;
       getAllPredictionTranscripts(server, get_features_data, feature_block) ;
-      //getAllGenes(server, get_features_data, feature_block) ;
 
       pthread_mutex_unlock(server->mutex) ;
     }
