@@ -32,6 +32,8 @@
 
 #include <ZMap/zmap.hpp>
 
+#include <set>
+#include <string>
 #include <string.h>
 #include <stdio.h>
 #include <pthread.h>
@@ -68,6 +70,7 @@ extern "C" {
 }
 #endif
 
+using namespace std;
 
 
 #define ENSEMBL_PROTOCOL_STR "Ensembl"                            /* For error messages. */
@@ -148,12 +151,9 @@ static gboolean getAllSimpleFeatures(EnsemblServer server, GetFeaturesData get_f
 static gboolean getAllDNAAlignFeatures(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 static gboolean getAllDNAPepAlignFeatures(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 static gboolean getAllRepeatFeatures(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
-static gboolean getAllTranscripts(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
+static gboolean getAllTranscripts(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block, set<GQuark> &transcript_ids) ;
 static gboolean getAllPredictionTranscripts(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
-
-#ifdef NOT_USED
-static gboolean getAllGenes(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
-#endif
+static gboolean getAllGenes(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block, set<GQuark> &transcript_ids) ;
 
 static const char* featureGetSOTerm(SeqFeature *rsf) ;
 
@@ -163,6 +163,7 @@ static ZMapFeature makeFeature(EnsemblServer server,
                                const char *feature_name,
                                ZMapStyleMode feature_mode,
                                const char *source,
+                               const char *gene_source,
                                const char *biotype,
                                const int match_start,
                                const int match_end,
@@ -172,13 +173,10 @@ static ZMapFeature makeFeature(EnsemblServer server,
 static ZMapFeature makeFeatureSimple(EnsemblServer server, SimpleFeature *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 static ZMapFeature makeFeatureBaseAlign(EnsemblServer server, BaseAlignFeature *rsf, ZMapHomolType homol_type, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 static ZMapFeature makeFeatureRepeat(EnsemblServer server, RepeatFeature *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
-static ZMapFeature makeFeatureTranscript(EnsemblServer server, Transcript *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
+static ZMapFeature makeFeatureTranscript(EnsemblServer server, Transcript *rsf, const char *gene_source, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block, set<GQuark> &transcript_ids) ;
 static ZMapFeature makeFeaturePredictionTranscript(EnsemblServer server, PredictionTranscript *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
-
-#ifdef NOT_USED
-static ZMapFeature makeFeatureGene(EnsemblServer server, Gene *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
-static void geneAddTranscripts(EnsemblServer server, Gene *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
-#endif
+static ZMapFeature makeFeatureGene(EnsemblServer server, Gene *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block, set<GQuark> &transcript_ids) ;
+static void geneAddTranscripts(EnsemblServer server, Gene *rsf, const char *gene_source, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block, set<GQuark> &transcript_ids) ;
 
 static void transcriptAddExons(EnsemblServer server, ZMapFeature feature, Vector *exons) ;
 
@@ -673,7 +671,8 @@ static gboolean getAllRepeatFeatures(EnsemblServer server,
 
 static gboolean getAllTranscripts(EnsemblServer server,
                                   GetFeaturesData get_features_data,
-                                  ZMapFeatureBlock feature_block)
+                                  ZMapFeatureBlock feature_block,
+                                  set<GQuark> &transcript_ids)
 {
   gboolean result = TRUE ;
 
@@ -707,7 +706,7 @@ static gboolean getAllTranscripts(EnsemblServer server,
       Transcript *rsf = (Transcript*)SeqFeature_transform((SeqFeature*)sf, (char *)(server->coord_system), NULL, NULL);
 
       if (rsf)
-        makeFeatureTranscript(server, rsf, get_features_data, feature_block) ;
+        makeFeatureTranscript(server, rsf, NULL, get_features_data, feature_block, transcript_ids) ;
       else
         printf("Failed to map feature '%s'\n", Transcript_getSeqRegionName(sf)) ;
 
@@ -771,10 +770,10 @@ static gboolean getAllPredictionTranscripts(EnsemblServer server,
 }
 
 
-#ifdef NOT_USED
 static gboolean getAllGenes(EnsemblServer server,
                             GetFeaturesData get_features_data,
-                            ZMapFeatureBlock feature_block)
+                            ZMapFeatureBlock feature_block,
+                            set<GQuark> &transcript_ids)
 {
   gboolean result = TRUE ;
 
@@ -804,11 +803,14 @@ static gboolean getAllGenes(EnsemblServer server,
 
   for (i = 0; i < num_element && result; ++i)
     {
-      Gene *sf = Vector_getElementAt(features,i);
-      Gene *rsf = (Gene*)SeqFeature_transform((SeqFeature*)sf,"chromosome",NULL,NULL);
+      Gene *sf = (Gene*)Vector_getElementAt(features,i);
+      char *cs_name = g_strdup("chromosome");
+      Gene *rsf = (Gene*)SeqFeature_transform((SeqFeature*)sf,cs_name,NULL,NULL);
+      g_free(cs_name);
+      cs_name = NULL;
 
       if (rsf)
-        makeFeatureGene(server, rsf, get_features_data, feature_block) ;
+        makeFeatureGene(server, rsf, get_features_data, feature_block, transcript_ids) ;
       else
         printf("Failed to map feature '%s'\n", Gene_getExternalName(sf)) ;
 
@@ -820,7 +822,6 @@ static gboolean getAllGenes(EnsemblServer server,
 
   return result;
 }
-#endif
 
 
 /* A bit of a lash up for now, we need the parent->child mapping for a sequence and since
@@ -1122,7 +1123,7 @@ static ZMapFeature makeFeatureSimple(EnsemblServer server,
     source = Analysis_getGFFSource(analysis) ;
 
   feature = makeFeature(server, (SeqFeature*)rsf, feature_name, feature_name, 
-                        feature_mode, source, NULL, 0, 0, 
+                        feature_mode, source, NULL, NULL, 0, 0, 
                         get_features_data, feature_block) ;
 
   return feature ;
@@ -1152,29 +1153,42 @@ static ZMapFeature makeFeatureRepeat(EnsemblServer server,
     source = Analysis_getGFFSource(analysis) ;
 
   feature = makeFeature(server, (SeqFeature*)rsf, feature_name, feature_name, 
-                        feature_mode, source, NULL, 0, 0, 
+                        feature_mode, source, NULL, NULL, 0, 0, 
                         get_features_data, feature_block) ;
 
   return feature ;
 }
 
 
-#ifdef NOT_USED
-/* gb10: probably don't need these but leaving them here for now */
 static ZMapFeature makeFeatureGene(EnsemblServer server,
                                    Gene *rsf,
                                    GetFeaturesData get_features_data,
-                                   ZMapFeatureBlock feature_block)
+                                   ZMapFeatureBlock feature_block,
+                                   set<GQuark> &transcript_ids)
 {
   ZMapFeature feature = NULL ;
 
-  geneAddTranscripts(server, rsf, get_features_data, feature_block) ;
+  const char *source = NULL ;
+  Analysis *analysis = SeqFeature_getAnalysis((SeqFeature*)rsf) ;
+
+  if (analysis && (!source || *source == '\0'))
+    source = Analysis_getLogicName(analysis) ;
+
+  if (analysis && (!source || *source == '\0'))
+    source = Analysis_getGFFSource(analysis) ;
+
+  geneAddTranscripts(server, rsf, source, get_features_data, feature_block, transcript_ids) ;
 
   return feature ;
 }
 
 
-static void geneAddTranscripts(EnsemblServer server, Gene *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block)
+static void geneAddTranscripts(EnsemblServer server, 
+                               Gene *rsf, 
+                               const char *gene_source,
+                               GetFeaturesData get_features_data, 
+                               ZMapFeatureBlock feature_block,
+                               set<GQuark> &transcript_ids)
 {
   if (rsf)
     {
@@ -1183,20 +1197,21 @@ static void geneAddTranscripts(EnsemblServer server, Gene *rsf, GetFeaturesData 
       int i = 0 ;
       for (i = 0; i < Vector_getNumElement(transcripts); ++i)
         {
-          Transcript *transcript = Vector_getElementAt(transcripts, i);
-          makeFeatureTranscript(server, transcript, get_features_data, feature_block) ;
+          Transcript *transcript = (Transcript*)Vector_getElementAt(transcripts, i);
+          makeFeatureTranscript(server, transcript, gene_source, get_features_data, feature_block, transcript_ids) ;
         }
 
       //Vector_free(transcripts) ;
     }
 }
-#endif
 
 
 static ZMapFeature makeFeatureTranscript(EnsemblServer server,
                                          Transcript *rsf,
+                                         const char *gene_source,
                                          GetFeaturesData get_features_data,
-                                         ZMapFeatureBlock feature_block)
+                                         ZMapFeatureBlock feature_block,
+                                         set<GQuark> &transcript_ids)
 {
   ZMapFeature feature = NULL ;
 
@@ -1212,20 +1227,28 @@ static ZMapFeature makeFeatureTranscript(EnsemblServer server,
       (biotype && zMap_g_list_find_quark(server->req_biotypes, g_quark_from_string(biotype))))
     {
       feature_name_id = Transcript_getStableId(rsf);
-      feature_name = Transcript_getExternalName(rsf) ;
+      GQuark feature_name_id_quark = g_quark_from_string(feature_name_id);
 
-      if (!feature_name || *feature_name == '\0')
-        feature_name = feature_name_id ;
+      /* Only add the transcript if it's not been processed already */
+      if (transcript_ids.find(feature_name_id_quark) == transcript_ids.end())
+        {
+          transcript_ids.insert(feature_name_id_quark);
 
-      if (analysis && (!source || *source == '\0'))
-        source = Analysis_getLogicName(analysis) ;
+          feature_name = Transcript_getExternalName(rsf) ;
 
-      if (analysis && (!source || *source == '\0'))
-        source = Analysis_getGFFSource(analysis) ;
+          if (!feature_name || *feature_name == '\0')
+            feature_name = feature_name_id ;
 
-      feature = makeFeature(server, (SeqFeature*)rsf, feature_name_id, feature_name, 
-                            feature_mode, source, biotype, 0, 0, 
-                            get_features_data, feature_block) ;
+          if (analysis && (!source || *source == '\0'))
+            source = Analysis_getLogicName(analysis) ;
+
+          if (analysis && (!source || *source == '\0'))
+            source = Analysis_getGFFSource(analysis) ;
+
+          feature = makeFeature(server, (SeqFeature*)rsf, feature_name_id, feature_name, 
+                                feature_mode, source, gene_source, biotype, 0, 0, 
+                                get_features_data, feature_block) ;
+        }
 
       if (feature)
         {
@@ -1317,7 +1340,7 @@ static ZMapFeature makeFeaturePredictionTranscript(EnsemblServer server,
     source = featureGetSOTerm((SeqFeature*)rsf) ;
   
   feature = makeFeature(server, (SeqFeature*)rsf, feature_name_id, feature_name, 
-                        feature_mode, source, NULL, 0, 0, 
+                        feature_mode, source, NULL, NULL, 0, 0, 
                         get_features_data, feature_block) ;
 
   if (feature)
@@ -1411,7 +1434,7 @@ static ZMapFeature makeFeatureBaseAlign(EnsemblServer server,
     source = BaseAlignFeature_getDbName((BaseAlignFeature*)rsf) ;
 
   feature = makeFeature(server, (SeqFeature*)rsf, feature_name_id, feature_name,
-                        feature_mode, source, NULL, match_start, match_end,
+                        feature_mode, source, NULL, NULL, match_start, match_end,
                         get_features_data, feature_block) ;
 
   if (feature)
@@ -1504,6 +1527,7 @@ static ZMapFeature makeFeature(EnsemblServer server,
                                const char *feature_name_in,
                                ZMapStyleMode feature_mode,
                                const char *source,
+                               const char *gene_source,
                                const char *biotype_in,
                                const int match_start,
                                const int match_end,
@@ -1526,7 +1550,11 @@ static ZMapFeature makeFeature(EnsemblServer server,
 
   SO_accession = featureGetSOTerm(rsf) ;
 
-  if (SO_accession && source && loadFeatureset(server, source))
+  /* We must have a SO accession and source. Also check whether we should load this
+   * featureset. This checks whether the featureset source or gene source (if given) is in our
+   * list of requested featuresets. */
+  if (SO_accession && source && 
+      (loadFeatureset(server, source) || loadFeatureset(server, gene_source)))
     {
       if (!feature_name_id || *feature_name_id == '\0')
         feature_name_id = source ;
@@ -1722,9 +1750,18 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
       getAllDNAAlignFeatures(server, get_features_data, feature_block) ;
       getAllDNAPepAlignFeatures(server, get_features_data, feature_block) ;
       getAllRepeatFeatures(server, get_features_data, feature_block) ;
-      getAllTranscripts(server, get_features_data, feature_block) ;
       getAllPredictionTranscripts(server, get_features_data, feature_block) ;
-      //getAllGenes(server, get_features_data, feature_block) ;
+
+      /* We get transcripts via the gene for genes whose logic_name is in the list of requested
+       * featuresets. The transcript logic_name may be different to the gene logic_name so we
+       * also look separately for transcripts by  logic_name. This means we may end up fetching
+       * the same transcript twice, so we maintain a set of transcript stable_ids that we've seen
+       * so that we don't add them twice. We may want to revisit this to fetch ALL genes and
+       * therefore we can check all transcripts from there. We need to make sure that this won't cause
+       * a performance problem, though. */
+      set<GQuark> transcript_ids;
+      getAllGenes(server, get_features_data, feature_block, transcript_ids) ;
+      getAllTranscripts(server, get_features_data, feature_block, transcript_ids) ;
 
       pthread_mutex_unlock(server->mutex) ;
     }
