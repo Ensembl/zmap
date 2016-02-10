@@ -51,6 +51,9 @@
 #include <ZMap/zmapThreads.hpp> // for ForkLock functions
 
 
+using namespace gbtools ;
+
+
 
 #define PFETCH_READ_SIZE 80        /* about a line */
 #define PFETCH_FAILED_PREFIX "PFetch failed:"
