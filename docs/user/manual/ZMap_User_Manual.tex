@@ -22,8 +22,10 @@
 \usepackage{titlesec}
 \hypersetup{colorlinks=true, linkcolor=blue, citecolor=blue, filecolor=blue, urlcolor=blue, pdftitle=ZMap User Manual, pdfauthor=Gemma Guest, pdfsubject=, pdfkeywords=}
 \usepackage[pdftex]{graphicx}
+\usepackage{parskip}
+\usepackage{listings}
 % Paragraph styles
-\setlength{\parindent}{0pt}
+%\setlength{\parindent}{0pt}
 % Text styles
 \newcommand\textstyleInternetlink[1]{\textcolor{blue}{#1}}
 \newcommand\textstyleSourceText[1]{\texttt{#1}}
@@ -123,6 +125,17 @@
 \renewcommand\labelitemii{o}
 \renewcommand\labelitemiii{[F0A7?]}
 \renewcommand\labelitemiv{[F0B7?]}
+}
+% Listings (code blocks) styles
+\lstnewenvironment{code}{%
+    \lstset{%
+        basicstyle={\small\ttfamily},
+        breaklines,
+        frame=single,
+        backgroundcolor=\color{lightgray!20},
+        xleftmargin=\parindent
+    }%
+}{%
 }
 % Page layout (geometry)
 \setlength\voffset{-1in}
@@ -247,20 +260,21 @@
 \clearpage
 \section{Introduction}
 
-ZMap is a software package that provides a visualisation and editing tool for genomic features. The software is written in C/C++, utilising the gnome toolkit (GTK2) to draw features on a canvas. ZMap accepts input from multiple sources in multiple formats across multiple genomes and is written in a way so that the addition of further formats is made as trivial as possible. Currently the list of formats includes GFF and DAS, which may reside in any one of; a file, an acedb instance, an http server. Multiple genomes and their associated features can be displayed in a single view as aligned blocks providing support for comparative annotation. ZMap privides facilities for editing and creating features, which can then be saved to a GFF file.
+ZMap is a software package that provides a visualisation and editing tool for genomic features. The software is written in C/C++, utilising the gnome toolkit (GTK2) to draw features on a canvas.
 
-ZMap is part of the Otter annotation suite and contains a protocol for two-way communication with Otter so that it operates seamlessly as an additional display within Otter.
+ZMap accepts input from multiple sources in multiple formats across multiple genomes and is written in a way so that the addition of further formats is made as trivial as possible. Currently the list of formats includes GFF and DAS (which may reside in a file, an acedb instance, or an http server). Multiple genomes and their associated features can be displayed in a single view as aligned blocks providing support for comparative annotation. ZMap provides facilities for editing and creating features, which can then be saved to a GFF file.
 
-ZMap can call tools from the SeqTools suite of sequence visualisation tools to analyse alignments in more detail.
+ZMap is part of the Otter annotation suite and contains a protocol for two-way communication with Otter so that it operates seamlessly as an additional display. ZMap can also call tools from the SeqTools suite of sequence visualisation tools to analyse alignments in more detail.
 
+\clearpage
 \section{Starting ZMap}
 There are several ways to run ZMap depending on the data sources you want to use.
 
 \subsection{Running ZMap on a GFF file}
 To run ZMap standalone on one or more GFF files, simply pass the file name(s) on the command line:
-\begin{verbatim}
+\begin{code}
 zmap file1.gff file2.gff
-\end{verbatim}
+\end{code}
 
 The sequence region will default to the region available in the GFF file. Alternatively, you can specify the sequence/region by passing the \texttt{--sequence}, \texttt{--start} and \texttt{--end} arguments on the command-line.
 
@@ -273,15 +287,14 @@ If you run ZMap without any arguments then you will be presented with the Main W
 \centering
 \color[rgb]{0.30980393,0.5058824,0.7411765}
 \includegraphics[resolution=150]{img_main_window.png}
-\caption{ZMap's Main Window. Use the '+' button to add new sources, enter the sequence details for the region you want to view, and then click 'Start ZMap'.}
+\caption{ZMap's Main Window. Use the '+' button to add new sources, enter the sequence details for the region you want to view, and then click 'Execute'.}
 \label{img_main_window}
 \end{figure}
 
 Click on the '+' button to add a new source. This will open the Create Source dialog. From the drop-down menu, select the type of source. Choose 'File' for a local/remote file (figure \ref{img_create_source_file}) or 'Ensembl' for an Ensembl database (figure \ref{img_create_source_ensembl}).
 
-For File sources, you just need to enter the path of the file (or URL if it is a remote file). You also need to enter a name for the source - this can be anything you like.
-
-For Ensembl sources, the public host details are pre-filled for you by default. You may change these if you wish but the public host should be fine for most users (note that a password is not required). You can click the magnifying glass icon next to the 'Database' box to search for available databases in the host (figure \ref{img_create_source_ensembl_search_db}). You may optionally also enter a list of featuresets or biotypes that you are interested in - in this case, ZMap will only load features of those types; otherwise, ZMap will load all of the features from the database. You can click the magnifying glass icon next to the featuresets/biotypes boxes to search for available featuresets/biotypes. Note that you can select multiple featuresets/biotypes from the search box by holding down Ctrl (for individual selection) or Shift (for range selection) when you click with the mouse button. You can also enter multiple featuresets/biotypes directly into the Create Source dialog as a semi-colon separated list.
+\textbf{Local/remote file}
+For File sources, you just need to enter the path of the file (or URL if it is a remote file). This file can be in any of the file formats supported by ZMap, e.g. GFF3 or BAM. You also need to enter a name for the source - this can be anything you like but should be a short, descriptive name with no special characters (except underscores or dashes).
 
 \begin{figure}
 \centering
@@ -290,6 +303,9 @@ For Ensembl sources, the public host details are pre-filled for you by default. 
 \caption{Create a new file source}
 \label{img_create_source_file}
 \end{figure}
+
+\textbf{Ensembl database}
+For Ensembl sources, the public host details are pre-filled for you by default. You may change these if you wish but the public host should be fine for most users (note that a password is not required). You can click the magnifying glass icon next to the 'Database' box to search for available databases in the host (figure \ref{img_create_source_ensembl_search_db}). You may optionally also enter a list of featuresets or biotypes that you are interested in - in this case, ZMap will only load features of those types; otherwise, ZMap will load all of the features from the database. You can click the magnifying glass icon next to the featuresets/biotypes boxes to search for available featuresets/biotypes. Note that you can select multiple featuresets/biotypes from the search box by holding down Ctrl (for individual selection) or Shift (for range selection) when you click with the mouse button. You can also enter multiple featuresets/biotypes directly into the Create Source dialog as a semi-colon separated list.
 
 \begin{figure}
 \centering
@@ -307,16 +323,16 @@ For Ensembl sources, the public host details are pre-filled for you by default. 
 \label{img_create_source_ensembl_search_db}
 \end{figure}
 
-After you click OK on the Create Source dialog, the new source will appear in the Main Window. You can enter multiple sources in the same way. If you want to remove a source, select it in the list and click the delete button. You also need to enter the sequence details for the region you want to load. Then click 'Start ZMap' to open ZMap on that region. You can edit the sources/sequence details at any time and click 'Start ZMap' again to start a new ZMap on a different region.
+After you click OK on the Create Source dialog, the new source will appear in the Main Window. You can enter multiple sources in the same way. If you want to remove a source, select it in the list and click the delete button. You also need to enter the sequence details for the region you want to load. Then click 'Execute' to open ZMap on that region. You can edit the sources/sequence details at any time and click 'Execute' again to start a new ZMap on a different region.
 
 You can save the source details to a config file so that they can easily be re-loaded later. Simply click the Save button and select a file location. To re-use the config, you can either open the Main Window again and select the file using the file chooser button, or you can run ZMap on the file from the command-line as follows:
-\begin{verbatim}
+\begin{code}
 zmap --conf_file=/path/to/file
-\end{verbatim}
+\end{code}
 
 \subsection{Running ZMap with a config file}
 If you have several sources, it can be convenient to specify them in a config file rather than typing them on the command-line. You can also then set up many different options and styles to use for these sources. To use a local GFF file as a source, a simple config file would look something like this:
-\begin{verbatim}
+\begin{code}
 [ZMap]
 # The list of sources
 sources=chr6-18
@@ -330,12 +346,12 @@ end=2864370
 # Source stanzas (one per source)
 [chr6-18]
 url=file:////Users/gb10/work/checkout/zmap/examples/features.gff
-\end{verbatim}
+\end{code}
 
 ZMap can then be started by passing the config file on the command line:
-\begin{verbatim}
+\begin{code}
 zmap --conf_file=/path/to/file
-\end{verbatim}
+\end{code}
 
 Alternatively, the config file can be saved as \texttt{~/.ZMap/ZMap} and will be picked up by default.
 
@@ -350,6 +366,7 @@ ZMap is opened via the Tools menu bar in Otter (figure \ref{img_open_from_otterl
 \label{img_open_from_otterlace}
 \end{figure}
 
+\clearpage
 \section{The ZMap display}
 
 The main ZMap display (figure \ref{img_main_interface} consists of a canvas showing any analysis and annotation that is present in your region of interest, with a toolbar, information bar and menu at the top and a ruler showing the coordinates at the current position based on the current coordinate system.
@@ -500,6 +517,9 @@ Many functions are available from the toolbar section in ZMap. See figures \ref{
 \end{figure}
 
 
+\clearpage
+\section{Operations}
+
 \subsection{Show feature details}
 Right click on a gene object or 'o' key when highlighted to see information on otter IDs and Ensembl IDs. For BLAST hits, double click on the HSP to get the feature interface where you will find details on alignment and on what gene object the HSP has been assigned to as evidence, if any (see figure \ref{img_feature_details_dialog}).
 
@@ -606,6 +626,20 @@ This option allows you to list all the features contained in a column in one win
 \label{img_show_hide}
 \end{figure}
 
+\subsection{Splitting windows in ZMap}
+Use the \textbf{split} window function to effectively reduce the size of the window when looking at homologies. This is of particular use when you have to deal with very large introns because you can essentially reduce the introns to whatever size you wish, or when there are very many HSPs, because you can keep your gene object in view and static, but still scroll across the evidence. See figure \ref{img_split_window}.
+
+\begin{figure}
+\centering
+\color[rgb]{0.30980393,0.5058824,0.7411765}
+\includegraphics[width=15.231cm]{img_split_window.png}
+\caption{Splitting windows}
+\label{img_split_window}
+\end{figure}
+
+
+\clearpage
+\section{Annotation}
 
 \subsection{Creating/editing features}
 ZMap can be used to create new features or edit existing features. ZMap can generate variant objects quickly - existing transcript objects can be used as a template for a new object while a ZMap HSP (or any other feature, nucleotide or peptide) can be used to provide the coordinates for the new variant.
@@ -657,19 +691,19 @@ When running ZMap under Otter, variants are constructed in a different manner. S
 \label{img_variant_construction2}
 \end{figure}
 
-\subsection{Splitting windows in ZMap}
-Use the \textbf{split} window function to effectively reduce the size of the window when looking at homologies. This is of particular use when you have to deal with very large introns because you can essentially reduce the introns to whatever size you wish, or when there are very many HSPs, because you can keep your gene object in view and static, but still scroll across the evidence. See figure \ref{img_split_window}.
 
-\begin{figure}
-\centering
-\color[rgb]{0.30980393,0.5058824,0.7411765}
-\includegraphics[width=15.231cm]{img_split_window.png}
-\caption{Splitting windows}
-\label{img_split_window}
-\end{figure}
+\clearpage
+\section{Multiple views}
+This function allows you to open two or more sequences alongside each other (such as a human region and the syntenic region in mouse, or two haplotypes), so that simultaneous investigation can be carried out. 
+
+\subsection{Multiple views from GFF}
+If you want have two different regions in GFF files, simply pass both GFF files to ZMap on the command line to view them side-by-side in ZMap:
+\begin{code}
+zmap file1.gff file2.gff
+\end{code}
 
 \subsection{Launching in a ZMap from Otter}
-This function allows you to open two or more sequences alongside each other (such as a human region and the syntenic region in mouse, or two haplotypes), so that simultaneous investigation can be carried out. To do this you will need to open both sets of clones in the same Otter session. To open both ZMap windows in one window as shown below, you need to select "Launch In A ZMap" option in one clone set. These clones will open to the left of the already open Otter session. This screen shot shows human gene SF3B14 and the syntenic region in mouse. The gene copy and paste function (referred to in the Otter section) is of much use here, saving time when building gene objects. See figure \ref{img_launch_in_zmap}.
+To open multiple sequences from Otter, you will need to open both sets of clones in the same Otter session. To open both ZMap windows in one window as shown below, you need to select "Launch In A ZMap" option in one clone set. These clones will open to the left of the already open Otter session. This screen shot shows human gene SF3B14 and the syntenic region in mouse. The gene copy and paste function (referred to in the Otter section) is of much use here, saving time when building gene objects. See figure \ref{img_launch_in_zmap}.
 
 \begin{figure}
 \centering
@@ -679,6 +713,20 @@ This function allows you to open two or more sequences alongside each other (suc
 \label{img_launch_in_zmap}
 \end{figure}
 
+
+\clearpage
+\section{Tips for a speedier ZMap}
+\begin{enumerate}
+\item Specifically: zoom and mark within ZMap early on after launching. Either select a gene object and press 'z' to zoom OR select a rectangle to zoom in by dragging the left mouse button around it. Reverse complement now if necessary, then press 'm' to mark the region.
+\item The quickest way to zoom out of ZMap again is to right mouse click on the 'zoom out' buttons at the top of zmap and choose one of the options (this is definitely much quicker that doing individual 'zoom outs' with the left mouse button). Likewise for 'zooming in' again (or use keyboard equivalents).
+\item Bump within a marked region only. Bumping without marking is slow and removes the lines connecting Blast matches.
+\item When you have finished working within a marked region, unbump the evidence you have been working on (e.g. ESTs) and unmark that region before you go on to select the next region to mark and bump - or you could miss visualising the evidence in the new region.
+\item If you want to get rid of some white space try the compress 'c' function or alternatively toggle off some of the columns. \textcolor{red}{Warning - this may hide features as well}. If a column (e.g ESTs) is bumped and you want to lose it temporarily, it is quicker to turn the column off (when you turn it on again it will still be bumped when it re-appears) than unbump then rebump again later.
+\item Jumping to genes/objects: If you expand the left hand 'scroll navigator' overview' you can jump directly to genes and objects by double-clicking on them.
+\end{enumerate}
+
+
+\clearpage
 \section{Keyboard and mouse shortcuts}
 In general ZMap will be faster for zooming, bumping etc if you make good use of the built in short cuts. These can often avoid the need for ZMap to redraw large amounts of data that you may not even be interested in. For example, click once (highlight) on a feature and a carriage return will bring up evidence. Another example is to press T for translation.
 
@@ -766,14 +814,5 @@ same as single click\\
 \hline
 \end{supertabular}
 
-\section{Tips for a speedier ZMap}
-\begin{enumerate}
-\item Specifically: zoom and mark within ZMap early on after launching. Either select a gene object and press 'z' to zoom OR select a rectangle to zoom in by dragging the left mouse button around it. Reverse complement now if necessary, then press 'm' to mark the region.
-\item The quickest way to zoom out of ZMap again is to right mouse click on the 'zoom out' buttons at the top of zmap and choose one of the options (this is definitely much quicker that doing individual 'zoom outs' with the left mouse button). Likewise for 'zooming in' again (or use keyboard equivalents).
-\item Bump within a marked region only. Bumping without marking is slow and removes the lines connecting Blast matches.
-\item When you have finished working within a marked region, unbump the evidence you have been working on (e.g. ESTs) and unmark that region before you go on to select the next region to mark and bump - or you could miss visualising the evidence in the new region.
-\item If you want to get rid of some white space try the compress 'c' function or alternatively toggle off some of the columns. \textcolor{red}{Warning - this may hide features as well}. If a column (e.g ESTs) is bumped and you want to lose it temporarily, it is quicker to turn the column off (when you turn it on again it will still be bumped when it re-appears) than unbump then rebump again later.
-\item Jumping to genes/objects: If you expand the left hand 'scroll navigator' overview' you can jump directly to genes and objects by double-clicking on them.
-\end{enumerate}
 
 \end{document}
