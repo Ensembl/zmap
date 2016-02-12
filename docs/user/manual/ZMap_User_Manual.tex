@@ -20,7 +20,7 @@
 \usepackage{hhline}
 \usepackage{hyperref}
 \usepackage{titlesec}
-\hypersetup{pdftex, colorlinks=true, linkcolor=blue, citecolor=blue, filecolor=blue, urlcolor=blue, pdftitle=ZMap User Manual, pdfauthor=Gemma Barson, pdfsubject=, pdfkeywords=}
+\hypersetup{colorlinks=true, linkcolor=blue, citecolor=blue, filecolor=blue, urlcolor=blue, pdftitle=ZMap User Manual, pdfauthor=Gemma Guest, pdfsubject=, pdfkeywords=}
 \usepackage[pdftex]{graphicx}
 % Paragraph styles
 \setlength{\parindent}{0pt}
@@ -183,7 +183,7 @@
 \bigskip
 
 {\centering\large{Written by and contributions from:}\par
-\large{Gemma Barson} {\textless}\href{mailto:gb10@sanger.ac.uk}{gb10@sanger.ac.uk}{\textgreater}\par
+\large{Gemma Guest} {\textless}\href{mailto:gb10@sanger.ac.uk}{gb10@sanger.ac.uk}{\textgreater}\par
 \large{Charlie Stewart}\par
 \large{Laurens Wilming}\par
 \large{Ed Griffiths}\par
@@ -205,14 +205,17 @@
 
 \begin{center}
 \tablehead{}
-\begin{supertabular}{|m{8.073cm}|m{3.2849998cm}|m{3.282cm}|}
+\begin{supertabular}{|m{8cm}|m{3.2849998cm}|m{3.282cm}|}
 \hline
 \bfseries Revision &
 \bfseries Date &
 \bfseries Author\\\hline
  First revision (ZMap v1.5.0) &
  16/03/2015 &
- Gemma Barson\\\hline
+ Gemma Guest\\\hline
+ Updated for ZMap v2.5.1 &
+ 12/02/2016 &
+ Gemma Guest\\\hline
  &
  &
  \\\hline
@@ -250,7 +253,9 @@ ZMap is part of the Otter annotation suite and contains a protocol for two-way c
 
 ZMap can call tools from the SeqTools suite of sequence visualisation tools to analyse alignments in more detail.
 
-\section{Using ZMap}
+\section{Starting ZMap}
+There are several ways to run ZMap depending on the data sources you want to use.
+
 \subsection{Running ZMap on a GFF file}
 To run ZMap standalone on one or more GFF files, simply pass the file name(s) on the command line:
 \begin{verbatim}
@@ -260,6 +265,54 @@ zmap file1.gff file2.gff
 The sequence region will default to the region available in the GFF file. Alternatively, you can specify the sequence/region by passing the \texttt{--sequence}, \texttt{--start} and \texttt{--end} arguments on the command-line.
 
 If all of the files contain the same reference sequence, then their contents will be shown in the same view. If the files contain multiple sequences/regions, then they will be shown in multiple views.
+
+\subsection{Choosing sources on startup}
+If you run ZMap without any arguments then you will be presented with the Main Window where you can choose data sources to load (see Figure \ref{img_main_window}).
+
+\begin{figure}
+\centering
+\color[rgb]{0.30980393,0.5058824,0.7411765}
+\includegraphics[width=15.231cm]{img_main_window.png}
+\caption{ZMap's Main Window. Use the '+' button to add new sources, enter the sequence details for the region you want to view, and then click 'Start ZMap'.}
+\label{img_main_window}
+\end{figure}
+
+Click on the '+' button to add a new source. This will open the Create Source dialog. From the drop-down menu, select the type of source. Choose 'File' for a local/remote file (figure \ref{img_create_source_file}) or 'Ensembl' for an Ensembl database (figure \ref{img_create_source_ensembl}).
+
+For File sources, you just need to enter the path of the file (or URL if it is a remote file). You also need to enter a name for the source - this can be anything you like.
+
+For Ensembl sources, the public host details are pre-filled for you by default. You may change these if you wish but the public host should be fine for most users (note that a password is not required). You can click the magnifying glass icon next to the 'Database' box to search for available databases in the host (figure \ref{img_create_source_ensembl_search_db}). You may optionally also enter a list of featuresets or biotypes that you are interested in - in this case, ZMap will only load features of those types; otherwise, ZMap will load all of the features from the database. You can click the magnifying glass icon next to the featuresets/biotypes boxes to search for available featuresets/biotypes. Note that you can select multiple featuresets/biotypes from the search box by holding down Ctrl (for individual selection) or Shift (for range selection) when you click with the mouse button. You can also enter multiple featuresets/biotypes directly into the Create Source dialog as a semi-colon separated list.
+
+\begin{figure}
+\centering
+\color[rgb]{0.30980393,0.5058824,0.7411765}
+\includegraphics[width=15.231cm]{img_create_source_file.png}
+\caption{Create a new file source}
+\label{img_create_source_file}
+\end{figure}
+
+\begin{figure}
+\centering
+\color[rgb]{0.30980393,0.5058824,0.7411765}
+\includegraphics[width=15.231cm]{img_create_source_ensembl.png}
+\caption{Create a new Ensembl source. Click on the magnifying glass icons to search for databases/featuresets/biotypes to load.}
+\label{img_create_source_ensembl}
+\end{figure}
+
+\begin{figure}
+\centering
+\color[rgb]{0.30980393,0.5058824,0.7411765}
+\includegraphics[width=8cm]{img_create_source_ensembl_search_db.png}
+\caption{Search a list of available Ensembl databases. Type text in the Search box to jump to items containing that text. You can use the up/down arrows to jump to the next/previous item with the same text.}
+\label{img_create_source_ensembl_search_db}
+\end{figure}
+
+After you click OK on the Create Source dialog, the new source will appear in the Main Window. You can enter multiple sources in the same way. If you want to remove a source, select it in the list and click the delete button. You also need to enter the sequence details for the region you want to load. Then click 'Start ZMap' to open ZMap on that region. You can edit the sources/sequence details at any time and click 'Start ZMap' again to start a new ZMap on a different region.
+
+You can save the source details to a config file so that they can easily be re-loaded later. Simply click the Save button and select a file location. To re-use the config, you can either open the Main Window again and select the file using the file chooser button, or you can run ZMap on the file from the command-line as follows:
+\begin{verbatim}
+zmap --conf_file=/path/to/file
+\end{verbatim}
 
 \subsection{Running ZMap with a config file}
 If you have several sources, it can be convenient to specify them in a config file rather than typing them on the command-line. You can also then set up many different options and styles to use for these sources. To use a local GFF file as a source, a simple config file would look something like this:
@@ -297,20 +350,24 @@ ZMap is opened via the Tools menu bar in Otter (figure \ref{img_open_from_otterl
 \label{img_open_from_otterlace}
 \end{figure}
 
-\section{Main ZMap interface}
+\section{The ZMap display}
+
+The main ZMap display (figure \ref{img_main_interface} consists of a canvas showing any analysis and annotation that is present in your region of interest, with a toolbar, information bar and menu at the top and a ruler showing the coordinates at the current position based on the current coordinate system.
 
 \begin{figure}
 \centering
 \color[rgb]{0.30980393,0.5058824,0.7411765}
 \includegraphics[width=15.231cm]{img_main_interface.png}
 \caption{The main ZMap interface}
+\label{img_main_interface}
 \end{figure}
 
-\subsection{Navigating in ZMap and zooming options}
-\begin{enumerate}
-\item Navigate by using the scroll bars or the middle mouse button. By clicking the middle mouse anywhere in ZMap you will see a horizontal line. You can move this up and down and the relative position in bp will be displayed along the line. When the button is released, the window will refresh, centering on the position of the line. You can also click in the window to make it active and use the scroll wheel to navigate up and down or achieve the same result using the scroll bar on the right hand side of the window. If you release the mouse outside the ZMap window, you can then check the sequence position displayed, without re-centering. See Figure \ref{img_navigating}.
-\item Zoom in by using the Zoom in/Zoom out buttons at the top, or by drawing a rectangle around the area of interest with the left mouse button. Use the ``z'' key on the keyboard to zoom to whatever feature is highlighted. Use the ``Z'' key to zoom to a whole transcript if you have an exon (s) highlighted or all HSPs if you have one HSP highlighted (HSPs are the "blocks" that you see in the homology columns, such as ESTs and protein hits). See figure \ref{img_zooming}.
-\end{enumerate}
+\subsection{Navigating}
+Navigate by using the scroll bars or the middle mouse button (figure \ref{img_navigating}. By clicking the middle mouse anywhere in ZMap you will see a horizontal line. You can move this up and down and the relative position in bp will be displayed along the line.
+
+When the button is released, the window will refresh, centering on the position of the line. You can also click in the window to make it active and use the scroll wheel to navigate up and down or achieve the same result using the scroll bar on the right hand side of the window.
+
+If you release the mouse outside the ZMap window, you can then check the sequence position displayed, without re-centering.
 
 \begin{figure}
 \centering
@@ -320,6 +377,16 @@ ZMap is opened via the Tools menu bar in Otter (figure \ref{img_open_from_otterl
 \label{img_navigating}
 \end{figure}
 
+\subsection{Zooming}
+See figure \ref{img_zooming}.
+
+\begin{itemize}
+\item Zoom in by using the Zoom in/Zoom out buttons on the toolbar
+\item Draw with the left mouse button to lasso an area to zoom in to
+\item Press the ``z'' key on the keyboard to zoom to the current focus feature.
+\item Use the ``Z'' key to zoom to a whole transcript if you have one or more exons highlighted, or all HSPs if you have one HSP highlighted (HSPs are the "blocks" that you see in the homology columns, such as ESTs and protein hits). 
+\end{itemize}
+
 \begin{figure}
 \centering
 \color[rgb]{0.30980393,0.5058824,0.7411765}
@@ -328,10 +395,14 @@ ZMap is opened via the Tools menu bar in Otter (figure \ref{img_open_from_otterl
 \label{img_zooming}
 \end{figure}
 
-\subsection{The Focus Feature vs the Marked Feature}
+\subsection{The Focus Feature}
 If you click on a column background then that column becomes the "focus" column and you can do various short cut operations on it such as pressing "b" to bump it. If you click on a feature then that feature becomes the "focus" feature and similarly you can do various short cut operations on it such as zooming in to it. (Note when you select a feature then its column automatically becomes the focus column.)
 
-While the focus facility is useful, the focus changes every time you click on a new feature. Sometimes you want to select a "working" feature or area more permanently. To do this you can "mark" the feature or area and it will stay ``marked'' until you unmark it. ``Marking'' an area within ZMap to work on is essential, allowing you to work much faster. The "marked" area is left clear while the unmarked area above and below is marked with a blue overlay (see figure \ref{img_focus_and_mark}):
+While the focus facility is useful, the focus changes every time you click on a new feature. Sometimes you want to select a "working" feature or area more permanently. To do this you can "mark" a feature or region and it will stay marked until you unmark it (see section \ref{section_marking_a_region}).
+
+\subsection{Marking a region}
+\label{section_marking_a_region}
+The "marked" area remains clear, while the unmarked area above and below is shaded out with a blue hashed overlay (see figure \ref{img_focus_and_mark}). Working on a marked region is recommended when you have a large amount of data loaded, because operations are faster and the display is less cluttered.
 
 \begin{figure}
 \centering
