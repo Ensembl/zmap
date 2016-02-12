@@ -127,16 +127,14 @@
 \renewcommand\labelitemiv{[F0B7?]}
 }
 % Listings (code blocks) styles
-\lstnewenvironment{code}{%
-    \lstset{%
-        basicstyle={\small\ttfamily},
-        breaklines,
-        frame=single,
-        backgroundcolor=\color{lightgray!20},
-        xleftmargin=\parindent
-    }%
-}{%
+\lstset{
+  basicstyle={\small\ttfamily},
+  breaklines,
+  frame=single,
+  backgroundcolor=\color{lightgray!20},
+  xleftmargin=\parindent
 }
+
 % Page layout (geometry)
 \setlength\voffset{-1in}
 \setlength\hoffset{-1in}
@@ -272,11 +270,11 @@ There are several ways to run ZMap depending on the data sources you want to use
 
 \subsection{Running ZMap on a GFF file}
 To run ZMap standalone on one or more GFF files, simply pass the file name(s) on the command line:
-\begin{code}
+\begin{lstlisting}
 zmap file1.gff file2.gff
-\end{code}
+\end{lstlisting}
 
-The sequence region will default to the region available in the GFF file. Alternatively, you can specify the sequence/region by passing the \texttt{--sequence}, \texttt{--start} and \texttt{--end} arguments on the command-line.
+The sequence region will default to the region available in the GFF file. Alternatively, you can specify the sequence/region by passing the \lstinline{--sequence}, \lstinline{--start} and \lstinline{--end} arguments on the command-line.
 
 If all of the files contain the same reference sequence, then their contents will be shown in the same view. If the files contain multiple sequences/regions, then they will be shown in multiple views.
 
@@ -326,13 +324,13 @@ For Ensembl sources, the public host details are pre-filled for you by default. 
 After you click OK on the Create Source dialog, the new source will appear in the Main Window. You can enter multiple sources in the same way. If you want to remove a source, select it in the list and click the delete button. You also need to enter the sequence details for the region you want to load. Then click 'Execute' to open ZMap on that region. You can edit the sources/sequence details at any time and click 'Execute' again to start a new ZMap on a different region.
 
 You can save the source details to a config file so that they can easily be re-loaded later. Simply click the Save button and select a file location. To re-use the config, you can either open the Main Window again and select the file using the file chooser button, or you can run ZMap on the file from the command-line as follows:
-\begin{code}
+\begin{lstlisting}
 zmap --conf_file=/path/to/file
-\end{code}
+\end{lstlisting}
 
 \subsection{Running ZMap with a config file}
 If you have several sources, it can be convenient to specify them in a config file rather than typing them on the command-line. You can also then set up many different options and styles to use for these sources. To use a local GFF file as a source, a simple config file would look something like this:
-\begin{code}
+\begin{lstlisting}
 [ZMap]
 # The list of sources
 sources=chr6-18
@@ -346,14 +344,14 @@ end=2864370
 # Source stanzas (one per source)
 [chr6-18]
 url=file:////Users/gb10/work/checkout/zmap/examples/features.gff
-\end{code}
+\end{lstlisting}
 
 ZMap can then be started by passing the config file on the command line:
-\begin{code}
+\begin{lstlisting}
 zmap --conf_file=/path/to/file
-\end{code}
+\end{lstlisting}
 
-Alternatively, the config file can be saved as \texttt{~/.ZMap/ZMap} and will be picked up by default.
+Alternatively, the config file can be saved as \lstinline{~/.ZMap/ZMap} and will be picked up by default.
 
 \subsection{Operation within Otter}
 ZMap is opened via the Tools menu bar in Otter (figure \ref{img_open_from_otterlace}).
@@ -649,11 +647,11 @@ Features are edited by copying them to a temporary feature in the \textbf{Annota
 
 The workflow is roughly as follows:
 \begin{itemize}
-\item Go to the menu option \texttt{Edit -> Preferences} and tick \texttt{Enable Annotation}
-\item Right-click a feature and select \texttt{Annotation -> Copy this feature} to create the temporary feature
+\item Go to the menu option \lstinline{Edit -> Preferences} and tick \lstinline{Enable Annotation}
+\item Right-click a feature and select \lstinline{Annotation -> Copy this feature} to create the temporary feature
 \item Copy other features/coordinates in the same manner to edit the temporary feature
 \item Double-click the temporary feature to set a name/featureset and save it to that featureset
-\item Right-click the new feature and select \texttt{Export -> Feature} to save the new feature to file
+\item Right-click the new feature and select \lstinline{Export -> Feature} to save the new feature to file
 \end{itemize}
 
 To create a new temporary feature, select the transcript (or other feature) you wish to create a variant from and press \textbf{Ctrl-K} (or right-click and select Annotation -> Copy selected transcript(s)\footnote{Note that you need to enable the Annotation column from the Preferences dialog for the Annotation menu to appear. Ctrl-K will automatically enable the Annotation column if it is not already enabled.}). Select other features and use Ctrl-K to copy those in to adjust the coordinates of the original feature. ZMap will do its best to make a sensible merge of the new coordinates, e.g. extending the feature extents if a coordinate lies outside the current range. If ZMap cannot automatically merge a coordinate it will ask for more information, e.g. if a coordinate lies within an intron, ZMap will ask whether it should form a 5' or 3' intron boundary.
@@ -698,9 +696,9 @@ This function allows you to open two or more sequences alongside each other (suc
 
 \subsection{Multiple views from GFF}
 If you want have two different regions in GFF files, simply pass both GFF files to ZMap on the command line to view them side-by-side in ZMap:
-\begin{code}
+\begin{lstlisting}
 zmap file1.gff file2.gff
-\end{code}
+\end{lstlisting}
 
 \subsection{Launching in a ZMap from Otter}
 To open multiple sequences from Otter, you will need to open both sets of clones in the same Otter session. To open both ZMap windows in one window as shown below, you need to select "Launch In A ZMap" option in one clone set. These clones will open to the left of the already open Otter session. This screen shot shows human gene SF3B14 and the syntenic region in mouse. The gene copy and paste function (referred to in the Otter section) is of much use here, saving time when building gene objects. See figure \ref{img_launch_in_zmap}.
