@@ -439,8 +439,40 @@ The navigator pane shows the analysis, any previously annotated loci or any impo
 
 The extent of the current canvas is shown by a red outline in the navigator. This is the region that can be scrolled using the scrollbars in the main canvas area. Zooming in or out on the main canvas changes the size of this box. Alternatively you can drag the red box to scroll the current canvas area, or drag the bounds of the red box to change the zoom level of the main canvas area. See figures \ref{img_main_interface} and \ref{img_navigating}.
 
+\subsection{Splitting the window}
+Use the \lstinline{split} window function to effectively reduce the size of the window when looking at homologies. This is of particular use when you have to deal with very large introns because you can essentially reduce the introns to whatever size you wish, or when there are very many HSPs, because you can keep your gene object in view and static, but still scroll across the evidence. See figure \ref{img_split_window}.
+
+\begin{figure}
+\centering
+\color[rgb]{0.30980393,0.5058824,0.7411765}
+\includegraphics[width=15.231cm]{img_split_window.png}
+\caption{Splitting windows}
+\label{img_split_window}
+\end{figure}
+
+
+\clearpage
+\section{Feature selection}
+
 \subsection{The Focus Feature}
 If you click on a column background then that column becomes the "focus" column and you can do various short cut operations on it such as pressing "b" to bump it. If you click on a feature then that feature becomes the "focus" feature and similarly you can do various short cut operations on it such as zooming in to it. (Note when you select a feature then its column automatically becomes the focus column.)
+
+\subsection{Selecting multiple features}
+\begin{itemize}
+\item If you left click once on a feature in ZMap, you will highlight all of its exons, the coordinates of which are now stored in the paste buffer and can be copied elsewhere, such as into the transcript editing window in Otter.
+\item You can select multiple features by holding the Shift key down and left clicking with mouse (same as for multi select on the Mac, Windows etc). This option will highlight a single exon at a time for each feature, but the accession numbers of each feature and the individual exon coordinates are held in the paste buffer. This is a particularly useful way of selecting ZMap hits to use in the OTF alignment tool in Otter, as all selected homologies will be held in the paste buffer and automatically pasted into the OTF accession window. Each of the exon coordinates can also be pasted into the transcript editing window in Otter (see figure \ref{img_paste_features}).
+\end{itemize}
+
+\begin{figure}
+\centering
+\color[rgb]{0.30980393,0.5058824,0.7411765}
+\includegraphics[width=15.231cm]{img_show_hide.png}
+\caption{Pasting selected features to Otter's OTF dialog}
+\label{img_paste_features}
+\end{figure}
+
+\subsection{Hiding features}
+You can remove selected features in ZMap by pressing \lstinline{Delete} on the keyboard and restore them by pressing \lstinline{Shift-Delete} (note on the Mac you need to press \lstinline{Fn-Delete} and \lstinline{Shift-Fn-Delete}). This is a particularly useful way of removing evidence that you have already assigned to a transcript object.
 
 \subsection{Marking a region} \label{section_marking_a_region}
 While the focus-feature facility is useful, the focus changes every time you click on a new feature. Sometimes you want to select a "working" feature or area more permanently. To do this you can "mark" a feature or region and it will stay marked until you unmark it (see section \ref{section_marking_a_region}).
@@ -484,22 +516,11 @@ You can manually change the borders of the marked area by putting your cursor ov
 \subsubsection{Unmark a feature}
 Press "m" or "M" again, i.e. the mark key toggles marking on and off.
 
-\subsection{Splitting the window}
-Use the \lstinline{split} window function to effectively reduce the size of the window when looking at homologies. This is of particular use when you have to deal with very large introns because you can essentially reduce the introns to whatever size you wish, or when there are very many HSPs, because you can keep your gene object in view and static, but still scroll across the evidence. See figure \ref{img_split_window}.
-
-\begin{figure}
-\centering
-\color[rgb]{0.30980393,0.5058824,0.7411765}
-\includegraphics[width=15.231cm]{img_split_window.png}
-\caption{Splitting windows}
-\label{img_split_window}
-\end{figure}
-
 
 \clearpage
-\section{Feature display}
+\section{Track display options}
 
-\subsection{Bumping features}
+\subsection{Bumping tracks}
 This section describes how to select a feature, mark it and then zoom in to it and examine evidence that overlaps that feature. The default setting for ZMap is to show HSPs drawn on top of each other. This saves space on the canvas making it easier to see the general features of the region of interest. The bump option allows you to see the HSPs as multiple alignments.
 \begin{enumerate}
 \item Click on the feature you are interested in (perhaps a transcript)
@@ -530,7 +551,7 @@ If you use the default bumping mode (i.e. you pressed "b") then you will find al
 
 Alignment quality of the HSPs is depicted by the width of every alignment displayed since the width is a measure of that HSP's score. Therefore, the wider it is the closer the score is to 100\%. The precise score is displayed in the ZMap details bar by clicking on the alignment. If HSPs are missing either the first or last Blast alignments in the set, they are marked with a red diamond at their start/end respectively. This indicates if they do not start at the first base/amino acid and/or do not end with the last base/amino acid of the alignment sequence. The screen shot below shows what options you get when you right click over a homology - note that you can also select an HSP and type ``o''. You also get further options such as retrieving the EMBL file for that homology using pfetch and starting \textbf{Blixem}, see later section (note, HSPs do not need to be bumped to use Blixem).
 
-\subsection{Feature styles and strand}
+\subsection{Featureset styles and strand}
 ZMap has rich feature display capabilities, which are highly configurable. Different features are displayed in distinct columns, and can be configured with many different styles as shown in figure \ref{img_features}. 
 
 \begin{figure}
@@ -560,8 +581,8 @@ ZMap has rich feature display capabilities, which are highly configurable. Diffe
 \item View and configure columns (i.e. the available features and analysis) - see section \ref{sec_columns}.
 \end{enumerate}
 
-\subsection{Column configuration} \label{sec_columns}
-The Column Configuration dialog (figure \ref{img_columns}) is used to control which features are displayed, to specify the order of columns, and to edit the style and other properties of the columns.  The dialog can be opened from the \lstinline{Columns} button on the toolbar, or via the right-click menu (\lstinline{Column Configuration->Configure this/all columns}).
+\subsection{Track configuration} \label{sec_columns}
+The Column Configuration dialog (figure \ref{img_columns}) is used to control which tracks are displayed, to specify the order of columns, and to edit the style and other properties of the columns.  The dialog can be opened from the \lstinline{Columns} button on the toolbar, or via the right-click menu (\lstinline{Column Configuration->Configure this/all columns}).
 
 \begin{figure}
 \centering
@@ -590,6 +611,8 @@ The visibility of each track (for both the forward and reverse strand) is contro
 \end{itemize}
 
 To change the visibility, select the track(s) you want to change and then click the relevant radio button in any of the selected tracks. Note that all highlighted tracks will be changed.
+
+Note that you can also hide a track directly from the ZMap canvas by right-clicking on the column and selecting \lstinline{Column Hide}.
 
 \subsubsection{Assigning groups}
 You can assign a group to one or more tracks by selecting the tracks and clicking \lstinline{Assign Group}. You will be prompted to enter a name for the group. The new group name will be populated on the Columns dialog. Remember to click \lstinline{Apply} or \lstinline{OK} on the Columns dialog to apply the changes.
@@ -685,22 +708,6 @@ This option allows you to list all the features contained in a column in one win
 \includegraphics[width=15.231cm]{img_feature_search_results.png}
 \caption{Feature search results}
 \label{img_feature_search_results}
-\end{figure}
-
-\subsection{Selecting single or multiple features and hiding/showing them}
-\begin{enumerate}
-\item If you left click once on a feature in ZMap, you will highlight all of its exons, the coordinates of which are now stored in the paste buffer and can be copied elsewhere, such as into the transcript editing window in Otter.
-\item You can select multiple features by holding the Shift key down and left clicking with mouse (same as for multi select on the Mac, Windows etc). This option will highlight a single exon at a time for each feature, but the accession numbers of each feature and the individual exon coordinates are held in the paste buffer. This is a particularly useful way of selecting ZMap hits to use in the OTF alignment tool in Otter, as all selected homologies will be held in the paste buffer and automatically pasted into the OTF accession window. Each of the exon coordinates can also be pasted into the transcript editing window in Otter (see figure \ref{img_show_hide}).
-\item You can remove selected features in ZMap by pressing \lstinline{Delete} on the keyboard and restore them by pressing \lstinline{Shift-Delete} (note on the Mac you need to press \lstinline{Fn-Delete} and \lstinline{Shift-Fn-Delete}). This is a particularly useful way of removing evidence that you have already assigned to a transcript object.
-\end{enumerate}
-
-
-\begin{figure}
-\centering
-\color[rgb]{0.30980393,0.5058824,0.7411765}
-\includegraphics[width=15.231cm]{img_show_hide.png}
-\caption{Pasting selected features to Otter's OTF dialog}
-\label{img_show_hide}
 \end{figure}
 
 
