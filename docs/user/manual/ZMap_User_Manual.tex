@@ -377,6 +377,7 @@ The main ZMap display (figure \ref{img_main_interface} consists of a canvas, whi
 \label{img_main_interface}
 \end{figure}
 
+
 \subsection{Navigating around the canvas}
 Navigate by using the scroll bars or the middle mouse button (figure \ref{img_navigating}. By clicking the middle mouse anywhere in ZMap you will see a horizontal line. You can move this up and down and the relative position in bp will be displayed along the line.
 
@@ -391,6 +392,7 @@ If you release the mouse outside the ZMap window, you can then check the sequenc
 \caption{Navigating}
 \label{img_navigating}
 \end{figure}
+
 
 \subsection{Zooming} \label{sec_zooming}
 See figure \ref{img_zooming}.
@@ -410,6 +412,7 @@ See figure \ref{img_zooming}.
 \caption{Zooming}
 \label{img_zooming}
 \end{figure}
+
 
 \subsection{Toolbar} \label{sec_toolbar}
 Many functions are available from the toolbar section in ZMap. Below the toolbar is an information bar, which displays information about the current focus feature. See figures \ref{img_toolbar_feature_details} and \ref{img_feature_display_details}.
@@ -449,8 +452,48 @@ Many functions are available from the toolbar section in ZMap. Below the toolbar
 \label{img_feature_display_details}
 \end{figure}
 
+
+\subsection{Menu bar}
+\subsubsection{File menu}
+\begin{itemize}
+\item \textbf{New Sequence} - Create a new view in the current ZMap session (see section \ref{sec_multiple_views})
+\item \textbf{New Source} - Create and load a new source into the existing region
+\item \textbf{Save} - Save all of the features to a GFF file (without prompting if a file has previously been selected)
+\item \textbf{Save As} - Save all of the features to a GFF file (prompting for a new file name)
+\item \textbf{Import} - Import features from a local or remote file (e.g. BAM/GFF)
+\item \textbf{Export} - Export features, config, styles or reference sequence DNA
+\item \textbf{Save screen shot} - Save the current canvas as a screen shot
+\item \textbf{Print screen shot} - Open the print dialog to print the current canvas
+\item \textbf{Close} - Close the current ZMap window
+\item \textbf{Quit} - Disconnect from all servers and quit ZMap
+\end{itemize}
+
+\subsubsection{Edit menu}
+\begin{itemize}
+\item \textbf{Copy Feature Coords} - Copy the currently-selected feature coordinates to the clipboard in the format: <seqname>:<start>-<end>
+\item \textbf{Copy Feature Coords (CHR)} - As above but prefix the seqname with ``chr''
+\item \textbf{Paste Feature Coords} - Get feature coordinates in the above format from the clipboard and zoom the ZMap display to that region
+\item \textbf{Redraw} - Redraw the canvas
+\item \textbf{Styles} - Show the Styles dialog (see section \ref{sec_style_configuration})
+\item \textbf{Preferences} - Open the Preferences dialog (see section \ref{sec_preferences})
+\end{itemize}
+
+\subsubsection{View menu}
+\begin{itemize}
+\item \textbf{Session details} - View details about the current ZMap session (useful when reporting bugs)
+\item \textbf{Toggle coords} - Toggle between 1-based and toplevel coordinate systems
+\end{itemize}
+
+\subsubsection{Raise Ticket menu}
+Use this menu to raise a ticket to report a bug or request a new feature.
+
+\subsubsection{Help menu}
+The help menu contains links to various quick-access help pages, as well as a link to the release notes (to find out what's new in the latest version). The \lstinline{About ZMap} menu item will tell you exactly which version of ZMap you are running.
+
+
 \subsection{Coordinate display (ruler)}
 The ruler to the left of the canvas shows the coordinates in the current coordinate system. By default, ZMap uses a local coordinate system, which starts at 1 for the first coordinate in the loaded region. You can toggle to the real toplevel coordinates using the menu option \lstinline{View->Toggle coords}.
+
 
 \subsection{Navigator pane}
 The navigator pane is on the left of the ZMap display but is hidden by default. It can be exposed by dragging the drag bar to the left of the ruler.
@@ -458,6 +501,7 @@ The navigator pane is on the left of the ZMap display but is hidden by default. 
 The navigator pane shows the analysis, any previously annotated loci or any imported genes that are present in the clone. Double-clicking on a locus will take you to that gene in ZMap. Right-click to show various other options.
 
 The extent of the current canvas is shown by a red outline in the navigator. This is the region that can be scrolled using the scrollbars in the main canvas area. Zooming in or out on the main canvas changes the size of this box. Alternatively you can drag the red box to scroll the current canvas area, or drag the bounds of the red box to change the zoom level of the main canvas area. See figures \ref{img_main_interface} and \ref{img_navigating}.
+
 
 \subsection{Splitting the window} \label{sec_split}
 Use the \textbf{split window} functionality to effectively reduce the size of the window when looking at homologies. This is of particular use when you have to deal with very large introns because you can essentially reduce the introns to whatever size you wish, or when there are very many HSPs, because you can keep your gene object in view and static, but still scroll across the evidence. See figure \ref{img_split_window}. You may split the window both horizontally and/or vertically as many times as you wish.
@@ -472,6 +516,7 @@ By default, the windows will be locked and will scroll in unison. You can unlock
 \label{img_split_window}
 \end{figure}
 
+
 \subsection{DNA and 3-frame translation} \label{sec_dna_3_frame}
 You can show the reference sequence DNA and/or 3-frame translation by pressing the \lstinline{DNA} and \lstinline{3-Frame} buttons on the toolbar respectively. Click the buttons again to turn them off.
 
@@ -483,12 +528,30 @@ Right-click on the \lstinline{3-Frame} buttons for these additional options:
 \item \textbf{Features + 3 Frame Translation} - Show 3-frame sensitive features alongside the 3-frame translation
 \end{itemize}
 
+When you select a gene object, the exons will be highlighted in the DNA and 3 Frame columns in the following colours (see figure \ref{img_dna_3_frame}):
+\begin{itemize}
+\item \textbf{Red} - UTR
+\item \textbf{Light green} - CDS
+\item \textbf{Dark green} - CDS (indicates the current frame in the 3-frame display)
+\item \textbf{Yellow} - Split codon (start)
+\item \textbf{Orange} - Split codon (end) 
+\end{itemize}
+
+\begin{figure}
+\centering
+\color[rgb]{0.30980393,0.5058824,0.7411765}
+\includegraphics[width=15.231cm]{img_dna_3_frame.png}
+\caption{DNA and 3-frame translation in ZMap}
+\label{img_dna_3_frame}
+\end{figure}
+
 
 \clearpage
 \section{Feature selection}
 
 \subsection{The Focus Feature}
 If you click on a column background then that column becomes the "focus" column and you can do various short cut operations on it such as pressing "b" to bump it. If you click on a feature then that feature becomes the "focus" feature and similarly you can do various short cut operations on it such as zooming in to it. (Note when you select a feature then its column automatically becomes the focus column.)
+
 
 \subsection{Selecting multiple features}
 \begin{itemize}
@@ -504,8 +567,10 @@ If you click on a column background then that column becomes the "focus" column 
 \label{img_paste_features}
 \end{figure}
 
+
 \subsection{Hiding features}
 You can remove selected features in ZMap by pressing \lstinline{Delete} on the keyboard and restore them by pressing \lstinline{Shift-Delete} (note on the Mac you need to press \lstinline{Fn-Delete} and \lstinline{Shift-Fn-Delete}). This is a particularly useful way of removing evidence that you have already assigned to a transcript object.
+
 
 \subsection{Marking a region} \label{section_marking_a_region}
 While the focus-feature facility is useful, the focus changes every time you click on a new feature. Sometimes you want to select a "working" feature or area more permanently. To do this you can "mark" a feature or region and it will stay marked until you unmark it (see section \ref{section_marking_a_region}).
@@ -584,10 +649,12 @@ If you use the default bumping mode (i.e. you pressed "b") then you will find al
 
 Alignment quality of the HSPs is depicted by the width of every alignment displayed since the width is a measure of that HSP's score. Therefore, the wider it is the closer the score is to 100\%. The precise score is displayed in the ZMap details bar by clicking on the alignment. If HSPs are missing either the first or last Blast alignments in the set, they are marked with a red diamond at their start/end respectively. This indicates if they do not start at the first base/amino acid and/or do not end with the last base/amino acid of the alignment sequence. Figure \ref{img_bumping} shows what options you get when you right click over a homology. You also get further options such as retrieving the EMBL file for that homology using pfetch and starting \textbf{Blixem}; see section \ref{sec_blixem} (note, HSPs do not need to be bumped to use Blixem).
 
+
 \subsection{Filter tracks} \label{sec_filter}
 You can filter tracks by score using the Filter spinwheel box on the toolbar (see section \ref{sec_toolbar}). First, click in the column you want to filter so that it is highlighted. Then, either use the up/down buttons to change the desired cutoff, or simply type into the box directly to set the cutoff. The features in the column will be filtered so that only features that have a score equal to or greater than the cutoff will remain. Simply set the cutoff back to 0 to show all features again.
 
 Columns that have filtered-out features can be highlighted in a different colour. Tick \lstinline{Highlight Filtered Columns} in the Preferences dialog to turn this highlighting on (see section \ref{sec_preferences_display}).
+
 
 \subsection{Featureset styles and strand}
 ZMap has rich feature display capabilities, which are highly configurable. Different features are displayed in distinct columns, and can be configured with many different styles as shown in figure \ref{img_features}. 
@@ -618,6 +685,7 @@ ZMap has rich feature display capabilities, which are highly configurable. Diffe
 \item RefSeq matches are the orange blocks.
 \item View and configure columns (i.e. the available features and analysis) - see section \ref{sec_track_configuration}.
 \end{enumerate}
+
 
 \subsection{Track configuration} \label{sec_track_configuration}
 The Column Configuration dialog (figure \ref{img_columns}) is used to control which tracks are displayed, to specify the order of columns, and to edit the style and other properties of the columns.  The dialog can be opened from the \lstinline{Columns} button on the toolbar, or via the right-click menu (\lstinline{Column Configuration->Configure this/all columns}).
@@ -666,6 +734,7 @@ Tracks can be reordered by dragging and dropping rows in the Columns dialog. You
 \subsubsection{Saving configuration}
 Column configuration can be saved in one of two ways. To save the configuration to your general ZMap settings so that will apply in all future sessions, go use the menu option \lstinline{File->Save} on the \lstinline{Column configuration} dialog. Alternatively, to save the configuration to a separate config file, so that you can load it selectively in future, use the menu option \lstinline{File->Export->Configuration} from ZMap's main menu.
 
+
 \subsection{Style configuration} \label{sec_style_configuration}
 You can view and edit the styles of all featuresets in ZMap from the \lstinline{Styles} dialog. Open the dialog by going to the menu \lstinline{Edit->Styles}. You can also open the Styles dialog from the \lstinline{Column configuration} dialog by selecting \lstinline{Assign Style}.
 
@@ -694,32 +763,81 @@ Right click on a gene object or 'o' key when highlighted to see information on o
 \label{img_feature_details_dialog}
 \end{figure}
 
-\subsection{View/export sequence for gene objects} \label{sec_view_export_sequence}
-In the main ZMap window, right click on an annotated gene object. You then have the following options to view/export the object's sequence. Figure \ref{img_exporting_features} shows how you can view and export an annotated sequence to your home directory in various different ways, such as dumping features directly.
 
+\subsection{View/export sequence for gene objects} \label{sec_view_export_sequence}
+There are various options for displaying or exporting the DNA or peptide sequence associated with a gene object. Note that you can edit a transcript's sequence before viewing/exporting it using ZMap's Annotation functionality (see section \ref{sec_edit_sequence}).
 
 \begin{itemize}
-\item Select \lstinline{Show Translation} to view the object's translation in the ZMap canvas.
-\item Select \lstinline{View or Export... -> Export -> Feature DNA} to export the DNA to file. Choose the sequence required from the options: CDS, transcript, unspliced and with flanking sequence.
-\item Select \lstinline{View or Export... -> Export -> Feature peptide} to export the peptide sequence to file. Choose either CDS or transcript.
-\item You can view the sequence in a popup box in ZMap using similar options under \lstinline{View or Export... -> View}. Figure \ref{img_exporting_features} shows the results of \lstinline{View or Export... -> Show -> Feature DNA} for annotated gene object AC008073.1-001 in FASTA format; firstly, the section of the transcript that corresponds to the CDS and secondly the whole transcript, including the untranslated region (UTR).
-\item You can edit a transcript's sequence before viewing/exporting it using ZMap's Annotation functionality (see section \ref{sec_edit_sequence}).
+\item You can \textbf{show the translation} of the gene model in the canvas alongside the model.
+\item You can \textbf{view the DNA or peptide} sequence in pop up dialog boxes in ZMap.
+\item You can \textbf{export the DNA or peptide} sequence to a FASTA file.
 \end{itemize}
 
+The \textbf{view} and \textbf{export} options are the same except that the output is either to the screen or to a file.
+
+\subsubsection{Show translation}
+Right-click on a gene model and select \lstinline{Show Translation} to view the translation in the canvas. Alternatively, select a gene model and press the shortcut key \lstinline{t}. You can hide the column again with \lstinline{Shift-T}.
+
+This will show a new column in ZMap showing the translation alongside the other features (see figure \ref{img_show_translation}). The introns are shown as dashes, and double-dashed lines are used in regions outside the transcript bounds.
+
+Click on the gene model and the exons will be highlighted in the Show Translation column. The highlight colours are the same as in the 3-Frame column (see section \ref{sec_dna_3_frame}) with the exception that the darker green now indicates that the reading frame is the same as the feature's reading frame (as calculated from the start coordinate of the feature).
 
 \begin{figure}
 \centering
 \color[rgb]{0.30980393,0.5058824,0.7411765}
-\includegraphics[width=15.231cm]{img_exporting_features.png}
-\caption{Exporting features}
-\label{img_exporting_features}
+\includegraphics[width=15.231cm]{img_show_translation.png}
+\caption{The Show Translation column (shown alongside the 3-frame tranlation on the left and the gene model on the right)}
+\label{img_show_translation}
 \end{figure}
+
+\subsubsection{Feature DNA}
+You can view or export the DNA sequence as one of the following:
+
+\begin{itemize}
+\item \textbf{CDS} - just the spliced CDS
+\item \textbf{transcript} - the whole spliced transcript, including UTR
+\item \textbf{unspliced} - the whole unspliced transcript, including UTR and introns
+\item \textbf{with flanking sequence} - the whole unspliced transcript, with flanking sequence at the start and end (whose length you will be prompted to specify)
+\end{itemize}
+
+The \textbf{view} options will open a dialog box in ZMap showing the sequence. As shown in figure \ref{img_view_dna}, the sequence is highlighted in the same colours as the DNA/3-Frame columns (see section \ref{sec_dna_3_frame}). The \textbf{export} options will allow you to dump the sequence directly to a FASTA file.
+
+\begin{figure}
+\centering
+\color[rgb]{0.30980393,0.5058824,0.7411765}
+\includegraphics[width=15.231cm]{img_view_dna.png}
+\caption{View DNA sequence: CDS; transcript; unspliced; with flanking sequence}
+\label{img_view_dna}
+\end{figure}
+
+\subsubsection{Feature peptide}
+You can view or export the peptide sequence as one of the following:
+
+\begin{itemize}
+\item \textbf{CDS} - just the spliced CDS
+\item \textbf{transcript} - the whole spliced transcript, including UTR
+\item \textbf{unspliced} - the whole unspliced transcript, including UTR and introns
+\item \textbf{flanking} - the whole unspliced transcript, with flanking sequence at the start and end (whose length you will be prompted to specify)
+\end{itemize}
+
+The \textbf{view} options will open a dialog box in ZMap showing the sequence (see figure \ref{img_view_peptide}). The \textbf{export} options will allow you to dump the sequence directly to a FASTA file.
+
+\begin{figure}
+\centering
+\color[rgb]{0.30980393,0.5058824,0.7411765}
+\includegraphics[width=15.231cm]{img_view_peptide.png}
+\caption{View peptide sequence: CDS or whole transcript}
+\label{img_view_peptide}
+\end{figure}
+
 
 \subsection{Exporting features to file}
 You can export some or all of the features in ZMap to a GFF file. To export all features, go to the main menu and select \lstinline{File -> Export -> Features}. To export just a single feature, right click on that feature and go to \lstinline{View or Export... -> Export -> Clicked Feature}.
 
+
 \subsection{Exporting reference DNA to file}
 You can export the reference sequence DNA to a FASTA file. Go to the main menu and select \lstinline{File -> Export -> DNA}. 
+
 
 \subsection{Searching for a sequence in ZMap}
 DNA and peptide search windows are provided from within ZMap and can be accessed by right clicking on ZMap space and selecting the option at the bottom of the menu. Both search windows are shown in figure \ref{img_sequence_search}.
@@ -731,6 +849,7 @@ DNA and peptide search windows are provided from within ZMap and can be accessed
 \caption{Searching for a sequence}
 \label{img_sequence_search}
 \end{figure}
+
 
 \subsection{Searching for a feature in ZMap}
 This option allows you to list all the features contained in a column in one window. There are further options for you to search within these results to find a specific feature. The list of column features can be exported as a GFF file via the File menu. See figures \ref{img_feature_search} amd \ref{img_feature_search_results}.
@@ -751,6 +870,7 @@ This option allows you to list all the features contained in a column in one win
 \label{img_feature_search_results}
 \end{figure}
 
+
 \subsection{Use Blixem to view alignments in more detail} \label{sec_blixem}
 ZMap does not store or display the sequence data for alignments. Instead, this can be viewed using Blixem. Blixem is an interactive browser of sequence alignments that have been stacked up in a "master-slave" multiple alignment; it is not a 'true' multiple alignment but a 'one-to-many' alignment.
 
@@ -768,6 +888,7 @@ Blixem will open up showing the specified alignments, along with any other featu
 \clearpage
 \section{Annotation} \label{sec_annotation}
 ZMap can be used to create new features or edit existing features. ZMap can generate variant objects quickly - existing transcript objects can be used as a template for a new object while a ZMap HSP (or any other feature, nucleotide or peptide) can be used to provide the coordinates for the new variant. The annotation process is different depending on whether you are working within Otter or not.
+
 
 \subsection{Standalone ZMap}
 To create/edit features in ZMap, the workflow is roughly as follows:
@@ -839,6 +960,7 @@ To clear the Annotation column ready to start again, right-click anywhere in ZMa
 \textbf{Highlight evidence}
 This option lets you highlight all of the feature(s) that were used to construct the temporary feature. Right-click on the temporary feature and select \lstinline{Highlight evidence}. The evidence features will be highlighted in yellow.
 
+
 \subsection{Variant construction with Otter}
 When running ZMap under Otter, variants are constructed in a different manner. See figures \ref{img_variant_construction} and \ref{img_variant_construction2}.
 
@@ -860,14 +982,16 @@ When running ZMap under Otter, variants are constructed in a different manner. S
 
 
 \clearpage
-\section{Multiple views}
+\section{Multiple views} \label{sec_multiple_views}
 This function allows you to open two or more sequences alongside each other (such as a human region and the syntenic region in mouse, or two haplotypes), so that simultaneous investigation can be carried out. 
+
 
 \subsection{Multiple views from GFF}
 If you want have two different regions in GFF files, simply pass both GFF files to ZMap on the command line to view them side-by-side in ZMap:
 \begin{lstlisting}
 zmap file1.gff file2.gff
 \end{lstlisting}
+
 
 \subsection{Launching in a ZMap from Otter}
 To open multiple sequences from Otter, you will need to open both sets of clones in the same Otter session. To open both ZMap windows in one window as shown below, you need to select "Launch In A ZMap" option in one clone set. These clones will open to the left of the already open Otter session. Figure \ref{img_launch_in_zmap} shows human gene SF3B14 and the syntenic region in mouse. The gene copy and paste function (referred to in the Otter section) is of much use here, saving time when building gene objects.
@@ -882,10 +1006,11 @@ To open multiple sequences from Otter, you will need to open both sets of clones
 
 
 \clearpage
-\section{Preferences}
+\section{Preferences} \label{sec_preferences}
 ZMap's preferences dialog can be shown by going to the main menu and selecting \lstinline{Edit -> Preferences}.
 
 Preferences can be \textbf{saved} by going to the menu bar on the dialog and selecting \lstinline{File -> Save} (to save the current tab only) or \lstinline{File -> Save All} (to save all preferences). This will save your preferences for all future ZMap sessions until you overwrite them by changing them and saving again. Note that preferences are saved to the file \lstinline{~/.ZMap/zmap_prefs.ini}. This file can be deleted if you want to revert back to the default settings.
+
 
 \subsection{Display preferences} \label{sec_preferences_display}
 On the preferences dialog, select the \lstinline{Display} button to access the display preferences.
@@ -896,6 +1021,7 @@ On the preferences dialog, select the \lstinline{Display} button to access the d
 \item \textbf{Highlight Filtered Columns} - Highlight columns in a different colour when they contain features that have been filtered out (see section \ref{sec_filter})
 \item \textbf{Enable Annotation} - Turn on feature editing functionality (see section \ref{sec_annotation})
 \end{itemize}
+
 
 \subsection{Blixem preferences} \label{sec_preferences_blixem}
 On the preferences dialog, select the \lstinline{Blixem} button to access the Blixem preferences.
@@ -939,6 +1065,7 @@ These settings are aimed at system administrators so should only be relevant to 
 \section{Keyboard and mouse shortcuts}
 In general ZMap will be faster for zooming, bumping etc if you make good use of the built in short cuts. These can often avoid the need for ZMap to redraw large amounts of data that you may not even be interested in. For example, click once (highlight) on a feature and a carriage return will bring up evidence. Another example is to press T for translation.
 
+
 \subsection{All windows}
 
 \begin{supertabular}{|m{6cm}|m{8.5cm}|}
@@ -949,6 +1076,7 @@ Cntl-W & close this window \\
 Cntl-Q & quit ZMap \\
 \hline
 \end{supertabular}
+
 
 \subsection{ZMap Window}
 
@@ -976,6 +1104,7 @@ Cntl-K & Copy selected feature(s) to the Annotation column for editing. Also ena
 \hline
 \end{supertabular}
 
+
 \subsection{Alpha-numeric keys}
 \begin{supertabular}{|m{1.5cm}|m{13cm}|}
 \hline
@@ -997,6 +1126,7 @@ z & zoom to the extent of any selected features (e.g. exon/introns, HSPs etc) or
 Z & Zoom to whole transcript or all HSPs of a selected feature.\\
 \hline
 \end{supertabular}
+
 
 \subsection{ZMap Mouse Usage}
 \begin{supertabular}{|m{4.8cm}|m{4.8cm}|m{4.8cm}|}
