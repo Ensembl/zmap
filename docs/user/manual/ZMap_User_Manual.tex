@@ -633,14 +633,15 @@ Right click on a gene object or 'o' key when highlighted to see information on o
 \label{img_feature_details_dialog}
 \end{figure}
 
-\subsection{Exporting features for gene objects}
+\subsection{View/export sequence for gene objects} \label{sec_view_export_sequence}
 Figure \ref{img_exporting_features} shows how you can view and export an annotated sequence to your home directory in various different ways, such as dumping features directly.
-\begin{enumerate}
+\begin{itemize}
 \item In the main ZMap window, right click on an annotated gene object.
-\item From the drop down menu select \lstinline{Export Feature DNA} and choose sequence required from CDS, transcript, unspliced and with flanking sequence.
-\item Alternatively, select \lstinline{Export Feature peptide} and choose either CDS or transcript.
-\item Figure \ref{img_exporting_features} also shows the results of \lstinline{Show Feature DNA} for annotated gene object AC008073.1-001 in FASTA format; firstly, the section of the transcript that corresponds to the CDS and secondly the whole transcript, including the untranslated region (UTR).
-\end{enumerate}
+\item From the drop down menu select \lstinline{View or Export... -> Export -> Feature DNA} and choose sequence required from CDS, transcript, unspliced and with flanking sequence.
+\item Alternatively, select \lstinline{View or Export... -> Export -> Feature peptide} and choose either CDS or transcript.
+\item Figure \ref{img_exporting_features} also shows the results of \lstinline{View or Export -> Show -> Feature DNA} for annotated gene object AC008073.1-001 in FASTA format; firstly, the section of the transcript that corresponds to the CDS and secondly the whole transcript, including the untranslated region (UTR).
+\item You can edit a transcript's sequence before exporting it by using ZMap's Annotation functionality (see section \ref{sec_edit_sequence}).
+\end{itemize}
 
 \begin{figure}
 \centering
@@ -649,6 +650,12 @@ Figure \ref{img_exporting_features} shows how you can view and export an annotat
 \caption{Exporting features}
 \label{img_exporting_features}
 \end{figure}
+
+\subsection{Exporting features to file}
+You can export some or all of the features in ZMap to a GFF file. To export all features, go to the main menu and select \lstinline{File -> Export -> Features}. To export just a single feature, right click on that feature and go to \lstinline{View or Export... -> Export -> Clicked Feature}.
+
+\subsection{Exporting reference DNA to file}
+You can export the reference sequence DNA to a FASTA file. Go to the main menu and select \lstinline{File -> Export -> DNA}. 
 
 \subsection{Searching for a sequence in ZMap}
 DNA and peptide search windows are provided from within ZMap and can be accessed by right clicking on ZMap space and selecting the option at the bottom of the menu. Both search windows are shown in figure \ref{img_sequence_search}.
@@ -739,10 +746,12 @@ You can edit exon coordinates manually in the attributes dialog (see section \re
 \subsubsection{Setting the CDS}
 When you create the temporary feature, the CDS will be copied from the original feature, if it had one. The CDS can be edited in the attributes dialog (see section \ref{sec_annotation_attributes}). You can also set the CDS based on other features. To do this, right-click on the feature you want to base the CDS on and go to the menu \lstinline{Annotation -> Set CDS}. From here, you have the option to set just the \lstinline{Start} or \lstinline{End} of the CDS from this feature, or to set both (\lstinline{Range}). There is then a further option to choose whether you want to use the entire feature or just the clicked subfeature to set the CDS from.
 
-\subsubsection{Editing the transcript's sequence}
+\subsubsection{Editing the transcript's sequence} \label{sec_edit_sequence}
 You can edit the transcript's sequence to see the effect of variation. This works by copying variation features into the Annotation column so you must have a variation column loaded. You will probably want to show the translation for the temporary feature first so you can see the effect of the changes. Click on the temporary feature and press \lstinline{t} to show the translation (or right-click on it and select \lstinline{Show Translation}). You may also want to show the three-frame translation (click the \lstinline{3 Frame} button on the toolbar to show it).
 
 To apply a variation, right-click on the variation and go to the right-click menu \lstinline{Annotation -> Copy}. Sleect \lstinline{This feature} to copy just the clicked variation, or \lstinline{Selected feature(s)} to copy all selected features. You can use the keyboard shortcut \lstinline{Ctrl-K} to copy all selected features. The translation will change to show the effect of the variation. It may be useful to undo/redo the operation (see section \ref{sec_annotation_undo}) to see the translation before and after the change.
+
+You can view or export the edited sequence in the same way as any other gene model (see section \ref{sec_view_export_sequence}).
 
 \subsubsection{Editing the attributes} \label{sec_annotation_attributes}
 The coordinates and attributes of the temporary feature can be edited manually. Double-click the temporary feature to open a dialog showing its properties. Click on the \lstinline{Exons} tab, where you can then edit the exon coordinates. You can also edit other attributes such as the final feature name and featureset on this dialog as well. If you are not ready to save the feature to a featureset yet, you can save these attributes to the temporary feature by clicking \lstinline{Save Settings}. You can then continue editing the temporary feature, but the attributes will be remembered.
