@@ -20,10 +20,12 @@
 \usepackage{hhline}
 \usepackage{hyperref}
 \usepackage{titlesec}
-\hypersetup{pdftex, colorlinks=true, linkcolor=blue, citecolor=blue, filecolor=blue, urlcolor=blue, pdftitle=ZMap User Manual, pdfauthor=Gemma Barson, pdfsubject=, pdfkeywords=}
+\hypersetup{colorlinks=true, linkcolor=blue, citecolor=blue, filecolor=blue, urlcolor=blue, pdftitle=ZMap User Manual, pdfauthor=Gemma Guest, pdfsubject=, pdfkeywords=}
 \usepackage[pdftex]{graphicx}
+\usepackage{parskip}
+\usepackage{listings}
 % Paragraph styles
-\setlength{\parindent}{0pt}
+%\setlength{\parindent}{0pt}
 % Text styles
 \newcommand\textstyleInternetlink[1]{\textcolor{blue}{#1}}
 \newcommand\textstyleSourceText[1]{\texttt{#1}}
@@ -37,7 +39,7 @@
 \titleformat{\section} {\normalfont\large\bf\color{lightblue}}{\thesection}{1em}{}
 \titleformat{\subsection} {\normalfont\normalsize\bf\color{lightblue}}{\thesubsection}{1em}{}
 % Outline numbering
-\setcounter{secnumdepth}{0}
+\setcounter{secnumdepth}{4}
 \makeatletter
 \newcommand\arraybslash{\let\\\@arraycr}
 \makeatother
@@ -124,6 +126,15 @@
 \renewcommand\labelitemiii{[F0A7?]}
 \renewcommand\labelitemiv{[F0B7?]}
 }
+% Listings (code blocks) styles
+\lstset{
+  basicstyle={\small\ttfamily},
+  breaklines,
+  frame=single,
+  backgroundcolor=\color{lightgray!20},
+  xleftmargin=\parindent
+}
+
 % Page layout (geometry)
 \setlength\voffset{-1in}
 \setlength\hoffset{-1in}
@@ -183,7 +194,7 @@
 \bigskip
 
 {\centering\large{Written by and contributions from:}\par
-\large{Gemma Barson} {\textless}\href{mailto:gb10@sanger.ac.uk}{gb10@sanger.ac.uk}{\textgreater}\par
+\large{Gemma Guest} {\textless}\href{mailto:gb10@sanger.ac.uk}{gb10@sanger.ac.uk}{\textgreater}\par
 \large{Charlie Stewart}\par
 \large{Laurens Wilming}\par
 \large{Ed Griffiths}\par
@@ -205,14 +216,17 @@
 
 \begin{center}
 \tablehead{}
-\begin{supertabular}{|m{8.073cm}|m{3.2849998cm}|m{3.282cm}|}
+\begin{supertabular}{|m{8cm}|m{3.2849998cm}|m{3.282cm}|}
 \hline
 \bfseries Revision &
 \bfseries Date &
 \bfseries Author\\\hline
  First revision (ZMap v1.5.0) &
  16/03/2015 &
- Gemma Barson\\\hline
+ Gemma Guest\\\hline
+ Updated for ZMap v2.5.1 &
+ 12/02/2016 &
+ Gemma Guest\\\hline
  &
  &
  \\\hline
@@ -244,26 +258,79 @@
 \clearpage
 \section{Introduction}
 
-ZMap is a software package that provides a visualisation and editing tool for genomic features. The software is written in C/C++, utilising the gnome toolkit (GTK2) to draw features on a canvas. ZMap accepts input from multiple sources in multiple formats across multiple genomes and is written in a way so that the addition of further formats is made as trivial as possible. Currently the list of formats includes GFF and DAS, which may reside in any one of; a file, an acedb instance, an http server. Multiple genomes and their associated features can be displayed in a single view as aligned blocks providing support for comparative annotation. ZMap privides facilities for editing and creating features, which can then be saved to a GFF file.
+ZMap is a software package that provides a visualisation and editing tool for genomic features. The software is written in C/C++, utilising the gnome toolkit (GTK2) to draw features on a canvas.
 
-ZMap is part of the Otter annotation suite and contains a protocol for two-way communication with Otter so that it operates seamlessly as an additional display within Otter.
+ZMap accepts input from multiple sources in multiple formats across multiple genomes and is written in a way so that the addition of further formats is made as trivial as possible. Currently the list of formats includes GFF and DAS (which may reside in a file, an acedb instance, or an http server). Multiple genomes and their associated features can be displayed in a single view as aligned blocks providing support for comparative annotation. ZMap provides facilities for editing and creating features, which can then be saved to a GFF file.
 
-ZMap can call tools from the SeqTools suite of sequence visualisation tools to analyse alignments in more detail.
+ZMap is part of the Otter annotation suite and contains a protocol for two-way communication with Otter so that it operates seamlessly as an additional display. ZMap can also call tools from the SeqTools suite of sequence visualisation tools to analyse alignments in more detail.
 
-\section{Using ZMap}
+\clearpage
+\section{Starting ZMap}
+There are several ways to run ZMap depending on the data sources you want to use.
+
 \subsection{Running ZMap on a GFF file}
 To run ZMap standalone on one or more GFF files, simply pass the file name(s) on the command line:
-\begin{verbatim}
+\begin{lstlisting}
 zmap file1.gff file2.gff
-\end{verbatim}
+\end{lstlisting}
 
-The sequence region will default to the region available in the GFF file. Alternatively, you can specify the sequence/region by passing the \texttt{--sequence}, \texttt{--start} and \texttt{--end} arguments on the command-line.
+The sequence region will default to the region available in the GFF file. Alternatively, you can specify the sequence/region by passing the \lstinline{--sequence}, \lstinline{--start} and \lstinline{--end} arguments on the command-line.
 
 If all of the files contain the same reference sequence, then their contents will be shown in the same view. If the files contain multiple sequences/regions, then they will be shown in multiple views.
 
+\subsection{Choosing sources on startup}
+If you run ZMap without any arguments then you will be presented with the Main Window where you can choose data sources to load (see Figure \ref{img_main_window}).
+
+\begin{figure}
+\centering
+\color[rgb]{0.30980393,0.5058824,0.7411765}
+\includegraphics[resolution=150]{img_main_window.png}
+\caption{ZMap's Main Window. Use the '+' button to add new sources, enter the sequence details for the region you want to view, and then click 'Execute'.}
+\label{img_main_window}
+\end{figure}
+
+Click on the '+' button to add a new source. This will open the Create Source dialog. From the drop-down menu, select the type of source. Choose 'File' for a local/remote file (figure \ref{img_create_source_file}) or 'Ensembl' for an Ensembl database (figure \ref{img_create_source_ensembl}).
+
+\textbf{Local/remote file}
+For File sources, you just need to enter the path of the file (or URL if it is a remote file). This file can be in any of the file formats supported by ZMap, e.g. GFF3 or BAM. You also need to enter a name for the source - this can be anything you like but should be a short, descriptive name with no special characters (except underscores or dashes).
+
+\begin{figure}
+\centering
+\color[rgb]{0.30980393,0.5058824,0.7411765}
+\includegraphics[resolution=150]{img_create_source_file.png}
+\caption{Create a new file source}
+\label{img_create_source_file}
+\end{figure}
+
+\textbf{Ensembl database}
+For Ensembl sources, the public host details are pre-filled for you by default. You may change these if you wish but the public host should be fine for most users (note that a password is not required). You can click the magnifying glass icon next to the 'Database' box to search for available databases in the host (figure \ref{img_create_source_ensembl_search_db}). You may optionally also enter a list of featuresets or biotypes that you are interested in - in this case, ZMap will only load features of those types; otherwise, ZMap will load all of the features from the database. You can click the magnifying glass icon next to the featuresets/biotypes boxes to search for available featuresets/biotypes. Note that you can select multiple featuresets/biotypes from the search box by holding down Ctrl (for individual selection) or Shift (for range selection) when you click with the mouse button. You can also enter multiple featuresets/biotypes directly into the Create Source dialog as a semi-colon separated list.
+
+\begin{figure}
+\centering
+\color[rgb]{0.30980393,0.5058824,0.7411765}
+\includegraphics[resolution=150]{img_create_source_ensembl.png}
+\caption{Create a new Ensembl source. Click on the magnifying glass icons to search for databases/featuresets/biotypes to load.}
+\label{img_create_source_ensembl}
+\end{figure}
+
+\begin{figure}
+\centering
+\color[rgb]{0.30980393,0.5058824,0.7411765}
+\includegraphics[resolution=150]{img_create_source_ensembl_search_db.png}
+\caption{Search a list of available Ensembl databases. Type text in the Search box to jump to items containing that text. You can use the up/down arrows to jump to the next/previous item with the same text.}
+\label{img_create_source_ensembl_search_db}
+\end{figure}
+
+After you click OK on the Create Source dialog, the new source will appear in the Main Window. You can enter multiple sources in the same way. If you want to remove a source, select it in the list and click the delete button. You also need to enter the sequence details for the region you want to load. Then click 'Execute' to open ZMap on that region. You can edit the sources/sequence details at any time and click 'Execute' again to start a new ZMap on a different region.
+
+You can save the source details to a config file so that they can easily be re-loaded later. Simply click the Save button and select a file location. To re-use the config, you can either open the Main Window again and select the file using the file chooser button, or you can run ZMap on the file from the command-line as follows:
+\begin{lstlisting}
+zmap --conf_file=/path/to/file
+\end{lstlisting}
+
 \subsection{Running ZMap with a config file}
 If you have several sources, it can be convenient to specify them in a config file rather than typing them on the command-line. You can also then set up many different options and styles to use for these sources. To use a local GFF file as a source, a simple config file would look something like this:
-\begin{verbatim}
+\begin{lstlisting}
 [ZMap]
 # The list of sources
 sources=chr6-18
@@ -277,16 +344,16 @@ end=2864370
 # Source stanzas (one per source)
 [chr6-18]
 url=file:////Users/gb10/work/checkout/zmap/examples/features.gff
-\end{verbatim}
+\end{lstlisting}
 
 ZMap can then be started by passing the config file on the command line:
-\begin{verbatim}
+\begin{lstlisting}
 zmap --conf_file=/path/to/file
-\end{verbatim}
+\end{lstlisting}
 
-Alternatively, the config file can be saved as \texttt{~/.ZMap/ZMap} and will be picked up by default.
+Alternatively, the config file can be saved as \lstinline{~/.ZMap/ZMap} and will be picked up by default.
 
-\subsection{Operation within Otter}
+\subsection{Starting ZMap from Otter}
 ZMap is opened via the Tools menu bar in Otter (figure \ref{img_open_from_otterlace}).
 
 \begin{figure}
@@ -297,20 +364,26 @@ ZMap is opened via the Tools menu bar in Otter (figure \ref{img_open_from_otterl
 \label{img_open_from_otterlace}
 \end{figure}
 
-\section{Main ZMap interface}
+\clearpage
+\section{The ZMap interface}
+
+The main ZMap display (figure \ref{img_main_interface} consists of a canvas, which is a drawing area where any analysis and annotation that is present in your region of interest is shown. There is a toolbar, information bar and menu at the top, and a ruler showing the coordinates at the current position based on the current coordinate system. There is also a navigator pane to the left of the ruler, which is hidden by default.
 
 \begin{figure}
 \centering
 \color[rgb]{0.30980393,0.5058824,0.7411765}
 \includegraphics[width=15.231cm]{img_main_interface.png}
 \caption{The main ZMap interface}
+\label{img_main_interface}
 \end{figure}
 
-\subsection{Navigating in ZMap and zooming options}
-\begin{enumerate}
-\item Navigate by using the scroll bars or the middle mouse button. By clicking the middle mouse anywhere in ZMap you will see a horizontal line. You can move this up and down and the relative position in bp will be displayed along the line. When the button is released, the window will refresh, centering on the position of the line. You can also click in the window to make it active and use the scroll wheel to navigate up and down or achieve the same result using the scroll bar on the right hand side of the window. If you release the mouse outside the ZMap window, you can then check the sequence position displayed, without re-centering. See Figure \ref{img_navigating}.
-\item Zoom in by using the Zoom in/Zoom out buttons at the top, or by drawing a rectangle around the area of interest with the left mouse button. Use the ``z'' key on the keyboard to zoom to whatever feature is highlighted. Use the ``Z'' key to zoom to a whole transcript if you have an exon (s) highlighted or all HSPs if you have one HSP highlighted (HSPs are the "blocks" that you see in the homology columns, such as ESTs and protein hits). See figure \ref{img_zooming}.
-\end{enumerate}
+
+\subsection{Navigating around the canvas}
+Navigate by using the scroll bars or the middle mouse button (figure \ref{img_navigating}. By clicking the middle mouse anywhere in ZMap you will see a horizontal line. You can move this up and down and the relative position in bp will be displayed along the line.
+
+When the button is released, the window will refresh, centering on the position of the line. You can also click in the window to make it active and use the scroll wheel to navigate up and down or achieve the same result using the scroll bar on the right hand side of the window.
+
+If you release the mouse outside the ZMap window, you can then check the sequence position displayed, without re-centering.
 
 \begin{figure}
 \centering
@@ -320,6 +393,18 @@ ZMap is opened via the Tools menu bar in Otter (figure \ref{img_open_from_otterl
 \label{img_navigating}
 \end{figure}
 
+
+\subsection{Zooming} \label{sec_zooming}
+See figure \ref{img_zooming}.
+
+\begin{itemize}
+\item Zoom in by using the Zoom in/Zoom out buttons on the toolbar
+\item Right-click on the toolbar buttons for more options, e.g. to zoom all the way in or out
+\item Draw with the left mouse button to lasso an area to zoom in to
+\item Press the ``z'' key on the keyboard to zoom to the current focus feature.
+\item Use the ``Z'' key to zoom to a whole transcript if you have one or more exons highlighted, or all HSPs if you have one HSP highlighted (HSPs are the "blocks" that you see in the homology columns, such as ESTs and protein hits). 
+\end{itemize}
+
 \begin{figure}
 \centering
 \color[rgb]{0.30980393,0.5058824,0.7411765}
@@ -328,10 +413,169 @@ ZMap is opened via the Tools menu bar in Otter (figure \ref{img_open_from_otterl
 \label{img_zooming}
 \end{figure}
 
-\subsection{The Focus Feature vs the Marked Feature}
+
+\subsection{Toolbar} \label{sec_toolbar}
+Many functions are available from the toolbar section in ZMap. Below the toolbar is an information bar, which displays information about the current focus feature. See figures \ref{img_toolbar_feature_details} and \ref{img_feature_display_details}.
+
+\begin{itemize}
+\item \textbf{Stop} - Stop loading of data and reset ZMap
+\item \textbf{Reload} - Reload data after a reset
+\item \textbf{Back} - Return to the previous location / zoom level
+\item \textbf{H-Split} - Split the window horizontally (see section \ref{sec_split})
+\item \textbf{V-Split} - Split the window vertically (see section \ref{sec_split})
+\item \textbf{Unsplit} - Remove the currently-active split pane (click in a pane first to make it active)
+\item \textbf{Revcomp} - Reverse complement the sequence view
+\item \textbf{3-Frame} - Show the 3-frame translation. Right-click on this button to show more options (see \ref{sec_dna_3_frame})
+\item \textbf{DNA} - Show the reference sequence DNA  (see \ref{sec_dna_3_frame})
+\item \textbf{Columns} - Open the Track Configuration dialog (see section \ref{sec_track_configuration})
+\item \textbf{Zoom In} - Zoom the display in by x2 (right-click for more options - see section \ref{sec_zooming})
+\item \textbf{Zoom Out} - Zoom the display out by x2 (right-click for more options - see section \ref{sec_zooming})
+\item \textbf{Filter} - This spinwheel box allows you to set a score cutoff for features in the active column (see section \ref{sec_filter})
+\item \textbf{Current strand} - Shows as ``+'' for the forward strand or ``-'' for the reverse strand
+\item \textbf{Current range} - Shows the extent of the current range
+\item \textbf{Loading status} - Shows the status of columns during loading
+\end{itemize}
+
+\begin{figure}
+\centering
+\color[rgb]{0.30980393,0.5058824,0.7411765}
+\includegraphics[width=15.231cm]{img_toolbar_feature_details.png}
+\caption{Toolbar feature details}
+\label{img_toolbar_feature_details}
+\end{figure}
+
+\begin{figure}
+\centering
+\color[rgb]{0.30980393,0.5058824,0.7411765}
+\includegraphics[width=15.231cm]{img_feature_display_details.png}
+\caption{Feature display details}
+\label{img_feature_display_details}
+\end{figure}
+
+
+\subsection{Menu bar}
+\subsubsection{File menu}
+\begin{itemize}
+\item \textbf{New Sequence} - Create a new view in the current ZMap session (see section \ref{sec_multiple_views})
+\item \textbf{New Source} - Create and load a new source into the existing region
+\item \textbf{Save} - Save all of the features to a GFF file (without prompting if a file has previously been selected)
+\item \textbf{Save As} - Save all of the features to a GFF file (prompting for a new file name)
+\item \textbf{Import} - Import features from a local or remote file (e.g. BAM/GFF)
+\item \textbf{Export} - Export features, config, styles or reference sequence DNA
+\item \textbf{Save screen shot} - Save the current canvas as a screen shot
+\item \textbf{Print screen shot} - Open the print dialog to print the current canvas
+\item \textbf{Close} - Close the current ZMap window
+\item \textbf{Quit} - Disconnect from all servers and quit ZMap
+\end{itemize}
+
+\subsubsection{Edit menu}
+\begin{itemize}
+\item \textbf{Copy Feature Coords} - Copy the currently-selected feature coordinates to the clipboard in the format: <seqname>:<start>-<end>
+\item \textbf{Copy Feature Coords (CHR)} - As above but prefix the seqname with ``chr''
+\item \textbf{Paste Feature Coords} - Get feature coordinates in the above format from the clipboard and zoom the ZMap display to that region
+\item \textbf{Redraw} - Redraw the canvas
+\item \textbf{Styles} - Show the Styles dialog (see section \ref{sec_style_configuration})
+\item \textbf{Preferences} - Open the Preferences dialog (see section \ref{sec_preferences})
+\end{itemize}
+
+\subsubsection{View menu}
+\begin{itemize}
+\item \textbf{Session details} - View details about the current ZMap session (useful when reporting bugs)
+\item \textbf{Toggle coords} - Toggle between 1-based and toplevel coordinate systems
+\end{itemize}
+
+\subsubsection{Raise Ticket menu}
+Use this menu to raise a ticket to report a bug or request a new feature.
+
+\subsubsection{Help menu}
+The help menu contains links to various quick-access help pages, as well as a link to the release notes (to find out what's new in the latest version). The \lstinline{About ZMap} menu item will tell you exactly which version of ZMap you are running.
+
+
+\subsection{Coordinate display (ruler)}
+The ruler to the left of the canvas shows the coordinates in the current coordinate system. By default, ZMap uses a local coordinate system, which starts at 1 for the first coordinate in the loaded region. You can toggle to the real toplevel coordinates using the menu option \lstinline{View->Toggle coords}.
+
+
+\subsection{Navigator pane}
+The navigator pane is on the left of the ZMap display but is hidden by default. It can be exposed by dragging the drag bar to the left of the ruler.
+
+The navigator pane shows the analysis, any previously annotated loci or any imported genes that are present in the clone. Double-clicking on a locus will take you to that gene in ZMap. Right-click to show various other options.
+
+The extent of the current canvas is shown by a red outline in the navigator. This is the region that can be scrolled using the scrollbars in the main canvas area. Zooming in or out on the main canvas changes the size of this box. Alternatively you can drag the red box to scroll the current canvas area, or drag the bounds of the red box to change the zoom level of the main canvas area. See figures \ref{img_main_interface} and \ref{img_navigating}.
+
+
+\subsection{Splitting the window} \label{sec_split}
+Use the \textbf{split window} functionality to effectively reduce the size of the window when looking at homologies. This is of particular use when you have to deal with very large introns because you can essentially reduce the introns to whatever size you wish, or when there are very many HSPs, because you can keep your gene object in view and static, but still scroll across the evidence. See figure \ref{img_split_window}. You may split the window both horizontally and/or vertically as many times as you wish.
+
+By default, the windows will be locked and will scroll in unison. You can unlock them by pressing the \lstinline{Unlock button} and they will then scroll independently.
+
+\begin{figure}
+\centering
+\color[rgb]{0.30980393,0.5058824,0.7411765}
+\includegraphics[width=15.231cm]{img_split_window.png}
+\caption{Splitting windows}
+\label{img_split_window}
+\end{figure}
+
+
+\subsection{DNA and 3-frame translation} \label{sec_dna_3_frame}
+You can show the reference sequence DNA and/or 3-frame translation by pressing the \lstinline{DNA} and \lstinline{3-Frame} buttons on the toolbar respectively. Click the buttons again to turn them off.
+
+Right-click on the \lstinline{3-Frame} buttons for these additional options:
+\begin{itemize}
+\item \textbf{None} - Turn all 3-frame columns off
+\item \textbf{Features} - Show ``3-frame sensitive'' features split into separate columns for each reading frame
+\item \textbf{3 Frame Translation} - Show the 3-frame translation (default)
+\item \textbf{Features + 3 Frame Translation} - Show 3-frame sensitive features alongside the 3-frame translation
+\end{itemize}
+
+When you select a gene object, the exons will be highlighted in the DNA and 3 Frame columns in the following colours (see figure \ref{img_dna_3_frame}):
+\begin{itemize}
+\item \textbf{Red} - UTR
+\item \textbf{Light green} - CDS
+\item \textbf{Dark green} - CDS (indicates the current frame in the 3-frame display)
+\item \textbf{Yellow} - Split codon (start)
+\item \textbf{Orange} - Split codon (end) 
+\end{itemize}
+
+\begin{figure}
+\centering
+\color[rgb]{0.30980393,0.5058824,0.7411765}
+\includegraphics[width=15.231cm]{img_dna_3_frame.png}
+\caption{DNA and 3-frame translation in ZMap}
+\label{img_dna_3_frame}
+\end{figure}
+
+
+\clearpage
+\section{Feature selection}
+
+\subsection{The Focus Feature}
 If you click on a column background then that column becomes the "focus" column and you can do various short cut operations on it such as pressing "b" to bump it. If you click on a feature then that feature becomes the "focus" feature and similarly you can do various short cut operations on it such as zooming in to it. (Note when you select a feature then its column automatically becomes the focus column.)
 
-While the focus facility is useful, the focus changes every time you click on a new feature. Sometimes you want to select a "working" feature or area more permanently. To do this you can "mark" the feature or area and it will stay ``marked'' until you unmark it. ``Marking'' an area within ZMap to work on is essential, allowing you to work much faster. The "marked" area is left clear while the unmarked area above and below is marked with a blue overlay (see figure \ref{img_focus_and_mark}):
+
+\subsection{Selecting multiple features}
+\begin{itemize}
+\item If you left click once on a feature in ZMap, you will highlight all of its exons, the coordinates of which are now stored in the paste buffer and can be copied elsewhere, such as into the transcript editing window in Otter.
+\item You can select multiple features by holding the Shift key down and left clicking with mouse (same as for multi select on the Mac, Windows etc). This option will highlight a single exon at a time for each feature, but the accession numbers of each feature and the individual exon coordinates are held in the paste buffer. This is a particularly useful way of selecting ZMap hits to use in the OTF alignment tool in Otter, as all selected homologies will be held in the paste buffer and automatically pasted into the OTF accession window. Each of the exon coordinates can also be pasted into the transcript editing window in Otter (see figure \ref{img_paste_features}).
+\end{itemize}
+
+\begin{figure}
+\centering
+\color[rgb]{0.30980393,0.5058824,0.7411765}
+\includegraphics[width=15.231cm]{img_show_hide.png}
+\caption{Pasting selected features to Otter's OTF dialog}
+\label{img_paste_features}
+\end{figure}
+
+
+\subsection{Hiding features}
+You can remove selected features in ZMap by pressing \lstinline{Delete} on the keyboard and restore them by pressing \lstinline{Shift-Delete} (note on the Mac you need to press \lstinline{Fn-Delete} and \lstinline{Shift-Fn-Delete}). This is a particularly useful way of removing evidence that you have already assigned to a transcript object.
+
+
+\subsection{Marking a region} \label{section_marking_a_region}
+While the focus-feature facility is useful, the focus changes every time you click on a new feature. Sometimes you want to select a "working" feature or area more permanently. To do this you can "mark" a feature or region and it will stay marked until you unmark it (see section \ref{section_marking_a_region}).
+ 
+The "marked" area remains clear, while the unmarked area above and below is shaded out with a blue hashed overlay (see figure \ref{img_focus_and_mark}). Working on a marked region is recommended when you have a large amount of data loaded, because operations are faster and the display is less cluttered.
 
 \begin{figure}
 \centering
@@ -370,7 +614,49 @@ You can manually change the borders of the marked area by putting your cursor ov
 \subsubsection{Unmark a feature}
 Press "m" or "M" again, i.e. the mark key toggles marking on and off.
 
-\subsection{General ZMap display features}
+
+\clearpage
+\section{Track display options}
+
+\subsection{Bumping tracks}
+This section describes how to select a feature, mark it and then zoom in to it and examine evidence that overlaps that feature. The default setting for ZMap is to show HSPs drawn on top of each other. This saves space on the canvas making it easier to see the general features of the region of interest. The bump option allows you to see the HSPs as multiple alignments.
+\begin{enumerate}
+\item Click on the feature you are interested in (perhaps a transcript)
+\item Mark it by pressing "m"
+\item Zoom in to the feature by pressing either "z" or "Z" (as described previously).
+\end{enumerate}
+
+Now when you bump an evidence column to look at matches that overlap the feature you will find that bumping is much faster because only those matches that overlap the feature get bumped and you also have fewer matches to look at. The quickest way to bump a column is:
+\begin{enumerate}
+\item Click on the column to select it.
+\item Bump it by pressing "b" (if you press "b" again the column will be unbumped). If you have marked a feature then bumping is restricted to matches that overlap that feature, otherwise bumping is for the whole column.
+\end{enumerate}
+
+If you use the default bumping mode (i.e. you pressed "b") then you will find all matches from the same piece of evidence are joined by coloured bars, the colours indicate the level of colinearity between the matches (see figure \ref{img_bumping}).
+\begin{enumerate}
+\item \textcolor{darkgreen}{\textbf{Green}}: the matches at either end are perfectly contiguous, e.g. 100, 230 ---> 231, 351
+\item \textcolor{orange}{\textbf{Orange}}:the matches at either end are colinear but not perfect , e.g. 100, 230 ---> 297, 351. Matches may also be this color when there are extra bases in the alignment, e.g. around clone boundaries.
+\item \textcolor{red}{\textbf{Red}}: the matches are not colinear, e.g. 100, 230 ---> 141, 423
+\end{enumerate}
+
+\begin{figure}
+\centering
+\color[rgb]{0.30980393,0.5058824,0.7411765}
+\includegraphics[width=15.231cm]{img_bumping.png}
+\caption{Bumping features}
+\label{img_bumping}
+\end{figure}
+
+Alignment quality of the HSPs is depicted by the width of every alignment displayed since the width is a measure of that HSP's score. Therefore, the wider it is the closer the score is to 100\%. The precise score is displayed in the ZMap details bar by clicking on the alignment. If HSPs are missing either the first or last Blast alignments in the set, they are marked with a red diamond at their start/end respectively. This indicates if they do not start at the first base/amino acid and/or do not end with the last base/amino acid of the alignment sequence. Figure \ref{img_bumping} shows what options you get when you right click over a homology. You also get further options such as retrieving the EMBL file for that homology using pfetch and starting \textbf{Blixem}; see section \ref{sec_blixem} (note, HSPs do not need to be bumped to use Blixem).
+
+
+\subsection{Filter tracks} \label{sec_filter}
+You can filter tracks by score using the Filter spinwheel box on the toolbar (see section \ref{sec_toolbar}). First, click in the column you want to filter so that it is highlighted. Then, either use the up/down buttons to change the desired cutoff, or simply type into the box directly to set the cutoff. The features in the column will be filtered so that only features that have a score equal to or greater than the cutoff will remain. Simply set the cutoff back to 0 to show all features again.
+
+Columns that have filtered-out features can be highlighted in a different colour. Tick \lstinline{Highlight Filtered Columns} in the Preferences dialog to turn this highlighting on (see section \ref{sec_preferences_display}).
+
+
+\subsection{Featureset styles and strand}
 ZMap has rich feature display capabilities, which are highly configurable. Different features are displayed in distinct columns, and can be configured with many different styles as shown in figure \ref{img_features}. 
 
 \begin{figure}
@@ -397,37 +683,74 @@ ZMap has rich feature display capabilities, which are highly configurable. Diffe
 \item EST matches are displayed as purple blocks and are broken down into human ESTs, mouse ESTs, and other ESTs from other organisms. 5' reads are on the left and 3' on the right.
 \item mRNA matches contains all species and are displayed as brown blocks,
 \item RefSeq matches are the orange blocks.
-\item Features and analysis available (see figure \ref{img_columns}).
+\item View and configure columns (i.e. the available features and analysis) - see section \ref{sec_track_configuration}.
 \end{enumerate}
+
+
+\subsection{Track configuration} \label{sec_track_configuration}
+The Column Configuration dialog (figure \ref{img_columns}) is used to control which tracks are displayed, to specify the order of columns, and to edit the style and other properties of the columns.  The dialog can be opened from the \lstinline{Columns} button on the toolbar, or via the right-click menu (\lstinline{Column Configuration->Configure this/all columns}).
 
 \begin{figure}
 \centering
 \color[rgb]{0.30980393,0.5058824,0.7411765}
-\includegraphics[width=15.231cm]{img_columns.png}
-\caption{Columns dialog}
+\includegraphics[resolution=150]{img_columns.png}
+\caption{Column configuration dialog}
 \label{img_columns}
 \end{figure}
 
+Each available track is listed and its visibility, group and style are shown.
 
-\subsection{Toolbar}
-Many functions are available from the toolbar section in ZMap. See figures \ref{img_toolbar_feature_details} and \ref{img_feature_display_details}.
+\subsubsection{Selecting rows}
+You can select one or more rows in the dialog to perform operations on them. To select multiple rows, you can hold down Ctrl (for one-by-one selection) or Shift (for range selection) while clicking with the mouse, or hold down Shift and press the up/down arrows.
 
-\begin{figure}
-\centering
-\color[rgb]{0.30980393,0.5058824,0.7411765}
-\includegraphics[width=15.231cm]{img_toolbar_feature_details.png}
-\caption{Toolbar feature details}
-\label{img_toolbar_feature_details}
-\end{figure}
+\subsubsection{Search and filter rows}
+You can quickly jump to a row containing specific text using the \lstinline{Search} box. As you type in the box, the row selection will jump to the first row containing that text. You can use the up/down arrows to jump to the next/previous matching row.
 
-\begin{figure}
-\centering
-\color[rgb]{0.30980393,0.5058824,0.7411765}
-\includegraphics[width=15.231cm]{img_feature_display_details.png}
-\caption{Feature display details}
-\label{img_feature_display_details}
-\end{figure}
+You can filter the displayed rows by specific text using the \lstinline{Filter} box. Type in the required text and press \lstinline{Enter} and the rows will be filtered. Click the \lstinline{Clear} button to clear the filter and go back to viewing all rows.
 
+\subsubsection{Track visibility}
+The visibility of each track (for both the forward and reverse strand) is controlled by a set of radio buttons with the options ``show'', ``auto'' and ``hide'':
+\begin{itemize}
+\item \textbf{Show} - the column will always be visibile 
+\item \textbf{Auto} - column visibility will be controlled automatically depending on the way the column is configured, e.g. the column may only be shown at certain levels of zoom
+\item \textbf{Hide} - the column will always be hidden
+\end{itemize}
+
+To change the visibility, select the track(s) you want to change and then click the relevant radio button in any of the selected tracks. Note that all highlighted tracks will be changed.
+
+Note that you can also hide a track directly from the ZMap canvas by right-clicking on the column and selecting \lstinline{Column Hide}.
+
+\subsubsection{Assigning groups} \label{sec_groups}
+You can assign a group to one or more tracks by selecting the tracks and clicking \lstinline{Assign Group}. You will be prompted to enter a name for the group. The new group name will be populated on the Columns dialog. Remember to click \lstinline{Apply} or \lstinline{OK} on the Columns dialog to apply the changes.
+
+Groups are used by various operations in ZMap such as running Blixem - when you run Blixem on a column, you have the option of running it on ``associated columns''. This will run Blixem on all columns that are in the same group as the selected column.
+
+\subsubsection{Assigning styles}
+You can assign a style to one or more tracks by selecting the tracks and clicking \lstinline{Assign Style}. This will open the \lstinline{Choose Style} dialog where you can select the required style, or create a new one (see section \ref{sec_style_configuration}). After choosing a style, the new style name will be populated on the Columns dialog. Remember to click \lstinline{Apply} or \lstinline{OK} on the Columns dialog to apply the changes.
+
+\subsubsection{Reordering tracks}
+Tracks can be reordered by dragging and dropping rows in the Columns dialog. You can also sort the rows by name, group or style by clicking on the appropriate header. You must click the \lstinline{Apply Order} button to apply the new track order in ZMap. Note that the main \lstinline{Apply} and \lstinline{OK} buttons do NOT apply the column order in ZMap.
+
+\subsubsection{Saving configuration}
+Column configuration can be saved in one of two ways. To save the configuration to your general ZMap settings so that will apply in all future sessions, go use the menu option \lstinline{File->Save} on the \lstinline{Column configuration} dialog. Alternatively, to save the configuration to a separate config file, so that you can load it selectively in future, use the menu option \lstinline{File->Export->Configuration} from ZMap's main menu.
+
+
+\subsection{Style configuration} \label{sec_style_configuration}
+You can view and edit the styles of all featuresets in ZMap from the \lstinline{Styles} dialog. Open the dialog by going to the menu \lstinline{Edit->Styles}. You can also open the Styles dialog from the \lstinline{Column configuration} dialog by selecting \lstinline{Assign Style}.
+
+All featuresets are assigned a default style on startup if they do not already have styles configured (see the styles.shtml help file for information about pre-configuring styles). Styles are usually organised into an heirarchy whereby child styles inherit the properties of their parent styles. The Styles dialog shows a tree of the styles heirarchy. The primary default styles, ``basic'', ``alignment'' and ``transcript'', are derived from ``root''. 
+
+Existing styles can be edited by selecting the row in the Styles dialog and clicking the \lstinline{Edit} button. This will open the \lstinline{Edit Style} dialog (see section \ref{sec_edit_style}). You can add a new child style to the currently-selected row by clicking the \lstinline{Add} button, or delete the currently-selected style using the \lstinline{Delete} button.
+
+\subsubsection{Editing styles} \label{sec_edit_style}
+The \lstinline{Edit Style} dialog is opened from the \lstinline{Styles} dialog when you Edit or Add a style. It can also be opened by right-clicking on a feature and going to the menu options \lstinline{Column configuration->Edit Style}. When editing an existing style, the new name will default to the same as the existing name. This can be changed if you want to rename the style. The list of featuresets that currently use the style are shown. This is so that you can be sure you want to edit the style for all of those featuresets. If you do not want to change the style for of the featuresets you can create a new child style by clicking the \lstinline{Create child style} button. This style will be assigned to just the selected featureset if editing the style of a particular feature, or will be assigned to no featuresets otherwise (in which case you can assign it to featuresets later e.g. via the \lstinline{Column configuration} dialog).
+
+\subsubsection{Saving styles}
+Styles can be saved to an .ini style configuration file. To do this, go to the menu \lstinline{File->Save->Styles}. To load the styles in a future ZMap session, set up a configuration file and use the \lstinline{stylesfile} key (see the configuration.shtml help file for details).
+
+
+\clearpage
+\section{Operations}
 
 \subsection{Show feature details}
 Right click on a gene object or 'o' key when highlighted to see information on otter IDs and Ensembl IDs. For BLAST hits, double click on the HSP to get the feature interface where you will find details on alignment and on what gene object the HSP has been assigned to as evidence, if any (see figure \ref{img_feature_details_dialog}).
@@ -440,54 +763,81 @@ Right click on a gene object or 'o' key when highlighted to see information on o
 \label{img_feature_details_dialog}
 \end{figure}
 
-\subsection{Exporting features for gene objects}
-Figure \ref{img_exporting_features} shows how you can view and export an annotated sequence to your home directory in various different ways, such as dumping features directly.
-\begin{enumerate}
-\item In the main ZMap window, right click on an annotated gene object.
-\item From the drop down menu select \textbf{Export Feature DNA} and choose sequence required from CDS, transcript, unspliced and with flanking sequence.
-\item Alternatively, select \textbf{Export Feature peptide} and choose either CDS or transcript.
-\item Figure \ref{img_exporting_features} also shows the results of \textbf{Show Feature DNA} for annotated gene object AC008073.1-001 in FASTA format; firstly, the section of the transcript that corresponds to the CDS and secondly the whole transcript, including the untranslated region (UTR).
-\end{enumerate}
+
+\subsection{View/export sequence for gene objects} \label{sec_view_export_sequence}
+There are various options for displaying or exporting the DNA or peptide sequence associated with a gene object. Note that you can edit a transcript's sequence before viewing/exporting it using ZMap's Annotation functionality (see section \ref{sec_edit_sequence}).
+
+\begin{itemize}
+\item You can \textbf{show the translation} of the gene model in the canvas alongside the model.
+\item You can \textbf{view the DNA or peptide} sequence in pop up dialog boxes in ZMap.
+\item You can \textbf{export the DNA or peptide} sequence to a FASTA file.
+\end{itemize}
+
+The \textbf{view} and \textbf{export} options are the same except that the output is either to the screen or to a file.
+
+\subsubsection{Show translation}
+Right-click on a gene model and select \lstinline{Show Translation} to view the translation in the canvas. Alternatively, select a gene model and press the shortcut key \lstinline{t}. You can hide the column again with \lstinline{Shift-T}.
+
+This will show a new column in ZMap showing the translation alongside the other features (see figure \ref{img_show_translation}). The introns are shown as dashes, and double-dashed lines are used in regions outside the transcript bounds.
+
+Click on the gene model and the exons will be highlighted in the Show Translation column. The highlight colours are the same as in the 3-Frame column (see section \ref{sec_dna_3_frame}) with the exception that the darker green now indicates that the reading frame is the same as the feature's reading frame (as calculated from the start coordinate of the feature).
 
 \begin{figure}
 \centering
 \color[rgb]{0.30980393,0.5058824,0.7411765}
-\includegraphics[width=15.231cm]{img_exporting_features.png}
-\caption{Exporting features}
-\label{img_exporting_features}
+\includegraphics[width=15.231cm]{img_show_translation.png}
+\caption{The Show Translation column (shown alongside the 3-frame tranlation on the left and the gene model on the right)}
+\label{img_show_translation}
 \end{figure}
 
+\subsubsection{Feature DNA}
+You can view or export the DNA sequence as one of the following:
 
-\subsection{Bumping features}
-This section describes how to select a feature, mark it and then zoom in to it and examine evidence that overlaps that feature. The default setting for ZMap is to show HSPs drawn on top of each other. This saves space on the canvas making it easier to see the general features of the region of interest. The bump option allows you to see the HSPs as multiple alignments.
-\begin{enumerate}
-\item Click on the feature you are interested in (perhaps a transcript)
-\item Mark it by pressing "m"
-\item Zoom in to the feature by pressing either "z" or "Z" (as described previously).
-\end{enumerate}
+\begin{itemize}
+\item \textbf{CDS} - just the spliced CDS
+\item \textbf{transcript} - the whole spliced transcript, including UTR
+\item \textbf{unspliced} - the whole unspliced transcript, including UTR and introns
+\item \textbf{with flanking sequence} - the whole unspliced transcript, with flanking sequence at the start and end (whose length you will be prompted to specify)
+\end{itemize}
+
+The \textbf{view} options will open a dialog box in ZMap showing the sequence. As shown in figure \ref{img_view_dna}, the sequence is highlighted in the same colours as the DNA/3-Frame columns (see section \ref{sec_dna_3_frame}). The \textbf{export} options will allow you to dump the sequence directly to a FASTA file.
 
 \begin{figure}
 \centering
 \color[rgb]{0.30980393,0.5058824,0.7411765}
-\includegraphics[width=15.231cm]{img_bumping.png}
-\caption{Bumping features}
-\label{img_bumping}
+\includegraphics[width=15.231cm]{img_view_dna.png}
+\caption{View DNA sequence: CDS; transcript; unspliced; with flanking sequence}
+\label{img_view_dna}
 \end{figure}
 
-Now when you bump an evidence column to look at matches that overlap the feature you will find that bumping is much faster because only those matches that overlap the feature get bumped and you also have fewer matches to look at. The quickest way to bump a column is:
-\begin{enumerate}
-\item Click on the column to select it.
-\item Bump it by pressing "b" (if you press "b" again the column will be unbumped). If you have marked a feature then bumping is restricted to matches that overlap that feature, otherwise bumping is for the whole column.
-\end{enumerate}
+\subsubsection{Feature peptide}
+You can view or export the peptide sequence as one of the following:
 
-If you use the default bumping mode (i.e. you pressed "b") then you will find all matches from the same piece of evidence are joined by coloured bars, the colours indicate the level of colinearity between the matches (see figure \ref{img_bumping}).
-\begin{enumerate}
-\item \textcolor{darkgreen}{\textbf{Green}}: the matches at either end are perfectly contiguous, e.g. 100, 230 ---> 231, 351
-\item \textcolor{orange}{\textbf{Orange}}:the matches at either end are colinear but not perfect , e.g. 100, 230 ---> 297, 351. Matches may also be this color when there are extra bases in the alignment, e.g. around clone boundaries.
-\item \textcolor{red}{\textbf{Red}}: the matches are not colinear, e.g. 100, 230 ---> 141, 423
-\end{enumerate}
+\begin{itemize}
+\item \textbf{CDS} - just the spliced CDS
+\item \textbf{transcript} - the whole spliced transcript, including UTR
+\item \textbf{unspliced} - the whole unspliced transcript, including UTR and introns
+\item \textbf{flanking} - the whole unspliced transcript, with flanking sequence at the start and end (whose length you will be prompted to specify)
+\end{itemize}
 
-Alignment quality of the HSPs is depicted by the width of every alignment displayed since the width is a measure of that HSP's score. Therefore, the wider it is the closer the score is to 100\%. The precise score is displayed in the ZMap details bar by clicking on the alignment. If HSPs are missing either the first or last Blast alignments in the set, they are marked with a red diamond at their start/end respectively. This indicates if they do not start at the first base/amino acid and/or do not end with the last base/amino acid of the alignment sequence. The screen shot below shows what options you get when you right click over a homology - note that you can also select an HSP and type ``o''. You also get further options such as retrieving the EMBL file for that homology using pfetch and starting \textbf{Blixem}, see later section (note, HSPs do not need to be bumped to use Blixem).
+The \textbf{view} options will open a dialog box in ZMap showing the sequence (see figure \ref{img_view_peptide}). The \textbf{export} options will allow you to dump the sequence directly to a FASTA file.
+
+\begin{figure}
+\centering
+\color[rgb]{0.30980393,0.5058824,0.7411765}
+\includegraphics[width=15.231cm]{img_view_peptide.png}
+\caption{View peptide sequence: CDS or whole transcript}
+\label{img_view_peptide}
+\end{figure}
+
+
+\subsection{Exporting features to file}
+You can export some or all of the features in ZMap to a GFF file. To export all features, go to the main menu and select \lstinline{File -> Export -> Features}. To export just a single feature, right click on that feature and go to \lstinline{View or Export... -> Export -> Clicked Feature}.
+
+
+\subsection{Exporting reference DNA to file}
+You can export the reference sequence DNA to a FASTA file. Go to the main menu and select \lstinline{File -> Export -> DNA}. 
+
 
 \subsection{Searching for a sequence in ZMap}
 DNA and peptide search windows are provided from within ZMap and can be accessed by right clicking on ZMap space and selecting the option at the bottom of the menu. Both search windows are shown in figure \ref{img_sequence_search}.
@@ -499,6 +849,7 @@ DNA and peptide search windows are provided from within ZMap and can be accessed
 \caption{Searching for a sequence}
 \label{img_sequence_search}
 \end{figure}
+
 
 \subsection{Searching for a feature in ZMap}
 This option allows you to list all the features contained in a column in one window. There are further options for you to search within these results to find a specific feature. The list of column features can be exported as a GFF file via the File menu. See figures \ref{img_feature_search} amd \ref{img_feature_search_results}.
@@ -519,45 +870,43 @@ This option allows you to list all the features contained in a column in one win
 \label{img_feature_search_results}
 \end{figure}
 
-\subsection{Selecting single or multiple features and hiding/showing them}
-\begin{enumerate}
-\item If you left click once on a feature in ZMap, you will highlight all of its exons, the coordinates of which are now stored in the paste buffer and can be copied elsewhere, such as into the transcript editing window in Otter.
-\item You can select multiple features by holding the Shift key down and left clicking with mouse (same as for multi select on the Mac, Windows etc). This option will highlight a single exon at a time for each feature, but the accession numbers of each feature and the individual exon coordinates are held in the paste buffer. This is a particularly useful way of selecting ZMap hits to use in the OTF alignment tool in Otter, as all selected homologies will be held in the paste buffer and automatically pasted into the OTF accession window. Each of the exon coordinates can also be pasted into the transcript editing window in Otter (see figure \ref{img_show_hide}).
-\item You can remove selected features in ZMap by pressing \textbf{Delete} on the keyboard and restore them by pressing \textbf{Shift-Delete} (note on the Mac you need to press \textbf{Fn-Delete} and \textbf{Shift-Fn-Delete}). This is a particularly useful way of removing evidence that you have already assigned to a transcript object.
-\end{enumerate}
 
+\subsection{Use Blixem to view alignments in more detail} \label{sec_blixem}
+ZMap does not store or display the sequence data for alignments. Instead, this can be viewed using Blixem. Blixem is an interactive browser of sequence alignments that have been stacked up in a "master-slave" multiple alignment; it is not a 'true' multiple alignment but a 'one-to-many' alignment.
 
-\begin{figure}
-\centering
-\color[rgb]{0.30980393,0.5058824,0.7411765}
-\includegraphics[width=15.231cm]{img_show_hide.png}
-\caption{Pasting selected features to Otter's OTF dialog}
-\label{img_show_hide}
-\end{figure}
-
-
-\subsection{Creating/editing features}
-ZMap can be used to create new features or edit existing features. ZMap can generate variant objects quickly - existing transcript objects can be used as a template for a new object while a ZMap HSP (or any other feature, nucleotide or peptide) can be used to provide the coordinates for the new variant.
-
-\subsubsection{Standalone ZMap}
-Features are edited by copying them to a temporary feature in the \textbf{Annotation} column (see figure \ref{img_editing_zmap}). The Annotation functionality must first be enabled by ticking the \textbf{Enable Annotation} option in the preferences dialog. The temporary feature can be based on any existing feature(s). Multiple features or nucleotide coords can be used to adjust feature/exon coordinates. The coordinates and other attributes can also be edited manually. When finished, the temporary feature can be saved to the relevant column - either as a new feature, or to overwrite an existing one. 
-
-The workflow is roughly as follows:
+Blixem can be easily started from ZMap on a single feature or an entire column. To start it, right-click on the feature/column of interest and select one of the following options (some of this may be under \lstinline{Blixem - more options}):
 \begin{itemize}
-\item Go to the menu option \texttt{Edit -> Preferences} and tick \texttt{Enable Annotation}
-\item Right-click a feature and select \texttt{Annotation -> Copy this feature} to create the temporary feature
-\item Copy other features/coordinates in the same manner to edit the temporary feature
-\item Double-click the temporary feature to set a name/featureset and save it to that featureset
-\item Right-click the new feature and select \texttt{Export -> Feature} to save the new feature to file
+\item \textbf{Blixem - all matches for this column} (\lstinline{A}) - All features in the current column
+\item \textbf{Blixem - all matches for selected features} (\lstinline{Shift-A}) - The selected feature(s) only
+\item \textbf{Blixem - all matches for associated columns} (\lstinline{Ctrl-A}) - All features in the same group as the current column (see section \ref{sec_groups} for details of how to set up groups)
+\item \textbf{Blixem - all matches for selected features, expanded} (\lstinline{Shift-X}) - The selected feature(s), expanded into underlying data
 \end{itemize}
 
-To create a new temporary feature, select the transcript (or other feature) you wish to create a variant from and press \textbf{Ctrl-K} (or right-click and select Annotation -> Copy selected transcript(s)\footnote{Note that you need to enable the Annotation column from the Preferences dialog for the Annotation menu to appear. Ctrl-K will automatically enable the Annotation column if it is not already enabled.}). Select other features and use Ctrl-K to copy those in to adjust the coordinates of the original feature. ZMap will do its best to make a sensible merge of the new coordinates, e.g. extending the feature extents if a coordinate lies outside the current range. If ZMap cannot automatically merge a coordinate it will ask for more information, e.g. if a coordinate lies within an intron, ZMap will ask whether it should form a 5' or 3' intron boundary.
+Blixem will open up showing the specified alignments, along with any other featuresets it is configured to display e.g. transcripts (see the Blixem user manual for details about how to configure Blixem). It has a default scope of 200000 base pairs but this can be adjusted in the ZMap Preferences. From the preferences, you can also limit the features and/or scope to the marked region (see section \ref{sec_preferences_blixem}).
 
-The Annotation menu in the right-click menu also offers other options such as: clear the Annotation column; delete an exon/intron; undo/redo the last operation.
 
-You can right-click the temporary feature and select \textbf{Highlight evidence} to highlight the feature(s) that were used to construct it.
+\clearpage
+\section{Annotation} \label{sec_annotation}
+ZMap can be used to create new features or edit existing features. ZMap can generate variant objects quickly - existing transcript objects can be used as a template for a new object while a ZMap HSP (or any other feature, nucleotide or peptide) can be used to provide the coordinates for the new variant. The annotation process is different depending on whether you are working within Otter or not.
 
-\textbf{Double-click} the temporary feature to open the \textbf{Edit Feature} dialog to edit coordinates and other attributes manually. You can specify the new feature's final name and feature set. If you wish to save these attributes to the temporary feature (without saving the feature to the feature set) then click \textbf{Save Attributes}. To go ahead and save the feature to the named feature set, click \textbf{Create Feature}. You can overwrite an existing feature by giving the new feature the same name and featureset as the existing one. Note that to save the feature back to file you also need to \textbf{Save/Export} the relevant feature(s) by going to the File menu and selecting one of the Save or Export menu options.
+
+\subsection{Standalone ZMap}
+To create/edit features in ZMap, the workflow is roughly as follows:
+\begin{itemize}
+\item Enable Annotation
+\item Copy a feature with \lstinline{Ctrl-K} to create a ``temporary feature''
+\item Copy other features/coordinates to edit the temporary feature
+\item Double-click the temporary feature to save it to a ``real'' featureset
+\item Export the new feature to file
+\end{itemize}
+
+\subsubsection{Enable annotation}
+To edit features in ZMap you must first enable annotation. Go to the menu option \lstinline{Edit -> Preferences} and tick \lstinline{Enable Annotation}. Alternatively, if you use the keyboard shortcut \lstinline{Ctrl-K} to copy your first feature to the Annotation column, then annotation will be enabled automatically.
+
+\subsubsection{Create a temporary feature}
+Features are edited by copying them to a \textbf{temporary feature} in the \textbf{Annotation} column (see figure \ref{img_editing_zmap}). The temporary feature can be based on any existing feature(s). The process is the same whether editing an existing gene model (in which case you will copy the gene model) or creating a new one (in which case you will copy the evidence features).
+
+To create a new temporary feature, select the transcript (or other feature) you wish to create a variant from and press \lstinline{Ctrl-K} (or right-click and select \lstinline{Annotation -> Copy selected transcript(s)}\footnote{Note that you need to enable the Annotation column from the Preferences dialog for the Annotation menu to appear. Ctrl-K will automatically enable the Annotation column if it is not already enabled.}). Alternatively, you can create a transcript from an alignment (or any other feature) by clicking the alignment and pressing \lstinline{Ctrl-K} (or right-click and select \lstinline{Annotatino -> Copy selected alignment(s)}).
 
 \begin{figure}
 \centering
@@ -567,7 +916,52 @@ You can right-click the temporary feature and select \textbf{Highlight evidence}
 \label{img_editing_zmap}
 \end{figure}
 
-\subsubsection{Variant construction with Otter}
+\subsubsection{Editing the coordinates}
+Once you have created the temporary feature, it can be edited by copying additional features into the Annotation column in the same way. Objects of any time, including splice markers, nucleotide coords, peptide coords etc. can be used to adjust feature/exon coordinates. Select the other features you want to use and use \lstinline{Ctrl-K} or right-click and use the \lstinline{Annotation} menu to copy those in to adjust the coordinates of the original feature. You can copy the entire feature or just the selected sub-feature (e.g. the selected exon from a transcript or the selected hit from an alignment). You can use the keyboard shortcut \lstinline{Ctrl-K} to copy the entire feature. 
+
+ZMap will do its best to make a sensible merge of the new coordinates, e.g. extending the feature extents if a coordinate lies outside the current range. If ZMap cannot automatically merge a coordinate it will ask for more information, e.g. if a coordinate lies within an intron, ZMap will ask whether it should form a 5' or 3' intron boundary.
+
+You can delete exons and introns from the temporary feature by right-clicking on then and using the menu \lstinline{Annotation -> Delete subfeature}.
+
+You can edit exon coordinates manually in the attributes dialog (see section \ref{sec_annotation_attributes}).
+
+\subsubsection{Setting the CDS}
+When you create the temporary feature, the CDS will be copied from the original feature, if it had one. The CDS can be edited in the attributes dialog (see section \ref{sec_annotation_attributes}). You can also set the CDS based on other features. To do this, right-click on the feature you want to base the CDS on and go to the menu \lstinline{Annotation -> Set CDS}. From here, you have the option to set just the \lstinline{Start} or \lstinline{End} of the CDS from this feature, or to set both (\lstinline{Range}). There is then a further option to choose whether you want to use the entire feature or just the clicked subfeature to set the CDS from.
+
+\subsubsection{Editing the transcript's sequence} \label{sec_edit_sequence}
+You can edit the transcript's sequence to see the effect of variation. This works by copying variation features into the Annotation column so you must have a variation column loaded. You will probably want to show the translation for the temporary feature first so you can see the effect of the changes. Click on the temporary feature and press \lstinline{t} to show the translation (or right-click on it and select \lstinline{Show Translation}). You may also want to show the three-frame translation (click the \lstinline{3 Frame} button on the toolbar to show it).
+
+To apply a variation, right-click on the variation and go to the right-click menu \lstinline{Annotation -> Copy}. Sleect \lstinline{This feature} to copy just the clicked variation, or \lstinline{Selected feature(s)} to copy all selected features. You can use the keyboard shortcut \lstinline{Ctrl-K} to copy all selected features. The translation will change to show the effect of the variation. It may be useful to undo/redo the operation (see section \ref{sec_annotation_undo}) to see the translation before and after the change.
+
+You can view or export the edited sequence in the same way as any other gene model (see section \ref{sec_view_export_sequence}).
+
+\subsubsection{Editing the attributes} \label{sec_annotation_attributes}
+The coordinates and attributes of the temporary feature can be edited manually. Double-click the temporary feature to open a dialog showing its properties. Click on the \lstinline{Exons} tab, where you can then edit the exon coordinates. You can also edit other attributes such as the final feature name and featureset on this dialog as well. If you are not ready to save the feature to a featureset yet, you can save these attributes to the temporary feature by clicking \lstinline{Save Settings}. You can then continue editing the temporary feature, but the attributes will be remembered.
+
+\subsubsection{Saving the temporary feature}
+When you have finished editing your feature, you may wish to save it to a ``real'' featureset in ZMap so that you can clear the Annotation column and work on another transcript. You may then want to export either this single feature, or a group of features, to file. Alternatively, you may just wish to export the temporary feature directly to file. The process is different depending on what kind of save you want to do.
+
+\textbf{Export the temporary feature}
+If you just want to export the temporary feature to a GFF file, right-click on it and use the menu option \lstinline{Annotation -> Export temp feature}. You will then be able to choose a file to export the feature to. Only the temporary feature will be exported. Note that any attributes you set from the properties dialog.
+
+\textbf{Save to a featureset}
+When you have finished editing your feature, the temporary feature can be saved to a ``real'' featureset (i.e. to move it out of the Annotation column). Double-click the temporary feature to open a dialog showing its properties. To save it as a new feature, give it a new, unique name. To overwrite an existing feature, give it the same name and featureset as the feature you want to overwrite. ZMap will warn you before it overwrites an existing feature so you don't have to worry about overwriting one accidentally.
+
+\textbf{Export to file}
+Saving the temporary feature to a featureset moves it into the relevant column in ZMap. However, it is not saved to a file anywhere yet. To save it to file, you must export it to GFF. To export a single feature, right-click on it and use the menu option \lstinline{View or Export Feature... -> Export -> Clicked feature}. To save all features, go to the main menu and select \lstinline{File -> Export -> Features}. You will be prompted for a file name to save the feature(s) to.
+
+\subsubsection{Other operations} \label{sec_annotation_undo}
+\textbf{Undo/redo}
+The right-click Annotation menu offers \lstinline{Undo} and \lstinline{Redo} options. These can also be accessed with the keyboard shortcuts \lstinline{Ctrl-Z} and \lstinline{Ctrl-Y}.
+
+\textbf{Clear the Annotation column}
+To clear the Annotation column ready to start again, right-click anywhere in ZMap and select \lstinline{Annotation -> Clear}. You may undo this operation if you select it by accident.
+
+\textbf{Highlight evidence}
+This option lets you highlight all of the feature(s) that were used to construct the temporary feature. Right-click on the temporary feature and select \lstinline{Highlight evidence}. The evidence features will be highlighted in yellow.
+
+
+\subsection{Variant construction with Otter}
 When running ZMap under Otter, variants are constructed in a different manner. See figures \ref{img_variant_construction} and \ref{img_variant_construction2}.
 
 \begin{figure}
@@ -586,19 +980,21 @@ When running ZMap under Otter, variants are constructed in a different manner. S
 \label{img_variant_construction2}
 \end{figure}
 
-\subsection{Splitting windows in ZMap}
-Use the \textbf{split} window function to effectively reduce the size of the window when looking at homologies. This is of particular use when you have to deal with very large introns because you can essentially reduce the introns to whatever size you wish, or when there are very many HSPs, because you can keep your gene object in view and static, but still scroll across the evidence. See figure \ref{img_split_window}.
 
-\begin{figure}
-\centering
-\color[rgb]{0.30980393,0.5058824,0.7411765}
-\includegraphics[width=15.231cm]{img_split_window.png}
-\caption{Splitting windows}
-\label{img_split_window}
-\end{figure}
+\clearpage
+\section{Multiple views} \label{sec_multiple_views}
+This function allows you to open two or more sequences alongside each other (such as a human region and the syntenic region in mouse, or two haplotypes), so that simultaneous investigation can be carried out. 
+
+
+\subsection{Multiple views from GFF}
+If you want have two different regions in GFF files, simply pass both GFF files to ZMap on the command line to view them side-by-side in ZMap:
+\begin{lstlisting}
+zmap file1.gff file2.gff
+\end{lstlisting}
+
 
 \subsection{Launching in a ZMap from Otter}
-This function allows you to open two or more sequences alongside each other (such as a human region and the syntenic region in mouse, or two haplotypes), so that simultaneous investigation can be carried out. To do this you will need to open both sets of clones in the same Otter session. To open both ZMap windows in one window as shown below, you need to select "Launch In A ZMap" option in one clone set. These clones will open to the left of the already open Otter session. This screen shot shows human gene SF3B14 and the syntenic region in mouse. The gene copy and paste function (referred to in the Otter section) is of much use here, saving time when building gene objects. See figure \ref{img_launch_in_zmap}.
+To open multiple sequences from Otter, you will need to open both sets of clones in the same Otter session. To open both ZMap windows in one window as shown below, you need to select "Launch In A ZMap" option in one clone set. These clones will open to the left of the already open Otter session. Figure \ref{img_launch_in_zmap} shows human gene SF3B14 and the syntenic region in mouse. The gene copy and paste function (referred to in the Otter section) is of much use here, saving time when building gene objects.
 
 \begin{figure}
 \centering
@@ -608,8 +1004,67 @@ This function allows you to open two or more sequences alongside each other (suc
 \label{img_launch_in_zmap}
 \end{figure}
 
+
+\clearpage
+\section{Preferences} \label{sec_preferences}
+ZMap's preferences dialog can be shown by going to the main menu and selecting \lstinline{Edit -> Preferences}.
+
+Preferences can be \textbf{saved} by going to the menu bar on the dialog and selecting \lstinline{File -> Save} (to save the current tab only) or \lstinline{File -> Save All} (to save all preferences). This will save your preferences for all future ZMap sessions until you overwrite them by changing them and saving again. Note that preferences are saved to the file \lstinline{~/.ZMap/zmap_prefs.ini}. This file can be deleted if you want to revert back to the default settings.
+
+
+\subsection{Display preferences} \label{sec_preferences_display}
+On the preferences dialog, select the \lstinline{Display} button to access the display preferences.
+
+\subsubsection{Windows tab}
+\begin{itemize}
+\item \textbf{Shrinkable Window} - Allow the window to shrink more than the toolbar width (not recommended because some tools may be unavailable)
+\item \textbf{Highlight Filtered Columns} - Highlight columns in a different colour when they contain features that have been filtered out (see section \ref{sec_filter})
+\item \textbf{Enable Annotation} - Turn on feature editing functionality (see section \ref{sec_annotation})
+\end{itemize}
+
+
+\subsection{Blixem preferences} \label{sec_preferences_blixem}
+On the preferences dialog, select the \lstinline{Blixem} button to access the Blixem preferences.
+
+\subsubsection{General}
+\begin{itemize}
+\item \textbf{Scope} - Sets the maximum length of sequence to send to Blixem
+\item \textbf{Restrict scope to Mark} - Restricts the scope to the current marked region
+\item \textbf{Restrict features to Mark} - Still uses the default scope but only sends features that are within the marked region to Blixem
+\item \textbf{Maximum Homols Shown} - Sets the maximum number of homologies that will be shown in Blixem
+\end{itemize}
+
+\subsubsection{Pfetch Socket Server}
+The pfetch socket server is deprecated and will soon be removed.
+
+\subsubsection{Advanced}
+These settings are aimed at system administrators so should only be relevant to most users if you are setting up your own system or debugging problems. 
+
+\begin{itemize}
+\item \textbf{Config File} - Specify the location of the config file that Blixem should use
+\item \textbf{Launch script} - Specify the location of the Blixem executable, if it is not in your path
+\item \textbf{Keep temporary files} - ZMap creates temporary GFF files that it sends to Blixem. By default, Blixem will delete these, but if you tick this option it will not. Instead, they will be saved in a directory named \lstinline{/tmp/<user>_ZMAP_BLIXEM/}, where \lstinline{<user>} is your user ID.
+\item \textbf{Sleep on Startup} - For debugging. This will pause Blixem for 10 seconds on startup so that a developer can attach a debugger.
+\item \textbf{Kill Blixem on Exit} - If ticked, all Blixem's that were started from this ZMap will be closed when ZMap closes.
+\end{itemize}
+
+
+\clearpage
+\section{Tips for a speedier ZMap}
+\begin{enumerate}
+\item Specifically: zoom and mark within ZMap early on after launching. Either select a gene object and press 'z' to zoom OR select a rectangle to zoom in by dragging the left mouse button around it. Reverse complement now if necessary, then press 'm' to mark the region.
+\item The quickest way to zoom out of ZMap again is to right mouse click on the 'zoom out' buttons at the top of zmap and choose one of the options (this is definitely much quicker that doing individual 'zoom outs' with the left mouse button). Likewise for 'zooming in' again (or use keyboard equivalents).
+\item Bump within a marked region only. Bumping without marking is slow and removes the lines connecting Blast matches.
+\item When you have finished working within a marked region, unbump the evidence you have been working on (e.g. ESTs) and unmark that region before you go on to select the next region to mark and bump - or you could miss visualising the evidence in the new region.
+\item If you want to get rid of some white space try the compress 'c' function or alternatively toggle off some of the columns. \textcolor{red}{Warning - this may hide features as well}. If a column (e.g ESTs) is bumped and you want to lose it temporarily, it is quicker to turn the column off (when you turn it on again it will still be bumped when it re-appears) than unbump then rebump again later.
+\item Jumping to genes/objects: If you expand the left hand 'scroll navigator' overview' you can jump directly to genes and objects by double-clicking on them.
+\end{enumerate}
+
+
+\clearpage
 \section{Keyboard and mouse shortcuts}
 In general ZMap will be faster for zooming, bumping etc if you make good use of the built in short cuts. These can often avoid the need for ZMap to redraw large amounts of data that you may not even be interested in. For example, click once (highlight) on a feature and a carriage return will bring up evidence. Another example is to press T for translation.
+
 
 \subsection{All windows}
 
@@ -621,6 +1076,7 @@ Cntl-W & close this window \\
 Cntl-Q & quit ZMap \\
 \hline
 \end{supertabular}
+
 
 \subsection{ZMap Window}
 
@@ -648,6 +1104,7 @@ Cntl-K & Copy selected feature(s) to the Annotation column for editing. Also ena
 \hline
 \end{supertabular}
 
+
 \subsection{Alpha-numeric keys}
 \begin{supertabular}{|m{1.5cm}|m{13cm}|}
 \hline
@@ -669,6 +1126,7 @@ z & zoom to the extent of any selected features (e.g. exon/introns, HSPs etc) or
 Z & Zoom to whole transcript or all HSPs of a selected feature.\\
 \hline
 \end{supertabular}
+
 
 \subsection{ZMap Mouse Usage}
 \begin{supertabular}{|m{4.8cm}|m{4.8cm}|m{4.8cm}|}
@@ -695,14 +1153,5 @@ same as single click\\
 \hline
 \end{supertabular}
 
-\section{Tips for a speedier ZMap}
-\begin{enumerate}
-\item Specifically: zoom and mark within ZMap early on after launching. Either select a gene object and press 'z' to zoom OR select a rectangle to zoom in by dragging the left mouse button around it. Reverse complement now if necessary, then press 'm' to mark the region.
-\item The quickest way to zoom out of ZMap again is to right mouse click on the 'zoom out' buttons at the top of zmap and choose one of the options (this is definitely much quicker that doing individual 'zoom outs' with the left mouse button). Likewise for 'zooming in' again (or use keyboard equivalents).
-\item Bump within a marked region only. Bumping without marking is slow and removes the lines connecting Blast matches.
-\item When you have finished working within a marked region, unbump the evidence you have been working on (e.g. ESTs) and unmark that region before you go on to select the next region to mark and bump - or you could miss visualising the evidence in the new region.
-\item If you want to get rid of some white space try the compress 'c' function or alternatively toggle off some of the columns. \textcolor{red}{Warning - this may hide features as well}. If a column (e.g ESTs) is bumped and you want to lose it temporarily, it is quicker to turn the column off (when you turn it on again it will still be bumped when it re-appears) than unbump then rebump again later.
-\item Jumping to genes/objects: If you expand the left hand 'scroll navigator' overview' you can jump directly to genes and objects by double-clicking on them.
-\end{enumerate}
 
 \end{document}
