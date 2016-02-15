@@ -910,12 +910,15 @@ static gboolean setEntryFromSelection(GtkEntry *entry, GtkTreeView *tree_view)
 /* Create and run a dialog to show the given list of values in a gtk tree view and to set the
  * given entry widget with the result when the user selects a row and hits ok. If the user
  * selects multiple values then it sets a semi-colon-separated list in the entry widget. */
-static gboolean runListDialog(MainFrame main_data, list<string> *values_list, GtkEntry *entry_widg)
+static gboolean runListDialog(MainFrame main_data, 
+                              list<string> *values_list, 
+                              GtkEntry *entry_widg,
+                              const char *title)
 {
   gboolean ok = FALSE ;
   zMapReturnValIfFail(main_data && values_list, ok) ;
 
-  GtkWidget *dialog = gtk_dialog_new_with_buttons("Select database",
+  GtkWidget *dialog = gtk_dialog_new_with_buttons(title,
                                                   NULL,
                                                   (GtkDialogFlags)(GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT),
                                                   GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
@@ -980,7 +983,7 @@ static void dbnameCB(GtkWidget *widget, gpointer cb_data)
 
   if (db_list)
     {
-      runListDialog(main_data, db_list, GTK_ENTRY(main_data->dbname_widg)) ;
+      runListDialog(main_data, db_list, GTK_ENTRY(main_data->dbname_widg), "Select database") ;
       delete db_list ;
     }
   else
@@ -1009,7 +1012,7 @@ static void featuresetsCB(GtkWidget *widget, gpointer cb_data)
 
       if (featuresets_list)
         {
-          runListDialog(main_data, featuresets_list, GTK_ENTRY(main_data->featuresets_widg)) ;
+          runListDialog(main_data, featuresets_list, GTK_ENTRY(main_data->featuresets_widg), "Select featureset(s)") ;
           delete featuresets_list ;
         }
       else
@@ -1043,7 +1046,7 @@ static void biotypesCB(GtkWidget *widget, gpointer cb_data)
 
       if (biotypes_list)
         {
-          runListDialog(main_data, biotypes_list, GTK_ENTRY(main_data->biotypes_widg)) ;
+          runListDialog(main_data, biotypes_list, GTK_ENTRY(main_data->biotypes_widg), "Select biotype(s)") ;
           delete biotypes_list ;
         }
       else

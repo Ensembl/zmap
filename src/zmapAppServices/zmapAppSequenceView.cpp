@@ -478,10 +478,8 @@ static GtkWidget *makeButtonBox(MainFrame main_data)
       gtk_box_pack_start(GTK_BOX(button_box), close_button, FALSE, TRUE, 0) ;
     }
 
-  create_button = gtk_button_new_with_label("Start ZMap") ;
-  gtk_widget_set_tooltip_text(create_button, "Create a new ZMap View of the given source/sequence") ;
-  gtk_button_set_image(GTK_BUTTON(create_button), 
-                       gtk_image_new_from_stock(GTK_STOCK_EXECUTE, GTK_ICON_SIZE_BUTTON));
+  create_button = gtk_button_new_from_stock(GTK_STOCK_EXECUTE) ;
+  gtk_widget_set_tooltip_text(create_button, "Run ZMap on the given source/sequence") ;
   gtk_signal_connect(GTK_OBJECT(create_button), "clicked",
                      GTK_SIGNAL_FUNC(createViewCB), (gpointer)main_data) ;
   gtk_box_pack_start(GTK_BOX(button_box), create_button, FALSE, TRUE, 0) ;
