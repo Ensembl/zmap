@@ -1894,7 +1894,7 @@ GList* zMapFeatureTranscriptGetEvidence(ZMapFeature feature)
 }
 
 /* Set the evidence list for the given transcript. Takes ownership of the list
- * if it succeeds or free's the list if it doesn't. */
+ * if it succeeds or free's the list if it doesn't (but doesn't free the data). */
 void zMapFeatureTranscriptSetEvidence(GList *evidence, gpointer data)
 {
   ZMapFeature feature = (ZMapFeature)data ;
@@ -1906,6 +1906,26 @@ void zMapFeatureTranscriptSetEvidence(GList *evidence, gpointer data)
   else
     {
       g_list_free(evidence) ;
+    }
+}
+
+GList* zMapFeatureTranscriptGetVariations(ZMapFeature feature)
+{
+  GList *result = NULL ;
+
+  if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
+    result = feature->feature.transcript.variations ;
+
+  return result ;
+}
+
+/* Set the variations list for the given transcript. Makes its own copy
+ * of the list container (but does not make a copy of the data). */
+void zMapFeatureTranscriptSetVariations(ZMapFeature feature, GList *variations)
+{
+  if (feature && feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT && variations)
+    {
+      feature->feature.transcript.variations = g_list_copy(variations) ;
     }
 }
 

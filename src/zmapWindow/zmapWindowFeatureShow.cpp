@@ -2787,6 +2787,10 @@ static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_f
       ZMapFeature scratch_feature = zmapWindowScratchGetFeature(window) ;
       zmapWindowScratchFeatureGetEvidence(window, scratch_feature, zMapFeatureTranscriptSetEvidence, feature) ;
 
+      /* Copy the list of variations to the new transcript */
+      GList *variations = zMapFeatureTranscriptGetVariations(scratch_feature) ;
+      zMapFeatureTranscriptSetVariations(feature, variations) ;
+
       if (chapter_feature->CDS)
         {
           const int cds_start = atoi(chapter_feature->CDS) + offset ;
