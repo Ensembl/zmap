@@ -1269,7 +1269,7 @@ static void importFileCB(gpointer cb_data)
       if (file_type == ZMAPSOURCE_FILE_GFF)
         {
           /* Just load the file directly */
-          server = sequence_map->createFileSource(file_txt, source_txt) ;
+          server = sequence_map->createFileSource(source_txt, file_txt) ;
         }
       else
         {
