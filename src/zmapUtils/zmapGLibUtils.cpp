@@ -258,7 +258,7 @@ GList *zMap_g_list_move(GList *glist, gpointer user_data, guint new_index)
 {
   GList *new_list = glist ;
 
-  if (new_index >= 0 && new_index < g_list_length(glist))
+  if (new_index < g_list_length(glist))
     {
       GList *list_element ;
 
@@ -606,7 +606,7 @@ gpointer zMap_g_hash_table_nth(GHashTable *hash_table, guint nth)
   gpointer entry = NULL ;
 
   /* zMapAssert(hash_table && nth >= 0) ; */
-  if (!hash_table || nth < 0 )
+  if (!hash_table)
     return entry ;
 
   if (g_hash_table_size(hash_table) > nth)
