@@ -2981,6 +2981,11 @@ static void loaded_page_apply_visibility_tree_row(LoadedPageData loaded_page_dat
     {
       ZMapWindow window = configure_data->window;
 
+      zmapWindowColumnSetState(window,
+                               column_group,
+                               show_hide_state,
+                               loaded_page_data->reposition) ;
+
       if (IS_3FRAME(window->display_3_frame))
         {
           ZMapWindowContainerFeatureSet container = (ZMapWindowContainerFeatureSet)(column_group);;
@@ -3034,13 +3039,6 @@ static void loaded_page_apply_visibility_tree_row(LoadedPageData loaded_page_dat
           
           if (feature_sets)
             g_list_free(feature_sets) ;
-        }
-      else
-        {
-          zmapWindowColumnSetState(window,
-                                   column_group,
-                                   show_hide_state,
-                                   loaded_page_data->reposition) ;
         }
     }
 }
