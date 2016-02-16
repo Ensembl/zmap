@@ -345,12 +345,14 @@ char *zMapFeatureGetTranscriptDNA(ZMapFeature transcript, gboolean spliced, gboo
           /* If the transcript has any variations, apply them now to the dna string */
           zmapFeatureDNAApplyVariations(&dna, start, end, transcript->feature.transcript.variations) ;
 
-          dna_save = block_dna = g_strdup(block_dna) ;
+          block_dna = g_strdup(block_dna) ;
 
           zmapFeatureDNAApplyVariations(&block_dna,
                                         block->block_to_sequence.block.x1,
                                         block->block_to_sequence.block.x2,
                                         transcript->feature.transcript.variations) ;
+
+          dna_save = block_dna ;
 
           if (!spliced || !exons)
             {
