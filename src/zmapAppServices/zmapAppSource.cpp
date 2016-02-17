@@ -293,6 +293,14 @@ static GtkWidget *makePanel(GtkWidget *toplevel,
  * source) using this function */
 static void updatePanelFromSource(MainFrame main_data, ZMapConfigSource source)
 {
+  zMapReturnIfFail(main_data) ;
+
+  /* When editing an existing source we currently identify it by name, so we must disable the 
+   * name widget so that the user cannot edit it */
+  if (main_data->name_widg)
+    gtk_widget_set_sensitive(main_data->name_widg, FALSE) ;
+
+  /* Parse values out of the url */
   int status = 0 ;
   ZMapURL zmap_url = url_parse(source->url, &status) ;
 
@@ -333,26 +341,26 @@ static void updatePanelFromSource(MainFrame main_data, ZMapConfigSource source)
           featuresets = featuresets + len_default ; // skip to the next char after the default cols
         }
 
-      if (source_name)
+      if (source_name && main_data->name_widg)
         gtk_entry_set_text(GTK_ENTRY(main_data->name_widg), source_name) ;
-      if (host)
+      if (host && main_data->host_widg)
         gtk_entry_set_text(GTK_ENTRY(main_data->host_widg), host) ;
-      if (port)
+      if (port && main_data->port_widg)
         gtk_entry_set_text(GTK_ENTRY(main_data->port_widg), port) ;
-      if (user)
+      if (user && main_data->user_widg)
         gtk_entry_set_text(GTK_ENTRY(main_data->user_widg), user) ;
-      if (pass)
+      if (pass && main_data->pass_widg)
         gtk_entry_set_text(GTK_ENTRY(main_data->pass_widg), pass) ;
-      if (dbname)
+      if (dbname && main_data->dbname_widg)
         gtk_entry_set_text(GTK_ENTRY(main_data->dbname_widg), dbname) ;
-      if (dbprefix)
+      if (dbprefix && main_data->dbprefix_widg)
         gtk_entry_set_text(GTK_ENTRY(main_data->dbprefix_widg), dbprefix) ;
-      if (featuresets)
+      if (featuresets && main_data->featuresets_widg)
         gtk_entry_set_text(GTK_ENTRY(main_data->featuresets_widg), featuresets) ;
-      if (biotypes)
+      if (biotypes && main_data->biotypes_widg)
         gtk_entry_set_text(GTK_ENTRY(main_data->biotypes_widg), biotypes) ;
-
-      gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(main_data->dna_check), load_dna) ;
+      if (main_data->dna_check)
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(main_data->dna_check), load_dna) ;
 
       if (source_name)
         g_free(source_name) ;
