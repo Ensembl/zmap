@@ -331,7 +331,7 @@ static void updatePanelFromSource(MainFrame main_data, ZMapConfigSource source)
       if (featuresets)
         gtk_entry_set_text(GTK_ENTRY(main_data->featuresets_widg), featuresets) ;
       if (biotypes)
-        gtk_entry_set_text(GTK_ENTRY(main_data->featuresets_widg), biotypes) ;
+        gtk_entry_set_text(GTK_ENTRY(main_data->biotypes_widg), biotypes) ;
 
       gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(main_data->dna_check), load_dna) ;
 
@@ -812,7 +812,7 @@ static gboolean applyEnsembl(MainFrame main_frame)
   const char *dbname = getEntryText(GTK_ENTRY(main_frame->dbname_widg)) ;
   const char *dbprefix = getEntryText(GTK_ENTRY(main_frame->dbprefix_widg)) ;
   const char *featuresets = getEntryText(GTK_ENTRY(main_frame->featuresets_widg)) ;
-  const char *biotypes = getEntryText(GTK_ENTRY(main_frame->featuresets_widg)) ;
+  const char *biotypes = getEntryText(GTK_ENTRY(main_frame->biotypes_widg)) ;
   const gboolean load_dna = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(main_frame->dna_check)) ;
 
   if (!source_name)
