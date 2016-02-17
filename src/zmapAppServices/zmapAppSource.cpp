@@ -100,6 +100,7 @@ typedef struct MainFrameStructName
   GtkWidget *dbprefix_widg ;
   GtkWidget *featuresets_widg ;
   GtkWidget *biotypes_widg ;
+  GtkWidget *dna_check ;
 #endif
 
   ZMapFeatureSequenceMap sequence_map ;
@@ -457,6 +458,16 @@ static GtkWidget *makeMainFrame(MainFrame main_data, ZMapFeatureSequenceMap sequ
   gtk_signal_connect(GTK_OBJECT(biotypes_button), "clicked", GTK_SIGNAL_FUNC(biotypesCB), main_data) ;
   gtk_table_attach(table, biotypes_button, cols - 1, cols, row - 1, row, GTK_SHRINK, GTK_SHRINK, xpad, ypad) ;
   main_data->ensembl_widgets.push_back(biotypes_button) ;
+  ++row ;
+
+  /* Add a check button to specify whether to load DNA */
+  col = 0 ;
+  main_data->dna_check = gtk_check_button_new_with_label("Load DNA") ;
+  gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(main_data->dna_check), FALSE) ;
+  gtk_widget_set_tooltip_text(main_data->dna_check, "Tick this button to load DNA, if available (not advised for very large regions)") ;
+  gtk_table_attach(table, main_data->dna_check, col, col + 1, row - 1, row, GTK_SHRINK, GTK_SHRINK, xpad, ypad) ;
+  main_data->ensembl_widgets.push_back(main_data->dna_check) ;
+  ++row ;
 
 #endif /* USE_ENSEMBL */
 
@@ -663,6 +674,7 @@ static std::string constructUrl(const char *host, const char *port,
 static gboolean applyEnsembl(MainFrame main_frame)
 {
   gboolean ok = FALSE ;
+  char *tmp = NULL ;
 
   const char *source_name = getEntryText(GTK_ENTRY(main_frame->name_widg)) ;
   const char *host = getEntryText(GTK_ENTRY(main_frame->host_widg)) ;
@@ -673,6 +685,7 @@ static gboolean applyEnsembl(MainFrame main_frame)
   const char *dbprefix = getEntryText(GTK_ENTRY(main_frame->dbprefix_widg)) ;
   const char *featuresets = getEntryText(GTK_ENTRY(main_frame->featuresets_widg)) ;
   const char *biotypes = getEntryText(GTK_ENTRY(main_frame->featuresets_widg)) ;
+  const gboolean load_dna = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(main_frame->dna_check)) ;
 
   if (!source_name)
     {
@@ -692,6 +705,25 @@ static gboolean applyEnsembl(MainFrame main_frame)
       
       std::string url = constructUrl(host, port, user, pass, dbname, dbprefix) ;
 
+      /* If loading dna (which for now implies 3ft etc too) then prefix the featuresets list with
+         the dna, 3ft etc. column names. */
+      if (load_dna)
+        {
+          if (featuresets)
+            {
+              tmp = g_strdup_printf("dna ; 3 frame ; 3 frame translation ; show translation ; %s", featuresets) ;
+              featuresets = tmp ;
+            }
+          else
+            {
+              /* Normally if we specify any featuresets then zmap will load only those and will
+               * exclude all non-named featuresets. However, here the user hasn't really named
+               * any so we still want to load all other featuresets. For now, prefix the list
+               * with "all" to indicate this is the intent. Really we need a better way to do this... */
+              featuresets = g_strdup("all ; dna ; 3 frame ; 3 frame translation ; show translation") ;
+            }
+        }
+
       (main_frame->user_func)(source_name, url, featuresets, biotypes, main_frame->user_data, &tmp_error) ;
 
       if (tmp_error)
@@ -699,6 +731,9 @@ static gboolean applyEnsembl(MainFrame main_frame)
 
       ok = TRUE ;
     }
+
+  if (tmp)
+    g_free(tmp) ;
 
   return ok ;
 }
@@ -1061,5 +1096,6 @@ static void biotypesCB(GtkWidget *widget, gpointer cb_data)
 
   return ;
 }
+
 
 #endif /* USE_ENSEMBL */

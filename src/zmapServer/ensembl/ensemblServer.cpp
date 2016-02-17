@@ -383,10 +383,22 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   EnsemblServer server = (EnsemblServer)server_in ;
 
+  static GQuark all_quark = 0 ;
+  if (!all_quark)
+    all_quark = g_quark_from_string("all") ;
+
   if (feature_sets_inout)
     {
       server->req_featuresets = *feature_sets_inout ;
       server->req_biotypes = *biotypes_inout ;
+
+      if (server->req_featuresets)
+        {
+          /* We will load only the requested featuresets, unless the list starts with "all" which is
+           * an indicator that we still load all featuresets we can find (this is sometimes used
+           * if we want to specify default columns such as DNA in the featuresets list). */
+          server->req_featuresets_only = ((GQuark)(GPOINTER_TO_INT(server->req_featuresets->data)) != all_quark) ;
+        }        
     }
 
   if (source_2_sourcedata_inout)
@@ -478,7 +490,7 @@ static gboolean getAllSimpleFeatures(EnsemblServer server,
 
   Vector *features = NULL;
 
-  if (server->req_featuresets)
+  if (server->req_featuresets_only)
     {
       /* Get features for each requested featureset */
       features = Vector_new();
@@ -528,7 +540,7 @@ static gboolean getAllDNAAlignFeatures(EnsemblServer server,
 
   Vector *features = NULL;
   
-  if (server->req_featuresets)
+  if (server->req_featuresets_only)
     {
       /* Get features for each requested featureset */
       features = Vector_new();
@@ -577,7 +589,7 @@ static gboolean getAllDNAPepAlignFeatures(EnsemblServer server,
 
   Vector *features = NULL;
 
-  if (server->req_featuresets)
+  if (server->req_featuresets_only)
     {
       /* Get features for each requested featureset */
       features = Vector_new();
@@ -627,7 +639,7 @@ static gboolean getAllRepeatFeatures(EnsemblServer server,
 
   Vector *features = NULL;
 
-  if (server->req_featuresets)
+  if (server->req_featuresets_only)
     {
       /* Get features for each requested featureset */
       features = Vector_new();
@@ -678,7 +690,7 @@ static gboolean getAllTranscripts(EnsemblServer server,
 
   Vector *features = NULL;
 
-  if (server->req_featuresets)
+  if (server->req_featuresets_only)
     {
       /* Get features for each requested featureset */
       features = Vector_new();
@@ -728,7 +740,7 @@ static gboolean getAllPredictionTranscripts(EnsemblServer server,
 
   Vector *features = NULL;
 
-  if (server->req_featuresets)
+  if (server->req_featuresets_only)
     {
       /* Get features for each requested featureset */
       features = Vector_new();
@@ -779,7 +791,7 @@ static gboolean getAllGenes(EnsemblServer server,
 
   Vector *features = NULL;
 
-  if (server->req_featuresets)
+  if (server->req_featuresets_only)
     {
       /* Get features for each requested featureset */
       features = Vector_new();
@@ -1499,7 +1511,7 @@ static gboolean loadFeatureset(EnsemblServer server, const char *featureset_name
 
   /* If the req_featuresets list is given then only load features in those
    * featuresets. Otherwise, load all features. */
-  if (server->req_featuresets)
+  if (server->req_featuresets_only)
     {
       result = FALSE ;
       GQuark check_featureset_id = zMapFeatureSetCreateID(featureset_name) ;
