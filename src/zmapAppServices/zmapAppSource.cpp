@@ -67,8 +67,8 @@ using namespace std ;
 #define DEFAULT_ENSEMBL_USER "anonymous"
 #define DEFAULT_ENSEMBL_PASS NULL
 #define SOURCE_TYPE_ENSEMBL "Ensembl"
-#define DEFAULT_COLUMNS_LIST "dna ; 3 frame ; 3 frame translation ; show translation"
-#define DEFAULT_COLUMNS_LIST_ALL "all ; dna ; 3 frame ; 3 frame translation ; show translation"
+#define DEFAULT_COLUMNS_LIST "dna ; 3 frame ; 3 frame translation ; show translation ; "
+#define DEFAULT_COLUMNS_LIST_ALL "all ; dna ; 3 frame ; 3 frame translation ; show translation ; "
 #endif
 
 
@@ -300,20 +300,30 @@ static void updatePanelFromSource(MainFrame main_data, ZMapConfigSource source)
       char *dbname = zMapURLGetQueryValue(zmap_url->query, "db_name") ;
       char *dbprefix = zMapURLGetQueryValue(zmap_url->query, "db_prefix") ;
       char *featuresets = g_strdup(source->featuresets) ;
+      char *featuresets_ptr = featuresets ;
       const char *biotypes = source->biotypes ;
       gboolean load_dna = FALSE ;
 
-      /* load_dna is true if featuresets starts with "all". Extract "all" and the default columns
-       * (which would have been added in because of the flag) from the featuresets list and set
-       * the flag instead */
-      const int len = strlen(DEFAULT_COLUMNS_LIST_ALL) ;
+      /* load_dna is true if featuresets starts with "all". Extract "all" (which would have been
+       * added in because of the flag) from the featuresets list and set the flag instead.
+       * Also extract the default columns list if it's there because we probably added this
+       * in as well. */
+      const int len_all = strlen(DEFAULT_COLUMNS_LIST_ALL) ;
+      const int len_default = strlen(DEFAULT_COLUMNS_LIST) ;
 
       if (featuresets && 
-          strlen(featuresets) >= len && 
-          strncasecmp(featuresets, DEFAULT_COLUMNS_LIST_ALL, len) == 0)
+          strlen(featuresets) >= len_all && 
+          strncasecmp(featuresets, DEFAULT_COLUMNS_LIST_ALL, len_all) == 0)
         {
           load_dna = TRUE ;
-          featuresets = featuresets + len ; // skip to the next char after the default cols
+          featuresets = featuresets + len_all ; // skip to the next char after the default cols
+        }
+      else if (featuresets && 
+               strlen(featuresets) >= len_default && 
+               strncasecmp(featuresets, DEFAULT_COLUMNS_LIST, len_default) == 0)
+        {
+          load_dna = TRUE ;
+          featuresets = featuresets + len_default ; // skip to the next char after the default cols
         }
 
       if (source_name)
@@ -345,8 +355,8 @@ static void updatePanelFromSource(MainFrame main_data, ZMapConfigSource source)
         g_free(dbname) ;
       if (dbprefix)
         g_free(dbprefix) ;
-      if (featuresets)
-        g_free(featuresets) ;
+      if (featuresets_ptr)
+        g_free(featuresets_ptr) ;
     }
 #endif
 
@@ -841,7 +851,7 @@ static gboolean applyEnsembl(MainFrame main_frame)
         {
           if (featuresets)
             {
-              tmp = g_strdup_printf("%s ; %s", DEFAULT_COLUMNS_LIST, featuresets) ;
+              tmp = g_strdup_printf("%s%s", DEFAULT_COLUMNS_LIST, featuresets) ;
               featuresets = tmp ;
             }
           else
