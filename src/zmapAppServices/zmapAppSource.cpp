@@ -89,6 +89,7 @@ typedef struct MainFrameStructName
   GtkWidget *toplevel ;
 
   GtkComboBox *combo ;
+  map<ZMapURLScheme, unsigned int> combo_indices ; /* keep track of which scheme is at which idx */
 
   list<GtkWidget*> file_widgets ;
   GtkWidget *name_widg ;
@@ -207,7 +208,7 @@ GtkWidget *zMapAppEditSource(ZMapFeatureSequenceMap sequence_map,
   GtkWidget *container ;
   gpointer seq_data = NULL ;
 
-  toplevel = zMapGUIToplevelNew(NULL, "Create Source") ;
+  toplevel = zMapGUIToplevelNew(NULL, "Edit Source") ;
 
   gtk_window_set_policy(GTK_WINDOW(toplevel), FALSE, TRUE, FALSE ) ;
   gtk_container_border_width(GTK_CONTAINER(toplevel), 0) ;
@@ -215,25 +216,15 @@ GtkWidget *zMapAppEditSource(ZMapFeatureSequenceMap sequence_map,
   MainFrame main_data = NULL ;
   container = makePanel(toplevel, &seq_data, sequence_map, user_func, user_data, &main_data) ;
 
-  updatePanelFromSource(main_data, source) ;
-
   gtk_container_add(GTK_CONTAINER(toplevel), container) ;
   gtk_signal_connect(GTK_OBJECT(toplevel), "destroy",
                      GTK_SIGNAL_FUNC(toplevelDestroyCB), seq_data) ;
 
   gtk_widget_show_all(toplevel) ;
 
-  /* Only show widgets for the relevant file type (ensembl by default if it exists, file
-   * otherwise) */
-  if (main_data)
-    {
-#ifdef USE_ENSEMBL
-      setWidgetsVisibility(main_data->ensembl_widgets, TRUE) ;
-      setWidgetsVisibility(main_data->file_widgets, FALSE) ;
-#else
-      setWidgetsVisibility(main_data->file_widgets, TRUE) ;
-#endif
-    }
+  /* Update the panel with the info from the given source. This toggles visibility of the
+   * appropriate widgets so must be done after show_all */
+  updatePanelFromSource(main_data, source) ;
 
   return toplevel ;
 }
@@ -289,6 +280,20 @@ static GtkWidget *makePanel(GtkWidget *toplevel,
 }
 
 
+/* Get the row index in the combo box for the given scheme */
+static int comboGetIndex(MainFrame main_data, ZMapURLScheme scheme)
+{
+  int result = -1 ;
+
+  auto map_iter = main_data->combo_indices.find(scheme) ;
+
+  if (map_iter != main_data->combo_indices.end())
+    result = map_iter->second ;
+
+  return result ;
+}
+
+
 /* After creating the panel, you can update it from an existing source (for editing an existing
  * source) using this function */
 static void updatePanelFromSource(MainFrame main_data, ZMapConfigSource source)
@@ -296,13 +301,24 @@ static void updatePanelFromSource(MainFrame main_data, ZMapConfigSource source)
   zMapReturnIfFail(main_data) ;
 
   /* When editing an existing source we currently identify it by name, so we must disable the 
-   * name widget so that the user cannot edit it */
+   * name widget so that the user cannot edit it. Also disable changing the type of source */
   if (main_data->name_widg)
     gtk_widget_set_sensitive(main_data->name_widg, FALSE) ;
+
+  if (main_data->combo)
+    gtk_widget_set_sensitive(GTK_WIDGET(main_data->combo), FALSE) ;
 
   /* Parse values out of the url */
   int status = 0 ;
   ZMapURL zmap_url = url_parse(source->url, &status) ;
+
+  /* Update the combo box with this scheme */
+  if (main_data->combo)
+    {
+      /* set to -1 (none) first to make sure we emit a "changed" signal */
+      gtk_combo_box_set_active(main_data->combo, -1) ;
+      gtk_combo_box_set_active(main_data->combo, comboGetIndex(main_data, zmap_url->scheme)) ;
+    }
 
 #ifdef USE_ENSEMBL
   if (zmap_url && zmap_url->scheme == SCHEME_ENSEMBL)
@@ -385,6 +401,7 @@ static void updatePanelFromSource(MainFrame main_data, ZMapConfigSource source)
       if (source_name)
         g_free(source_name) ;
     }
+
 }
 
 
@@ -464,7 +481,7 @@ static char* comboGetValue(GtkComboBox *combo)
     {
       GtkTreeModel *model = gtk_combo_box_get_model(GTK_COMBO_BOX(combo));
       
-      gtk_tree_model_get(model, &iter, 0, &result, -1);
+      gtk_tree_model_get(model, &iter, NAME_COLUMN, &result, -1);
     }
 
   return result ;
@@ -512,17 +529,25 @@ static GtkComboBox *createComboBox(MainFrame main_data)
   GtkCellRenderer *renderer = gtk_cell_renderer_text_new();
   gtk_cell_layout_pack_start(GTK_CELL_LAYOUT(combo), renderer, FALSE);
   gtk_cell_layout_set_attributes(GTK_CELL_LAYOUT(combo), renderer, "text", 0, NULL);
- 
+
+  /* Add the rows to the combo box */
+  unsigned int combo_index = 0 ;
+
   GtkTreeIter iter;
   gtk_list_store_append(store, &iter);
-  gtk_list_store_set(store, &iter, 0, SOURCE_TYPE_FILE, -1);
-
+  gtk_list_store_set(store, &iter, NAME_COLUMN, SOURCE_TYPE_FILE, -1);
   gtk_combo_box_set_active_iter(combo, &iter);
+
+  main_data->combo_indices[SCHEME_FILE] = combo_index ;
+  ++combo_index ;
 
 #ifdef USE_ENSEMBL
   gtk_list_store_append(store, &iter);
-  gtk_list_store_set(store, &iter, 0, SOURCE_TYPE_ENSEMBL, -1);
+  gtk_list_store_set(store, &iter, NAME_COLUMN, SOURCE_TYPE_ENSEMBL, -1);
   gtk_combo_box_set_active_iter(combo, &iter);
+
+  main_data->combo_indices[SCHEME_ENSEMBL] = combo_index ;
+  ++combo_index ;
 #endif /* USE_ENSEMBL */
 
   g_signal_connect(G_OBJECT(combo), "changed", G_CALLBACK(sourceTypeChangedCB), main_data);
