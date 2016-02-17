@@ -1036,7 +1036,7 @@ static gboolean tree_model_filter_visible_cb(GtkTreeModel *model, GtkTreeIter *i
 
 
 static GtkTreeView* createListWidget(MainFrame main_data, list<string> *val_list, 
-                                     SearchListData search_data)
+                                     SearchListData search_data, const gboolean allow_multiple)
 {
   /* Create the data store */
   GtkListStore *store = gtk_list_store_new(N_COLUMNS, G_TYPE_STRING) ;
@@ -1069,7 +1069,7 @@ static GtkTreeView* createListWidget(MainFrame main_data, list<string> *val_list
   gtk_tree_view_set_search_equal_func(tree_view, search_equal_func_cb, NULL, NULL) ;
 
   GtkTreeSelection *tree_selection = gtk_tree_view_get_selection(tree_view) ;
-  gtk_tree_selection_set_mode(tree_selection, GTK_SELECTION_MULTIPLE);
+  gtk_tree_selection_set_mode(tree_selection, allow_multiple ? GTK_SELECTION_MULTIPLE : GTK_SELECTION_SINGLE);
 
   /* Create the columns */
   GtkCellRenderer *renderer = gtk_cell_renderer_text_new();
@@ -1174,7 +1174,8 @@ static void clear_button_cb(GtkButton *button, gpointer user_data)
 static gboolean runListDialog(MainFrame main_data, 
                               list<string> *values_list, 
                               GtkEntry *entry_widg,
-                              const char *title)
+                              const char *title,
+                              const char allow_multiple)
 {
   gboolean ok = FALSE ;
   zMapReturnValIfFail(main_data && values_list, ok) ;
@@ -1224,7 +1225,7 @@ static gboolean runListDialog(MainFrame main_data,
   gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrollwin), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
   gtk_box_pack_start(content, GTK_WIDGET(scrollwin), TRUE, TRUE, 0) ;
 
-  GtkTreeView *list_widget = createListWidget(main_data, values_list, &search_data) ;
+  GtkTreeView *list_widget = createListWidget(main_data, values_list, &search_data, allow_multiple) ;
   gtk_container_add(GTK_CONTAINER(scrollwin), GTK_WIDGET(list_widget)) ;
 
   gtk_widget_show_all(dialog) ;
@@ -1262,7 +1263,7 @@ static void dbnameCB(GtkWidget *widget, gpointer cb_data)
 
   if (db_list)
     {
-      runListDialog(main_data, db_list, GTK_ENTRY(main_data->dbname_widg), "Select database") ;
+      runListDialog(main_data, db_list, GTK_ENTRY(main_data->dbname_widg), "Select database", FALSE) ;
       delete db_list ;
     }
   else
@@ -1291,7 +1292,7 @@ static void featuresetsCB(GtkWidget *widget, gpointer cb_data)
 
       if (featuresets_list)
         {
-          runListDialog(main_data, featuresets_list, GTK_ENTRY(main_data->featuresets_widg), "Select featureset(s)") ;
+          runListDialog(main_data, featuresets_list, GTK_ENTRY(main_data->featuresets_widg), "Select featureset(s)", TRUE) ;
           delete featuresets_list ;
         }
       else
@@ -1325,7 +1326,7 @@ static void biotypesCB(GtkWidget *widget, gpointer cb_data)
 
       if (biotypes_list)
         {
-          runListDialog(main_data, biotypes_list, GTK_ENTRY(main_data->biotypes_widg), "Select biotype(s)") ;
+          runListDialog(main_data, biotypes_list, GTK_ENTRY(main_data->biotypes_widg), "Select biotype(s)", TRUE) ;
           delete biotypes_list ;
         }
       else
