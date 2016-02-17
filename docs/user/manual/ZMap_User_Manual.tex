@@ -128,7 +128,7 @@
 }
 % Listings (code blocks) styles
 \lstset{
-  basicstyle={\small\ttfamily},
+  basicstyle={\small\ttfamily\color{darkblue}},
   breaklines,
   frame=single,
   backgroundcolor=\color{lightgray!20},
@@ -289,7 +289,7 @@ If you run ZMap without any arguments then you will be presented with the Main W
 \label{img_main_window}
 \end{figure}
 
-Click on the '+' button to add a new source. This will open the Create Source dialog. From the drop-down menu, select the type of source. Choose 'File' for a local/remote file (figure \ref{img_create_source_file}) or 'Ensembl' for an Ensembl database (figure \ref{img_create_source_ensembl}).
+Click on the \lstinline{+} button to add a new source. This will open the Create Source dialog. From the drop-down menu, select the type of source. Choose \lstinline{File} for a local/remote file (figure \ref{img_create_source_file}) or \lstinline{Ensembl} for an Ensembl database (figure \ref{img_create_source_ensembl}).
 
 \textbf{Local/remote file}
 For File sources, you just need to enter the path of the file (or URL if it is a remote file). This file can be in any of the file formats supported by ZMap, e.g. GFF3 or BAM. You also need to enter a name for the source - this can be anything you like but should be a short, descriptive name with no special characters (except underscores or dashes).
@@ -303,7 +303,7 @@ For File sources, you just need to enter the path of the file (or URL if it is a
 \end{figure}
 
 \textbf{Ensembl database}
-For Ensembl sources, the public host details are pre-filled for you by default. You may change these if you wish but the public host should be fine for most users (note that a password is not required). You can click the magnifying glass icon next to the 'Database' box to search for available databases in the host (figure \ref{img_create_source_ensembl_search_db}). You may optionally also enter a list of featuresets or biotypes that you are interested in - in this case, ZMap will only load features of those types; otherwise, ZMap will load all of the features from the database. You can click the magnifying glass icon next to the featuresets/biotypes boxes to search for available featuresets/biotypes. Note that you can select multiple featuresets/biotypes from the search box by holding down Ctrl (for individual selection) or Shift (for range selection) when you click with the mouse button. You can also enter multiple featuresets/biotypes directly into the Create Source dialog as a semi-colon separated list.
+For Ensembl sources, the public host details are pre-filled for you by default. You may change these if you wish but the public host should be fine for most users (note that a password is not required). You can click the magnifying glass icon next to the ``Database'' box to search for available databases in the host (figure \ref{img_create_source_ensembl_search_db}). You may optionally also enter a list of featuresets or biotypes that you are interested in - in this case, ZMap will only load features of those types; otherwise, ZMap will load all of the features from the database. You can click the magnifying glass icon next to the featuresets/biotypes boxes to search for available featuresets/biotypes. Note that you can select multiple featuresets/biotypes from the search box by holding down Ctrl (for individual selection) or Shift (for range selection) when you click with the mouse button. You can also enter multiple featuresets/biotypes directly into the Create Source dialog as a semi-colon separated list.
 
 \begin{figure}
 \centering
@@ -321,9 +321,9 @@ For Ensembl sources, the public host details are pre-filled for you by default. 
 \label{img_create_source_ensembl_search_db}
 \end{figure}
 
-After you click OK on the Create Source dialog, the new source will appear in the Main Window. You can enter multiple sources in the same way. If you want to remove a source, select it in the list and click the delete button. You also need to enter the sequence details for the region you want to load. Then click 'Execute' to open ZMap on that region. You can edit the sources/sequence details at any time and click 'Execute' again to start a new ZMap on a different region.
+After you click OK on the Create Source dialog, the new source will appear in the Main Window. You can enter multiple sources in the same way. If you want to remove a source, select it in the list and click the delete button. You also need to enter the sequence details for the region you want to load. Then click \lstinline{Execute} to open ZMap on that region. You can edit the sources/sequence details at any time and click \lstinline{Execute} again to start a new ZMap on a different region.
 
-You can save the source details to a config file so that they can easily be re-loaded later. Simply click the Save button and select a file location. To re-use the config, you can either open the Main Window again and select the file using the file chooser button, or you can run ZMap on the file from the command-line as follows:
+You can save the source details to a config file so that they can easily be re-loaded later. Simply click the \lstinline{Save} button and select a file location. To re-use the config, you can either open the Main Window again and select the file using the file chooser button, or you can run ZMap on the file from the command-line as follows:
 \begin{lstlisting}
 zmap --conf_file=/path/to/file
 \end{lstlisting}
@@ -367,7 +367,7 @@ ZMap is opened via the Tools menu bar in Otter (figure \ref{img_open_from_otterl
 \clearpage
 \section{The ZMap interface}
 
-The main ZMap display (figure \ref{img_main_interface} consists of a canvas, which is a drawing area where any analysis and annotation that is present in your region of interest is shown. There is a toolbar, information bar and menu at the top, and a ruler showing the coordinates at the current position based on the current coordinate system. There is also a navigator pane to the left of the ruler, which is hidden by default.
+The main ZMap display (figure \ref{img_main_interface}) consists of a canvas, which is a drawing area where any analysis and annotation that is present in your region of interest is shown. There is a toolbar, information bar and menu at the top, and a ruler showing the coordinates at the current position based on the current coordinate system. There is also a navigator pane to the left of the ruler, which is hidden by default.
 
 \begin{figure}
 \centering
@@ -379,7 +379,7 @@ The main ZMap display (figure \ref{img_main_interface} consists of a canvas, whi
 
 
 \subsection{Navigating around the canvas}
-Navigate by using the scroll bars or the middle mouse button (figure \ref{img_navigating}. By clicking the middle mouse anywhere in ZMap you will see a horizontal line. You can move this up and down and the relative position in bp will be displayed along the line.
+Navigate by using the scroll bars or the middle mouse button (figure \ref{img_navigating}). By clicking the middle mouse anywhere in ZMap you will see a horizontal line. You can move this up and down and the coordinate of the clicked position will be displayed along the line. By default the coordinate display is relative to the start of the loaded region. To toggle to toplevel coordinates, go to the main menu and select \lstinline{View -> Toggle coords}.
 
 When the button is released, the window will refresh, centering on the position of the line. You can also click in the window to make it active and use the scroll wheel to navigate up and down or achieve the same result using the scroll bar on the right hand side of the window.
 
@@ -398,11 +398,11 @@ If you release the mouse outside the ZMap window, you can then check the sequenc
 See figure \ref{img_zooming}.
 
 \begin{itemize}
-\item Zoom in by using the Zoom in/Zoom out buttons on the toolbar
+\item Zoom in by using the \lstinline{Zoom in}/\lstinline{Zoom out} buttons on the toolbar
 \item Right-click on the toolbar buttons for more options, e.g. to zoom all the way in or out
 \item Draw with the left mouse button to lasso an area to zoom in to
-\item Press the ``z'' key on the keyboard to zoom to the current focus feature.
-\item Use the ``Z'' key to zoom to a whole transcript if you have one or more exons highlighted, or all HSPs if you have one HSP highlighted (HSPs are the "blocks" that you see in the homology columns, such as ESTs and protein hits). 
+\item Press the \lstinline{z} key on the keyboard to zoom to the current focus feature.
+\item Use the \lstinline{Z} key to zoom to a whole transcript if you have one or more exons highlighted, or all HSPs if you have one HSP highlighted (HSPs are the ``blocks'' that you see in the homology columns, such as ESTs and protein hits). 
 \end{itemize}
 
 \begin{figure}
@@ -470,8 +470,8 @@ Many functions are available from the toolbar section in ZMap. Below the toolbar
 
 \subsubsection{Edit menu}
 \begin{itemize}
-\item \textbf{Copy Feature Coords} - Copy the currently-selected feature coordinates to the clipboard in the format: <seqname>:<start>-<end>
-\item \textbf{Copy Feature Coords (CHR)} - As above but prefix the seqname with ``chr''
+\item \textbf{Copy Feature Coords} - Copy the currently-selected feature coordinates to the clipboard in the format: \lstinline{<seqname>:<start>-<end>}
+\item \textbf{Copy Feature Coords (CHR)} - As above but prefix the seqname with \lstinline{chr}
 \item \textbf{Paste Feature Coords} - Get feature coordinates in the above format from the clipboard and zoom the ZMap display to that region
 \item \textbf{Redraw} - Redraw the canvas
 \item \textbf{Styles} - Show the Styles dialog (see section \ref{sec_style_configuration})
@@ -481,7 +481,7 @@ Many functions are available from the toolbar section in ZMap. Below the toolbar
 \subsubsection{View menu}
 \begin{itemize}
 \item \textbf{Session details} - View details about the current ZMap session (useful when reporting bugs)
-\item \textbf{Toggle coords} - Toggle between 1-based and toplevel coordinate systems
+\item \textbf{Toggle coords} - Toggle between 1-based and toplevel coordinate systems (see \ref{sec_ruler})
 \end{itemize}
 
 \subsubsection{Raise Ticket menu}
@@ -491,7 +491,7 @@ Use this menu to raise a ticket to report a bug or request a new feature.
 The help menu contains links to various quick-access help pages, as well as a link to the release notes (to find out what's new in the latest version). The \lstinline{About ZMap} menu item will tell you exactly which version of ZMap you are running.
 
 
-\subsection{Coordinate display (ruler)}
+\subsection{Coordinate display (ruler)} \label{sec_ruler}
 The ruler to the left of the canvas shows the coordinates in the current coordinate system. By default, ZMap uses a local coordinate system, which starts at 1 for the first coordinate in the loaded region. You can toggle to the real toplevel coordinates using the menu option \lstinline{View->Toggle coords}.
 
 
@@ -541,7 +541,7 @@ When you select a gene object, the exons will be highlighted in the DNA and 3 Fr
 \centering
 \color[rgb]{0.30980393,0.5058824,0.7411765}
 \includegraphics[width=15.231cm]{images/dna_3_frame.png}
-\caption{DNA and 3-frame translation in ZMap}
+\caption{DNA and 3-frame translation in ZMap. When a gene object is selected, the sequence is highlighted red for UTR and green for CDS. The darker green indicates the current frame}
 \label{img_dna_3_frame}
 \end{figure}
 
@@ -550,7 +550,7 @@ When you select a gene object, the exons will be highlighted in the DNA and 3 Fr
 \section{Feature selection}
 
 \subsection{The Focus Feature}
-If you click on a column background then that column becomes the "focus" column and you can do various short cut operations on it such as pressing "b" to bump it. If you click on a feature then that feature becomes the "focus" feature and similarly you can do various short cut operations on it such as zooming in to it. (Note when you select a feature then its column automatically becomes the focus column.)
+If you click on a column background then that column becomes the ``focus'' column and you can do various short cut operations on it such as pressing \lstinline{b} to bump it. If you click on a feature then that feature becomes the ``focus'' feature and similarly you can do various short cut operations on it such as zooming in to it. (Note when you select a feature then its column automatically becomes the focus column.)
 
 
 \subsection{Selecting multiple features}
@@ -573,9 +573,9 @@ You can remove selected features in ZMap by pressing \lstinline{Delete} on the k
 
 
 \subsection{Marking a region} \label{section_marking_a_region}
-While the focus-feature facility is useful, the focus changes every time you click on a new feature. Sometimes you want to select a "working" feature or area more permanently. To do this you can "mark" a feature or region and it will stay marked until you unmark it (see section \ref{section_marking_a_region}).
+While the focus-feature facility is useful, the focus changes every time you click on a new feature. Sometimes you want to select a ``working'' feature or area more permanently. To do this you can ``mark'' a feature or region and it will stay marked until you unmark it (see section \ref{section_marking_a_region}).
  
-The "marked" area remains clear, while the unmarked area above and below is shaded out with a blue hashed overlay (see figure \ref{img_focus_and_mark}). Working on a marked region is recommended when you have a large amount of data loaded, because operations are faster and the display is less cluttered.
+The ``marked'' area remains clear, while the unmarked area above and below is shaded out with a blue hashed overlay (see figure \ref{img_focus_and_mark}). Working on a marked region is recommended when you have a large amount of data loaded, because operations are faster and the display is less cluttered.
 
 \begin{figure}
 \centering
@@ -588,16 +588,16 @@ The "marked" area remains clear, while the unmarked area above and below is shad
 \subsubsection{Mark a feature}
 \begin{enumerate}
 \item Select a feature to make it the focus feature.
-\item Press ``m'' to mark the feature, the feature will be highlighted with a blue overlay.
+\item Press \lstinline{m} to mark the feature, the feature will be highlighted with a blue overlay.
 \end{enumerate}
 
-Feature marking behaves differently according to the type of feature you highlighted prior to marking and according to whether you press ``m'' or ``M'' to do the marking:
+Feature marking behaves differently according to the type of feature you highlighted prior to marking and according to whether you press \lstinline{m} or \lstinline{M} to do the marking:
 
 \begin{enumerate}
-\item  If you press ``m'', the mark is made around all features you have highlighted, e.g. a whole transcript, a single exon, several HSPs.
-\item  If you press ``M'' to do the marking around transcripts the whole transcript becomes the marked feature and the marked area extends from the start to the end of the transcript.
-\item  If you press ``M'' to do the marking around alignments all the HSPs for that alignment become the marked feature and the marked area extends from the start to the end of all the HSPs.
-\item  If you press ``M'' to do the marking around all other features: the feature becomes the marked feature and the marked area extends from the start to the end of the feature.
+\item  If you press \lstinline{m}, the mark is made around all features you have highlighted, e.g. a whole transcript, a single exon, several HSPs.
+\item  If you press \lstinline{M} to do the marking around transcripts the whole transcript becomes the marked feature and the marked area extends from the start to the end of the transcript.
+\item  If you press \lstinline{M} to do the marking around alignments all the HSPs for that alignment become the marked feature and the marked area extends from the start to the end of all the HSPs.
+\item  If you press \lstinline{M} to do the marking around all other features: the feature becomes the marked feature and the marked area extends from the start to the end of the feature.
 \item  If no feature is selected but an area was selected using the left button rubberband then that area is marked.
 \item  If no feature or area is selected then the visible screen area minus a small top/bottom margin is marked.
 \end{enumerate}
@@ -605,14 +605,14 @@ Feature marking behaves differently according to the type of feature you highlig
 \subsubsection{Mark an area}
 \begin{enumerate}
 \item Select an area by holding down the left mouse button and dragging out a box to focus on that area.
-\item Press "m" to mark the area.
+\item Press \lstinline{m} to mark the area.
 \end{enumerate}
 
 \subsubsection{Manual cropping of the marked borders}
 You can manually change the borders of the marked area by putting your cursor over this area and using the cropping tool by clicking and holding with the left mouse button and dragging to make the area bigger or smaller.
 
 \subsubsection{Unmark a feature}
-Press "m" or "M" again, i.e. the mark key toggles marking on and off.
+Press \lstinline{m} or \lstinline{M} again, i.e. the mark key toggles marking on and off.
 
 
 \clearpage
@@ -622,17 +622,17 @@ Press "m" or "M" again, i.e. the mark key toggles marking on and off.
 This section describes how to select a feature, mark it and then zoom in to it and examine evidence that overlaps that feature. The default setting for ZMap is to show HSPs drawn on top of each other. This saves space on the canvas making it easier to see the general features of the region of interest. The bump option allows you to see the HSPs as multiple alignments.
 \begin{enumerate}
 \item Click on the feature you are interested in (perhaps a transcript)
-\item Mark it by pressing "m"
-\item Zoom in to the feature by pressing either "z" or "Z" (as described previously).
+\item Mark it by pressing \lstinline{m}
+\item Zoom in to the feature by pressing either \lstinline{z} or \lstinline{Z} (as described previously).
 \end{enumerate}
 
 Now when you bump an evidence column to look at matches that overlap the feature you will find that bumping is much faster because only those matches that overlap the feature get bumped and you also have fewer matches to look at. The quickest way to bump a column is:
 \begin{enumerate}
 \item Click on the column to select it.
-\item Bump it by pressing "b" (if you press "b" again the column will be unbumped). If you have marked a feature then bumping is restricted to matches that overlap that feature, otherwise bumping is for the whole column.
+\item Bump it by pressing \lstinline{b} (if you press \lstinline{b} again the column will be unbumped). If you have marked a feature then bumping is restricted to matches that overlap that feature, otherwise bumping is for the whole column.
 \end{enumerate}
 
-If you use the default bumping mode (i.e. you pressed "b") then you will find all matches from the same piece of evidence are joined by coloured bars, the colours indicate the level of colinearity between the matches (see figure \ref{img_bumping}).
+If you use the default bumping mode (i.e. you pressed \lstinline{b}) then you will find all matches from the same piece of evidence are joined by coloured bars, the colours indicate the level of colinearity between the matches (see figure \ref{img_bumping}).
 \begin{enumerate}
 \item \textcolor{darkgreen}{\textbf{Green}}: the matches at either end are perfectly contiguous, e.g. 100, 230 ---> 231, 351
 \item \textcolor{orange}{\textbf{Orange}}:the matches at either end are colinear but not perfect , e.g. 100, 230 ---> 297, 351. Matches may also be this color when there are extra bases in the alignment, e.g. around clone boundaries.
@@ -669,7 +669,7 @@ ZMap has rich feature display capabilities, which are highly configurable. Diffe
 
 \begin{enumerate}
 \item  The thick yellow line represents the genomic sequence; everything to the left represents the negative strand and everything to the right the positive strand. DNA matches (i.e. ESTs, mRNAs and RefSeq) and repeats have been configured so that they are all displayed to the right of the center, although they may align to either strand. Other features are configured to display in their relevant strand. The thin bar to the right is the clone that the genomic sequence is made up from. When connected to the Otter peer, double-clicking on this gives access to the DE editing window.
-\item  Annotated transcripts; green is coding (CDS), red is non-coding (UTR and transcript variants) and purple shows the "coding'' region of NMD variants. Grey transcripts (see dotted line) contain exons outside the sequence slice being viewed and should not be confused with Halfwise hits.
+\item  Annotated transcripts; green is coding (CDS), red is non-coding (UTR and transcript variants) and purple shows the ``coding'' region of NMD variants. Grey transcripts (see dotted line) contain exons outside the sequence slice being viewed and should not be confused with Halfwise hits.
 \item  Curated features, such as PolyA features are seen as horizontal black lines.
 \item  Phastcons44 - conserved regions detected using multiple sequence alignments of 44 organisms.
 \item  Imported annotation from CCDS (human and mouse only).
@@ -709,7 +709,7 @@ You can quickly jump to a row containing specific text using the \lstinline{Sear
 You can filter the displayed rows by specific text using the \lstinline{Filter} box. Type in the required text and press \lstinline{Enter} and the rows will be filtered. Click the \lstinline{Clear} button to clear the filter and go back to viewing all rows.
 
 \subsubsection{Track visibility}
-The visibility of each track (for both the forward and reverse strand) is controlled by a set of radio buttons with the options ``show'', ``auto'' and ``hide'':
+The visibility of each track (for both the forward and reverse strand) is controlled by a set of radio buttons with the options \lstinline{show}, \lstinline{auto} and \lstinline{hide}:
 \begin{itemize}
 \item \textbf{Show} - the column will always be visibile 
 \item \textbf{Auto} - column visibility will be controlled automatically depending on the way the column is configured, e.g. the column may only be shown at certain levels of zoom
@@ -723,7 +723,7 @@ Note that you can also hide a track directly from the ZMap canvas by right-click
 \subsubsection{Assigning groups} \label{sec_groups}
 You can assign a group to one or more tracks by selecting the tracks and clicking \lstinline{Assign Group}. You will be prompted to enter a name for the group. The new group name will be populated on the Columns dialog. Remember to click \lstinline{Apply} or \lstinline{OK} on the Columns dialog to apply the changes.
 
-Groups are used by various operations in ZMap such as running Blixem - when you run Blixem on a column, you have the option of running it on ``associated columns''. This will run Blixem on all columns that are in the same group as the selected column.
+Groups are used by various operations in ZMap such as running Blixem (see section \ref{sec_blixem}). When you run Blixem on a column, you have the option of running it on ``associated columns''. This will run Blixem on all columns that are in the same group as the selected column.
 
 \subsubsection{Assigning styles}
 You can assign a style to one or more tracks by selecting the tracks and clicking \lstinline{Assign Style}. This will open the \lstinline{Choose Style} dialog where you can select the required style, or create a new one (see section \ref{sec_style_configuration}). After choosing a style, the new style name will be populated on the Columns dialog. Remember to click \lstinline{Apply} or \lstinline{OK} on the Columns dialog to apply the changes.
@@ -743,7 +743,11 @@ All featuresets are assigned a default style on startup if they do not already h
 Existing styles can be edited by selecting the row in the Styles dialog and clicking the \lstinline{Edit} button. This will open the \lstinline{Edit Style} dialog (see section \ref{sec_edit_style}). You can add a new child style to the currently-selected row by clicking the \lstinline{Add} button, or delete the currently-selected style using the \lstinline{Delete} button.
 
 \subsubsection{Editing styles} \label{sec_edit_style}
-The \lstinline{Edit Style} dialog is opened from the \lstinline{Styles} dialog when you Edit or Add a style. It can also be opened by right-clicking on a feature and going to the menu options \lstinline{Column configuration->Edit Style}. When editing an existing style, the new name will default to the same as the existing name. This can be changed if you want to rename the style. The list of featuresets that currently use the style are shown. This is so that you can be sure you want to edit the style for all of those featuresets. If you do not want to change the style for of the featuresets you can create a new child style by clicking the \lstinline{Create child style} button. This style will be assigned to just the selected featureset if editing the style of a particular feature, or will be assigned to no featuresets otherwise (in which case you can assign it to featuresets later e.g. via the \lstinline{Column configuration} dialog).
+The \lstinline{Edit Style} dialog is opened from the \lstinline{Styles} dialog when you Edit or Add a style. It can also be opened by right-clicking on a feature and going to the menu options \lstinline{Column configuration->Edit Style}.
+
+When editing an existing style, the new name will default to the same as the existing name. This can be changed if you want to rename the style. The list of featuresets that currently use the style are shown. This is so that you can be sure you want to edit the style for all of those featuresets.
+
+If you do not want to change the style for of the featuresets you can create a new child style by clicking the \lstinline{Create child style} button. This style will be assigned to just the selected featureset (if editing the style of a particular feature), or will be assigned to no featuresets otherwise (in which case you can assign it to featuresets later e.g. via the \lstinline{Column configuration} dialog).
 
 \subsubsection{Saving styles}
 Styles can be saved to an .ini style configuration file. To do this, go to the menu \lstinline{File->Save->Styles}. To load the styles in a future ZMap session, set up a configuration file and use the \lstinline{stylesfile} key (see the configuration.shtml help file for details).
@@ -753,7 +757,7 @@ Styles can be saved to an .ini style configuration file. To do this, go to the m
 \section{Operations}
 
 \subsection{Show feature details}
-Right click on a gene object or 'o' key when highlighted to see information on otter IDs and Ensembl IDs. For BLAST hits, double click on the HSP to get the feature interface where you will find details on alignment and on what gene object the HSP has been assigned to as evidence, if any (see figure \ref{img_feature_details_dialog}).
+Right click on a gene object or \lstinline{o} key when highlighted to see information on otter IDs and Ensembl IDs. For BLAST hits, double click on the HSP to get the feature interface where you will find details on alignment and on what gene object the HSP has been assigned to as evidence, if any (see figure \ref{img_feature_details_dialog}).
 
 \begin{figure}
 \centering
@@ -775,7 +779,7 @@ There are various options for displaying or exporting the DNA or peptide sequenc
 
 The \textbf{view} and \textbf{export} options are the same except that the output is either to the screen or to a file.
 
-\subsubsection{Show translation}
+\subsubsection{Show translation} \label{sec_show_translation}
 Right-click on a gene model and select \lstinline{Show Translation} to view the translation in the canvas. Alternatively, select a gene model and press the shortcut key \lstinline{t}. You can hide the column again with \lstinline{Shift-T}.
 
 This will show a new column in ZMap showing the translation alongside the other features (see figure \ref{img_show_translation}). The introns are shown as dashes, and double-dashed lines are used in regions outside the transcript bounds.
@@ -790,11 +794,11 @@ Click on the gene model and the exons will be highlighted in the Show Translatio
 \label{img_show_translation}
 \end{figure}
 
-\subsubsection{Feature DNA}
+\subsubsection{Feature DNA} \label{sec_feature_dna}
 You can view or export the DNA sequence as one of the following:
 
 \begin{itemize}
-\item \textbf{CDS} - just the spliced CDS
+\item \textbf{CDS} - just the CDS
 \item \textbf{transcript} - the whole spliced transcript, including UTR
 \item \textbf{unspliced} - the whole unspliced transcript, including UTR and introns
 \item \textbf{with flanking sequence} - the whole unspliced transcript, with flanking sequence at the start and end (whose length you will be prompted to specify)
@@ -810,17 +814,8 @@ The \textbf{view} options will open a dialog box in ZMap showing the sequence. A
 \label{img_view_dna}
 \end{figure}
 
-\subsubsection{Feature peptide}
-You can view or export the peptide sequence as one of the following:
-
-\begin{itemize}
-\item \textbf{CDS} - just the spliced CDS
-\item \textbf{transcript} - the whole spliced transcript, including UTR
-\item \textbf{unspliced} - the whole unspliced transcript, including UTR and introns
-\item \textbf{flanking} - the whole unspliced transcript, with flanking sequence at the start and end (whose length you will be prompted to specify)
-\end{itemize}
-
-The \textbf{view} options will open a dialog box in ZMap showing the sequence (see figure \ref{img_view_peptide}). The \textbf{export} options will allow you to dump the sequence directly to a FASTA file.
+\subsubsection{Feature peptide} \label{sec_feature_peptide}
+You can view or export the CDS as a peptide sequence. The \textbf{view} option will open a dialog box in ZMap showing the sequence (see figure \ref{img_view_peptide}). The \textbf{export} option will allow you to dump the sequence directly to a FASTA file.
 
 \begin{figure}
 \centering
@@ -832,7 +827,7 @@ The \textbf{view} options will open a dialog box in ZMap showing the sequence (s
 
 
 \subsection{Exporting features to file}
-You can export some or all of the features in ZMap to a GFF file. To export all features, go to the main menu and select \lstinline{File -> Export -> Features}. To export just a single feature, right click on that feature and go to \lstinline{View or Export... -> Export -> Clicked Feature}.
+You can export some or all of the features in ZMap to a GFF file. To export all features, go to the main menu and select \lstinline{File -> Export -> Features}. To export just a single feature, right click on that feature and go to \lstinline{View or Export... -> Export -> Clicked Feature}. To export all of the features in a column, right click on that column and go to \lstinline{View or Export... -> Export -> Column features}.
 
 
 \subsection{Exporting reference DNA to file}
@@ -872,7 +867,7 @@ This option allows you to list all the features contained in a column in one win
 
 
 \subsection{Use Blixem to view alignments in more detail} \label{sec_blixem}
-ZMap does not store or display the sequence data for alignments. Instead, this can be viewed using Blixem. Blixem is an interactive browser of sequence alignments that have been stacked up in a "master-slave" multiple alignment; it is not a 'true' multiple alignment but a 'one-to-many' alignment.
+ZMap does not store or display the sequence data for alignments. Instead, this can be viewed using Blixem. Blixem is an interactive browser of sequence alignments that have been stacked up in a ``master-slave'' multiple alignment; it is not a ``true'' multiple alignment but a ``one-to-many'' alignment.
 
 Blixem can be easily started from ZMap on a single feature or an entire column. To start it, right-click on the feature/column of interest and select one of the following options (some of this may be under \lstinline{Blixem - more options}):
 \begin{itemize}
@@ -1002,7 +997,7 @@ zmap file1.gff file2.gff
 
 
 \subsection{Launching in a ZMap from Otter}
-To open multiple sequences from Otter, you will need to open both sets of clones in the same Otter session. To open both ZMap windows in one window as shown below, you need to select "Launch In A ZMap" option in one clone set. These clones will open to the left of the already open Otter session. Figure \ref{img_launch_in_zmap} shows human gene SF3B14 and the syntenic region in mouse. The gene copy and paste function (referred to in the Otter section) is of much use here, saving time when building gene objects.
+To open multiple sequences from Otter, you will need to open both sets of clones in the same Otter session. To open both ZMap windows in one window as shown below, you need to select ``Launch In A ZMap'' option in one clone set. These clones will open to the left of the already open Otter session. Figure \ref{img_launch_in_zmap} shows human gene SF3B14 and the syntenic region in mouse. The gene copy and paste function (referred to in the Otter section) is of much use here, saving time when building gene objects.
 
 \begin{figure}
 \centering
@@ -1060,12 +1055,12 @@ These settings are aimed at system administrators so should only be relevant to 
 \clearpage
 \section{Tips for a speedier ZMap}
 \begin{enumerate}
-\item Specifically: zoom and mark within ZMap early on after launching. Either select a gene object and press 'z' to zoom OR select a rectangle to zoom in by dragging the left mouse button around it. Reverse complement now if necessary, then press 'm' to mark the region.
-\item The quickest way to zoom out of ZMap again is to right mouse click on the 'zoom out' buttons at the top of zmap and choose one of the options (this is definitely much quicker that doing individual 'zoom outs' with the left mouse button). Likewise for 'zooming in' again (or use keyboard equivalents).
+\item Specifically: zoom and mark within ZMap early on after launching. Either select a gene object and press \lstinline{z} to zoom OR select a rectangle to zoom in by dragging the left mouse button around it. Reverse complement now if necessary, then press \lstinline{m} to mark the region.
+\item The quickest way to zoom out of ZMap again is to right mouse click on the \lstinline{Zoom out} buttons at the top of zmap and choose one of the options (this is definitely much quicker that doing individual \lstinline{Zoom out}s with the left mouse button). Likewise for 'zooming in' again (or use keyboard equivalents).
 \item Bump within a marked region only. Bumping without marking is slow and removes the lines connecting Blast matches.
 \item When you have finished working within a marked region, unbump the evidence you have been working on (e.g. ESTs) and unmark that region before you go on to select the next region to mark and bump - or you could miss visualising the evidence in the new region.
-\item If you want to get rid of some white space try the compress 'c' function or alternatively toggle off some of the columns. \textcolor{red}{Warning - this may hide features as well}. If a column (e.g ESTs) is bumped and you want to lose it temporarily, it is quicker to turn the column off (when you turn it on again it will still be bumped when it re-appears) than unbump then rebump again later.
-\item Jumping to genes/objects: If you expand the left hand 'scroll navigator' overview' you can jump directly to genes and objects by double-clicking on them.
+\item If you want to get rid of some white space try the compress \lstinline{c} function or alternatively toggle off some of the columns. \textcolor{red}{Warning - this may hide features as well}. If a column (e.g ESTs) is bumped and you want to lose it temporarily, it is quicker to turn the column off (when you turn it on again it will still be bumped when it re-appears) than unbump then rebump again later.
+\item Jumping to genes/objects: If you expand the left hand ``scroll navigator'' overview, you can jump directly to genes and objects by double-clicking on them.
 \end{enumerate}
 
 
@@ -1100,8 +1095,8 @@ up-arrow, down-arrow & scroll up/down slowly bit\\
 Cntl up-arrow, Cntl down-arrow & scroll up/down more quickly\\
 left-arrow, right-arrow & scroll left/right slowly\\
 Cntl left-arrow, Cntl right-arrow & scroll left/right more quickly\\
-page-up, page-down (Mac users should use fn and up/down arrow) & up/down by half a "page"\\
-Cntl page-up, Cntl page-down & up/down by a whole "page"\\
+page-up, page-down (Mac users should use fn and up/down arrow) & up/down by half a ``page''\\
+Cntl page-up, Cntl page-down & up/down by a whole ``page''\\
 Home, End (Mac users should use fn and left/rights arrows) & Go to far left or right\\
 Cntl Home, Cntl End (Mac users will have to configure their keyboards for this) & Go to top or bottom\\
 Delete, Shift Delete & Hide/Show selected features.\\
@@ -1121,7 +1116,7 @@ a & Blixem all sequences in column\\
 A & Blixem only highlighted sequence in column\\
 b & Bump/unbump current column within limits of mark if set, otherwise bump the whole column.\\
 B & Bump/unBump current column within limits of the visible feature range.\\
-c & compress/uncompress columns: hides columns that have no features in them either within the marked region or if there is no marked region within the range displayed on screen. Note that columns set to "Show" will not be hidden.\\
+c & compress/uncompress columns: hides columns that have no features in them either within the marked region or if there is no marked region within the range displayed on screen. Note that columns set to ``Show'' will not be hidden.\\
 C & Compress/unCompress columns: hides all columns that have no features in them within the range displayed on screen regardless of any column, zoom, mark etc. settings.\\
 h & Toggles highlighting (good for screen shots).\\
 m & mark/unmark a range which spans whichever features or subparts of features are currently selected for zooming/smart bumping\\
