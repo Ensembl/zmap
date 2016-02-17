@@ -51,6 +51,7 @@
 
 #ifdef USE_ENSEMBL
 #include <ZMap/zmapEnsemblUtils.hpp>
+
 #endif
 
 using namespace std ;
@@ -66,6 +67,8 @@ using namespace std ;
 #define DEFAULT_ENSEMBL_USER "anonymous"
 #define DEFAULT_ENSEMBL_PASS NULL
 #define SOURCE_TYPE_ENSEMBL "Ensembl"
+#define DEFAULT_COLUMNS_LIST "dna ; 3 frame ; 3 frame translation ; show translation"
+#define DEFAULT_COLUMNS_LIST_ALL "all ; dna ; 3 frame ; 3 frame translation ; show translation"
 #endif
 
 
@@ -300,18 +303,17 @@ static void updatePanelFromSource(MainFrame main_data, ZMapConfigSource source)
       const char *biotypes = source->biotypes ;
       gboolean load_dna = FALSE ;
 
-      /* load_dna is true if featuresets starts with "all". Extract "all" from the featuresets
-       * list and set the flag instead */
-      if (featuresets && strlen(featuresets) > 3 && strncasecmp(featuresets, "all", 3) == 0)
+      /* load_dna is true if featuresets starts with "all". Extract "all" and the default columns
+       * (which would have been added in because of the flag) from the featuresets list and set
+       * the flag instead */
+      const int len = strlen(DEFAULT_COLUMNS_LIST_ALL) ;
+
+      if (featuresets && 
+          strlen(featuresets) >= len && 
+          strncasecmp(featuresets, DEFAULT_COLUMNS_LIST_ALL, len) == 0)
         {
           load_dna = TRUE ;
-
-          /* look for the semi-colon separator after "all" */
-          char *p = strchr(featuresets, ';') ;
-          if (p)
-            featuresets = p + 1;
-          else
-            featuresets = featuresets + 3 ; // skip to the next char after "all"
+          featuresets = featuresets + len ; // skip to the next char after the default cols
         }
 
       if (source_name)
@@ -839,7 +841,7 @@ static gboolean applyEnsembl(MainFrame main_frame)
         {
           if (featuresets)
             {
-              tmp = g_strdup_printf("dna ; 3 frame ; 3 frame translation ; show translation ; %s", featuresets) ;
+              tmp = g_strdup_printf("%s ; %s", DEFAULT_COLUMNS_LIST, featuresets) ;
               featuresets = tmp ;
             }
           else
@@ -848,7 +850,7 @@ static gboolean applyEnsembl(MainFrame main_frame)
                * exclude all non-named featuresets. However, here the user hasn't really named
                * any so we still want to load all other featuresets. For now, prefix the list
                * with "all" to indicate this is the intent. Really we need a better way to do this... */
-              featuresets = g_strdup("all ; dna ; 3 frame ; 3 frame translation ; show translation") ;
+              featuresets = g_strdup(DEFAULT_COLUMNS_LIST_ALL) ;
             }
         }
 
