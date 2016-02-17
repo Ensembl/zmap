@@ -95,6 +95,7 @@ static void chooseConfigCB(GtkFileChooserButton *widget, gpointer user_data) ;
 static void defaultsCB(GtkWidget *widget, gpointer cb_data) ;
 static void createSourceCB(GtkWidget *widget, gpointer cb_data) ;
 static void removeSourceCB(GtkWidget *widget, gpointer cb_data) ;
+static void editSourceCB(GtkWidget *widget, gpointer cb_data) ;
 static void saveCB(GtkWidget *widget, gpointer cb_data) ;
 static void closeCB(GtkWidget *widget, gpointer cb_data) ;
 static void saveSourcesToConfig(ZMapFeatureSequenceMap sequence_map,
@@ -301,7 +302,7 @@ static GtkWidget* createListWidget(ZMapFeatureSequenceMap sequence_map, MainFram
 }
 
 
-/* Create a frame listing all of the available sources, plus buttons to add/remove sources */
+/* Create a frame listing all of the available sources, plus buttons to add/edit/remove sources */
 static GtkWidget *makeSourcesFrame(MainFrame main_data, ZMapFeatureSequenceMap sequence_map)
 {
   GtkWidget *frame = gtk_frame_new( "Sources: " );
@@ -410,7 +411,7 @@ static GtkWidget *makeButtonBox(MainFrame main_data)
 {
   GtkWidget *frame ;
   GtkWidget *button_box, *create_button, *chooser_button, *defaults_button, *close_button,
-    *save_button, *source_button, *remove_button;
+    *save_button, *source_button, *remove_button, *edit_button;
   char *home_dir ;
 
   frame = gtk_frame_new(NULL) ;
@@ -428,6 +429,14 @@ static GtkWidget *makeButtonBox(MainFrame main_data)
                      GTK_SIGNAL_FUNC(createSourceCB), (gpointer)main_data) ;
   gtk_box_pack_start(GTK_BOX(button_box), source_button, FALSE, TRUE, 0) ;
   
+  edit_button = gtk_button_new() ;
+  gtk_button_set_image(GTK_BUTTON(edit_button), 
+                       gtk_image_new_from_stock(GTK_STOCK_EDIT, GTK_ICON_SIZE_BUTTON));
+  gtk_widget_set_tooltip_text(edit_button, "Edit the selected source(s)") ;
+  gtk_signal_connect(GTK_OBJECT(edit_button), "clicked", 
+                     GTK_SIGNAL_FUNC(editSourceCB), (gpointer)main_data) ;
+  gtk_box_pack_start(GTK_BOX(button_box), edit_button, FALSE, TRUE, 0) ;
+
   remove_button = gtk_button_new() ;
   gtk_button_set_image(GTK_BUTTON(remove_button), 
                        gtk_image_new_from_stock(GTK_STOCK_DELETE, GTK_ICON_SIZE_BUTTON));
@@ -596,6 +605,32 @@ static void createNewSourceCB(const char *source_name,
 }
 
 
+/* Callback called when the create-source dialog has been ok'd to do the work to create the new
+ * source from the user-provided info. Returns true if successfully created the source.  */
+static void editSourceCB(const char *source_name, 
+                         const std::string &url, 
+                         const char *featuresets,
+                         const char *biotypes,
+                         gpointer user_data,
+                         GError **error)
+{
+  MainFrame main_data = (MainFrame)user_data ;
+  zMapReturnIfFail(source_name && main_data && main_data->orig_sequence_map) ;
+
+  ZMapFeatureSequenceMap sequence_map = main_data->orig_sequence_map ;
+  GError *tmp_error = NULL ;
+
+  sequence_map->updateSource(source_name, url, featuresets, biotypes, &tmp_error) ;
+
+  /* Update the list of sources shown in the dialog to include the new source */
+  if (!tmp_error)
+    updateSourcesList(main_data, sequence_map) ;
+
+  if (tmp_error)
+    g_propagate_error(error, tmp_error) ;
+}
+
+
 /* Set up a new source. */
 static void createSourceCB(GtkWidget *widget, gpointer cb_data)
 {
@@ -603,6 +638,57 @@ static void createSourceCB(GtkWidget *widget, gpointer cb_data)
   zMapReturnIfFail(main_data) ;
 
   zMapAppCreateSource(&main_data->sequence_map, createNewSourceCB, main_data) ;
+
+  return ;
+}
+
+
+/* Edit an existing source. */
+static void editSourceCB(GtkWidget *widget, gpointer cb_data)
+{
+  MainFrame main_data = (MainFrame)cb_data ;
+  zMapReturnIfFail(main_data) ;
+
+  GtkTreeSelection *selection = gtk_tree_view_get_selection(main_data->tree_view) ;
+  ZMapFeatureSequenceMap sequence_map = main_data->orig_sequence_map ;
+
+  if (!selection)
+    {
+      zMapCritical("%s", "No source selected") ;
+    }
+  else
+    {
+      GtkTreeModel *model = NULL ; 
+      GList *rows = gtk_tree_selection_get_selected_rows(selection, &model) ;
+
+      if (g_list_length(rows) < 1)
+        {
+          zMapCritical("%s", "Please select a source") ;
+        }
+      else if (g_list_length(rows) > 1)
+        {
+          zMapCritical("%s", "Please only select one source") ;
+        }
+      else
+        {
+          GtkTreePath *path = (GtkTreePath*)(rows->data) ;
+          GtkTreeIter iter ;
+          gtk_tree_model_get_iter(model, &iter, path) ;
+
+          char *source_name = NULL ;
+          gtk_tree_model_get(model, &iter, SourceColumn::NAME, &source_name, -1) ;
+
+          if (source_name)
+            {
+              ZMapConfigSource source = sequence_map->getSource(source_name) ;
+              zMapAppEditSource(main_data->orig_sequence_map, source, editSourceCB, main_data) ;
+            }
+          else
+            {
+              zMapCritical("%s", "Program error: failed to get source name") ;
+            }
+        }
+    }
 
   return ;
 }

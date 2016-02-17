@@ -297,6 +297,7 @@ typedef struct ZMapFeatureSequenceMapStructType
   void setFlag(ZMapFlag flag, const gboolean value) ;
 
   ZMapConfigSource getSource(const std::string &source_name) ;
+  char* getSourceName(ZMapConfigSource source) ;
   char* getSourceURL(const std::string &source_name) ;
   GList* getSources() ;
   void constructSources(const char *filename, const char *config_str, char **stylesfile) ;
@@ -307,6 +308,10 @@ typedef struct ZMapFeatureSequenceMapStructType
                                 const char *featuresets, const char *biotypes, GError **error) ;
   ZMapConfigSource createSource(const char *source_name, const std::string &url, 
                                 const char *featuresets, const char *biotypes, GError **error) ;
+  void updateSource(const char *source_name, const char *url, 
+                    const char *featuresets, const char *biotypes, GError **error) ;
+  void updateSource(const char *source_name, const std::string &url, 
+                    const char *featuresets, const char *biotypes, GError **error) ;
   ZMapConfigSource createFileSource(const char *source_name, const char *file) ;
   ZMapConfigSource createPipeSource(const char *source_name, const char *file, const char *script, const char *args) ;
   void removeSource(const char *source_name_cstr, GError **error) ;
