@@ -47,6 +47,7 @@
 #include <ZMap/zmap.hpp>
 #include <ZMap/zmapUtilsGUI.hpp>
 #include <ZMap/zmapAppServices.hpp>
+#include <ZMap/zmapURL.hpp>
 
 #ifdef USE_ENSEMBL
 #include <ZMap/zmapEnsemblUtils.hpp>
@@ -61,7 +62,7 @@ using namespace std ;
 
 #ifdef USE_ENSEMBL
 #define DEFAULT_ENSEMBL_HOST "ensembldb.ensembl.org"
-#define DEFAULT_ENSEMBL_PORT "3306"
+#define DEFAULT_ENSEMBL_PORT1 "3306"
 #define DEFAULT_ENSEMBL_USER "anonymous"
 #define DEFAULT_ENSEMBL_PASS NULL
 #define SOURCE_TYPE_ENSEMBL "Ensembl"
@@ -125,6 +126,7 @@ static void applyCB(GtkWidget *widget, gpointer cb_data) ;
 static GtkWidget *makeMainFrame(MainFrame main_data, ZMapFeatureSequenceMap sequence_map) ;
 static gboolean applyFile(MainFrame main_data) ;
 static void setWidgetsVisibility(list<GtkWidget*> widget_list, const gboolean visible) ;
+static void updatePanelFromSource(MainFrame main_data, ZMapConfigSource source) ;
 
 #ifdef USE_ENSEMBL
 static void dbnameCB(GtkWidget *widget, gpointer cb_data) ;
@@ -160,6 +162,50 @@ GtkWidget *zMapAppCreateSource(ZMapFeatureSequenceMap sequence_map,
 
   MainFrame main_data = NULL ;
   container = makePanel(toplevel, &seq_data, sequence_map, user_func, user_data, &main_data) ;
+
+  gtk_container_add(GTK_CONTAINER(toplevel), container) ;
+  gtk_signal_connect(GTK_OBJECT(toplevel), "destroy",
+                     GTK_SIGNAL_FUNC(toplevelDestroyCB), seq_data) ;
+
+  gtk_widget_show_all(toplevel) ;
+
+  /* Only show widgets for the relevant file type (ensembl by default if it exists, file
+   * otherwise) */
+  if (main_data)
+    {
+#ifdef USE_ENSEMBL
+      setWidgetsVisibility(main_data->ensembl_widgets, TRUE) ;
+      setWidgetsVisibility(main_data->file_widgets, FALSE) ;
+#else
+      setWidgetsVisibility(main_data->file_widgets, TRUE) ;
+#endif
+    }
+
+  return toplevel ;
+}
+
+
+/* Show a dialog to edit an existing source */
+GtkWidget *zMapAppEditSource(ZMapFeatureSequenceMap sequence_map,
+                             ZMapConfigSource source,
+                             ZMapAppCreateSourceCB user_func,
+                             gpointer user_data)
+{
+  zMapReturnValIfFail(user_func, NULL) ;
+
+  GtkWidget *toplevel = NULL ;
+  GtkWidget *container ;
+  gpointer seq_data = NULL ;
+
+  toplevel = zMapGUIToplevelNew(NULL, "Create Source") ;
+
+  gtk_window_set_policy(GTK_WINDOW(toplevel), FALSE, TRUE, FALSE ) ;
+  gtk_container_border_width(GTK_CONTAINER(toplevel), 0) ;
+
+  MainFrame main_data = NULL ;
+  container = makePanel(toplevel, &seq_data, sequence_map, user_func, user_data, &main_data) ;
+
+  updatePanelFromSource(main_data, source) ;
 
   gtk_container_add(GTK_CONTAINER(toplevel), container) ;
   gtk_signal_connect(GTK_OBJECT(toplevel), "destroy",
@@ -230,6 +276,88 @@ static GtkWidget *makePanel(GtkWidget *toplevel,
     *main_data_out = main_data ;
 
   return frame ;
+}
+
+
+/* After creating the panel, you can update it from an existing source (for editing an existing
+ * source) using this function */
+static void updatePanelFromSource(MainFrame main_data, ZMapConfigSource source)
+{
+  int status = 0 ;
+  ZMapURL zmap_url = url_parse(source->url, &status) ;
+
+#ifdef USE_ENSEMBL
+  if (zmap_url && zmap_url->scheme == SCHEME_ENSEMBL)
+    {
+      char *source_name = main_data->sequence_map->getSourceName(source) ;
+      const char *host = zmap_url->host ;
+      char *port = g_strdup_printf("%d", zmap_url->port) ;
+      const char *user = zmap_url->user ;
+      const char *pass = zmap_url->passwd ;
+      char *dbname = zMapURLGetQueryValue(zmap_url->query, "db_name") ;
+      char *dbprefix = zMapURLGetQueryValue(zmap_url->query, "db_prefix") ;
+      char *featuresets = g_strdup(source->featuresets) ;
+      const char *biotypes = source->biotypes ;
+      gboolean load_dna = FALSE ;
+
+      /* load_dna is true if featuresets starts with "all". Extract "all" from the featuresets
+       * list and set the flag instead */
+      if (featuresets && strlen(featuresets) > 3 && strncasecmp(featuresets, "all", 3) == 0)
+        {
+          load_dna = TRUE ;
+
+          /* look for the semi-colon separator after "all" */
+          char *p = strchr(featuresets, ';') ;
+          if (p)
+            featuresets = p + 1;
+          else
+            featuresets = featuresets + 3 ; // skip to the next char after "all"
+        }
+
+      if (source_name)
+        gtk_entry_set_text(GTK_ENTRY(main_data->name_widg), source_name) ;
+      if (host)
+        gtk_entry_set_text(GTK_ENTRY(main_data->host_widg), host) ;
+      if (port)
+        gtk_entry_set_text(GTK_ENTRY(main_data->port_widg), port) ;
+      if (user)
+        gtk_entry_set_text(GTK_ENTRY(main_data->user_widg), user) ;
+      if (pass)
+        gtk_entry_set_text(GTK_ENTRY(main_data->pass_widg), pass) ;
+      if (dbname)
+        gtk_entry_set_text(GTK_ENTRY(main_data->dbname_widg), dbname) ;
+      if (dbprefix)
+        gtk_entry_set_text(GTK_ENTRY(main_data->dbprefix_widg), dbprefix) ;
+      if (featuresets)
+        gtk_entry_set_text(GTK_ENTRY(main_data->featuresets_widg), featuresets) ;
+      if (biotypes)
+        gtk_entry_set_text(GTK_ENTRY(main_data->featuresets_widg), biotypes) ;
+
+      gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(main_data->dna_check), load_dna) ;
+
+      if (source_name)
+        g_free(source_name) ;
+      if (port)
+        g_free(port) ;
+      if (dbname)
+        g_free(dbname) ;
+      if (dbprefix)
+        g_free(dbprefix) ;
+      if (featuresets)
+        g_free(featuresets) ;
+    }
+#endif
+
+  if (zmap_url && (zmap_url->scheme == SCHEME_FILE || zmap_url->scheme == SCHEME_PIPE))
+    {
+      char *source_name = main_data->sequence_map->getSourceName(source) ;
+
+      gtk_entry_set_text(GTK_ENTRY(main_data->name_widg), source_name) ;
+      gtk_entry_set_text(GTK_ENTRY(main_data->path_widg), zmap_url->path) ;
+
+      if (source_name)
+        g_free(source_name) ;
+    }
 }
 
 
@@ -428,7 +556,7 @@ static GtkWidget *makeMainFrame(MainFrame main_data, ZMapFeatureSequenceMap sequ
   col += 3 ;
 
   main_data->host_widg = makeEntryWidget("Host :", DEFAULT_ENSEMBL_HOST, NULL, table, &row, col, cols - 1, FALSE, &main_data->ensembl_widgets) ;
-  main_data->port_widg = makeEntryWidget("Port :", DEFAULT_ENSEMBL_PORT, NULL, table, &row, col, cols - 1, FALSE, &main_data->ensembl_widgets) ;
+  main_data->port_widg = makeEntryWidget("Port :", DEFAULT_ENSEMBL_PORT1, NULL, table, &row, col, cols - 1, FALSE, &main_data->ensembl_widgets) ;
   main_data->user_widg = makeEntryWidget("Username :", DEFAULT_ENSEMBL_USER, NULL, table, &row, col, cols - 1, FALSE, &main_data->ensembl_widgets) ;
   main_data->pass_widg = makeEntryWidget("Password :", DEFAULT_ENSEMBL_PASS, "Can be empty if not required", table, &row, col, cols - 1, FALSE, &main_data->ensembl_widgets) ;
 
