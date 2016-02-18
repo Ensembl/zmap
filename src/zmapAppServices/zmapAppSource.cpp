@@ -47,7 +47,7 @@
 #include <ZMap/zmap.hpp>
 #include <ZMap/zmapUtilsGUI.hpp>
 #include <ZMap/zmapAppServices.hpp>
-#include <ZMap/zmapURL.hpp>
+#include <ZMap/zmapUrl.hpp>
 
 #ifdef USE_ENSEMBL
 #include <ZMap/zmapEnsemblUtils.hpp>
