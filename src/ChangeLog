@@ -1,1268 +1,508 @@
-2016-01-26  Gemma Guest  <gb10@sanger.ac.uk>
- Add config to set cainfo file for curl - WIP
- src/include/ZMap/zmapConfigStrings.hpp   |    1 +
- src/libcurlobject/libcurlobject.c        |    6 ++++++
- src/libpfetch/libpfetch.c                |   27 ++++++++++++++++++++++++++-
- src/libpfetch/libpfetch_I.h              |    2 ++
- src/zmapConfig/zmapConfigLoader.cpp      |    1 +
- src/zmapWindow/zmapWindowFeature.cpp     |    1 +
- src/zmapWindow/zmapWindowPreferences.cpp |    6 ++++++
- src/zmapWindow/zmapWindow_P.hpp          |    1 +
- 8 files changed, 44 insertions(+), 1 deletions(-)
+2016-02-18  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix an issue with merging column-groups stanzas - BUG FIX
+ src/include/ZMap/zmapConfigIni.hpp  |  6 +++--
+ src/zmapConfig/zmapConfigFile.cpp   | 42 ++++++++++++++++++++++++++----
+ src/zmapConfig/zmapConfigLoader.cpp | 51 ++++++++++++++++++++++++-------------
+ 3 files changed, 75 insertions(+), 24 deletions(-)
 
-2016-01-22  zmap  <zmap@sanger.ac.uk>
- ZMap version 2.4.1-133-gd1df089 - Update RT and git commit reports
- src/ChangeLog |    7 +++++++
- 1 files changed, 7 insertions(+), 0 deletions(-)
+2016-02-18  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix compile error on linux - BUILD
+ src/zmapAppServices/zmapAppSource.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-2016-01-22  zmap  <zmap@sanger.ac.uk>
- ZMap version 2.4.1-133-gd1df089 - Update RT and git commit reports
- src/ChangeLog                                  |   63 ++++++++++++++++++++++++
- src/build/release_docs/GIT_COMMITS.txt         |    3 +
- src/build/release_docs/RT_TICKETS_RESOLVED.txt |   12 ++++-
- 3 files changed, 77 insertions(+), 1 deletions(-)
+2016-02-17  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix a problem with editing file sources - WIP
+ src/zmapAppServices/zmapAppSource.cpp | 65 ++++++++++++++++++++++++-----------
+ 1 file changed, 45 insertions(+), 20 deletions(-)
 
-2016-01-22  Gemma Guest  <gb10@sanger.ac.uk>
- Add new config to docs - DOC
- docs/user/configuration.shtml |    6 +++++-
- 1 files changed, 5 insertions(+), 1 deletions(-)
+2016-02-17  Gemma Guest  <gb10@sanger.ac.uk>
+ Disable editing source name - WIP
+ src/zmapAppServices/zmapAppSource.cpp | 30 +++++++++++++++++++-----------
+ 1 file changed, 19 insertions(+), 11 deletions(-)
 
-2016-01-22  Gemma Guest  <gb10@sanger.ac.uk>
- Rename variable - TRIVIAL
- src/libpfetch/libpfetch.c   |    6 +++---
- src/libpfetch/libpfetch_I.h |    2 +-
+2016-02-17  Gemma Guest  <gb10@sanger.ac.uk>
+ Disable invalid selection of multiple databases - TRIVIAL
+ src/zmapAppServices/zmapAppSource.cpp | 15 ++++++++-------
+ 1 file changed, 8 insertions(+), 7 deletions(-)
+
+2016-02-17  Gemma Guest  <gb10@sanger.ac.uk>
+ Add a Filter box to the featureset/biotype search lists - NEW FEATURE 'create sources'
+ src/zmapAppServices/zmapAppSource.cpp | 112 ++++++++++++++++++++++++++++++++--
+ 1 file changed, 108 insertions(+), 4 deletions(-)
+
+2016-02-17  Gemma Guest  <gb10@sanger.ac.uk>
+ Merge branch 'feature/ensembl' into develop - NEW FEATURE 'create sources'
+2016-02-17  Gemma Guest  <gb10@sanger.ac.uk>
+ Improvements to previous - WIP
+ src/zmapAppServices/zmapAppSource.cpp | 34 ++++++++++++++++++++++------------
+ 1 file changed, 22 insertions(+), 12 deletions(-)
+
+2016-02-17  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix error with editing source with load_dna flag - WIP
+ src/zmapAppServices/zmapAppSource.cpp | 26 ++++++++++++++------------
+ 1 file changed, 14 insertions(+), 12 deletions(-)
+
+2016-02-17  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix a bug with reading biotypes from create-source dialog - BUG FIX
+ src/zmapAppServices/zmapAppSource.cpp | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+2016-02-17  Gemma Guest  <gb10@sanger.ac.uk>
+ Add functionality to edit sources from main window - RT 516368
+ src/include/ZMap/zmapAppServices.hpp        |   2 +
+ src/include/ZMap/zmapFeatureLoadDisplay.hpp |   5 ++
+ src/zmapAppServices/zmapAppSequenceView.cpp |  90 ++++++++++++++++++-
+ src/zmapAppServices/zmapAppSource.cpp       | 132 +++++++++++++++++++++++++++-
+ src/zmapFeature/zmapFeatureLoadDisplay.cpp  |  70 +++++++++++++++
+ 5 files changed, 295 insertions(+), 4 deletions(-)
+
+2016-02-17  Gemma Guest  <gb10@sanger.ac.uk>
+ Merge branch 'feature/manual' into develop
+2016-02-17  Gemma Guest  <gb10@sanger.ac.uk>
+ Lots of minor fixes and formatting improvements - DOC
+ docs/user/manual/ZMap_User_Manual.pdf              | Bin 5235311 -> 5236740 bytes
+ docs/user/manual/ZMap_User_Manual.tex              | 113 ++++++++++-----------
+ docs/user/manual/images/create_source_ensembl.png  | Bin 53528 -> 42691 bytes
+ docs/user/manual/images/create_source_file.png     | Bin 38992 -> 29073 bytes
+ docs/user/manual/images/feature_details_dialog.png | Bin 171267 -> 171267 bytes
+ docs/user/manual/images/main_window.png            | Bin 50521 -> 38276 bytes
+ docs/user/manual/images/show_translation.png       | Bin 256813 -> 216207 bytes
+ docs/user/manual/images/split_window.png           | Bin 154461 -> 154445 bytes
+ docs/user/manual/images/view_dna.png               | Bin 247876 -> 199198 bytes
+ 9 files changed, 54 insertions(+), 59 deletions(-)
+
+2016-02-17  Gemma Guest  <gb10@sanger.ac.uk>
+ Add README file - DOC
+ docs/user/manual/README | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
+
+2016-02-17  Gemma Guest  <gb10@sanger.ac.uk>
+ Move images to subdirectory - DOC
+ docs/user/manual/ZMap_User_Manual.pdf              | Bin 5235311 -> 5235311 bytes
+ docs/user/manual/ZMap_User_Manual.tex              |  58 ++++++++++-----------
+ docs/user/manual/images/bumping.png                | Bin 0 -> 226710 bytes
+ docs/user/manual/images/columns.png                | Bin 0 -> 73903 bytes
+ docs/user/manual/images/create_source_ensembl.png  | Bin 0 -> 53528 bytes
+ .../images/create_source_ensembl_search_db.png     | Bin 0 -> 30848 bytes
+ docs/user/manual/images/create_source_file.png     | Bin 0 -> 38992 bytes
+ docs/user/manual/images/dna_3_frame.png            | Bin 0 -> 275752 bytes
+ docs/user/manual/images/edit_sequence.png          | Bin 0 -> 497143 bytes
+ docs/user/manual/images/editing_zmap.png           | Bin 0 -> 445694 bytes
+ docs/user/manual/images/exporting_features.png     | Bin 0 -> 271632 bytes
+ docs/user/manual/images/feature_details_dialog.png | Bin 0 -> 171267 bytes
+ .../user/manual/images/feature_display_details.png | Bin 0 -> 188073 bytes
+ docs/user/manual/images/feature_search.png         | Bin 0 -> 230905 bytes
+ docs/user/manual/images/feature_search_results.png | Bin 0 -> 126810 bytes
+ docs/user/manual/images/features.png               | Bin 0 -> 153983 bytes
+ docs/user/manual/images/focus_and_mark.png         | Bin 0 -> 279017 bytes
+ docs/user/manual/images/launch_in_zmap.png         | Bin 0 -> 224087 bytes
+ docs/user/manual/images/main_interface.png         | Bin 0 -> 243426 bytes
+ docs/user/manual/images/main_window.png            | Bin 0 -> 50521 bytes
+ docs/user/manual/images/navigating.png             | Bin 0 -> 341787 bytes
+ docs/user/manual/images/open_from_otterlace.png    | Bin 0 -> 233082 bytes
+ docs/user/manual/images/sequence_search.png        | Bin 0 -> 153908 bytes
+ docs/user/manual/images/show_hide.png              | Bin 0 -> 115524 bytes
+ docs/user/manual/images/show_translation.png       | Bin 0 -> 256813 bytes
+ docs/user/manual/images/split_window.png           | Bin 0 -> 154461 bytes
+ .../user/manual/images/toolbar_feature_details.png | Bin 0 -> 185742 bytes
+ docs/user/manual/images/variant_construction.png   | Bin 0 -> 334734 bytes
+ docs/user/manual/images/variant_construction2.png  | Bin 0 -> 238223 bytes
+ docs/user/manual/images/view_dna.png               | Bin 0 -> 247876 bytes
+ docs/user/manual/images/view_peptide.png           | Bin 0 -> 305945 bytes
+ docs/user/manual/images/zooming.png                | Bin 0 -> 308639 bytes
+ docs/user/manual/img_bumping.png                   | Bin 226710 -> 0 bytes
+ docs/user/manual/img_columns.png                   | Bin 73903 -> 0 bytes
+ docs/user/manual/img_create_source_ensembl.png     | Bin 53528 -> 0 bytes
+ .../manual/img_create_source_ensembl_search_db.png | Bin 30848 -> 0 bytes
+ docs/user/manual/img_create_source_file.png        | Bin 38992 -> 0 bytes
+ docs/user/manual/img_dna_3_frame.png               | Bin 275752 -> 0 bytes
+ docs/user/manual/img_edit_sequence.png             | Bin 497143 -> 0 bytes
+ docs/user/manual/img_editing_zmap.png              | Bin 445694 -> 0 bytes
+ docs/user/manual/img_exporting_features.png        | Bin 271632 -> 0 bytes
+ docs/user/manual/img_feature_details_dialog.png    | Bin 171267 -> 0 bytes
+ docs/user/manual/img_feature_display_details.png   | Bin 188073 -> 0 bytes
+ docs/user/manual/img_feature_search.png            | Bin 230905 -> 0 bytes
+ docs/user/manual/img_feature_search_results.png    | Bin 126810 -> 0 bytes
+ docs/user/manual/img_features.png                  | Bin 153983 -> 0 bytes
+ docs/user/manual/img_focus_and_mark.png            | Bin 279017 -> 0 bytes
+ docs/user/manual/img_launch_in_zmap.png            | Bin 224087 -> 0 bytes
+ docs/user/manual/img_main_interface.png            | Bin 243426 -> 0 bytes
+ docs/user/manual/img_main_window.png               | Bin 50521 -> 0 bytes
+ docs/user/manual/img_navigating.png                | Bin 341787 -> 0 bytes
+ docs/user/manual/img_open_from_otterlace.png       | Bin 233082 -> 0 bytes
+ docs/user/manual/img_sequence_search.png           | Bin 153908 -> 0 bytes
+ docs/user/manual/img_show_hide.png                 | Bin 115524 -> 0 bytes
+ docs/user/manual/img_show_translation.png          | Bin 256813 -> 0 bytes
+ docs/user/manual/img_split_window.png              | Bin 154461 -> 0 bytes
+ docs/user/manual/img_toolbar_feature_details.png   | Bin 185742 -> 0 bytes
+ docs/user/manual/img_variant_construction.png      | Bin 334734 -> 0 bytes
+ docs/user/manual/img_variant_construction2.png     | Bin 238223 -> 0 bytes
+ docs/user/manual/img_view_dna.png                  | Bin 247876 -> 0 bytes
+ docs/user/manual/img_view_peptide.png              | Bin 305945 -> 0 bytes
+ docs/user/manual/img_zooming.png                   | Bin 308639 -> 0 bytes
+ 62 files changed, 29 insertions(+), 29 deletions(-)
+
+2016-02-17  Gemma Guest  <gb10@sanger.ac.uk>
+ Update intro text and ensembl screenshots - DOC
+ docs/user/manual/ZMap_User_Manual.pdf          | Bin 5227565 -> 5235311 bytes
+ docs/user/manual/ZMap_User_Manual.tex          |   2 +-
+ docs/user/manual/img_create_source_ensembl.png | Bin 36510 -> 53528 bytes
+ docs/user/manual/img_create_source_file.png    | Bin 27004 -> 38992 bytes
+ docs/user/manual/img_main_window.png           | Bin 35155 -> 50521 bytes
+ 5 files changed, 1 insertion(+), 1 deletion(-)
+
+2016-02-17  Gemma Guest  <gb10@sanger.ac.uk>
+ Add button to create-source dialog to load dna - NEW FEATURE 'Load dna'
+ src/zmapAppServices/zmapAppSource.cpp    | 36 ++++++++++++++++++++++++++++++++
+ src/zmapServer/ensembl/ensemblServer.cpp | 28 ++++++++++++++++++-------
+ 2 files changed, 56 insertions(+), 8 deletions(-)
+
+2016-02-16  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix a typo which broke GFF file import - BUG FIX
+ src/zmapControl/zmapControlImportFile.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+2016-02-16  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix compiler warnings - BUILD
+ src/zmapUtils/zmapGLibUtils.cpp | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+2016-02-16  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix a bug saving edited sequence to a real feature - BUG FIX
+ src/include/ZMap/zmapFeature.hpp          |  2 ++
+ src/zmapFeature/zmapFeatureTranscript.cpp | 22 +++++++++++++++++++++-
+ src/zmapWindow/zmapWindowFeatureShow.cpp  |  4 ++++
+ 3 files changed, 27 insertions(+), 1 deletion(-)
+
+2016-02-16  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix a bug showing/hiding columns when 3FT is enabled - BUG FIX
+ src/zmapWindow/zmapWindowColConfig.cpp | 12 +++++-------
+ 1 file changed, 5 insertions(+), 7 deletions(-)
+
+2016-02-16  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix a crash when editing a transcript's sequence - BUG FIX
+ src/zmapFeature/zmapFeatureDNA.cpp | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+2016-02-16  Gemma Guest  <gb10@sanger.ac.uk>
+ Add screenshot for editing transcript's sequence - DOC
+ docs/user/manual/ZMap_User_Manual.pdf  | Bin 4856509 -> 5227565 bytes
+ docs/user/manual/ZMap_User_Manual.tex  |  12 ++++++++++--
+ docs/user/manual/img_edit_sequence.png | Bin 0 -> 497143 bytes
+ 3 files changed, 10 insertions(+), 2 deletions(-)
+
+2016-02-15  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix minor error with dialog titles - TRIVIAL
+ src/zmapAppServices/zmapAppSequenceView.cpp |  6 ++----
+ src/zmapAppServices/zmapAppSource.cpp       | 13 ++++++++-----
+ 2 files changed, 10 insertions(+), 9 deletions(-)
+
+2016-02-15  Gemma Guest  <gb10@sanger.ac.uk>
+ Merge branch 'feature/manual' into develop
+2016-02-15  Gemma Guest  <gb10@sanger.ac.uk>
+ Minor fix - WIP
+ docs/user/manual/ZMap_User_Manual.pdf | Bin 4856308 -> 4856509 bytes
+ docs/user/manual/ZMap_User_Manual.tex |   8 ++++----
  2 files changed, 4 insertions(+), 4 deletions(-)
 
-2016-01-22  Gemma Guest  <gb10@sanger.ac.uk>
- Fix to previous - WIP
- src/libcurlobject/libcurlobject.c |    2 --
- 1 files changed, 0 insertions(+), 2 deletions(-)
+2016-02-15  Gemma Guest  <gb10@sanger.ac.uk>
+ Flesh out view/export dna/peptide sections - WIP
+ docs/user/manual/ZMap_User_Manual.pdf     | Bin 4355366 -> 4856308 bytes
+ docs/user/manual/ZMap_User_Manual.tex     | 152 +++++++++++++++++++++++++++---
+ docs/user/manual/img_dna_3_frame.png      | Bin 0 -> 275752 bytes
+ docs/user/manual/img_show_translation.png | Bin 0 -> 256813 bytes
+ docs/user/manual/img_view_dna.png         | Bin 0 -> 247876 bytes
+ docs/user/manual/img_view_peptide.png     | Bin 0 -> 305945 bytes
+ 6 files changed, 141 insertions(+), 11 deletions(-)
 
-2016-01-22  Gemma Guest  <gb10@sanger.ac.uk>
- Minor fixes to previous - WIP
- src/include/ZMap/zmapConfigStrings.hpp   |    4 ++--
- src/libcurlobject/libcurlobject.c        |    6 ++----
- src/zmapConfig/zmapConfigLoader.cpp      |    4 ++--
- src/zmapWindow/zmapWindowPreferences.cpp |    4 ++--
- 4 files changed, 8 insertions(+), 10 deletions(-)
+2016-02-15  Gemma Guest  <gb10@sanger.ac.uk>
+ Add missing functionality to manual - WIP
+ docs/user/manual/ZMap_User_Manual.pdf | Bin 4344536 -> 4355366 bytes
+ docs/user/manual/ZMap_User_Manual.tex | 146 ++++++++++++++++++++++++++++------
+ 2 files changed, 121 insertions(+), 25 deletions(-)
 
-2016-01-22  Gemma Guest  <gb10@sanger.ac.uk>
- Fix compile error - WIP
- src/zmapWindow/zmapWindowPreferences.cpp |    5 +++--
- 1 files changed, 3 insertions(+), 2 deletions(-)
+2016-02-15  Gemma Guest  <gb10@sanger.ac.uk>
+ More section reorganisation - WIP
+ docs/user/manual/ZMap_User_Manual.pdf | Bin 4343766 -> 4344536 bytes
+ docs/user/manual/ZMap_User_Manual.tex |  71 +++++++++++++++++++---------------
+ 2 files changed, 39 insertions(+), 32 deletions(-)
 
-2016-01-22  Gemma Guest  <gb10@sanger.ac.uk>
- Add libcurl verbose and ipresolve config options - NEW FEATURE 'libcurl'
- src/include/ZMap/zmapConfigStrings.hpp   |    2 +
- src/libcurlobject/libcurlobject.c        |   10 ++++
- src/libpfetch/libpfetch.c                |   82 +++++++++++++++++-------------
- src/libpfetch/libpfetch_I.h              |    4 ++
- src/zmapConfig/zmapConfigLoader.cpp      |    2 +
- src/zmapWindow/zmapWindowFeature.cpp     |    2 +
- src/zmapWindow/zmapWindowPreferences.cpp |   30 ++++++++++-
- src/zmapWindow/zmapWindow_P.hpp          |    2 +
- 8 files changed, 96 insertions(+), 38 deletions(-)
+2016-02-15  Gemma Guest  <gb10@sanger.ac.uk>
+ Updates to previous - WIP
+ docs/user/manual/ZMap_User_Manual.pdf | Bin 4342571 -> 4343766 bytes
+ docs/user/manual/ZMap_User_Manual.tex |  23 ++++++++++++++++-------
+ 2 files changed, 16 insertions(+), 7 deletions(-)
 
-2016-01-19  Gemma Guest  <gb10@sanger.ac.uk>
- Add proxy config to zmap - WIP
- src/include/ZMap/zmapConfigStrings.hpp   |    1 +
- src/libcurlobject/libcurlobject.c        |    5 +++
- src/libpfetch/libpfetch.c                |   43 +++++++++++++++++++++++++++++-
- src/libpfetch/libpfetch_I.h              |    2 +
- src/zmapWindow/zmapWindowFeature.cpp     |    5 +++
- src/zmapWindow/zmapWindowPreferences.cpp |    6 ++++
- src/zmapWindow/zmapWindow_P.hpp          |    1 +
- 7 files changed, 62 insertions(+), 1 deletions(-)
+2016-02-15  Gemma Guest  <gb10@sanger.ac.uk>
+ More reorg and flesh out columns/annotation - WIP
+ docs/user/manual/ZMap_User_Manual.pdf | Bin 4423561 -> 4342571 bytes
+ docs/user/manual/ZMap_User_Manual.tex | 285 +++++++++++++++++++++++-----------
+ docs/user/manual/img_columns.png      | Bin 193957 -> 73903 bytes
+ 3 files changed, 192 insertions(+), 93 deletions(-)
+
+2016-02-12  Gemma Guest  <gb10@sanger.ac.uk>
+ Further code block format improvement - WIP
+ docs/user/manual/ZMap_User_Manual.pdf | Bin 4450736 -> 4423561 bytes
+ docs/user/manual/ZMap_User_Manual.tex |  46 ++++++++++++++++------------------
+ 2 files changed, 22 insertions(+), 24 deletions(-)
+
+2016-02-12  Gemma Guest  <gb10@sanger.ac.uk>
+ Re-do sections and improve formatting - WIP
+ docs/user/manual/ZMap_User_Manual.pdf | Bin 4416079 -> 4450736 bytes
+ docs/user/manual/ZMap_User_Manual.tex | 111 +++++++++++++++++++++++-----------
+ 2 files changed, 75 insertions(+), 36 deletions(-)
+
+2016-02-12  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix size of dialog screenshots - WIP
+ docs/user/manual/ZMap_User_Manual.pdf | Bin 4416392 -> 4416079 bytes
+ docs/user/manual/ZMap_User_Manual.tex |   8 ++++----
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+2016-02-12  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix invalid colour profiles in screenshots - WIP
+ docs/user/manual/ZMap_User_Manual.pdf              | Bin 4416392 -> 4416392 bytes
+ docs/user/manual/img_bumping.png                   | Bin 246540 -> 226710 bytes
+ docs/user/manual/img_columns.png                   | Bin 204564 -> 193957 bytes
+ docs/user/manual/img_create_source_ensembl.png     | Bin 50799 -> 36510 bytes
+ .../manual/img_create_source_ensembl_search_db.png | Bin 47352 -> 30848 bytes
+ docs/user/manual/img_create_source_file.png        | Bin 40996 -> 27004 bytes
+ docs/user/manual/img_editing_zmap.png              | Bin 443085 -> 445694 bytes
+ docs/user/manual/img_exporting_features.png        | Bin 267489 -> 271632 bytes
+ docs/user/manual/img_feature_details_dialog.png    | Bin 191833 -> 171267 bytes
+ docs/user/manual/img_feature_display_details.png   | Bin 198818 -> 188073 bytes
+ docs/user/manual/img_feature_search.png            | Bin 230622 -> 230905 bytes
+ docs/user/manual/img_feature_search_results.png    | Bin 135567 -> 126810 bytes
+ docs/user/manual/img_features.png                  | Bin 177360 -> 153983 bytes
+ docs/user/manual/img_focus_and_mark.png            | Bin 278930 -> 279017 bytes
+ docs/user/manual/img_launch_in_zmap.png            | Bin 255309 -> 224087 bytes
+ docs/user/manual/img_main_interface.png            | Bin 268048 -> 243426 bytes
+ docs/user/manual/img_main_window.png               | Bin 50581 -> 35155 bytes
+ docs/user/manual/img_navigating.png                | Bin 356542 -> 341787 bytes
+ docs/user/manual/img_open_from_otterlace.png       | Bin 240300 -> 233082 bytes
+ docs/user/manual/img_sequence_search.png           | Bin 178492 -> 153908 bytes
+ docs/user/manual/img_show_hide.png                 | Bin 128483 -> 115524 bytes
+ docs/user/manual/img_split_window.png              | Bin 183066 -> 154461 bytes
+ docs/user/manual/img_toolbar_feature_details.png   | Bin 198509 -> 185742 bytes
+ docs/user/manual/img_variant_construction.png      | Bin 328720 -> 334734 bytes
+ docs/user/manual/img_variant_construction2.png     | Bin 244126 -> 238223 bytes
+ docs/user/manual/img_zooming.png                   | Bin 336292 -> 308639 bytes
+ 26 files changed, 0 insertions(+), 0 deletions(-)
+
+2016-02-12  Gemma Guest  <gb10@sanger.ac.uk>
+ Start to reorg and add new features - WIP
+ docs/user/manual/ZMap_User_Manual.pdf              | Bin 4305827 -> 4416392 bytes
+ docs/user/manual/ZMap_User_Manual.tex              |  97 ++++++++++++++++++---
+ docs/user/manual/img_create_source_ensembl.png     | Bin 0 -> 50799 bytes
+ .../manual/img_create_source_ensembl_search_db.png | Bin 0 -> 47352 bytes
+ docs/user/manual/img_create_source_file.png        | Bin 0 -> 40996 bytes
+ docs/user/manual/img_main_window.png               | Bin 0 -> 50581 bytes
+ 6 files changed, 84 insertions(+), 13 deletions(-)
+
+2016-02-10  Gemma Guest  <gb10@sanger.ac.uk>
+ Merge branch 'feature/ensembl' into develop
+2016-02-10  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix a bug loading transcripts with different logic_name to gene - RT '514113'
+ src/zmapServer/ensembl/ensemblServer.cpp | 112 ++++++++++++++++++++++---------
+ 1 file changed, 80 insertions(+), 32 deletions(-)
+
+2016-02-10  Gemma Guest  <gb10@sanger.ac.uk>
+ Fetch transcripts via gene - WIP
+ src/zmapServer/ensembl/ensemblServer.cpp | 19 ++++---------------
+ 1 file changed, 4 insertions(+), 15 deletions(-)
+
+2016-02-10  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Add using gbtools namespace - WIP
+ src/zmapWindow/zmapWindowFeature.cpp | 3 +++
+ 1 file changed, 3 insertions(+)
+
+2016-02-10  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Add more up to date libtool macros. - BUILD
+ src/configure.ac | 16 +++-------------
+ 1 file changed, 3 insertions(+), 13 deletions(-)
+
+2016-02-09  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Put back code as was, problem in pfetch was in gbtools pfetch code. - REGRESSION FIX
+ src/zmapWindow/zmapWindowFeature.cpp | 48 +++++++++++++++++++++++++-----------
+ 1 file changed, 34 insertions(+), 14 deletions(-)
+
+2016-02-05  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix statement with no effect - TRIVIAL
+ src/zmapServer/ensembl/ensemblServer.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+2016-02-05  Gemma Guest  <gb10@sanger.ac.uk>
+ Merge branch 'production' into develop
+2016-02-05  Gemma Guest  <gb10@sanger.ac.uk>
+ Add missing header to makefile - BUILD
+ src/include/Makefile.am | 1 +
+ 1 file changed, 1 insertion(+)
+
+2016-02-05  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix incorrect gbtools version number - BUILD
+ src/autogen.sh | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+2016-02-05  Gemma Guest  <gb10@sanger.ac.uk>
+ Remove obsolete comment - TRIVIAL
+ src/autogen.sh | 4 ----
+ 1 file changed, 4 deletions(-)
+
+2016-02-04  Gemma Guest  <gb10@sanger.ac.uk>
+ Remove unused pfetch verbose arg - TRIVIAL
+ src/zmapWindow/zmapWindowFeature.cpp | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+
+2016-02-04  Gemma Guest  <gb10@sanger.ac.uk>
+ Merge branch 'production' into develop
+2016-01-26  Gemma Guest  <gb10@sanger.ac.uk>
+ Merge branch 'release/2.5.0' into develop
+2016-02-03  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Fix small bug in colinear colours code. - REGRESSION FIX
+ src/zmapWindow/canvas/zmapWindowCanvasAlignment.cpp | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+2016-01-28  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Remove redundant Makefile.zmap - BUILD
+ src/zmapApp/Makefile.am                      | 2 +-
+ src/zmapAppServices/Makefile.am              | 2 +-
+ src/zmapConfig/Makefile.am                   | 2 +-
+ src/zmapControl/Makefile.am                  | 2 +-
+ src/zmapDraw/Makefile.am                     | 2 +-
+ src/zmapFeature/Makefile.am                  | 2 +-
+ src/zmapGFF/Makefile.am                      | 2 +-
+ src/zmapRemoteControl/Makefile.am            | 2 +-
+ src/zmapRemoteControl/remotetest/Makefile.am | 2 +-
+ src/zmapServer/Makefile.am                   | 2 +-
+ src/zmapServer/acedb/Makefile.am             | 2 +-
+ src/zmapServer/ensembl/Makefile.am           | 2 +-
+ src/zmapServer/file/Makefile.am              | 2 +-
+ src/zmapServer/pipe/Makefile.am              | 2 +-
+ src/zmapThreads/Makefile.am                  | 2 +-
+ src/zmapUtils/Makefile.am                    | 2 +-
+ src/zmapView/Makefile.am                     | 2 +-
+ src/zmapWindow/Makefile.am                   | 2 +-
+ src/zmapXML/Makefile.am                      | 2 +-
+ 19 files changed, 19 insertions(+), 19 deletions(-)
+
+2016-01-28  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Remove redundant Makefile.zmap - BUILD
+ src/Makefile.zmap | 18 ------------------
+ 1 file changed, 18 deletions(-)
+
+2016-01-28  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Fix compiler warnings revealed by fix to setting compiler flags. - BUILD
+ src/include/ZMap/zmapFeature.hpp                   |  2 +-
+ src/include/ZMap/zmapGLibUtils.hpp                 |  2 +-
+ src/include/ZMap/zmapUrl.hpp                       |  2 +-
+ src/include/ZMap/zmapUtilsGUI.hpp                  |  4 ++--
+ src/zmapFeature/zmapFeatureAlignment.cpp           |  4 +++-
+ src/zmapFeature/zmapFeatureTranscript.cpp          |  8 ++++----
+ src/zmapGFF/zmapGFF3parser.cpp                     | 21 +++++++++++----------
+ src/zmapGFF/zmapGFFAttribute.cpp                   | 22 +++++++++++-----------
+ src/zmapGFF/zmapGFFStringUtils.cpp                 |  4 ++--
+ src/zmapGFF/zmapSOParser.cpp                       |  8 ++++----
+ src/zmapUtils/zmapDNA.cpp                          |  6 ++----
+ src/zmapUtils/zmapGLibUtils.cpp                    |  8 ++++----
+ src/zmapUtils/zmapGUINotebook.cpp                  |  8 ++++----
+ src/zmapUtils/zmapUrl.cpp                          |  4 ++--
+ .../canvas/zmapWindowCanvasAlignment.cpp           |  4 ++--
+ src/zmapWindow/zmapWindow.cpp                      |  4 ++--
+ src/zmapWindow/zmapWindowFeatureShow.cpp           | 14 ++++++++------
+ src/zmapWindow/zmapWindowList.cpp                  |  3 ++-
+ src/zmapXML/zmapXMLParse.cpp                       |  4 ++--
+ 19 files changed, 68 insertions(+), 64 deletions(-)
+
+2016-01-28  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Merge branch 'feature/Dashed_gaps' into develop
+2016-01-28  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Add new code to handle colinear colours in BAM matches, gaps in transcripts. - NEW FEATURE Gap Display
+ src/zmapFeature/zmapFeatureAlignment.cpp           |  58 ++--
+ .../canvas/zmapWindowCanvasAlignment.cpp           | 133 ++++-----
+ .../canvas/zmapWindowCanvasAlignment.hpp           |  23 +-
+ src/zmapWindow/canvas/zmapWindowCanvasDraw.cpp     | 328 +++++++++++++++++++--
+ src/zmapWindow/canvas/zmapWindowCanvasDraw.hpp     |  21 +-
+ .../canvas/zmapWindowCanvasFeatureset.cpp          |   3 -
+ .../canvas/zmapWindowCanvasFeatureset_I.hpp        |   8 +
+ .../canvas/zmapWindowCanvasTranscript.cpp          |  12 +-
+ 8 files changed, 451 insertions(+), 135 deletions(-)
+
+2016-01-28  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Add in align array for handling transcripts from vulgar matches. - NEW FEATURE Gap Display
+ src/include/ZMap/zmapFeature.hpp | 22 +++++++++++++---------
+ 1 file changed, 13 insertions(+), 9 deletions(-)
+
+2016-01-28  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Better prints for compile date file creation. - TRIVIAL
+ src/zmapUtils/Makefile.am | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
 2016-01-19  Gemma Guest  <gb10@sanger.ac.uk>
  Fix problems using localhost for ensembl db - RT 510659
- src/zmapServer/ensembl/ensemblUtils.cpp |   45 +++++++++++++++++++++++++-----
- 1 files changed, 37 insertions(+), 8 deletions(-)
+ src/zmapServer/ensembl/ensemblUtils.cpp | 45 +++++++++++++++++++++++++++------
+ 1 file changed, 37 insertions(+), 8 deletions(-)
 
-2016-01-15  zmap  <zmap@sanger.ac.uk>
- ZMap version 2.4.1-133-gd1df089 - Update RT and git commit reports
- src/ChangeLog                                  |    6 ++++++
- src/build/release_docs/RT_TICKETS_RESOLVED.txt |    2 +-
- 2 files changed, 7 insertions(+), 1 deletions(-)
+2016-01-25  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Bother...lipfetch ref. left in, removed now. - BUILD
+ src/Makefile.common | 2 --
+ 1 file changed, 2 deletions(-)
 
-2016-01-14  zmap  <zmap@sanger.ac.uk>
- ZMap version 2.4.1-132-gfe75a70 - Update RT and git commit reports
- src/ChangeLog                                  |  350 ++++++++++++++++++++++++
- src/build/release_docs/RT_TICKETS_RESOLVED.txt |    2 +-
- 2 files changed, 351 insertions(+), 1 deletions(-)
+2016-01-21  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Don't call member func when we don't have a style set. - TRIVIAL
+ src/zmapFeature/zmapStyleTree.cpp | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+2016-01-21  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Formatting. - FORMATTING ONLY
+ src/zmapFeature/zmapStyleObj.cpp | 3 +++
+ 1 file changed, 3 insertions(+)
+
+2016-01-21  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Try to get compile flags right. - BUILD
+ src/Makefile.common |  8 ++++----
+ src/configure.ac    | 15 ---------------
+ src/runconfig       | 11 ++++++-----
+ 3 files changed, 10 insertions(+), 24 deletions(-)
+
+2016-01-21  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Remove libpfetch and libcurlobject libs, code now in gbtools. - BUILD
+ src/libcurlobject/Makefile.am         |   21 -
+ src/libcurlobject/libcurlobject.c     | 1082 ------------------------
+ src/libcurlobject/libcurlobject.h     |   76 --
+ src/libcurlobject/libcurlobject_I.h   |   90 --
+ src/libpfetch/Makefile.am             |   46 -
+ src/libpfetch/libpfetch-cmarshal.list |    2 -
+ src/libpfetch/libpfetch-utils.c       |  110 ---
+ src/libpfetch/libpfetch.c             | 1505 ---------------------------------
+ src/libpfetch/libpfetch.h             |  164 ----
+ src/libpfetch/libpfetch_I.h           |  235 -----
+ src/libpfetch/libpfetch_P.h           |  121 ---
+ src/libpfetch/tests/Makefile.am       |   16 -
+ src/libpfetch/tests/check_libpfetch.c |  247 ------
+ src/libpfetch/tests/check_libpfetch.h |   74 --
+ 14 files changed, 3789 deletions(-)
+
+2016-01-21  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Remove local libpfetch - BUILD
+ src/Makefile.am  | 17 ++++++++---------
+ src/configure.ac |  4 ----
+ 2 files changed, 8 insertions(+), 13 deletions(-)
+
+2016-01-21  Ed Griffiths  <edgrif@sanger.ac.uk>
+ change call to new pfetch returning gerror. - TRIVIAL
+ src/zmapWindow/zmapWindowFeature.cpp | 12 +++++++++---
+ 1 file changed, 9 insertions(+), 3 deletions(-)
+
+2016-01-18  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Fix for new gbtools lib stuff. - BUILD
+ src/Makefile.am | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+2016-01-18  Ed Griffiths  <edgrif@sanger.ac.uk>
+ reformat. - TRIVIAL
+ src/README | 25 +++++++++++++++++++------
+ 1 file changed, 19 insertions(+), 6 deletions(-)
 
 2016-01-14  Gemma Guest  <gb10@sanger.ac.uk>
  Update release notes - DOC
- docs/user/release_notes.shtml |   21 +++++++++++++++++++++
- 1 files changed, 21 insertions(+), 0 deletions(-)
-
-2016-01-14  Gemma Guest  <gb10@sanger.ac.uk>
- Merge branch 'develop' into release/2.5.0
-2016-01-14  Gemma Guest  <gb10@sanger.ac.uk>
- Merge branch 'feature/bam' into develop
-2016-01-11  Gemma Guest  <gb10@sanger.ac.uk>
- Revert "Temporarily disable c++0x flag - BUILD"
- src/Makefile.common                         |    6 +++---
- src/configure.ac                            |    2 +-
- src/zmapAppServices/zmapAppSequenceView.cpp |   18 ++++++++----------
- src/zmapFeature/zmapFeatureAlignment.cpp    |   16 ++++++++--------
- 4 files changed, 20 insertions(+), 22 deletions(-)
-
-2016-01-11  Gemma Guest  <gb10@sanger.ac.uk>
- Fix bug with saving new source - NEW FEATURE 'BAM config'
- src/zmapControl/zmapControlWindowMenubar.cpp |   18 +++++-------------
- 1 files changed, 5 insertions(+), 13 deletions(-)
-
-2016-01-08  Gemma Guest  <gb10@sanger.ac.uk>
- Reorganise sources code and fix a bug setting source name - WIP
- src/include/ZMap/zmapFeatureLoadDisplay.hpp  |   12 +++-
- src/zmapApp/zmapAppmain_c.cpp                |    2 +-
- src/zmapApp/zmapAppwindow.cpp                |    4 +-
- src/zmapAppServices/zmapAppSequenceView.cpp  |   26 ++--------
- src/zmapControl/zmapControlImportFile.cpp    |    6 +-
- src/zmapControl/zmapControlWindowMenubar.cpp |   34 +++----------
- src/zmapFeature/zmapFeatureLoadDisplay.cpp   |   70 +++++++++++++++++++++++---
- 7 files changed, 90 insertions(+), 64 deletions(-)
-
-2016-01-08  Gemma Guest  <gb10@sanger.ac.uk>
- Reorganise sources code and fix a bug setting source name - WIP
- src/include/ZMap/zmapFeatureLoadDisplay.hpp  |   12 +++-
- src/zmapApp/zmapAppmain_c.cpp                |    2 +-
- src/zmapApp/zmapAppwindow.cpp                |    4 +-
- src/zmapAppServices/zmapAppSequenceView.cpp  |   26 ++--------
- src/zmapControl/zmapControlImportFile.cpp    |    6 +-
- src/zmapControl/zmapControlWindowMenubar.cpp |   34 +++----------
- src/zmapFeature/zmapFeatureLoadDisplay.cpp   |   70 +++++++++++++++++++++++---
- 7 files changed, 90 insertions(+), 64 deletions(-)
-
-2016-01-08  Gemma Barson  <gb10@sanger.ac.uk>
- Fix compile error with previous - REGRESSION FIX
- src/zmapControl/zmapControlImportFile.cpp |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
-
-2016-01-08  Gemma Guest  <gb10@sanger.ac.uk>
- Fix bug with bam_get args - REGRESSION FIX
- src/zmapControl/zmapControlImportFile.cpp |   29 +++++++++++++----------------
- 1 files changed, 13 insertions(+), 16 deletions(-)
-
-2016-01-08  Gemma Guest  <gb10@sanger.ac.uk>
- Merge branch 'feature/bam' into develop - NEW FEATURE 'BAM config'
-2016-01-07  Gemma Guest  <gb10@sanger.ac.uk>
- Reorganise file import code - WIP
- src/include/ZMap/zmapFeatureLoadDisplay.hpp |   22 +-
- src/include/ZMap/zmapView.hpp               |    3 +-
- src/zmapControl/zmapControlImportFile.cpp   |  519 +++++++++++++++------------
- src/zmapFeature/zmapFeatureLoadDisplay.cpp  |  128 ++++++-
- src/zmapUtils/zmapUtils.cpp                 |    3 +-
- src/zmapView/zmapView.cpp                   |   10 +
- src/zmapView/zmapViewUtils.cpp              |   17 -
- src/zmapWindow/zmapWindow.cpp               |    2 +-
- 8 files changed, 431 insertions(+), 273 deletions(-)
-
-2016-01-06  Gemma Guest  <gb10@sanger.ac.uk>
- Merge branch 'feature/columns' into develop
-2016-01-06  Gemma Guest  <gb10@sanger.ac.uk>
- Fix crash showing translation when not available - BUG FIX
- src/zmapWindow/zmapWindowSeqDisp.cpp |    9 ++++++---
- 1 files changed, 6 insertions(+), 3 deletions(-)
-
-2016-01-06  Gemma Guest  <gb10@sanger.ac.uk>
- Fix redraw problem when applying reorder - BUG FIX
- src/zmapWindow/zmapWindowColConfig.cpp |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-2016-01-06  Gemma Guest  <gb10@sanger.ac.uk>
- Fix a couple of bugs with columns dialog - BUG FIX
- src/zmapFeature/zmapFeatureLoadDisplay.cpp |   14 +----
- src/zmapWindow/zmapWindowColConfig.cpp     |   84 ++++++++++++++++++++++------
- 2 files changed, 70 insertions(+), 28 deletions(-)
-
-2016-01-04  Gemma Guest  <gb10@sanger.ac.uk>
- Respect scope when blixeming bam column - WIP 'BAM config'
- src/zmapView/zmapViewCallBlixem.cpp |   11 +++++++----
- 1 files changed, 7 insertions(+), 4 deletions(-)
-
-2016-01-04  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add a placeholder to make sure we have the src subdir for builds. - BUILD
- src/ensc-core/src/README_ZMAP |    7 +++++++
- 1 files changed, 7 insertions(+), 0 deletions(-)
-
-2016-01-04  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add new dummy file to keep ensc-core dir. - BUILD
- src/.gitignore |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-2016-01-04  Ed Griffiths  <edgrif@sanger.ac.uk>
- Remove this file as it overwrites an ensc-core file. - BUILD
- src/ensc-core/src/.gitignore |    3 ---
- 1 files changed, 0 insertions(+), 3 deletions(-)
-
-2016-01-04  Ed Griffiths  <edgrif@sanger.ac.uk>
- Fix up build messages to make it clearer what is being built and what is not. - BUILD
- src/autogen.sh |   80 ++++++++++++++++++++++++++++++-------------------------
- 1 files changed, 44 insertions(+), 36 deletions(-)
-
-2016-01-04  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add entry for new ensc-core dummy directory. - BUILD
- src/.gitignore |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
-
-2016-01-04  Ed Griffiths  <edgrif@sanger.ac.uk>
- New dummy file to fix bug in building without ensembl. - BUILD
- src/ensc-core/src/.gitignore |    3 +++
- 1 files changed, 3 insertions(+), 0 deletions(-)
-
-2016-01-04  Gemma Guest  <gb10@sanger.ac.uk>
- Fix bug with right-click blixem menus - REGRESSION
- src/zmapWindow/zmapWindowMenus.cpp |    6 +++---
- 1 files changed, 3 insertions(+), 3 deletions(-)
-
-2016-01-04  Gemma Guest  <gb10@sanger.ac.uk>
- Better blixem BAM configuration - NEW FEATURE 'BAM config'
- src/zmapWindow/zmapWindow.cpp      |   10 +++++++++-
- src/zmapWindow/zmapWindowMenus.cpp |   10 +++++-----
- src/zmapWindow/zmapWindow_P.hpp    |    2 ++
- 3 files changed, 16 insertions(+), 6 deletions(-)
-
-2016-01-04  Gemma Guest  <gb10@sanger.ac.uk>
- Fix merge errors - BUILD
- src/zmapView/zmapViewCallBlixem.cpp |   75 +++++++++++++++++++++++++++++++---
- 1 files changed, 68 insertions(+), 7 deletions(-)
-
-2016-01-04  Gemma Guest  <gb10@sanger.ac.uk>
- Merge branch 'feature/bam' into develop
-2016-01-04  Gemma Guest  <gb10@sanger.ac.uk>
- Merge branch 'develop' into feature/bam
-2015-12-22  Gemma Guest  <gb10@sanger.ac.uk>
- Merge branch 'feature/bam' into develop - NEW FEATURE 'fetch command'
-2015-12-22  Gemma Guest  <gb10@sanger.ac.uk>
- Use url from cached source - WIP
- src/include/ZMap/zmapFeatureLoadDisplay.hpp |    3 +-
- src/zmapFeature/zmapFeatureLoadDisplay.cpp  |   29 ++++++++++++++++++++++++++-
- src/zmapView/zmapViewCallBlixem.cpp         |   10 ++++----
- 3 files changed, 35 insertions(+), 7 deletions(-)
-
-2015-12-22  Gemma Guest  <gb10@sanger.ac.uk>
- Fix typo - WIP
- src/zmapView/zmapViewCallBlixem.cpp |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-2015-12-22  Gemma Guest  <gb10@sanger.ac.uk>
- Fixes to previous - WIP
- src/include/ZMap/zmapFeatureLoadDisplay.hpp |    2 +-
- src/zmapFeature/zmapFeatureLoadDisplay.cpp  |    2 +-
- src/zmapView/zmapViewCallBlixem.cpp         |   24 ++++++++++++++++++------
- 3 files changed, 20 insertions(+), 8 deletions(-)
-
-2015-12-22  Gemma Guest  <gb10@sanger.ac.uk>
- Add facility to send a bam_get command to blixem in gff - WIP
- src/include/ZMap/zmapFeatureLoadDisplay.hpp |    1 +
- src/zmapFeature/zmapFeatureLoadDisplay.cpp  |   17 +++++++++++++
- src/zmapView/zmapViewCallBlixem.cpp         |   34 +++++++++++++++++++++++++-
- 3 files changed, 50 insertions(+), 2 deletions(-)
-
-2016-01-04  Gemma Guest  <gb10@sanger.ac.uk>
- Get command tag args from url - WIP
- src/zmapView/zmapViewCallBlixem.cpp |  104 ++++++++++++++++++++---------------
- 1 files changed, 59 insertions(+), 45 deletions(-)
-
-2016-01-04  Gemma Guest  <gb10@sanger.ac.uk>
- Add function to escape GFF special chars - WIP
- src/include/ZMap/zmapGFFStringUtils.hpp |    2 ++
- src/zmapGFF/zmapGFFAttribute.cpp        |   30 +++++++++++++++++++++++++-----
- 2 files changed, 27 insertions(+), 5 deletions(-)
-
-2016-01-04  Gemma Guest  <gb10@sanger.ac.uk>
- Fix a bad pointer bug - BUG FIX
- src/zmapFeature/zmapFeatureLoadDisplay.cpp |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
-
-2016-01-04  Gemma Guest  <gb10@sanger.ac.uk>
- Get bam_get script name from url - WIP
- src/zmapView/zmapViewCallBlixem.cpp |   20 ++++++++++++++++++--
- 1 files changed, 18 insertions(+), 2 deletions(-)
-
-2015-12-22  Gemma Guest  <gb10@sanger.ac.uk>
- Remove special-case bam menu items - WIP
- src/zmapWindow/zmapWindowMenus.cpp |  115 ++++++++++++++++++------------------
- src/zmapWindow/zmapWindow_P.hpp    |    6 ++
- 2 files changed, 63 insertions(+), 58 deletions(-)
-
-2015-12-22  Gemma Guest  <gb10@sanger.ac.uk>
- Remove special case code for bam - WIP
- src/include/ZMap/zmapWindow.hpp           |    4 +-
- src/zmapView/zmapViewCallBlixem.cpp       |   72 +++++++++++++++--------------
- src/zmapWindow/zmapWindowFeatureFuncs.cpp |   48 +++++++------------
- src/zmapWindow/zmapWindowMenus.cpp        |    6 +-
- 4 files changed, 60 insertions(+), 70 deletions(-)
-
-2015-12-22  Gemma Guest  <gb10@sanger.ac.uk>
- Merge branch 'feature/bam' into develop - NEW FEATURE 'fetch command'
-2015-12-22  Gemma Guest  <gb10@sanger.ac.uk>
- Use url from cached source - WIP
- src/include/ZMap/zmapFeatureLoadDisplay.hpp |    3 +-
- src/zmapFeature/zmapFeatureLoadDisplay.cpp  |   29 ++++++++++++++++++++++++++-
- src/zmapView/zmapViewCallBlixem.cpp         |   10 ++++----
- 3 files changed, 35 insertions(+), 7 deletions(-)
-
-2015-12-22  Gemma Guest  <gb10@sanger.ac.uk>
- Fix typo - WIP
- src/zmapView/zmapViewCallBlixem.cpp |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-2015-12-22  Gemma Guest  <gb10@sanger.ac.uk>
- Fixes to previous - WIP
- src/include/ZMap/zmapFeatureLoadDisplay.hpp |    2 +-
- src/zmapFeature/zmapFeatureLoadDisplay.cpp  |    2 +-
- src/zmapView/zmapViewCallBlixem.cpp         |   24 ++++++++++++++++++------
- 3 files changed, 20 insertions(+), 8 deletions(-)
-
-2015-12-22  Ed Griffiths  <edgrif@sanger.ac.uk>
- Oh dear, missing so related and other scripts for new build. - BUILD
- src/SOFA.obo                | 3060 +++++++
- src/autogen.sh              |    7 +-
- src/git_branch.sh           |   89 +
- src/git_version.sh          |  109 +
- src/sh_functions.sh         |    6 +
- src/so-hack.obo             |   11 +
- src/so-xp-simple.obo        |19817 ++++++++++++++++++++++++++++++++++++++++++
- src/so-xp.obo               |20289 +++++++++++++++++++++++++++++++++++++++++++
- src/so_to_mode_map.txt      | 2014 +++++
- src/so_to_mode_map_hack.txt |    6 +
- src/zmap_SO_header.pl       |   14 +-
- 11 files changed, 45411 insertions(+), 11 deletions(-)
-
-2015-12-22  Gemma Guest  <gb10@sanger.ac.uk>
- Add facility to send a bam_get command to blixem in gff - WIP
- src/include/ZMap/zmapFeatureLoadDisplay.hpp |    1 +
- src/zmapFeature/zmapFeatureLoadDisplay.cpp  |   17 +++++++++++++
- src/zmapView/zmapViewCallBlixem.cpp         |   34 +++++++++++++++++++++++++-
- 3 files changed, 50 insertions(+), 2 deletions(-)
-
-2015-12-22  Ed Griffiths  <edgrif@sanger.ac.uk>
- scripts directory moved to it's own git repository. - BUILD
- scripts/Author                                  |  225 -
- scripts/CopyRight                               |  141 -
- scripts/CopyRight.txt                           |   46 -
- scripts/Include                                 |  152 -
- scripts/PerlModules/Hum/Ace/AceText.pm          |  264 -
- scripts/PerlModules/Hum/Ace/Colors.pm           |  108 -
- scripts/PerlModules/Hum/Ace/Method.pm           |  782 -
- scripts/PerlModules/Hum/Ace/MethodCollection.pm |  401 -
- scripts/README                                  |    9 -
- scripts/RT_scrips                               |   17 -
- scripts/SOFA.obo                                | 3060 ----
- scripts/Tweak                                   |  155 -
- scripts/build_bootstrap.sh                      |  754 -
- scripts/build_config.deskpro110.sh              |    3 -
- scripts/build_config.linux-64.sh                |   22 -
- scripts/build_config.linux-i386.sh              |   22 -
- scripts/build_config.mac.sh                     |   22 -
- scripts/build_config.mac18480i.sh               |   19 -
- scripts/build_config.mpb101217i.sh              |   30 -
- scripts/build_config.sh                         |  389 -
- scripts/build_config.tviewsrv.sh                |   22 -
- scripts/build_run.sh                            |  425 -
- scripts/copy_directory.sh                       |   25 -
- scripts/crontab.overnight.build                 |    1 -
- scripts/git_branch.sh                           |   89 -
- scripts/git_clone.sh                            |  125 -
- scripts/git_commit.sh                           |   61 -
- scripts/git_version.sh                          |  109 -
- scripts/includes.php                            |  125 -
- scripts/makeQuadList                            |  509 -
- scripts/methods2style.pl                        |  520 -
- scripts/methods_add_style_tags.pl               |   48 -
- scripts/process_rt_tickets_file.pl              |   79 -
- scripts/process_stack_dump.pl                   |   92 -
- scripts/session.pl                              |  192 -
- scripts/set_dev_description.pl                  |   52 -
- scripts/setup_libs_otter.sh                     |   51 -
- scripts/so-hack.obo                             |   11 -
- scripts/so-xp-simple.obo                        |19817 ----------------------
- scripts/so-xp.obo                               |20289 -----------------------
- scripts/so_to_mode_map.txt                      | 2014 ---
- scripts/so_to_mode_map_hack.txt                 |    6 -
- scripts/versioner                               |  405 -
- scripts/zmap_build_development.sh               |   44 -
- scripts/zmap_build_feature.sh                   |   50 -
- scripts/zmap_build_one_off.sh                   |   48 -
- scripts/zmap_build_overnight.sh                 |   47 -
- scripts/zmap_build_production.sh                |   43 -
- scripts/zmap_build_release.sh                   |   53 -
- scripts/zmap_check_cluster_config.sh            |   36 -
- scripts/zmap_compile_and_tar.sh                 |  241 -
- scripts/zmap_cvs_changes.sh                     |  163 -
- scripts/zmap_fetch_acedbbinaries.sh             |  344 -
- scripts/zmap_foocanvas_tasks.sh                 |   69 -
- scripts/zmap_functions.sh                       |  521 -
- scripts/zmap_functions_web.sh                   |  275 -
- scripts/zmap_handle_release_tar.sh              |  226 -
- scripts/zmap_machine_perf.sh                    |   89 -
- scripts/zmap_make_SOURCES_list.sh               |   92 -
- scripts/zmap_make_docs.sh                       |  179 -
- scripts/zmap_master_build                       |  148 -
- scripts/zmap_otterlace.sh                       |  100 -
- scripts/zmap_release_docs.sh                    |   91 -
- scripts/zmap_release_notes.sh                   |   92 -
- scripts/zmap_symlink.sh                         |   70 -
- scripts/zmap_test_suite.sh                      |  265 -
- scripts/zmap_update_ftp.sh                      |  296 -
- scripts/zmap_update_run                         |   63 -
- scripts/zmap_update_web.sh                      |  219 -
- scripts/zmap_x11_functions.sh                   |   95 -
- scripts/zmap_x11_helper.sh                      |   59 -
- 71 files changed, 0 insertions(+), 55706 deletions(-)
-
-2015-12-22  Ed Griffiths  <edgrif@sanger.ac.uk>
- Move script to src subdir so src is self-contained. - BUILD
- scripts/zmap_SO_header.pl |  536 ---------------------------------------------
- src/zmap_SO_header.pl     |  536 +++++++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 536 insertions(+), 536 deletions(-)
-
-2015-12-22  Ed Griffiths  <edgrif@sanger.ac.uk>
- New local script functions to replace those in scripts subdir. - BUILD
- src/sh_functions.sh |  136 +++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 files changed, 136 insertions(+), 0 deletions(-)
-
-2015-12-22  Ed Griffiths  <edgrif@sanger.ac.uk>
- Remove references to scripts subdir, not needed now. - BUILD
- src/autogen.sh |   52 +++++++++++++++++++++++++++++++++++++++++++++-------
- src/runconfig  |    8 +++++---
- 2 files changed, 50 insertions(+), 10 deletions(-)
-
-2015-12-18  Gemma Guest  <gb10@sanger.ac.uk>
- Merge branch 'release/2.5.0' into develop
-2015-12-18  zmap  <zmap@sanger.ac.uk>
- ZMap version 2.4.1-116-gffc7182 - Update RT and git commit reports
- src/ChangeLog                                  |   14 ++++++++++++++
- src/build/release_docs/RT_TICKETS_RESOLVED.txt |    2 +-
- 2 files changed, 15 insertions(+), 1 deletions(-)
-
-2015-12-18  Gemma Guest  <gb10@sanger.ac.uk>
- Merge branch 'release/2.5.0' into develop
-2015-12-18  Gemma Guest  <gb10@sanger.ac.uk>
- Temporarily disable c++0x flag - BUILD
- src/Makefile.common                         |    6 +++---
- src/configure.ac                            |    2 +-
- src/zmapAppServices/zmapAppSequenceView.cpp |   18 ++++++++++--------
- src/zmapFeature/zmapFeatureAlignment.cpp    |   16 ++++++++--------
- 4 files changed, 22 insertions(+), 20 deletions(-)
-
-2015-12-17  zmap  <zmap@sanger.ac.uk>
- ZMap version 2.4.1-114-g4fa5f9e - Update RT and git commit reports
- src/ChangeLog                                  |   14 ++++++++++++++
- src/build/release_docs/RT_TICKETS_RESOLVED.txt |    2 +-
- 2 files changed, 15 insertions(+), 1 deletions(-)
-
-2015-12-17  Gemma Guest  <gb10@sanger.ac.uk>
- Merge branch 'develop' into release/2.5.0
-2015-12-17  Gemma Guest  <gb10@sanger.ac.uk>
- Fix missing include file in dist - BUILD
- src/zmapAppServices/Makefile.am |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
-
-2015-12-15  zmap  <zmap@sanger.ac.uk>
- ZMap version 2.4.1-111-gb7a8287 - Update RT and git commit reports
- src/ChangeLog                                  | 1611 ++++++++++++------------
- src/build/release_docs/GIT_COMMITS.txt         |   32 +-
- src/build/release_docs/RT_TICKETS_RESOLVED.txt |   66 +-
- 3 files changed, 837 insertions(+), 872 deletions(-)
-
-2015-12-15  Gemma Guest  <gb10@sanger.ac.uk>
- Add autotools check for c++0x support - BUILD
- src/ax_cxx_compile_stdcxx_0x.m4 |  111 +++++++++++++++++++++++++++++++++++++++
- src/configure.ac                |    4 ++
- 2 files changed, 115 insertions(+), 0 deletions(-)
-
-2015-12-14  Gemma Guest  <gb10@sanger.ac.uk>
- Fix unnecessary call to ssh in autogen.sh - BUILD
- src/autogen.sh |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-2015-12-11  Gemma Guest  <gb10@sanger.ac.uk>
- Don't fetch any optional libs with -z arg - BUILD
- src/autogen.sh |    2 ++
- 1 files changed, 2 insertions(+), 0 deletions(-)
-
-2015-12-10  Gemma Guest  <gb10@sanger.ac.uk>
- Fix bug with otter sources not loading - REGRESSION FIX
- src/zmapApp/zmapAppManager.cpp |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
-
-2015-12-10  Ed Griffiths  <edgrif@sanger.ac.uk>
- Remove unused RT_Test and server directories. NEW FEATURE
- RT_Test/maintenance_scripts/dumb_installer.sh |  229 -----------
- server/Bio/Server/BAM.pm                      |   43 ---
- server/Bio/Server/BigWig.pm                   |   72 ----
- server/fake.gff                               |  505 -------------------------
- server/modEncode.txt                          |  117 ------
- server/run_zmap                               |  262 -------------
- server/zmap_bam_get_sequence                  |  129 -------
- server/zmap_bam_get_sequence_test_encode      |    8 -
- server/zmap_get_bam                           |  338 -----------------
- server/zmap_get_bam_test_encode               |   27 --
- server/zmap_get_bam_test_wormbase             |   17 -
- server/zmap_get_bigwig                        |  256 -------------
- server/zmap_get_bigwig_test_encode            |   17 -
- server/zmap_get_gff                           |  208 ----------
- server/zmap_get_gff_test_fake                 |   13 -
- server/zmap_perl.sh                           |   45 ---
- server/zmap_proxy.sh                          |   42 --
- 17 files changed, 0 insertions(+), 2328 deletions(-)
-
-2015-12-10  Ed Griffiths  <edgrif@sanger.ac.uk>
- Removed foocanvas, moved to it's own zmap_foocanvas respository. NEW FEATURE
- foocanvas/README                                   |    5 -
- foocanvas/foocanvas_build.html                     |  771 ----
- foocanvas/makebuildcode                            |   89 -
- foocanvas/makecvs                                  |  169 -
- foocanvas/makediff                                 |  101 -
- foocanvas/makedirs                                 |   82 -
- foocanvas/makepatch                                |   90 -
- foocanvas/zmap_source/configure.in                 |   70 -
- foocanvas/zmap_source/configure.in.diff            |   42 -
- foocanvas/zmap_source/demos/Makefile.am            |   36 -
- foocanvas/zmap_source/demos/Makefile.am.diff       |   11 -
- foocanvas/zmap_source/libfoocanvas/Makefile.am     |   65 -
- .../zmap_source/libfoocanvas/Makefile.am.diff      |  115 -
- .../zmap_source/libfoocanvas/foo-canvas-line.c     | 1290 ------
- .../libfoocanvas/foo-canvas-line.c.diff            |   63 -
- .../zmap_source/libfoocanvas/foo-canvas-line.h     |  151 -
- .../libfoocanvas/foo-canvas-line.h.diff            |   16 -
- .../libfoocanvas/foo-canvas-marshal.list           |    3 -
- .../libfoocanvas/foo-canvas-marshal.list.diff      |    6 -
- .../zmap_source/libfoocanvas/foo-canvas-pixbuf.c   |  826 ----
- .../libfoocanvas/foo-canvas-pixbuf.c.diff          |   79 -
- .../zmap_source/libfoocanvas/foo-canvas-pixbuf.h   |   63 -
- .../libfoocanvas/foo-canvas-pixbuf.h.diff          |   16 -
- .../zmap_source/libfoocanvas/foo-canvas-polygon.c  |  827 ----
- .../libfoocanvas/foo-canvas-polygon.c.diff         |   34 -
- .../zmap_source/libfoocanvas/foo-canvas-polygon.h  |  122 -
- .../libfoocanvas/foo-canvas-polygon.h.diff         |   16 -
- .../libfoocanvas/foo-canvas-rect-ellipse.c         | 1490 -------
- .../libfoocanvas/foo-canvas-rect-ellipse.c.diff    |   61 -
- .../libfoocanvas/foo-canvas-rect-ellipse.h         |  175 -
- .../libfoocanvas/foo-canvas-rect-ellipse.h.diff    |   16 -
- .../zmap_source/libfoocanvas/foo-canvas-text.c     | 1595 --------
- .../libfoocanvas/foo-canvas-text.c.diff            |   86 -
- .../zmap_source/libfoocanvas/foo-canvas-text.h     |  169 -
- .../libfoocanvas/foo-canvas-text.h.diff            |   16 -
- .../zmap_source/libfoocanvas/foo-canvas-widget.c   |  590 ---
- .../libfoocanvas/foo-canvas-widget.c.diff          |   29 -
- .../zmap_source/libfoocanvas/foo-canvas-widget.h   |  104 -
- .../libfoocanvas/foo-canvas-widget.h.diff          |   16 -
- foocanvas/zmap_source/libfoocanvas/foo-canvas.c    | 4186 --------------------
- .../zmap_source/libfoocanvas/foo-canvas.c.diff     |  539 ---
- foocanvas/zmap_source/libfoocanvas/foo-canvas.h    |  554 ---
- .../zmap_source/libfoocanvas/foo-canvas.h.diff     |   78 -
- .../libfoocanvas/foozmap-canvas-floating-group.c   |  449 ---
- .../foozmap-canvas-floating-group.c.diff           |  452 ---
- .../libfoocanvas/foozmap-canvas-floating-group.h   |   89 -
- .../foozmap-canvas-floating-group.h.diff           |   92 -
- .../libfoocanvas/foozmap-canvas-line-glyph.c       | 1480 -------
- .../libfoocanvas/foozmap-canvas-line-glyph.c.diff  | 1483 -------
- .../libfoocanvas/foozmap-canvas-line-glyph.h       |  126 -
- .../libfoocanvas/foozmap-canvas-line-glyph.h.diff  |  129 -
- .../zmap_source/libfoocanvas/foozmap-canvas-text.c | 1353 -------
- .../libfoocanvas/foozmap-canvas-text.c.diff        | 1356 -------
- .../zmap_source/libfoocanvas/foozmap-canvas-text.h |  132 -
- .../libfoocanvas/foozmap-canvas-text.h.diff        |  135 -
- foocanvas/zmap_source/libfoocanvas/libfoocanvas.h  |   50 -
- .../zmap_source/libfoocanvas/libfoocanvas.h.diff   |   34 -
- .../zmap_source/libfoocanvas/libfoocanvas.pc.in    |   11 -
- .../libfoocanvas/libfoocanvas.pc.in.diff           |   16 -
- .../zmap_source/libfoocanvas/libfoocanvastypes.c   |   44 -
- .../libfoocanvas/libfoocanvastypes.c.diff          |   16 -
- 61 files changed, 0 insertions(+), 22309 deletions(-)
-
-2015-12-10  Ed Griffiths  <edgrif@sanger.ac.uk>
- minor comment improvements - TRIVIAL
- src/runconfig                        |   10 ++++++++--
- src/zmapConfig/zmap_DefaultStyles.pl |    2 +-
- 2 files changed, 9 insertions(+), 3 deletions(-)
-
-2015-12-09  Gemma Guest  <gb10@sanger.ac.uk>
- Merge branch 'feature/pfetch' into develop - NEW FEATURE 'pfetch https'
-2015-12-09  Gemma Guest  <gb10@sanger.ac.uk>
- Fix an error with reading the port - WIP
- src/zmapWindow/zmapWindowPreferences.cpp |    8 ++++----
- 1 files changed, 4 insertions(+), 4 deletions(-)
-
-2015-12-09  Gemma Guest  <gb10@sanger.ac.uk>
- Fix compiler warnings - WIP
- src/zmapFeature/zmapFeatureAlignment.cpp |   14 --------------
- src/zmapFeature/zmapFeatureAny.cpp       |    3 ---
- 2 files changed, 0 insertions(+), 17 deletions(-)
-
-2015-12-09  Gemma Guest  <gb10@sanger.ac.uk>
- Add config for port - WIP
- src/include/ZMap/zmapConfigStrings.hpp   |    1 +
- src/zmapConfig/zmapConfigLoader.cpp      |    1 +
- src/zmapWindow/zmapWindowPreferences.cpp |   22 ++++++++++++++++++----
- 3 files changed, 20 insertions(+), 4 deletions(-)
-
-2015-12-09  Gemma Guest  <gb10@sanger.ac.uk>
- Improve handling of errors from libcurl - WIP
- src/libcurlobject/libcurlobject.c |   25 ++++++++++++++-----------
- 1 files changed, 14 insertions(+), 11 deletions(-)
-
-2015-12-09  Gemma Guest  <gb10@sanger.ac.uk>
- Merge branch 'feature/columns' into develop
-2015-12-07  Gemma Guest  <gb10@sanger.ac.uk>
- Add save menu to columns dialog - NEW FEATURE 'save columns'
- src/zmapWindow/zmapWindowColConfig.cpp |  109 ++++++++++++++++++--------------
- 1 files changed, 62 insertions(+), 47 deletions(-)
-
-2015-12-07  Gemma Guest  <gb10@sanger.ac.uk>
- Refactoring - WIP
- src/include/ZMap/zmapFeatureLoadDisplay.hpp |   14 ++-
- src/zmapAppServices/zmapAppSequenceView.cpp |    2 +
- src/zmapFeature/zmapFeatureLoadDisplay.cpp  |  200 ++++++++++++++++++++++++++-
- src/zmapView/zmapView.cpp                   |  174 +----------------------
- 4 files changed, 214 insertions(+), 176 deletions(-)
-
-2015-12-07  Gemma Guest  <gb10@sanger.ac.uk>
- Only save sources if changed by user - WIP
- src/zmapAppServices/zmapAppSequenceView.cpp |    2 ++
- src/zmapView/zmapView.cpp                   |    2 +-
- 2 files changed, 3 insertions(+), 1 deletions(-)
-
-2015-12-07  Gemma Guest  <gb10@sanger.ac.uk>
- Fix bug checking for unsaved status - BUG FIX
- src/zmapView/zmapView.cpp |    3 +++
- 1 files changed, 3 insertions(+), 0 deletions(-)
-
-2015-12-07  Gemma Guest  <gb10@sanger.ac.uk>
- Add save cb and move flags to seq map - WIP
- src/include/ZMap/zmapFeatureLoadDisplay.hpp        |   46 +++++++--
- src/include/ZMap/zmapView.hpp                      |    2 +-
- src/include/ZMap/zmapWindow.hpp                    |   26 +----
- src/zmapFeature/zmapFeatureLoadDisplay.cpp         |  111 +++++++++++++-------
- src/zmapView/zmapView.cpp                          |   27 +----
- src/zmapView/zmapViewCallBlixem.cpp                |    4 +-
- src/zmapView/zmapViewScratch.cpp                   |    2 +-
- src/zmapView/zmapViewUtils.cpp                     |   10 +-
- src/zmapView/zmapView_P.hpp                        |    1 -
- .../canvas/zmapWindowContainerFeatureSet.cpp       |   12 +-
- src/zmapWindow/zmapWindow.cpp                      |   42 +++++---
- src/zmapWindow/zmapWindowColConfig.cpp             |   64 +++++++++--
- src/zmapWindow/zmapWindowColOrder.cpp              |    5 +-
- src/zmapWindow/zmapWindowDNA.cpp                   |    6 +-
- src/zmapWindow/zmapWindowDisplayOps.cpp            |    4 +-
- src/zmapWindow/zmapWindowDraw.cpp                  |    2 +-
- src/zmapWindow/zmapWindowDrawFeatures.cpp          |    2 +-
- src/zmapWindow/zmapWindowFeature.cpp               |    4 +-
- src/zmapWindow/zmapWindowFeatureFuncs.cpp          |    3 +-
- src/zmapWindow/zmapWindowFeatureShow.cpp           |   10 +-
- src/zmapWindow/zmapWindowMenus.cpp                 |   14 ++--
- src/zmapWindow/zmapWindowRemoteControl.cpp         |    2 +-
- src/zmapWindow/zmapWindowScratch.cpp               |    2 +-
- src/zmapWindow/zmapWindowSearch.cpp                |    7 +-
- src/zmapWindow/zmapWindowState.cpp                 |   16 ++--
- src/zmapWindow/zmapWindowStyle.cpp                 |    2 +-
- src/zmapWindow/zmapWindowUtils.cpp                 |   16 ++--
- src/zmapWindow/zmapWindow_P.hpp                    |    1 -
- 28 files changed, 265 insertions(+), 178 deletions(-)
-
-2015-12-04  Gemma Guest  <gb10@sanger.ac.uk>
- Merge branch 'feature/ensembl_gui' into develop
-2015-12-04  Gemma Guest  <gb10@sanger.ac.uk>
- Load sources when config file changed - WIP
- src/include/ZMap/zmapFeatureLoadDisplay.hpp |    1 +
- src/zmapAppServices/zmapAppSequenceView.cpp |   18 ++++++++++++++++++
- src/zmapFeature/zmapFeatureLoadDisplay.cpp  |   14 +++++++++++---
- 3 files changed, 30 insertions(+), 3 deletions(-)
-
-2015-12-04  Gemma Guest  <gb10@sanger.ac.uk>
- Fixes for save button - WIP
- src/include/ZMap/zmapFeatureLoadDisplay.hpp |    1 +
- src/zmapAppServices/zmapAppSequenceView.cpp |   14 +++++++-------
- src/zmapView/zmapView.cpp                   |    4 ----
- 3 files changed, 8 insertions(+), 11 deletions(-)
-
-2015-12-04  Gemma Guest  <gb10@sanger.ac.uk>
- Add save-sources button - WIP
- src/include/ZMap/zmapFeatureLoadDisplay.hpp |    1 +
- src/zmapAppServices/zmapAppSequenceView.cpp |  118 ++++++++++++++++++++++++++-
- src/zmapAppServices/zmapAppServices_P.hpp   |    5 +-
- src/zmapFeature/zmapFeatureLoadDisplay.cpp  |   54 ++++++++++++
- src/zmapView/zmapView.cpp                   |   59 +-------------
- 5 files changed, 176 insertions(+), 61 deletions(-)
-
-2015-12-04  Gemma Guest  <gb10@sanger.ac.uk>
- Improve error messages - WIP
- src/zmapAppServices/zmapAppSequenceView.cpp |   24 +++++++++++++++++++-----
- 1 files changed, 19 insertions(+), 5 deletions(-)
-
-2015-12-04  Gemma Guest  <gb10@sanger.ac.uk>
- Avoid potential null access - WIP
- src/zmapWindow/zmapWindowStyle.cpp |    5 +++--
- 1 files changed, 3 insertions(+), 2 deletions(-)
-
-2015-12-04  Gemma Guest  <gb10@sanger.ac.uk>
- Construct sources early in set up - WIP
- src/zmapApp/zmapAppwindow.cpp               |    7 ++++++-
- src/zmapAppServices/zmapAppSequenceView.cpp |    4 ----
- src/zmapView/zmapView.cpp                   |    2 +-
- 3 files changed, 7 insertions(+), 6 deletions(-)
-
-2015-12-04  Gemma Guest  <gb10@sanger.ac.uk>
- Remove sources - WIP
- src/include/ZMap/zmapFeatureLoadDisplay.hpp |    1 +
- src/zmapAppServices/zmapAppSequenceView.cpp |   42 +++++++++++++++++++++++++-
- src/zmapFeature/zmapFeatureLoadDisplay.cpp  |   18 +++++++++++
- 3 files changed, 59 insertions(+), 2 deletions(-)
-
-2015-12-04  Gemma Guest  <gb10@sanger.ac.uk>
- Minor layout changes - WIP
- src/zmapAppServices/zmapAppSequenceView.cpp |   40 +++++++++++++-------------
- 1 files changed, 20 insertions(+), 20 deletions(-)
-
-2015-12-04  Gemma Guest  <gb10@sanger.ac.uk>
- Refresh sources box after addition - WIP
- src/zmapAppServices/zmapAppSequenceView.cpp |   60 ++++++++++++++++++++------
- 1 files changed, 46 insertions(+), 14 deletions(-)
-
-2015-12-04  Gemma Guest  <gb10@sanger.ac.uk>
- Minor improvements - TRIVIAL
- src/zmapAppServices/zmapAppSequenceView.cpp |    8 +++++++-
- src/zmapFeature/zmapFeatureLoadDisplay.cpp  |    6 +-----
- 2 files changed, 8 insertions(+), 6 deletions(-)
-
-2015-12-04  Gemma Guest  <gb10@sanger.ac.uk>
- Add sources list to main window - WIP
- src/zmapAppServices/zmapAppSequenceView.cpp |   86 ++++++++++++++++++++++++++-
- 1 files changed, 85 insertions(+), 1 deletions(-)
-
-2015-12-04  Gemma Guest  <gb10@sanger.ac.uk>
- Add a sources section to main window - WIP
- src/zmapAppServices/zmapAppSequenceView.cpp |  165 ++++++++++++++++++---------
- 1 files changed, 111 insertions(+), 54 deletions(-)
-
-2015-12-04  Gemma Guest  <gb10@sanger.ac.uk>
- Fix a bug assigning styles - REGRESSION FIX
- src/zmapWindow/zmapWindowColConfig.cpp |   67 ++++++++++++++++++++-----------
- src/zmapWindow/zmapWindowStyle.cpp     |    2 +-
- 2 files changed, 44 insertions(+), 25 deletions(-)
-
-2015-12-04  Gemma Guest  <gb10@sanger.ac.uk>
- Fix compiler warning - BUILD
- src/zmapFeature/zmapFeatureAlignment.cpp |    1 -
- 1 files changed, 0 insertions(+), 1 deletions(-)
-
-2015-12-04  Gemma Guest  <gb10@sanger.ac.uk>
- Fix an error assigning styles - BUG FIX
- src/zmapWindow/zmapWindowStyle.cpp |   10 ++++++----
- 1 files changed, 6 insertions(+), 4 deletions(-)
-
-2015-12-04  Gemma Guest  <gb10@sanger.ac.uk>
- Edit-style dialog now uses background colour if none set - BUG FIX
- src/zmapWindow/zmapWindowStyle.cpp |   22 ++++++++++++----------
- 1 files changed, 12 insertions(+), 10 deletions(-)
-
-2015-12-03  Gemma Guest  <gb10@sanger.ac.uk>
- Merge branch 'production' into develop
-2015-12-03  Ed Griffiths  <edgrif@sanger.ac.uk>
- Reorganise feature code, new files and moving of create/destroy code for features into appropriate files. - NEW FEATURE 'feature reorganise.'
- src/include/ZMap/zmapFeature.hpp            |    6 -
- src/zmapFeature/Makefile.am                 |    8 +-
- src/zmapFeature/zmapFeature.cpp             | 2968 +--------------------------
- src/zmapFeature/zmapFeatureAlignment.cpp    |  112 +-
- src/zmapFeature/zmapFeatureAny.cpp          |  808 ++++++++
- src/zmapFeature/zmapFeatureBasic.cpp        |   21 -
- src/zmapFeature/zmapFeatureContext.cpp      | 1267 +++++++++++-
- src/zmapFeature/zmapFeatureContextAlign.cpp |  168 ++
- src/zmapFeature/zmapFeatureContextBlock.cpp |  291 +++
- src/zmapFeature/zmapFeatureContextSet.cpp   |  308 +++
- src/zmapFeature/zmapFeatureTranscript.cpp   |  117 ++
- src/zmapFeature/zmapFeature_P.hpp           |   36 +-
- 12 files changed, 3105 insertions(+), 3005 deletions(-)
-
-2015-12-03  Gemma Guest  <gb10@sanger.ac.uk>
- Minor change to make sure style dialog picks up colors initially - TRIVIAL
- src/zmapWindow/zmapWindowStyle.cpp |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
-
-2015-12-03  Ed Griffiths  <edgrif@sanger.ac.uk>
- fix my own stupid bug. - BUG FIX
- src/zmapConfig/zmapConfigLoader.cpp |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-2015-12-03  Gemma Guest  <gb10@sanger.ac.uk>
- Fix compile error - BUILD
- src/zmapConfig/zmapConfigLoader.cpp |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-2015-12-03  Ed Griffiths  <edgrif@sanger.ac.uk>
- Minor bug in group source value handling. - BUG FIX
- src/zmapConfig/zmapConfigLoader.cpp |   41 +++++++++++++++++++---------------
- 1 files changed, 23 insertions(+), 18 deletions(-)
-
-2015-12-03  Gemma Guest  <gb10@sanger.ac.uk>
- Fix build error - BUILD
- src/zmapServer/ensembl/ensemblUtils.cpp |   34 +++++++++++++++---------------
- 1 files changed, 17 insertions(+), 17 deletions(-)
-
-2015-12-03  Gemma Guest  <gb10@sanger.ac.uk>
- Add missing lib - BUILD
- src/Makefile.am |    6 +++++-
- 1 files changed, 5 insertions(+), 1 deletions(-)
-
-2015-12-03  Gemma Guest  <gb10@sanger.ac.uk>
- Fix missing header - BUILD
- src/zmapAppServices/zmapAppSource.cpp |    5 +++--
- 1 files changed, 3 insertions(+), 2 deletions(-)
-
-2015-12-03  Gemma Guest  <gb10@sanger.ac.uk>
- Tidying - WIP
- src/include/ZMap/zmapEnsemblUtils.hpp   |   40 ++++++++++++++++--------------
- src/zmapAppServices/zmapAppSource.cpp   |   12 +++++----
- src/zmapServer/ensembl/ensemblUtils.cpp |    2 +
- 3 files changed, 30 insertions(+), 24 deletions(-)
-
-2015-12-03  Gemma Guest  <gb10@sanger.ac.uk>
- Fix compile error due to merge problem - REGRESSION FIX
- src/zmapView/zmapView.cpp   |   47 ++++++++++++++++++++++--------------------
- src/zmapView/zmapView_P.hpp |    3 +-
- 2 files changed, 27 insertions(+), 23 deletions(-)
-
-2015-12-02  Gemma Guest  <gb10@sanger.ac.uk>
- Merge branch 'feature/ensembl_gui' into develop
-2015-12-02  Gemma Guest  <gb10@sanger.ac.uk>
- Fix compiler warnings - BUILD
- src/zmapFeature/zmapFeatureAlignment.cpp           |   11 +++++------
- src/zmapFeature/zmapFeatureParams.cpp              |    1 -
- src/zmapUtils/zmapUrl.cpp                          |    2 +-
- .../canvas/zmapWindowCanvasAlignment.cpp           |    8 +-------
- src/zmapWindow/canvas/zmapWindowCanvasDraw.cpp     |    3 ---
- 5 files changed, 7 insertions(+), 18 deletions(-)
-
-2015-12-02  Gemma Guest  <gb10@sanger.ac.uk>
- Fix build failure on mac due to std=c++0x - BUILD
- src/Makefile.common |    5 ++++-
- 1 files changed, 4 insertions(+), 1 deletions(-)
-
-2015-12-02  Gemma Guest  <gb10@sanger.ac.uk>
- Tidying - TRIVIAL
- src/include/ZMap/zmapFeatureLoadDisplay.hpp  |    8 ++++----
- src/zmapApp/zmapAppmain_c.cpp                |    2 +-
- src/zmapAppServices/zmapAppSequenceView.cpp  |    2 +-
- src/zmapControl/zmapControlWindowMenubar.cpp |    2 +-
- src/zmapFeature/zmapFeatureLoadDisplay.cpp   |   10 +++++-----
- src/zmapView/zmapView.cpp                    |    4 ++--
- 6 files changed, 14 insertions(+), 14 deletions(-)
-
-2015-12-02  Gemma Guest  <gb10@sanger.ac.uk>
- Add drop-down box to select source type - WIP
- src/zmapAppServices/zmapAppSource.cpp |  124 +++++++++++++++++---------------
- 1 files changed, 66 insertions(+), 58 deletions(-)
-
-2015-12-02  Gemma Guest  <gb10@sanger.ac.uk>
- Conditionally compile ensembl code - WIP
- src/include/ZMap/zmapEnsemblUtils.hpp   |    5 +
- src/zmapAppServices/zmapAppSource.cpp   |  492 ++++++++++++++++++++++---------
- src/zmapServer/ensembl/ensemblUtils.cpp |    6 +
- 3 files changed, 369 insertions(+), 134 deletions(-)
-
-2015-12-02  Gemma Guest  <gb10@sanger.ac.uk>
- Save sources to config file - WIP
- src/include/ZMap/zmapFeatureLoadDisplay.hpp |    8 +-
- src/zmapFeature/zmapFeatureLoadDisplay.cpp  |  105 +++++++++++++++++++++------
- src/zmapView/zmapView.cpp                   |   20 ++----
- 3 files changed, 92 insertions(+), 41 deletions(-)
-
-2015-12-02  Gemma Guest  <gb10@sanger.ac.uk>
- Implement featuresets/biotypes find - WIP
- src/include/ZMap/zmapEnsemblUtils.hpp   |   14 ++++++
- src/zmapAppServices/zmapAppSource.cpp   |   52 ++++++++++++++++++++--
- src/zmapServer/ensembl/ensemblUtils.cpp |   75 ++++++++++++++++++++++++++++---
- 3 files changed, 130 insertions(+), 11 deletions(-)
-
-2015-12-02  Gemma Guest  <gb10@sanger.ac.uk>
- Fix infinite loop bug - WIP
- src/zmapAppServices/zmapAppSource.cpp |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-2015-12-02  Gemma Guest  <gb10@sanger.ac.uk>
- WIP to implement featureset/biotype selector - WIP
- src/zmapAppServices/zmapAppSource.cpp |  213 +++++++++++++++++++++++++-------
- 1 files changed, 166 insertions(+), 47 deletions(-)
-
-2015-12-01  Gemma Guest  <gb10@sanger.ac.uk>
- Added a dialog to choose a db from a host - WIP
- src/include/ZMap/zmapEnsemblUtils.hpp      |   44 +++++
- src/zmapApp/zmapApp_P.hpp                  |    2 +-
- src/zmapAppServices/zmapAppDebugConfig.cpp |   17 +--
- src/zmapAppServices/zmapAppServices_P.hpp  |   49 +++++
- src/zmapAppServices/zmapAppSource.cpp      |  287 ++++++++++++++++++++++++++--
- src/zmapServer/ensembl/ensemblUtils.cpp    |   27 +++-
- 6 files changed, 385 insertions(+), 41 deletions(-)
-
-2015-11-30  Gemma Guest  <gb10@sanger.ac.uk>
- Add utility function to get db names for a host - WIP
- src/zmapServer/ensembl/Makefile.am      |    2 +-
- src/zmapServer/ensembl/ensemblUtils.cpp |   88 +++++++++++++++++++++++++++++++
- 2 files changed, 89 insertions(+), 1 deletions(-)
-
-2015-11-30  Gemma Guest  <gb10@sanger.ac.uk>
- Remove cached list of command-line sources and allow http/ftp - WIP
- src/include/ZMap/zmapFeatureLoadDisplay.hpp |    5 +-
- src/zmapApp/zmapApp_P.hpp                   |    3 +-
- src/zmapApp/zmapAppmain_c.cpp               |   32 ++++++++++------
- src/zmapFeature/zmapFeatureLoadDisplay.cpp  |   54 ++++++++++++++-------------
- src/zmapView/zmapView.cpp                   |    1 -
- 5 files changed, 53 insertions(+), 42 deletions(-)
-
-2015-11-30  Gemma Guest  <gb10@sanger.ac.uk>
- Tidy up new source dialog - WIP
- src/zmapAppServices/zmapAppSource.cpp |   84 ++++++++++++++++++++------------
- 1 files changed, 52 insertions(+), 32 deletions(-)
-
-2015-11-30  Gemma Guest  <gb10@sanger.ac.uk>
- Make sequence map functions members - TRIVIAL
- src/include/ZMap/zmapFeatureLoadDisplay.hpp  |   15 ++++--------
- src/zmapApp/zmapAppmain_c.cpp                |    1 +
- src/zmapAppServices/zmapAppSequenceView.cpp  |    2 +-
- src/zmapControl/zmapControlWindowMenubar.cpp |    3 +-
- src/zmapFeature/zmapFeatureLoadDisplay.cpp   |   33 +++++++++++--------------
- src/zmapView/zmapView.cpp                    |    2 +-
- 6 files changed, 25 insertions(+), 31 deletions(-)
-
-2015-11-30  Gemma Guest  <gb10@sanger.ac.uk>
- Fix a bug where command line sources fail - WIP
- src/zmapView/zmapView.cpp |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
-
-2015-11-30  Gemma Guest  <gb10@sanger.ac.uk>
- Don't quit if no sources found - WIP
- src/zmapView/zmapView.cpp |   11 -----------
- 1 files changed, 0 insertions(+), 11 deletions(-)
-
-2015-11-27  Gemma Guest  <gb10@sanger.ac.uk>
- Make sure new sequence maps have sources list - WIP
- src/zmapAppServices/zmapAppSequenceView.cpp |    3 +++
- src/zmapView/zmapView.cpp                   |    1 +
- 2 files changed, 4 insertions(+), 0 deletions(-)
-
-2015-11-27  Gemma Guest  <gb10@sanger.ac.uk>
- Include dynamically-added source in load list - WIP
- src/zmapAppServices/zmapAppSequenceView.cpp |    1 +
- src/zmapFeature/zmapFeatureLoadDisplay.cpp  |   15 +++++++++++++--
- 2 files changed, 14 insertions(+), 2 deletions(-)
-
-2015-11-27  Gemma Guest  <gb10@sanger.ac.uk>
- Move sequence map functions into own file - WIP
- src/include/ZMap/zmapConfigIni.hpp          |    2 +-
- src/include/ZMap/zmapFeature.hpp            |    2 -
- src/include/ZMap/zmapFeatureLoadDisplay.hpp |    8 +-
- src/include/ZMap/zmapWindow.hpp             |   10 ++-
- src/zmapConfig/zmapConfigLoader.cpp         |    2 +-
- src/zmapFeature/zmapFeatureLoadDisplay.cpp  |  139 ++++++++++++++++++++++++++-
- src/zmapFeature/zmapFeatureUtils.cpp        |  107 --------------------
- src/zmapView/zmapView.cpp                   |    5 +-
- 8 files changed, 150 insertions(+), 125 deletions(-)
-
-2015-11-27  Gemma Guest  <gb10@sanger.ac.uk>
- Move config function to more appropriate directory - WIP
- src/include/ZMap/zmapConfigIni.hpp         |    2 +-
- src/include/ZMap/zmapView.hpp              |    1 -
- src/zmapConfig/zmapConfigLoader.cpp        |   31 +++++++++++++++++++++++--
- src/zmapControl/zmapControlImportFile.cpp  |    2 +-
- src/zmapFeature/zmapFeatureLoadDisplay.cpp |    1 +
- src/zmapView/zmapView.cpp                  |   33 +--------------------------
- 6 files changed, 33 insertions(+), 37 deletions(-)
-
-2015-11-27  Gemma Guest  <gb10@sanger.ac.uk>
- Allow zmap to start up if there are no sources - WIP
- src/zmapApp/zmapAppmain_c.cpp |   15 ++-------------
- 1 files changed, 2 insertions(+), 13 deletions(-)
-
-2015-11-27  Gemma Guest  <gb10@sanger.ac.uk>
- Add create-source button to main window - WIP
- src/include/ZMap/zmapFeatureLoadDisplay.hpp  |   20 +-
- src/include/ZMap/zmapUtilsGUI.h.orig         |  581 --------------------------
- src/zmapAppServices/zmapAppSequenceView.cpp  |    4 +-
- src/zmapControl/zmapControlWindowMenubar.cpp |    6 +-
- src/zmapFeature/Makefile.am                  |    1 +
- src/zmapFeature/zmapFeatureLoadDisplay.cpp   |  266 ++++++++++++
- src/zmapFeature/zmapFeatureUtils.cpp         |  170 --------
- src/zmapServer/zmapDataSource.cpp            |    9 +-
- src/zmapView/zmapView.cpp                    |   43 +--
- 9 files changed, 295 insertions(+), 805 deletions(-)
-
-2015-11-16  Gemma Guest  <gb10@sanger.ac.uk>
- WIP to call new-style dialog from main window - WIP
- src/include/ZMap/zmapFeatureLoadDisplay.hpp |    2 +
- src/zmapAppServices/zmapAppSequenceView.cpp |   59 ++++++++++++++++++++++++++-
- src/zmapAppServices/zmapAppSource.cpp       |    1 -
- 3 files changed, 59 insertions(+), 3 deletions(-)
-
-2015-11-16  Gemma Guest  <gb10@sanger.ac.uk>
- Tidying - TRIVIAL
- src/zmapAppServices/zmapAppSource.cpp |   36 +++++++++++++++-----------------
- 1 files changed, 17 insertions(+), 19 deletions(-)
-
-2015-11-16  Gemma Guest  <gb10@sanger.ac.uk>
- New-source dialog now creates ensembl source - WIP
- src/include/ZMap/zmapAppServices.hpp         |    3 +-
- src/zmapAppServices/zmapAppSource.cpp        |  174 ++++++++++++++++++++------
- src/zmapControl/zmapControlWindowMenubar.cpp |    7 +-
- 3 files changed, 143 insertions(+), 41 deletions(-)
-
-2015-11-16  Gemma Guest  <gb10@sanger.ac.uk>
- Error checking - WIP
- src/zmapFeature/zmapStyleObj.cpp |   12 ++++++++++--
- src/zmapServer/zmapServer.cpp    |    2 +-
- src/zmapView/zmapView.cpp        |    5 ++++-
- 3 files changed, 15 insertions(+), 4 deletions(-)
-
-2015-11-16  Gemma Guest  <gb10@sanger.ac.uk>
- Fix a strange crash when map is a member of a struct - WIP
- src/include/ZMap/zmapConfigIni.hpp          |    5 +-
- src/include/ZMap/zmapFeatureLoadDisplay.hpp |    5 +-
- src/zmapServer/zmapDataSource.cpp           |    2 +-
- src/zmapView/zmapView.cpp                   |   80 ++++++++++++++------------
- 4 files changed, 49 insertions(+), 43 deletions(-)
-
-2015-11-16  Gemma Guest  <gb10@sanger.ac.uk>
- Fix a missing error message when file dosen't exist - WIP
- src/zmapServer/zmapDataSource.cpp |    4 ++--
- src/zmapServer/zmapDataSource.hpp |    2 +-
- 2 files changed, 3 insertions(+), 3 deletions(-)
-
-2015-11-13  Gemma Guest  <gb10@sanger.ac.uk>
- WIP to export user-created sources (not working) - WIP
- src/include/ZMap/zmapAppServices.hpp         |    6 +-
- src/include/ZMap/zmapConfigIni.hpp           |    2 +
- src/include/ZMap/zmapFeatureLoadDisplay.hpp  |    8 +
- src/include/ZMap/zmapView.hpp                |    8 +-
- src/zmapAppServices/zmapAppSource.cpp        |   19 ++-
- src/zmapConfig/zmapConfigLoader.cpp          |   44 ++++---
- src/zmapControl/zmapControlWindowMenubar.cpp |   72 +++++-----
- src/zmapView/zmapView.cpp                    |  199 ++++++++++++++++++--------
- src/zmapView/zmapView_P.hpp                  |    3 +-
- 9 files changed, 237 insertions(+), 124 deletions(-)
-
-2015-11-13  Gemma Guest  <gb10@sanger.ac.uk>
- Use shorthand get-revcomp status function - TRIVIAL
- src/zmapView/zmapView.cpp              |   12 ++++++------
- src/zmapView/zmapViewCallBlixem.cpp    |   16 ++++++++--------
- src/zmapView/zmapViewRemoteControl.cpp |    6 +++---
- 3 files changed, 17 insertions(+), 17 deletions(-)
-
-2015-11-13  Gemma Guest  <gb10@sanger.ac.uk>
- Use get/set functions for view flags - TRIVIAL
- src/zmapView/zmapView.cpp              |   41 ++++++++++++++++---------------
- src/zmapView/zmapViewCallBlixem.cpp    |   16 ++++++------
- src/zmapView/zmapViewRemoteControl.cpp |    6 ++--
- src/zmapView/zmapViewScratch.cpp       |   16 ++++++------
- src/zmapView/zmapViewUtils.cpp         |    6 ++--
- 5 files changed, 43 insertions(+), 42 deletions(-)
-
-2015-11-13  Gemma Guest  <gb10@sanger.ac.uk>
- Save new sources when exporting config - WIP
- src/include/ZMap/zmapWindow.hpp              |    1 +
- src/zmapAppServices/zmapAppSource.cpp        |    2 +-
- src/zmapControl/zmapControlPreferences.cpp   |    1 -
- src/zmapControl/zmapControlWindowMenubar.cpp |    3 +++
- src/zmapView/zmapView.cpp                    |   25 ++++++++++++++++---------
- 5 files changed, 21 insertions(+), 11 deletions(-)
-
-2015-11-13  Gemma Guest  <gb10@sanger.ac.uk>
- Remove unused prefs values - TRIVIAL
- src/zmapControl/zmapControlPreferences.cpp |   25 -------------------------
- 1 files changed, 0 insertions(+), 25 deletions(-)
-
-2015-11-13  Gemma Guest  <gb10@sanger.ac.uk>
- Create-source now works - WIP
- src/include/ZMap/zmapConfigStrings.hpp       |    1 +
- src/include/ZMap/zmapView.hpp                |    3 ++
- src/zmapAppServices/zmapAppSource.cpp        |   19 ++++++++++---
- src/zmapConfig/zmapConfigLoader.cpp          |    7 +++--
- src/zmapControl/zmapControlWindowMenubar.cpp |   37 +++++++++++++++++++++++++-
- src/zmapView/zmapView.cpp                    |    5 +--
- 6 files changed, 61 insertions(+), 11 deletions(-)
-
-2015-11-12  Gemma Guest  <gb10@sanger.ac.uk>
- Remove dependancy on zmapurl - WIP
- src/include/ZMap/zmapAppServices.hpp         |    3 +--
- src/zmapAppServices/zmapAppSource.cpp        |   10 ++--------
- src/zmapControl/zmapControlWindowMenubar.cpp |    2 +-
- 3 files changed, 4 insertions(+), 11 deletions(-)
-
-2015-11-12  Gemma Guest  <gb10@sanger.ac.uk>
- Add callback to create new source - WIP
- src/include/ZMap/zmapAppServices.hpp         |    6 ++++-
- src/zmapAppServices/zmapAppSource.cpp        |   33 ++++++++++++++++++++++---
- src/zmapControl/zmapControlWindowMenubar.cpp |   18 ++++++++++++-
- 3 files changed, 50 insertions(+), 7 deletions(-)
-
-2015-11-12  Gemma Guest  <gb10@sanger.ac.uk>
- Code reorganisation - TRIVIAL
- src/zmapView/zmapView.cpp |  450 ++++++++++++++++++++++----------------------
- 1 files changed, 225 insertions(+), 225 deletions(-)
-
-2015-11-12  Gemma Guest  <gb10@sanger.ac.uk>
- WIP for a create-source dialog - WIP
- src/include/ZMap/zmapAppServices.hpp         |    2 +-
- src/zmapAppServices/Makefile.am              |    1 +
- src/zmapAppServices/zmapAppSequenceView.cpp  |   12 -
- src/zmapAppServices/zmapAppSource.cpp        |  368 +++-----------------------
- src/zmapControl/zmapControlWindowMenubar.cpp |   11 +-
- 5 files changed, 44 insertions(+), 350 deletions(-)
-
-2015-11-09  Gemma Guest  <gb10@sanger.ac.uk>
- WIP to add a create-source dialog - WIP
- src/include/ZMap/zmapAppServices.hpp         |    1 +
- src/zmapAppServices/zmapAppSequenceView.cpp  |   12 +
- src/zmapAppServices/zmapAppSource.cpp        |  555 ++++++++++++++++++++++++++
- src/zmapControl/zmapControlWindowMenubar.cpp |   18 +
- 4 files changed, 586 insertions(+), 0 deletions(-)
-
-2015-12-02  Gemma Guest  <gb10@sanger.ac.uk>
- Fix uninitialised variable - BUG FIX
- src/zmapView/zmapView.cpp |    3 +--
- 1 files changed, 1 insertions(+), 2 deletions(-)
-
-2015-12-02  Ed Griffiths  <edgrif@sanger.ac.uk>
- Not loading right BAM sequence because we didn't search the list of sequences in the hts header. - RT '502868'
- src/zmapServer/file/fileServer.cpp |    6 ++--
- src/zmapServer/zmapDataSource.cpp  |   39 +++++++++++++++++++++++++----------
- src/zmapServer/zmapDataSource.hpp  |    8 +++---
- 3 files changed, 35 insertions(+), 18 deletions(-)
-
-2015-12-01  Ed Griffiths  <edgrif@sanger.ac.uk>
- Merge branch 'feature/VULGAR' into develop
-2015-12-01  Ed Griffiths  <edgrif@sanger.ac.uk>
- Generalise code to draw gapped boxes so it can be called for transcripts too. - NEW FEATURE 'VULGAR'
- .../canvas/zmapWindowCanvasAlignment.cpp           |  227 ++++++++++----------
- .../canvas/zmapWindowCanvasAlignment.hpp           |   30 +++-
- .../canvas/zmapWindowCanvasAlignment_I.hpp         |   21 --
- 3 files changed, 145 insertions(+), 133 deletions(-)
-
-2015-12-01  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add support for parsing vulgar strings. - NEW FEATURE 'VULGAR'
- src/zmapGFF/zmapGFF3parser.cpp   |  191 +++++++++++++++++++++++++++----------
- src/zmapGFF/zmapGFFAttribute.cpp |   80 ++++++++--------
- src/zmapGFF/zmapGFFAttribute.hpp |    5 +-
- 3 files changed, 185 insertions(+), 91 deletions(-)
-
-2015-12-01  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add support for arrays of exon aligns to support vulgar predictions. - NEW FEATURE 'VULGAR'
- src/include/ZMap/zmapFeature.hpp         |  116 ++++++++++++++++++------------
- src/zmapFeature/zmapFeature.cpp          |  104 +++++++++++++++++++++++----
- src/zmapFeature/zmapFeatureAlignment.cpp |   74 +++++++++++++++++++
- 3 files changed, 235 insertions(+), 59 deletions(-)
-
-2015-11-30  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add code to draw gapped exons. - NEW FEATURE 'VULGAR'
- .../canvas/zmapWindowCanvasTranscript.cpp          |  221 +++++++++++++++-----
- .../canvas/zmapWindowCanvasTranscript_I.hpp        |    8 +
- 2 files changed, 175 insertions(+), 54 deletions(-)
-
-2015-11-30  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add function to draw a gapped box (i.e. a local alignment). - NEW FEATURE 'VULGAR'
- src/zmapWindow/canvas/zmapWindowCanvasDraw.cpp |  107 ++++++++++++++++++++++++
- src/zmapWindow/canvas/zmapWindowCanvasDraw.hpp |    8 ++
- 2 files changed, 115 insertions(+), 0 deletions(-)
-
-2015-11-30  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add vulgar string parsing. - NEW FEATURE 'VULGAR'
- src/zmapFeature/zmapFeatureAlignment.cpp | 3035 +++++++++++++++++++++---------
- 1 files changed, 2155 insertions(+), 880 deletions(-)
-
-2015-11-30  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add functions to cope with exons with gaps. - NEW FEATURE 'VULGAR'
- src/zmapFeature/zmapFeatureTranscript.cpp |  107 +++++++++++++++++++++++++++-
- 1 files changed, 103 insertions(+), 4 deletions(-)
-
-2015-11-30  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add support for exon submatches = tidy file up. - NEW FEATURE 'VULGAR'
- src/zmapFeature/zmapFeatureParams.cpp |  899 +++++++++++++++++++++------------
- 1 files changed, 589 insertions(+), 310 deletions(-)
-
-2015-11-30  Ed Griffiths  <edgrif@sanger.ac.uk>
- Make feature output func. report any vulgar string. - NEW FEATURE 'VULGAR'
- src/zmapFeature/zmapFeatureOutput.cpp |    4 +++-
- 1 files changed, 3 insertions(+), 1 deletions(-)
-
-2015-11-30  Ed Griffiths  <edgrif@sanger.ac.uk>
- Fix infopanel to query subparts of an exon where the exon is gapped. - NEW FEATURE 'VULGAR'
- src/zmapWindow/zmapWindow.cpp |  127 ++++++++++++++++++++++++++++++----------
- 1 files changed, 95 insertions(+), 32 deletions(-)
-
-2015-11-30  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add reporting of subparts of a gapped exon. - NEW FEATURE 'VULGAR'
- src/zmapControl/zmapControlWindowInfoPanel.cpp |   46 +++++++++++++++++------
- 1 files changed, 34 insertions(+), 12 deletions(-)
-
-2015-11-30  Ed Griffiths  <edgrif@sanger.ac.uk>
- add -g and -std=c++0x to build - BUILD
- src/runconfig |    4 +++-
- 1 files changed, 3 insertions(+), 1 deletions(-)
-
-2015-11-30  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add c++ -std=c++0x to build - BUILD
- src/Makefile.common |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
-
-2015-11-27  Gemma Guest  <gb10@sanger.ac.uk>
- Merge branch 'feature/columns' into develop
-2015-11-26  Gemma Guest  <gb10@sanger.ac.uk>
- Avoid double free of hash table list links - WIP
- src/zmapWindow/zmapWindowStyle.cpp |   55 ++++++++++++++++++++++++++----------
- 1 files changed, 40 insertions(+), 15 deletions(-)
-
-2015-11-26  Gemma Guest  <gb10@sanger.ac.uk>
- Avoid potential null access - WIP
- src/zmapUtils/zmapGLibUtils.cpp |    3 ++-
- 1 files changed, 2 insertions(+), 1 deletions(-)
-
-2015-11-26  Gemma Guest  <gb10@sanger.ac.uk>
- Reorganise columns hash table using std::map - WIP
- src/include/ZMap/zmapConfigIni.hpp          |    8 ++-
- src/include/ZMap/zmapFeatureLoadDisplay.hpp |    4 +-
- src/zmapConfig/zmapConfigLoader.cpp         |   23 ++++---
- src/zmapFeature/zmapFeatureUtils.cpp        |  104 +++++++++++++++++---------
- src/zmapView/zmapView.cpp                   |   55 ++++++++++-----
- src/zmapView/zmapViewScratch.cpp            |    8 +-
- src/zmapWindow/zmapWindow.cpp               |   15 +++--
- src/zmapWindow/zmapWindowColConfig.cpp      |   34 ++++++----
- src/zmapWindow/zmapWindowDNA.cpp            |   17 +++--
- src/zmapWindow/zmapWindowDisplayOps.cpp     |    7 ++-
- src/zmapWindow/zmapWindowDrawFeatures.cpp   |   27 ++++++--
- src/zmapWindow/zmapWindowMenus.cpp          |    5 +-
- src/zmapWindow/zmapWindowStyle.cpp          |   12 +++-
- src/zmapWindow/zmapWindowUtils.cpp          |    6 ++-
- 14 files changed, 219 insertions(+), 106 deletions(-)
-
-2015-11-24  Gemma Guest  <gb10@sanger.ac.uk>
- Several fixes to assigning styles on columns dialog - WIP
- src/zmapWindow/zmapWindowColConfig.cpp |  296 +++++++++++++++++---------------
- src/zmapWindow/zmapWindowStyle.cpp     |  151 ++++++++++++----
- src/zmapWindow/zmapWindow_P.hpp        |   10 +-
- 3 files changed, 284 insertions(+), 173 deletions(-)
-
-2015-11-25  Gemma Guest  <gb10@sanger.ac.uk>
- Allow http/ftp sources - NEW FEATURE 'http/ftp sources'
- src/zmapServer/file/fileServer.cpp |   29 +++++++++++++++++++++++++++--
- src/zmapServer/zmapServer.cpp      |   21 +++++++++++++--------
- src/zmapUtils/zmapUrl.cpp          |    3 ++-
- 3 files changed, 42 insertions(+), 11 deletions(-)
-
-2015-11-25  Gemma Guest  <gb10@sanger.ac.uk>
- Avoid potential crash with invalid bam file name - BUG FIX
- src/zmapServer/file/fileServer.cpp |    2 +-
- src/zmapServer/zmapDataSource.cpp  |    9 +++++++--
- src/zmapServer/zmapDataSource.hpp  |    2 +-
- 3 files changed, 9 insertions(+), 4 deletions(-)
-
-2015-11-23  Gemma Guest  <gb10@sanger.ac.uk>
- Commenting - FORMATTING ONLY
- src/include/ZMap/zmapStyleTree.hpp |    5 ++++-
- src/zmapFeature/zmapStyleTree.cpp  |    2 +-
- 2 files changed, 5 insertions(+), 2 deletions(-)
-
-2015-11-23  Gemma Guest  <gb10@sanger.ac.uk>
- Merge branch 'release/2.4.0' into develop
+ docs/user/release_notes.shtml | 21 +++++++++++++++++++++
+ 1 file changed, 21 insertions(+)

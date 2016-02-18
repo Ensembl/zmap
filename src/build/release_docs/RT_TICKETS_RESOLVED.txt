@@ -1,73 +1,13 @@
 
-Request Tracker Tickets Resolved from 11/11/2015 to 26/01/2016
+Request Tracker Tickets Resolved from 14/01/2016 to 18/02/2016
 
-ticket/326083
-id: ticket/326083
+ticket/510659
+id: ticket/510659
 Queue: zmap
-Subject: Show translation crashes if there's no DNA sequence
-Requestors: gb10@sanger.ac.uk
-Owner: edgrif
-Resolved: Mon Nov 30 16:52:48 2015
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/456914
-id: ticket/456914
-Queue: zmap
-Subject: bugfixes
-Requestors: mh19@sanger.ac.uk
-Owner: edgrif
-Resolved: Mon Nov 30 17:04:49 2015
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/472209
-id: ticket/472209
-Queue: zmap
-Subject: Zmap crashes when I save a new transcript.
-Requestors: erb@sanger.ac.uk
-Owner: jgrg
-Resolved: Mon Nov 23 12:20:46 2015
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/499440
-id: ticket/499440
-Queue: zmap
-Subject: group = always
-Requestors: jgrg@sanger.ac.uk, mg13@sanger.ac.uk
-Owner: edgrif
-Resolved: Thu Dec 03 09:15:48 2015
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/502868
-id: ticket/502868
-Queue: zmap
-Subject: Error loading bam files with more than 1 sequence
-Requestors: gb10@sanger.ac.uk
-Owner: edgrif
-Resolved: Wed Dec 02 08:41:04 2015
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/504232
-id: ticket/504232
-Queue: zmap
-Subject: Problem compiling zmap
+Subject: zmap doesn't like localhost
 Requestors: thibaut@ebi.ac.uk
-Owner: edgrif
-Resolved: Thu Dec 03 11:18:33 2015
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/505463
-id: ticket/505463
-Queue: zmap
-Subject: Development ZMap - column loading broken
-Requestors: mg13@sanger.ac.uk
 Owner: gb10
-Resolved: Fri Dec 11 08:47:08 2015
+Resolved: Fri Feb 05 15:23:49 2016
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
@@ -78,6 +18,26 @@ Subject: Zmap has now crashed twice
 Requestors: erb@sanger.ac.uk
 Owner: edgrif
 Resolved: Thu Jan 21 16:07:33 2016
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
+ticket/514113
+id: ticket/514113
+Queue: zmap
+Subject: Fetching transcript with different analysis_id than gene
+Requestors: thibaut@ebi.ac.uk
+Owner: gb10
+Resolved: Wed Feb 10 14:18:41 2016
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
+ticket/514583
+id: ticket/514583
+Queue: zmap
+Subject: Zmap-2.5 on EBI
+Requestors: thibaut@ebi.ac.uk
+Owner: gb10
+Resolved: Fri Feb 05 15:04:46 2016
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
