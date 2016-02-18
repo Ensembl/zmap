@@ -731,7 +731,7 @@ GList *zMapConfigString2QuarkIDList(const char *string_list)
 
 GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context, 
                                               GHashTable *ghash, 
-                                              std::map<GQuark, ZMapFeatureColumn> columns)
+                                              std::map<GQuark, ZMapFeatureColumn> &columns)
 {
   GKeyFile *gkf;
   gchar ** keys,**freethis;
