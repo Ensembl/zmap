@@ -351,16 +351,19 @@ gboolean zMapConfigIniSave(ZMapConfigIni config, ZMapConfigIniFileType file_type
 }
 
 
+/* Return true if any of our config files contains the given stanza. Sets the key file to the
+ * first config file found with this stanza */
 gboolean zMapConfigIniHasStanza(ZMapConfigIni config, const char *stanza_name,GKeyFile **which)
 {
   gboolean result = FALSE;
 
-  /* gb10: Not sure why this is in reverse order (maybe it doesn't matter) but I'm keeping it
-   * that way in case it's important. */
-  int i = ZMAPCONFIG_FILE_NUM_TYPES ;
-  ZMapConfigIniFileType file_type = ZMAPCONFIG_FILE_NUM_TYPES ;
+  /* gb10: This used to be in reverse order but that doesn't seem to make sense. It returns the
+   * first key file with the given stanza so we want to check higher priority config files first
+   * which I think should be in the same order as they are listed in the enum. */
+  int i = 0 ;
+  ZMapConfigIniFileType file_type = ZMAPCONFIG_FILE_NONE ;
 
-  for ( ; i >= 0; --i)
+  for ( ; i < (int)ZMAPCONFIG_FILE_NUM_TYPES ; ++i)
     {
       file_type = (ZMapConfigIniFileType)i ;
 
@@ -373,6 +376,35 @@ gboolean zMapConfigIniHasStanza(ZMapConfigIni config, const char *stanza_name,GK
 
   if(result && which)
     *which = config->key_file[file_type];
+
+  return result;
+}
+
+
+/* Return true if any of our config files contains the given stanza. Sets the list of key files to
+ * contain all config files that have this stanza */
+gboolean zMapConfigIniHasStanzaAll(ZMapConfigIni config, const char *stanza_name, GList **which)
+{
+  gboolean result = FALSE;
+
+  /* gb10: This used to be in reverse order but that doesn't seem to make sense. It returns the
+   * first key file with the given stanza so we want to check higher priority config files first
+   * which I think should be in the same order as they are listed in the enum. */
+  int i = 0 ;
+  ZMapConfigIniFileType file_type = ZMAPCONFIG_FILE_NONE ;
+
+  for ( ; i < (int)ZMAPCONFIG_FILE_NUM_TYPES ; ++i)
+    {
+      file_type = (ZMapConfigIniFileType)i ;
+
+      if(config->key_file[file_type] && g_key_file_has_group(config->key_file[file_type], stanza_name))
+        {
+          result = TRUE ;
+          
+          if(which)
+            *which = g_list_append(*which, config->key_file[file_type]);
+        }
+    }
 
   return result;
 }
