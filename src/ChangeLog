@@ -1,4 +1,13 @@
 2016-02-18  Gemma Guest  <gb10@sanger.ac.uk>
+ Merge branch 'production' into release/2.6.0
+2016-02-18  zmap  <zmap@sanger.ac.uk>
+ ZMap version 2.4.1-135-g11930b6 - Update RT and git commit reports
+ src/ChangeLog                                  | 1758 +++++++-----------------
+ src/build/release_docs/GIT_COMMITS.txt         |   39 +-
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt |   82 +-
+ 3 files changed, 537 insertions(+), 1342 deletions(-)
+
+2016-02-18  Gemma Guest  <gb10@sanger.ac.uk>
  Fix an issue with merging column-groups stanzas - BUG FIX
  src/include/ZMap/zmapConfigIni.hpp  |  6 +++--
  src/zmapConfig/zmapConfigFile.cpp   | 42 ++++++++++++++++++++++++++----
