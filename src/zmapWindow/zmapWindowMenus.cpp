@@ -190,11 +190,11 @@ typedef enum {
 #define END                        "End"
 
 
-#define PAIRED_READS_RELATED       "Request %s paired reads"
+#define PAIRED_READS_RELATED       "Request paired reads for featureset"
 #define PAIRED_READS_ALL           "Request all paired reads"
 
-#define COLUMN_COLOUR                        "Edit Style"
-#define COLUMN_STYLE_OPTS                "Choose Style"
+#define COLUMN_COLOUR              "Edit Style"
+#define COLUMN_STYLE_OPTS          "Choose Style"
 
 /* Search/Listing menus. */
 #define SEARCH_STR                 "Search or List Features and Sequence"
@@ -373,7 +373,6 @@ static void developerMenuCB(int menu_item_id, gpointer callback_data) ;
 static void colFilterMenuCB(int menu_item_id, gpointer callback_data) ;
 static void requestShortReadsCB(int menu_item_id, gpointer callback_data);
 static void blixemMenuCB(int menu_item_id, gpointer callback_data) ;
-static char *get_menu_string(GQuark set_quark,char disguise) ;
 GQuark related_column(ZMapFeatureContextMap map,GQuark fset_id) ;
 
 
@@ -3731,7 +3730,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuBlixemBAMColumn(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {ZMAPGUI_MENU_NORMAL, BLIXEM_OPS_STR "/" BLIXEM_READS_STR, BLIX_ALL_READS, blixemMenuCB, NULL, "<Ctrl>A"},
+      {ZMAPGUI_MENU_NORMAL, BLIXEM_OPS_STR "/" BLIXEM_ALL_READS_STR, BLIX_ALL_READS, blixemMenuCB, NULL, "<Ctrl>A"},
 
       {ZMAPGUI_MENU_NONE,   NULL,                                            0, NULL,         NULL}
     } ;
@@ -3858,6 +3857,13 @@ static void requestShortReadsCB(int menu_item_id, gpointer callback_data)
     }
   else if (menu_item_id == ZMAPREADS_ALL)
     {
+      std::list<GQuark> fset_ids;
+      if (selectedColumnRelatedBAMData(menu_data, &fset_ids))
+        {
+          for (auto iter = fset_ids.begin() ; iter != fset_ids.end(); ++iter)
+            req_list = zmapWindowAddColumnFeaturesets(menu_data->context_map, req_list, *iter, TRUE) ;
+        }
+
       GQuark fset_id,req_id;
       ZMapFeatureSource src;
 
@@ -3935,6 +3941,10 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
           GQuark req_id = selectedFeaturesetRelatedBAMData(menu_data) ;
           seq_sets = zmapWindowAddColumnFeaturesets(menu_data->window->context_map, seq_sets, req_id, FALSE);
         }
+      break;
+    case BLIX_READS:
+      break;
+    case BLIX_ALL_READS:
       break;
 
     default:
