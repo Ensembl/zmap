@@ -44,6 +44,7 @@
 
 #include <ZMap/zmap.hpp>
 
+#include <string>
 #include <string.h>
 #include <list>
 
