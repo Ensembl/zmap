@@ -3708,6 +3708,34 @@ static bool selectedColumnRelatedBAMData(ItemMenuCBData menu_data, std::list<GQu
 }
 
 
+/* Create a menu item based on the featureset name */
+static std::string getBAMMenuNameFromFeatureset(ZMapFeatureSet feature_set, 
+                                                const char *branch_text,
+                                                const char *menu_text)
+{
+  std::string item_text(branch_text) ;
+  zMapReturnValIfFail(feature_set, item_text) ;
+
+  const int max_chars = 50 ; // limit the length of the menu text
+
+  std::string item_name(menu_text) ;
+  item_name += g_quark_to_string(feature_set->original_id) ;
+  std::replace(item_name.begin(), item_name.end(), '_', ' ');
+
+  if (item_name.length() > max_chars)
+    {
+      item_name = item_name.substr(0, max_chars) ;
+      item_name += "..." ;
+    }
+
+  // Now prefix the branch name
+  item_text += "/" ;
+  item_text += item_name ;
+
+  return item_text ;
+}
+
+
 /* This function creates Blixem BAM menu entries for the selected featureset. */
 ZMapGUIMenuItem zmapWindowMakeMenuBlixemBAMFeatureset(int *start_index_inout,
                                                       ZMapGUIMenuItemCallbackFunc callback_func,
@@ -3715,28 +3743,17 @@ ZMapGUIMenuItem zmapWindowMakeMenuBlixemBAMFeatureset(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         NULL, NULL},
-      //{ZMAPGUI_MENU_NORMAL, BLIXEM_OPS_STR "/" BLIXEM_READS_STR, BLIX_READS, blixemMenuCB, NULL, "<Ctrl>A"},
-
-      {ZMAPGUI_MENU_NONE,   NULL,                                            0, NULL,         NULL}
+      {ZMAPGUI_MENU_NONE, NULL, ITEM_MENU_INVALID, NULL, NULL},
+      {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
     } ;
 
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
   ZMapFeatureSet clicked_feature_set = menu_data->feature_set ;
 
   int i = 0 ;
-  const int max_elements = 1;
-  const int max_chars = 30 ;
-  
-  std::string item_name(BLIXEM_READS_STR) ;
-  item_name += g_quark_to_string(clicked_feature_set->original_id) ;
-  std::replace(item_name.begin(), item_name.end(), '_', ' ');
-  item_name = item_name.substr(0, max_chars) ;
+  const int max_elements = 1; // must match number of items in menu list (not including terminator)
 
-  std::string item_text(BLIXEM_OPS_STR);
-  item_text += "/" ;
-  item_text += item_name ;
-
+  std::string item_text = getBAMMenuNameFromFeatureset(clicked_feature_set, BLIXEM_OPS_STR, BLIXEM_READS_STR) ;
   addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, item_text.c_str(), BLIX_READS, blixemMenuCB, NULL);
 
   zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
@@ -3762,37 +3779,23 @@ ZMapGUIMenuItem zmapWindowMakeMenuBlixemBAMColumn(int *start_index_inout,
 }
 
 
-
 ZMapGUIMenuItem zmapWindowMakeMenuRequestBAMFeatureset(int *start_index_inout,
                                                        ZMapGUIMenuItemCallbackFunc callback_func,
                                                        gpointer callback_data)
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         NULL, NULL},
-      
-      //{ZMAPGUI_MENU_NORMAL, COLUMN_CONFIG_STR "/" PAIRED_READS_RELATED, ZMAPREADS_SELECTED, 
-      // requestShortReadsCB, NULL, "<Ctrl>A"},
-
-      {ZMAPGUI_MENU_NONE,   NULL,                                            0, NULL,         NULL}
+      {ZMAPGUI_MENU_NONE, NULL, ITEM_MENU_INVALID, NULL, NULL},
+      {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
     } ;
 
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
   ZMapFeatureSet clicked_feature_set = menu_data->feature_set ;
 
   int i = 0 ;
-  const int max_elements = 1;
-  const int max_chars = 40 ;
+  const int max_elements = 1; // must match number of items in menu list (not including terminator)
 
-  std::string item_name(PAIRED_READS_RELATED) ;
-  item_name += g_quark_to_string(clicked_feature_set->original_id) ;
-  std::replace(item_name.begin(), item_name.end(), '_', ' ');
-  item_name = item_name.substr(0, max_chars) ;
-
-  std::string item_text(COLUMN_CONFIG_STR);
-  item_text += "/" ;
-  item_text += item_name ;
-
+  std::string item_text = getBAMMenuNameFromFeatureset(clicked_feature_set, COLUMN_CONFIG_STR, PAIRED_READS_RELATED) ;
   addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, item_text.c_str(), ZMAPREADS_SELECTED, requestShortReadsCB, NULL);
 
   zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
