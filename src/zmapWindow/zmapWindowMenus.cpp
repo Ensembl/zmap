@@ -3744,10 +3744,10 @@ static std::string getBAMMenuNameFromSelection(ItemMenuCBData menu_data,
   GQuark selection_id = all_fsets ? menu_data->container_set->original_id : menu_data->feature_set->original_id ;
 
   // Construct the menu item name from the given menu text and the featureset/column id.
-  // Note that we have to escape underscores because otherwise these indicate mnemonics.
+  // Note that underscores indicate mnemonics so replace them with dashes.
   std::string item_name(menu_text) ;
   item_name += g_quark_to_string(selection_id) ;
-  stringReplace(item_name, "_", "&#95");
+  stringReplace(item_name, "_", "-");
 
   if (item_name.length() > max_chars)
     {
@@ -4027,6 +4027,7 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
       {
         // The user selected a coverage featureset and wants to blixem all related reads.
         // Get the related column id and add any featuresets in it to our seq_sets list.
+        requested_homol_set = ZMAPWINDOW_ALIGNCMD_SET ;
         GQuark req_id = selectedFeaturesetRelatedBAMData(menu_data) ;
         seq_sets = zmapWindowAddColumnFeaturesets(menu_data->context_map, seq_sets, req_id, TRUE);
         break;
@@ -4036,6 +4037,7 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
         // The user selected a coverage column and wants to blixem all related reads for all
         // featuresets in that column. Get a list of all related columns for any of the
         // coverage featuresets. For each related column, add their featuresets to our list of seq_sets.
+        requested_homol_set = ZMAPWINDOW_ALIGNCMD_SET ;
         std::list<GQuark> related_col_ids;
         if (selectedColumnRelatedBAMData(menu_data, &related_col_ids))
           {
