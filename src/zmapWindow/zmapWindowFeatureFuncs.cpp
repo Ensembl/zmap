@@ -163,8 +163,10 @@ void zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item,
       if (zmapWindowMarkIsSet(window->mark))
         zmapWindowMarkGetSequenceRange(window->mark, &(align->mark_start), &(align->mark_end)) ;
 
-      if (feature->mode == ZMAPSTYLE_MODE_ALIGNMENT)
+      if (feature->mode == ZMAPSTYLE_MODE_ALIGNMENT ||
+          feature->mode == ZMAPSTYLE_MODE_GRAPH)
         {
+          /* User may click on graph coverage column to view related read data */
           align->homol_type = feature->feature.homol.type ;
           align->source = source ;
           align->homol_set = requested_homol_set ;
