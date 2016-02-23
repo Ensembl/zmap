@@ -3987,9 +3987,22 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
         }
       break;
     case BLIX_READS:
-      break;
+      {
+        GQuark req_id = selectedFeaturesetRelatedBAMData(menu_data) ;
+        seq_sets = zmapWindowAddColumnFeaturesets(menu_data->context_map, seq_sets, req_id, TRUE);
+        break;
+      }
     case BLIX_ALL_READS:
-      break;
+      {
+        std::list<GQuark> fset_ids;
+        if (selectedColumnRelatedBAMData(menu_data, &fset_ids))
+          {
+            for (auto iter = fset_ids.begin() ; iter != fset_ids.end(); ++iter)
+              seq_sets = zmapWindowAddColumnFeaturesets(menu_data->context_map, seq_sets, *iter, TRUE) ;
+          }
+
+        break;
+      }
 
     default:
       break;
