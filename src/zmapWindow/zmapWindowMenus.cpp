@@ -151,7 +151,7 @@ typedef enum {
 #define BLIXEM_MENU_STR            "Blixem"
 #define BLIXEM_OPS_STR             BLIXEM_MENU_STR " - more options"
 #define BLIXEM_READS_STR           "Paired reads for "
-#define BLIXEM_ALL_READS_STR       "All paired reads"
+#define BLIXEM_ALL_READS_STR       "All paired reads for "
 
 #define BLIXEM_DNA_STR             "DNA"
 #define BLIXEM_DNAS_STR            BLIXEM_DNA_STR "s"
@@ -193,7 +193,7 @@ typedef enum {
 
 
 #define PAIRED_READS_RELATED       "Request reads for "
-#define PAIRED_READS_ALL           "Request all reads"
+#define PAIRED_READS_ALL           "Request all reads for "
 
 #define COLUMN_COLOUR              "Edit Style"
 #define COLUMN_STYLE_OPTS          "Choose Style"
@@ -433,7 +433,7 @@ static void offsetTextAttr(gpointer data, gpointer user_data) ;
 static ZMapWindowContainerFeatureSet getScratchContainerFeatureset(ZMapWindow window) ;
 
 static GQuark selectedFeaturesetRelatedBAMData(ItemMenuCBData menu_data) ;
-static bool selectedColumnRelatedBAMData(ItemMenuCBData menu_data, std::list<GQuark> *fset_ids_out) ;
+static bool selectedColumnRelatedBAMData(ItemMenuCBData menu_data, std::list<GQuark> *column_ids_out) ;
 
 
 
@@ -3678,9 +3678,9 @@ static GQuark selectedFeaturesetRelatedBAMData(ItemMenuCBData menu_data)
 }
 
 
-/* If the selected column has any featuresets with related BAM featuresets, then
- * add the IDs of the BAM featuresets to the list and return TRUE; otherwise return FALSE */
-static bool selectedColumnRelatedBAMData(ItemMenuCBData menu_data, std::list<GQuark> *fset_ids_out)
+/* If the selected column has any featuresets with related BAM columns, then
+ * add the IDs of the BAM columns to the list and return TRUE; otherwise return FALSE */
+static bool selectedColumnRelatedBAMData(ItemMenuCBData menu_data, std::list<GQuark> *column_ids_out)
 {
   bool result = FALSE ;
 
@@ -3690,14 +3690,14 @@ static bool selectedColumnRelatedBAMData(ItemMenuCBData menu_data, std::list<GQu
       for(;l; l = l->next)
         {
           GQuark fset_id = GPOINTER_TO_UINT(l->data);
-          GQuark related_fset_id = related_column(menu_data->window->context_map,fset_id);
+          GQuark related_column_id = related_column(menu_data->window->context_map,fset_id);
 
-          if(related_fset_id)
+          if(related_column_id)
             {
               result = TRUE ;
           
-              if (fset_ids_out)
-                fset_ids_out->push_back(related_fset_id) ;
+              if (column_ids_out)
+                column_ids_out->push_back(related_column_id) ;
               else
                 break ; // just want to know if any have a related fset so exit after one is found
             }
@@ -3708,19 +3708,46 @@ static bool selectedColumnRelatedBAMData(ItemMenuCBData menu_data, std::list<GQu
 }
 
 
+
+/* A function to replace all occurances of substring 'from' with substring 'to' in the given
+ * string. Taken from http://stackoverflow.com/questions/3418231/replace-part-of-a-string-with-another-string */
+void stringReplace(std::string& str, const std::string& from, const std::string& to) 
+{
+  if(from.empty())
+    return;
+
+  size_t start_pos = 0;
+
+  while((start_pos = str.find(from, start_pos)) != std::string::npos) 
+    {
+      str.replace(start_pos, from.length(), to);
+      start_pos += to.length();
+    }
+}
+
+
 /* Create a menu item based on the featureset name */
-static std::string getBAMMenuNameFromFeatureset(ZMapFeatureSet feature_set, 
-                                                const char *branch_text,
-                                                const char *menu_text)
+static std::string getBAMMenuNameFromSelection(ItemMenuCBData menu_data,
+                                               const char *branch_text,
+                                               const char *menu_text,
+                                               const bool all_fsets)
 {
   std::string item_text(branch_text) ;
-  zMapReturnValIfFail(feature_set, item_text) ;
+  zMapReturnValIfFail(menu_data && 
+                      (all_fsets && menu_data->feature_set ||
+                       !all_fsets && menu_data->container_set),
+                      item_text) ;
 
   const int max_chars = 50 ; // limit the length of the menu text
 
+  // Get the name of the column (if all_fsets is true) or the selected featureset
+  GQuark selection_id = all_fsets ? menu_data->container_set->original_id : menu_data->feature_set->original_id ;
+
+  // Construct the menu item name from the given menu text and the featureset/column id.
+  // Note that we have to escape underscores because otherwise these indicate mnemonics.
   std::string item_name(menu_text) ;
-  item_name += g_quark_to_string(feature_set->original_id) ;
-  std::replace(item_name.begin(), item_name.end(), '_', ' ');
+  item_name += g_quark_to_string(selection_id) ;
+  stringReplace(item_name, "_", "&#95");
 
   if (item_name.length() > max_chars)
     {
@@ -3748,12 +3775,11 @@ ZMapGUIMenuItem zmapWindowMakeMenuBlixemBAMFeatureset(int *start_index_inout,
     } ;
 
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
-  ZMapFeatureSet clicked_feature_set = menu_data->feature_set ;
 
   int i = 0 ;
   const int max_elements = 1; // must match number of items in menu list (not including terminator)
 
-  std::string item_text = getBAMMenuNameFromFeatureset(clicked_feature_set, BLIXEM_OPS_STR, BLIXEM_READS_STR) ;
+  std::string item_text = getBAMMenuNameFromSelection(menu_data, BLIXEM_OPS_STR, BLIXEM_READS_STR, FALSE) ;
   addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, item_text.c_str(), BLIX_READS, blixemMenuCB, NULL);
 
   zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
@@ -3768,10 +3794,17 @@ ZMapGUIMenuItem zmapWindowMakeMenuBlixemBAMColumn(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {ZMAPGUI_MENU_NORMAL, BLIXEM_OPS_STR "/" BLIXEM_ALL_READS_STR, BLIX_ALL_READS, blixemMenuCB, NULL, "<Ctrl>A"},
-
-      {ZMAPGUI_MENU_NONE,   NULL,                                            0, NULL,         NULL}
+      {ZMAPGUI_MENU_NONE, NULL, ITEM_MENU_INVALID, NULL, NULL},
+      {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
     } ;
+
+  ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
+
+  int i = 0 ;
+  const int max_elements = 1; // must match number of items in menu list (not including terminator)
+
+  std::string item_text = getBAMMenuNameFromSelection(menu_data, BLIXEM_OPS_STR, BLIXEM_ALL_READS_STR, TRUE) ;
+  addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, item_text.c_str(), BLIX_ALL_READS, blixemMenuCB, NULL);
 
   zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
 
@@ -3790,12 +3823,11 @@ ZMapGUIMenuItem zmapWindowMakeMenuRequestBAMFeatureset(int *start_index_inout,
     } ;
 
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
-  ZMapFeatureSet clicked_feature_set = menu_data->feature_set ;
 
   int i = 0 ;
   const int max_elements = 1; // must match number of items in menu list (not including terminator)
 
-  std::string item_text = getBAMMenuNameFromFeatureset(clicked_feature_set, COLUMN_CONFIG_STR, PAIRED_READS_RELATED) ;
+  std::string item_text = getBAMMenuNameFromSelection(menu_data, COLUMN_CONFIG_STR, PAIRED_READS_RELATED, FALSE) ;
   addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, item_text.c_str(), ZMAPREADS_SELECTED, requestShortReadsCB, NULL);
 
   zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
@@ -3809,11 +3841,17 @@ ZMapGUIMenuItem zmapWindowMakeMenuRequestBAMColumn(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {ZMAPGUI_MENU_NORMAL, COLUMN_CONFIG_STR "/" PAIRED_READS_ALL, ZMAPREADS_ALL, 
-       requestShortReadsCB, NULL, "<Ctrl>A"},
-
-      {ZMAPGUI_MENU_NONE,   NULL,                                            0, NULL,         NULL}
+      {ZMAPGUI_MENU_NONE, NULL, ITEM_MENU_INVALID, NULL, NULL},
+      {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
     } ;
+
+  ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
+
+  int i = 0 ;
+  const int max_elements = 1; // must match number of items in menu list (not including terminator)
+
+  std::string item_text = getBAMMenuNameFromSelection(menu_data, COLUMN_CONFIG_STR, PAIRED_READS_ALL, TRUE) ;
+  addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, item_text.c_str(), ZMAPREADS_ALL, requestShortReadsCB, NULL);
 
   zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
 
@@ -3841,9 +3879,8 @@ GQuark related_column(ZMapFeatureContextMap map,GQuark fset_id)
 }
 
 
-
-
-
+/* For the given column, get all of its featuresets and add their ids to the given glist. Adds
+ * their unique ids if unique_id is true or their display names otherwise. */
 GList * zmapWindowAddColumnFeaturesets(ZMapFeatureContextMap map, GList *glist, GQuark column_id, gboolean unique_id)
 {
   ZMapFeatureColumn column = NULL ;
@@ -3901,10 +3938,10 @@ static void requestShortReadsCB(int menu_item_id, gpointer callback_data)
     }
   else if (menu_item_id == ZMAPREADS_ALL)
     {
-      std::list<GQuark> fset_ids;
-      if (selectedColumnRelatedBAMData(menu_data, &fset_ids))
+      std::list<GQuark> related_col_ids;
+      if (selectedColumnRelatedBAMData(menu_data, &related_col_ids))
         {
-          for (auto iter = fset_ids.begin() ; iter != fset_ids.end(); ++iter)
+          for (auto iter = related_col_ids.begin() ; iter != related_col_ids.end(); ++iter)
             req_list = zmapWindowAddColumnFeaturesets(menu_data->context_map, req_list, *iter, TRUE) ;
         }
 
@@ -3988,16 +4025,21 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
       break;
     case BLIX_READS:
       {
+        // The user selected a coverage featureset and wants to blixem all related reads.
+        // Get the related column id and add any featuresets in it to our seq_sets list.
         GQuark req_id = selectedFeaturesetRelatedBAMData(menu_data) ;
         seq_sets = zmapWindowAddColumnFeaturesets(menu_data->context_map, seq_sets, req_id, TRUE);
         break;
       }
     case BLIX_ALL_READS:
       {
-        std::list<GQuark> fset_ids;
-        if (selectedColumnRelatedBAMData(menu_data, &fset_ids))
+        // The user selected a coverage column and wants to blixem all related reads for all
+        // featuresets in that column. Get a list of all related columns for any of the
+        // coverage featuresets. For each related column, add their featuresets to our list of seq_sets.
+        std::list<GQuark> related_col_ids;
+        if (selectedColumnRelatedBAMData(menu_data, &related_col_ids))
           {
-            for (auto iter = fset_ids.begin() ; iter != fset_ids.end(); ++iter)
+            for (auto iter = related_col_ids.begin() ; iter != related_col_ids.end(); ++iter)
               seq_sets = zmapWindowAddColumnFeaturesets(menu_data->context_map, seq_sets, *iter, TRUE) ;
           }
 
