@@ -3735,7 +3735,7 @@ static std::string getBAMMenuNameFromSelection(ItemMenuCBData menu_data,
                                                const char *menu_text,
                                                const bool all_fsets)
 {
-  std::string item_text() ;
+  std::string item_text("") ;
   zMapReturnValIfFail(menu_data && 
                       (all_fsets && menu_data->feature_set ||
                        !all_fsets && menu_data->container_set),
