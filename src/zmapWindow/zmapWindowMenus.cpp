@@ -150,8 +150,8 @@ typedef enum {
 /* Strings/enums for invoking blixem. */
 #define BLIXEM_MENU_STR            "Blixem"
 #define BLIXEM_OPS_STR             BLIXEM_MENU_STR " - more options"
-#define BLIXEM_READS_STR           "Paired reads for "
-#define BLIXEM_ALL_READS_STR       "All paired reads for "
+#define BLIXEM_READS_FEATURESET    "Paired reads for "
+#define BLIXEM_READS_COL           "All paired reads for "
 
 #define BLIXEM_DNA_STR             "DNA"
 #define BLIXEM_DNAS_STR            BLIXEM_DNA_STR "s"
@@ -192,8 +192,8 @@ typedef enum {
 #define END                        "End"
 
 
-#define PAIRED_READS_RELATED       "Request reads for "
-#define PAIRED_READS_ALL           "Request all reads for "
+#define REQUEST_READS_FEATURESET   "Request reads for "
+#define REQUEST_READS_COL          "Request all reads for "
 
 #define COLUMN_COLOUR              "Edit Style"
 #define COLUMN_STYLE_OPTS          "Choose Style"
@@ -210,15 +210,15 @@ enum
     BLIX_EXPANDED,                          /* selected features expanded into hidden underlying data */
     BLIX_SET,                               /* Blixem all matches for all features in this column. */
     BLIX_MULTI_SETS,                        /* Blixem all matches for all features in the list of columns in the blixem config file. */
-    BLIX_READS,                             /* Blixem related reads data for a coverage featureset. */
-    BLIX_ALL_READS,                         /* Blixem all related reads data for a coverage column. */
+    BLIX_READS_FEATURESET,                  /* Blixem related reads data for a coverage featureset. */
+    BLIX_READS_COL,                         /* Blixem all related reads data for a coverage column. */
   } ;
 
 
 enum
   {
-    ZMAPREADS_SELECTED,                     /* Load related reads data for a coverage featureset. */
-    ZMAPREADS_ALL                           /* Load all related reads data for a coverage column. */
+    ZMAPREADS_FEATURESET,                   /* Load related reads data for a coverage featureset. */
+    ZMAPREADS_COL                           /* Load all related reads data for a coverage column. */
   } ;
 
 
@@ -433,8 +433,8 @@ static void offsetTextAttr(gpointer data, gpointer user_data) ;
 
 static ZMapWindowContainerFeatureSet getScratchContainerFeatureset(ZMapWindow window) ;
 
-static GQuark selectedFeaturesetRelatedBAMData(ItemMenuCBData menu_data) ;
-static bool selectedColumnRelatedBAMData(ItemMenuCBData menu_data, std::list<GQuark> *column_ids_out) ;
+static GQuark coverageFeaturesetGetReads(ItemMenuCBData menu_data) ;
+static bool coverageColumnGetReads(ItemMenuCBData menu_data, std::list<GQuark> *column_ids_out) ;
 
 
 
@@ -642,10 +642,10 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
     }
 
   /* Add blixem options for coverage columns that have related BAM data */
-  if (selectedFeaturesetRelatedBAMData(menu_data))
+  if (coverageFeaturesetGetReads(menu_data))
     menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuBlixemBAMFeatureset(NULL, NULL, menu_data)) ;
 
-  if (selectedColumnRelatedBAMData(menu_data, NULL))
+  if (coverageColumnGetReads(menu_data, NULL))
     menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuBlixemBAMColumn(NULL, NULL, menu_data)) ;
 
   if (zMapStyleIsPfetchable(style))
@@ -699,10 +699,10 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
   }
 
   /* Add column configuration options for coverage columns that have related BAM data */
-  if (selectedFeaturesetRelatedBAMData(menu_data))
+  if (coverageFeaturesetGetReads(menu_data))
     menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuRequestBAMFeatureset(NULL, NULL, menu_data)) ;
 
-  if (selectedColumnRelatedBAMData(menu_data, NULL))
+  if (coverageColumnGetReads(menu_data, NULL))
     menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuRequestBAMColumn(NULL, NULL, menu_data)) ;
 
   menu_sets = g_list_append(menu_sets, separator) ;
@@ -829,10 +829,10 @@ void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
 
 
           /* Add blixem options for coverage columns that have related BAM data */
-          if (selectedFeaturesetRelatedBAMData(cbdata))
+          if (coverageFeaturesetGetReads(cbdata))
             menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuBlixemBAMFeatureset(NULL, NULL, cbdata)) ;
 
-          if (selectedColumnRelatedBAMData(cbdata, NULL))
+          if (coverageColumnGetReads(cbdata, NULL))
             menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuBlixemBAMColumn(NULL, NULL, cbdata)) ;
         }
 
@@ -857,10 +857,10 @@ void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
 
 
       /* Add column configuration options for coverage columns that have related BAM data */
-      if (selectedFeaturesetRelatedBAMData(cbdata))
+      if (coverageFeaturesetGetReads(cbdata))
         menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuRequestBAMFeatureset(NULL, NULL, cbdata)) ;
 
-      if (selectedColumnRelatedBAMData(cbdata, NULL))
+      if (coverageColumnGetReads(cbdata, NULL))
         menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuRequestBAMColumn(NULL, NULL, cbdata)) ;
 
       menu_sets = g_list_append(menu_sets, separator) ;
@@ -3664,7 +3664,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuProteinHomol(int *start_index_inout,
 
 /* If the selected featureset is a coverage featureset with a related BAM featureset, then
  * return the ID of the BAM featureset; otherwise return 0  */
-static GQuark selectedFeaturesetRelatedBAMData(ItemMenuCBData menu_data)
+static GQuark coverageFeaturesetGetReads(ItemMenuCBData menu_data)
 {
   GQuark result = 0 ;
 
@@ -3683,7 +3683,7 @@ static GQuark selectedFeaturesetRelatedBAMData(ItemMenuCBData menu_data)
 
 /* If the selected column has any featuresets with related BAM columns, then
  * add the IDs of the BAM columns to the list and return TRUE; otherwise return FALSE */
-static bool selectedColumnRelatedBAMData(ItemMenuCBData menu_data, std::list<GQuark> *column_ids_out)
+static bool coverageColumnGetReads(ItemMenuCBData menu_data, std::list<GQuark> *column_ids_out)
 {
   bool result = FALSE ;
 
@@ -3787,8 +3787,8 @@ ZMapGUIMenuItem zmapWindowMakeMenuBlixemBAMFeatureset(int *start_index_inout,
   int i = 0 ;
   const int max_elements = 1; // must match number of items in menu list (not including terminator)
 
-  std::string item_text = getBAMMenuNameFromSelection(menu_data, BLIXEM_OPS_STR, BLIXEM_READS_STR, FALSE) ;
-  addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, item_text.c_str(), BLIX_READS, blixemMenuCB, NULL, "<Shift>A");
+  std::string item_text = getBAMMenuNameFromSelection(menu_data, BLIXEM_OPS_STR, BLIXEM_READS_FEATURESET, FALSE) ;
+  addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, item_text.c_str(), BLIX_READS_FEATURESET, blixemMenuCB, NULL, "<Shift>A");
 
   zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
 
@@ -3811,8 +3811,8 @@ ZMapGUIMenuItem zmapWindowMakeMenuBlixemBAMColumn(int *start_index_inout,
   int i = 0 ;
   const int max_elements = 1; // must match number of items in menu list (not including terminator)
 
-  std::string item_text = getBAMMenuNameFromSelection(menu_data, BLIXEM_OPS_STR, BLIXEM_ALL_READS_STR, TRUE) ;
-  addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, item_text.c_str(), BLIX_ALL_READS, blixemMenuCB, NULL, "A");
+  std::string item_text = getBAMMenuNameFromSelection(menu_data, BLIXEM_OPS_STR, BLIXEM_READS_COL, TRUE) ;
+  addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, item_text.c_str(), BLIX_READS_COL, blixemMenuCB, NULL, "A");
 
   zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
 
@@ -3835,8 +3835,8 @@ ZMapGUIMenuItem zmapWindowMakeMenuRequestBAMFeatureset(int *start_index_inout,
   int i = 0 ;
   const int max_elements = 1; // must match number of items in menu list (not including terminator)
 
-  std::string item_text = getBAMMenuNameFromSelection(menu_data, COLUMN_CONFIG_STR, PAIRED_READS_RELATED, FALSE) ;
-  addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, item_text.c_str(), ZMAPREADS_SELECTED, requestShortReadsCB, NULL, NULL);
+  std::string item_text = getBAMMenuNameFromSelection(menu_data, COLUMN_CONFIG_STR, REQUEST_READS_FEATURESET, FALSE) ;
+  addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, item_text.c_str(), ZMAPREADS_FEATURESET, requestShortReadsCB, NULL, NULL);
 
   zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
 
@@ -3858,8 +3858,8 @@ ZMapGUIMenuItem zmapWindowMakeMenuRequestBAMColumn(int *start_index_inout,
   int i = 0 ;
   const int max_elements = 1; // must match number of items in menu list (not including terminator)
 
-  std::string item_text = getBAMMenuNameFromSelection(menu_data, COLUMN_CONFIG_STR, PAIRED_READS_ALL, TRUE) ;
-  addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, item_text.c_str(), ZMAPREADS_ALL, requestShortReadsCB, NULL, NULL);
+  std::string item_text = getBAMMenuNameFromSelection(menu_data, COLUMN_CONFIG_STR, REQUEST_READS_COL, TRUE) ;
+  addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, item_text.c_str(), ZMAPREADS_COL, requestShortReadsCB, NULL, NULL);
 
   zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
 
@@ -3938,16 +3938,16 @@ static void requestShortReadsCB(int menu_item_id, gpointer callback_data)
     }
   else
 #endif
-  if(menu_item_id == ZMAPREADS_SELECTED)
+  if(menu_item_id == ZMAPREADS_FEATURESET)
     {
       /* this is for a column related to a coverage featureset so we get several featuresets */
-      GQuark req_id = selectedFeaturesetRelatedBAMData(menu_data) ;
+      GQuark req_id = coverageFeaturesetGetReads(menu_data) ;
       req_list = zmapWindowAddColumnFeaturesets(menu_data->context_map, req_list, req_id, TRUE);
     }
-  else if (menu_item_id == ZMAPREADS_ALL)
+  else if (menu_item_id == ZMAPREADS_COL)
     {
       std::list<GQuark> related_col_ids;
-      if (selectedColumnRelatedBAMData(menu_data, &related_col_ids))
+      if (coverageColumnGetReads(menu_data, &related_col_ids))
         {
           for (auto iter = related_col_ids.begin() ; iter != related_col_ids.end(); ++iter)
             req_list = zmapWindowAddColumnFeaturesets(menu_data->context_map, req_list, *iter, TRUE) ;
@@ -4019,7 +4019,7 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
       requested_homol_set = ZMAPWINDOW_ALIGNCMD_SET ;
       if (menu_data->feature_set && menu_data->window->context_map->isSeqFeatureSet(menu_data->feature_set->unique_id))
         {
-          GQuark req_id = selectedFeaturesetRelatedBAMData(menu_data) ;
+          GQuark req_id = coverageFeaturesetGetReads(menu_data) ;
           seq_sets = zmapWindowAddColumnFeaturesets(menu_data->window->context_map,seq_sets,req_id,FALSE);
         }
       break ;
@@ -4027,27 +4027,27 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
       requested_homol_set = ZMAPWINDOW_ALIGNCMD_MULTISET ;
       if (menu_data->feature_set && menu_data->window->context_map->isSeqFeatureSet(menu_data->feature_set->unique_id))
         {
-          GQuark req_id = selectedFeaturesetRelatedBAMData(menu_data) ;
+          GQuark req_id = coverageFeaturesetGetReads(menu_data) ;
           seq_sets = zmapWindowAddColumnFeaturesets(menu_data->window->context_map, seq_sets, req_id, FALSE);
         }
       break;
-    case BLIX_READS:
+    case BLIX_READS_FEATURESET:
       {
         // The user selected a coverage featureset and wants to blixem all related reads.
         // Get the related column id and add any featuresets in it to our seq_sets list.
         requested_homol_set = ZMAPWINDOW_ALIGNCMD_SET ;
-        GQuark req_id = selectedFeaturesetRelatedBAMData(menu_data) ;
+        GQuark req_id = coverageFeaturesetGetReads(menu_data) ;
         seq_sets = zmapWindowAddColumnFeaturesets(menu_data->context_map, seq_sets, req_id, TRUE);
         break;
       }
-    case BLIX_ALL_READS:
+    case BLIX_READS_COL:
       {
         // The user selected a coverage column and wants to blixem all related reads for all
         // featuresets in that column. Get a list of all related columns for any of the
         // coverage featuresets. For each related column, add their featuresets to our list of seq_sets.
         requested_homol_set = ZMAPWINDOW_ALIGNCMD_SET ;
         std::list<GQuark> related_col_ids;
-        if (selectedColumnRelatedBAMData(menu_data, &related_col_ids))
+        if (coverageColumnGetReads(menu_data, &related_col_ids))
           {
             for (auto iter = related_col_ids.begin() ; iter != related_col_ids.end(); ++iter)
               seq_sets = zmapWindowAddColumnFeaturesets(menu_data->context_map, seq_sets, *iter, TRUE) ;
