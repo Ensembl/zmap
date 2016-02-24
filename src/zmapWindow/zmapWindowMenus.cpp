@@ -3735,7 +3735,7 @@ static std::string getBAMMenuNameFromSelection(ItemMenuCBData menu_data,
                                                const char *menu_text,
                                                const bool all_fsets)
 {
-  std::string item_text(branch_text) ;
+  std::string item_text() ;
   zMapReturnValIfFail(menu_data && 
                       (all_fsets && menu_data->feature_set ||
                        !all_fsets && menu_data->container_set),
@@ -3760,7 +3760,10 @@ static std::string getBAMMenuNameFromSelection(ItemMenuCBData menu_data,
 
   // Now prefix the branch name
   if (branch_text)
-    item_text += "/" ; // only add separator if a branch name was specified
+    {
+      item_text += branch_text ;
+      item_text += "/" ;
+    }
 
   item_text += item_name ;
 
@@ -3784,7 +3787,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuBlixemBAMFeatureset(int *start_index_inout,
   int i = 0 ;
   const int max_elements = 1; // must match number of items in menu list (not including terminator)
 
-  std::string item_text = getBAMMenuNameFromSelection(menu_data, NULL, BLIXEM_READS_STR, FALSE) ;
+  std::string item_text = getBAMMenuNameFromSelection(menu_data, BLIXEM_OPS_STR, BLIXEM_READS_STR, FALSE) ;
   addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, item_text.c_str(), BLIX_READS, blixemMenuCB, NULL, "<Shift>A");
 
   zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
