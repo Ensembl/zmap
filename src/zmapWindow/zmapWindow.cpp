@@ -5428,6 +5428,44 @@ void zmapWindowFetchData(ZMapWindow window,
 }
 
 
+/* Called when the user presses one of the keys to initiate a blixem */
+static void keyboardEventBlixem(ZMapWindow window, GdkEventKey *key_event)
+{
+  zMapReturnIfFail(window) ;
+
+  /* get the focus item if there is one. */
+  FooCanvasItem *focus_item = zmapWindowFocusGetHotItem(window->focus) ;
+
+  ZMapWindowAlignSetType requested_homol_set = ZMAPWINDOW_ALIGNCMD_INVALID ;
+
+  if (key_event->state & GDK_CONTROL_MASK)
+    {
+      requested_homol_set = ZMAPWINDOW_ALIGNCMD_MULTISET ;
+    }
+  else if (key_event->keyval == GDK_a)
+    {
+      requested_homol_set = ZMAPWINDOW_ALIGNCMD_SET ;
+      if(!focus_item)
+        focus_item = (FooCanvasItem *) zmapWindowFocusGetHotColumn(window->focus);
+    }
+  else if (key_event->keyval == GDK_A)
+    {
+      requested_homol_set = ZMAPWINDOW_ALIGNCMD_FEATURES ;
+    }
+
+  /* Check if it's a BAM column and if so add the column's featuresets to the seq_sets
+   * list. If it's a coverage column we get the column's */
+  char* column_name = zMapWindowGetHotColumnName(window) ;
+  GQuark column_id = zMapStyleCreateID(column_name) ;
+
+  GList *seq_sets = NULL ;
+  if (window->context_map->isSeqColumn(column_id))
+    seq_sets = zmapWindowAddColumnFeaturesets(window->context_map, seq_sets, column_id, TRUE);
+  else if (window->context_map->isCoverageColumn(column_id))
+    seq_sets = zmapWindowAddColumnFeaturesets(window->context_map, seq_sets, column_id, TRUE);
+
+  zmapWindowCallBlixem(window, focus_item, requested_homol_set, NULL, seq_sets, 0.0, 0.0) ;
+}
 
 
 /* Handles all keyboard events for the ZMap window, as per gtk callback rules
@@ -5587,36 +5625,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
     case GDK_a:
     case GDK_A:
       {
-        ZMapWindowAlignSetType requested_homol_set = ZMAPWINDOW_ALIGNCMD_INVALID ;
-        FooCanvasItem *focus_item  ;
-        GList *seq_sets = NULL;
-
-        /* User just pressed a key so pass in focus item if there is one. */
-        focus_item = zmapWindowFocusGetHotItem(window->focus) ;
-
-        if (key_event->state & GDK_CONTROL_MASK)
-          requested_homol_set = ZMAPWINDOW_ALIGNCMD_MULTISET ;
-        else if (key_event->keyval == GDK_a)
-          {
-            requested_homol_set = ZMAPWINDOW_ALIGNCMD_SET ;
-            if(!focus_item)
-              focus_item = (FooCanvasItem *) zmapWindowFocusGetHotColumn(window->focus);
-          }
-        else if (key_event->keyval == GDK_A)
-          requested_homol_set = ZMAPWINDOW_ALIGNCMD_FEATURES ;
-
-        /* Check if it's a BAM column and if so add the column's featuresets to the seq_sets
-         * list. If it's a coverage column we get the column's */
-        char* column_name = zMapWindowGetHotColumnName(window) ;
-        GQuark column_id = zMapStyleCreateID(column_name) ;
-
-        if (window->context_map->isSeqColumn(column_id))
-          seq_sets = zmapWindowAddColumnFeaturesets(window->context_map, seq_sets, column_id, TRUE);
-        else if (window->context_map->isCoverageColumn(column_id))
-          seq_sets = zmapWindowAddColumnFeaturesets(window->context_map, seq_sets, column_id, TRUE);
-
-        zmapWindowCallBlixem(window, focus_item, requested_homol_set, NULL, seq_sets, 0.0, 0.0) ;
-
+        keyboardEventBlixem(window, key_event) ;
         break ;
       }
 
