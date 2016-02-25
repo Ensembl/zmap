@@ -1984,6 +1984,8 @@ bool zmapWindowCoverageGetDataColumns(ZMapFeatureContextMap context_map, ZMapFea
 bool zmapWindowCoverageGetDataColumns(ZMapFeatureContextMap context_map, ZMapWindowContainerFeatureSet container_set, std::list<GQuark> *column_ids_out = NULL) ;
 GList* zmapWindowCoverageGetRelatedFeaturesets(ZMapFeatureContextMap context_map, ZMapFeatureSet feature_set,
                                                GList *req_list, bool unique_id) ;
+GList* zmapWindowCoverageGetRelatedFeaturesets(ZMapFeatureContextMap context_map, GList *feature_sets,
+                                               GList *req_list, bool unique_id) ;
 GList* zmapWindowCoverageGetRelatedFeaturesets(ZMapFeatureContextMap context_map, ZMapWindowContainerFeatureSet container_set,
                                                GList *req_list, bool unique_id) ;
 

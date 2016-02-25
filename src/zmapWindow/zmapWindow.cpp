@@ -5440,30 +5440,63 @@ static void keyboardEventBlixem(ZMapWindow window, GdkEventKey *key_event)
 
   if (key_event->state & GDK_CONTROL_MASK)
     {
+      /* Ctrl-A: blixem all features in the column and any associated columns */
       requested_homol_set = ZMAPWINDOW_ALIGNCMD_MULTISET ;
     }
   else if (key_event->keyval == GDK_a)
     {
+      /* a: blixem all features in the column */
       requested_homol_set = ZMAPWINDOW_ALIGNCMD_SET ;
+
       if(!focus_item)
         focus_item = (FooCanvasItem *) zmapWindowFocusGetHotColumn(window->focus);
     }
   else if (key_event->keyval == GDK_A)
     {
+      /* Shift-A: blixem only the selected feature(s) */
       requested_homol_set = ZMAPWINDOW_ALIGNCMD_FEATURES ;
     }
 
-  /* Check if it's a BAM column and if so add the column's featuresets to the seq_sets
-   * list. If it's a coverage column we get the column's */
-  char* column_name = zMapWindowGetHotColumnName(window) ;
+  /* The behaviour is slightly different if it's a BAM or coverage column and we need to supply
+   * the seq_sets list.
+   * gb10: We could probably reorganise the blixem-calling code so that it takes care of
+   * all this and then remove the special-case code here...  */
+
+  const char* column_name = zMapWindowGetHotColumnName(window) ;
   GQuark column_id = zMapStyleCreateID(column_name) ;
-
   GList *seq_sets = NULL ;
-  if (window->context_map->isSeqColumn(column_id))
-    seq_sets = zmapWindowAddColumnFeaturesets(window->context_map, seq_sets, column_id, TRUE);
-  else if (window->context_map->isCoverageColumn(column_id))
-    seq_sets = zmapWindowAddColumnFeaturesets(window->context_map, seq_sets, column_id, TRUE);
 
+  if (window->context_map->isSeqColumn(column_id))
+    {
+      /* For BAM data columns, we need to get the column's featuresets and add them to the 
+       * seq_sets list to pass to the blixem function. */
+      seq_sets = zmapWindowAddColumnFeaturesets(window->context_map, seq_sets, column_id, TRUE);
+    }
+  else if (window->context_map->isCoverageColumn(column_id))
+    {
+      /* For coverage columns, we actually want to call blixem on the related data column,
+       * so find the related column and add its featuresets to seq_sets. Do this for the selected
+       * featureset or all featuresets in the selected column. */
+      if (requested_homol_set == ZMAPWINDOW_ALIGNCMD_FEATURES)
+        {
+          GList *focus_features = NULL ; // list of ZMapFeature structs
+          char *err_msg = NULL ;
+          bool in_mark = TRUE ; // limit to mark, if set; all otherwise
+
+          if (zmapWindowFocusGetFeatureListFull(window, in_mark, NULL, NULL, &focus_features, &err_msg))
+            {
+              seq_sets = zmapWindowCoverageGetRelatedFeaturesets(window->context_map, focus_features, seq_sets, TRUE) ;
+            }
+        }
+      else
+        {
+          ZMapWindowContainerFeatureSet hot_column = (ZMapWindowContainerFeatureSet)zmapWindowFocusGetHotColumn(window->focus) ;
+          seq_sets = zmapWindowCoverageGetRelatedFeaturesets(window->context_map, hot_column, seq_sets, TRUE) ;
+        }
+
+    }
+
+  /* Ok, now call blixem */
   zmapWindowCallBlixem(window, focus_item, requested_homol_set, NULL, seq_sets, 0.0, 0.0) ;
 }
 
@@ -7794,6 +7827,23 @@ GList* zmapWindowCoverageGetRelatedFeaturesets(ZMapFeatureContextMap context_map
     {
       for (auto iter = related_col_ids.begin() ; iter != related_col_ids.end(); ++iter)
         req_list = zmapWindowAddColumnFeaturesets(context_map, req_list, *iter, unique_id) ;
+    }
+
+  return req_list ;
+}
+
+
+/* If any of the given featuresets are coverage featuresets, get all the featuresets in their related data
+ * column (adds them to the given list and returns the new list pointer) */
+GList* zmapWindowCoverageGetRelatedFeaturesets(ZMapFeatureContextMap context_map,
+                                               GList *feature_sets,
+                                               GList *req_list,
+                                               bool unique_id)
+{
+  for (GList *item = feature_sets; item; item = item->next)
+    {
+      ZMapFeatureSet feature_set = (ZMapFeatureSet)(item->data) ;
+      req_list = zmapWindowCoverageGetRelatedFeaturesets(context_map, feature_set, req_list, unique_id) ;
     }
 
   return req_list ;

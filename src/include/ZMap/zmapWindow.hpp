@@ -669,7 +669,7 @@ void zMapWindowHighlightObjects(ZMapWindow window, ZMapFeatureContext context, g
 
 void zmapWindowHighlightSequenceItem(ZMapWindow window, FooCanvasItem *item, int start, int end, int flanking);
 
-char *zMapWindowGetHotColumnName(ZMapWindow window) ;
+const char *zMapWindowGetHotColumnName(ZMapWindow window) ;
 
 void zMapWindowDestroyLists(ZMapWindow window) ;
 void zMapWindowUnlock(ZMapWindow window) ;

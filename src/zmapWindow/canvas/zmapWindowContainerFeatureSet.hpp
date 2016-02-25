@@ -179,7 +179,7 @@ ZMapFeatureTypeStyle zmapWindowContainerFeatureSetStyleFromStyle(ZMapWindowConta
 ZMapFeatureTypeStyle zmapWindowContainerFeatureSetStyleFromID(ZMapWindowContainerFeatureSet container_set,
 							      GQuark                       style_unique_id);
 
-char *zmapWindowContainerFeaturesetGetColumnName(ZMapWindowContainerFeatureSet container_set) ;
+const char *zmapWindowContainerFeaturesetGetColumnName(ZMapWindowContainerFeatureSet container_set) ;
 GQuark zmapWindowContainerFeaturesetGetColumnId(ZMapWindowContainerFeatureSet container_set) ;
 char *zmapWindowContainerFeaturesetGetColumnUniqueName(ZMapWindowContainerFeatureSet container_set) ;
 GQuark zmapWindowContainerFeaturesetGetColumnUniqueId(ZMapWindowContainerFeatureSet container_set) ;
