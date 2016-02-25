@@ -30,7 +30,9 @@
 #ifndef ZMAP_WINDOW_P_H
 #define ZMAP_WINDOW_P_H
 
+#include <list>
 #include <gtk/gtk.h>
+
 #include <ZMap/zmapUtilsGUI.hpp>
 #include <ZMap/zmapFeature.hpp>
 #include <ZMap/zmapDraw.hpp>
@@ -1977,6 +1979,13 @@ void zmapWindowStateRevCompRegion(ZMapWindow window, double *a, double *b);
 void zmapWindowHighlightEvidenceCB(GList *evidence, gpointer user_data) ;
 
 GList * zmapWindowAddColumnFeaturesets(ZMapFeatureContextMap map, GList *glist, GQuark column_id, gboolean unique_id) ;
+
+bool zmapWindowCoverageGetDataColumns(ZMapFeatureContextMap context_map, ZMapFeatureSet feature_set, std::list<GQuark> *column_ids_out = NULL) ;
+bool zmapWindowCoverageGetDataColumns(ZMapFeatureContextMap context_map, ZMapWindowContainerFeatureSet container_set, std::list<GQuark> *column_ids_out = NULL) ;
+GList* zmapWindowCoverageGetRelatedFeaturesets(ZMapFeatureContextMap context_map, ZMapFeatureSet feature_set,
+                                               GList *req_list, bool unique_id) ;
+GList* zmapWindowCoverageGetRelatedFeaturesets(ZMapFeatureContextMap context_map, ZMapWindowContainerFeatureSet container_set,
+                                               GList *req_list, bool unique_id) ;
 
 /* Malcolms.... */
 void foo_bug_set(void *key, const char *id) ;

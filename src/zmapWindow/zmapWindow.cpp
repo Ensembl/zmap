@@ -5605,11 +5605,14 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
         else if (key_event->keyval == GDK_A)
           requested_homol_set = ZMAPWINDOW_ALIGNCMD_FEATURES ;
 
-        /* Check if it's a BAM column and if so add the column's featuresets to the seq_sets list */
+        /* Check if it's a BAM column and if so add the column's featuresets to the seq_sets
+         * list. If it's a coverage column we get the column's */
         char* column_name = zMapWindowGetHotColumnName(window) ;
         GQuark column_id = zMapStyleCreateID(column_name) ;
 
         if (window->context_map->isSeqColumn(column_id))
+          seq_sets = zmapWindowAddColumnFeaturesets(window->context_map, seq_sets, column_id, TRUE);
+        else if (window->context_map->isCoverageColumn(column_id))
           seq_sets = zmapWindowAddColumnFeaturesets(window->context_map, seq_sets, column_id, TRUE);
 
         zmapWindowCallBlixem(window, focus_item, requested_homol_set, NULL, seq_sets, 0.0, 0.0) ;
@@ -7709,6 +7712,104 @@ void zmapWindowHighlightEvidenceCB(GList *evidence, gpointer user_data)
 
   return ;
 }
+
+
+/* If the selected featureset is a coverage featureset with a related BAM featureset, then
+ * return the ID of the BAM featureset; otherwise return 0  */
+bool zmapWindowCoverageGetDataColumns(ZMapFeatureContextMap context_map,
+                                      ZMapFeatureSet feature_set,
+                                      std::list<GQuark> *column_ids_out)
+{
+  bool result = FALSE ;
+
+  if (context_map && feature_set)
+    {
+      GQuark fset_id = ((ZMapFeatureSet) (feature_set))->unique_id;
+      GQuark related_fset_id = context_map->getRelatedColumnID(fset_id);
+
+      if(related_fset_id)
+        {
+          result = TRUE ;
+
+          if (column_ids_out)
+            column_ids_out->push_back(related_fset_id) ;
+        }
+    }
+
+  return result ;
+}
+
+
+/* If the selected column has any featuresets with related BAM columns, then
+ * add the IDs of the BAM columns to the list and return TRUE; otherwise return FALSE */
+bool zmapWindowCoverageGetDataColumns(ZMapFeatureContextMap context_map,
+                                      ZMapWindowContainerFeatureSet container_set,
+                                      std::list<GQuark> *column_ids_out)
+{
+  bool result = FALSE ;
+
+  if (context_map && container_set)
+    {
+      GList *l = zmapWindowContainerFeatureSetGetFeatureSets(container_set);
+      for(;l; l = l->next)
+        {
+          GQuark fset_id = GPOINTER_TO_UINT(l->data);
+          GQuark related_column_id = context_map->getRelatedColumnID(fset_id);
+
+          if(related_column_id)
+            {
+              result = TRUE ;
+          
+              if (column_ids_out)
+                column_ids_out->push_back(related_column_id) ;
+              else
+                break ; // just want to know if any have a related fset so exit after one is found
+            }
+        }
+    }
+
+  return result ;
+}
+
+
+/* If the given featureset is a coverage featureset, get all the featuresets in its related data
+ * column (adds them to the given list and returns the new list pointer) */
+GList* zmapWindowCoverageGetRelatedFeaturesets(ZMapFeatureContextMap context_map,
+                                               ZMapFeatureSet feature_set,
+                                               GList *req_list,
+                                               bool unique_id)
+{
+  std::list<GQuark> related_col_ids;
+
+  if (zmapWindowCoverageGetDataColumns(context_map, feature_set, &related_col_ids))
+    {
+      for (auto iter = related_col_ids.begin() ; iter != related_col_ids.end(); ++iter)
+        req_list = zmapWindowAddColumnFeaturesets(context_map, req_list, *iter, unique_id) ;
+    }
+
+  return req_list ;
+}
+
+
+/* If the given column is a coverage featureset, get all the featuresets in its related data
+ * column (adds them to the given list and returns the new list pointer) */
+GList* zmapWindowCoverageGetRelatedFeaturesets(ZMapFeatureContextMap context_map,
+                                               ZMapWindowContainerFeatureSet container_set,
+                                               GList *req_list,
+                                               bool unique_id)
+{
+  std::list<GQuark> related_col_ids;
+
+  if (zmapWindowCoverageGetDataColumns(context_map, container_set, &related_col_ids))
+    {
+      for (auto iter = related_col_ids.begin() ; iter != related_col_ids.end(); ++iter)
+        req_list = zmapWindowAddColumnFeaturesets(context_map, req_list, *iter, unique_id) ;
+    }
+
+  return req_list ;
+}
+
+
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
