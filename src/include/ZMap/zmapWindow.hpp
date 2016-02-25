@@ -359,7 +359,8 @@ typedef struct ZMapWindowCallbackCommandAlignStructName
                                                                visible in alignment tool.  */
 
   int mark_start, mark_end ;                                /* Optional range for alignment viewing. */
-
+  bool features_from_mark ;                                 /* If true, only use features that
+                                                             * are in the mark (overrides prefs) */
 
   ZMapWindowAlignSetType homol_set ;                        /* What features to display. */
 

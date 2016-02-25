@@ -5432,7 +5432,9 @@ void zmapWindowFetchData(ZMapWindow window,
  * the seq_sets list of actual featuresets to blixem.
  * gb10: We could probably reorganise the blixem-calling code so that it takes care of
  * all this and then remove the special-case code here...  */
-static GList* keyboardEventBlixemBAM(ZMapWindow window, ZMapWindowAlignSetType requested_homol_set)
+static GList* keyboardEventBlixemBAM(ZMapWindow window, 
+                                     ZMapWindowAlignSetType requested_homol_set,
+                                     bool &features_from_mark)
 {
   GList *seq_sets = NULL ;
   zMapReturnValIfFail(window, seq_sets) ;
@@ -5445,9 +5447,12 @@ static GList* keyboardEventBlixemBAM(ZMapWindow window, ZMapWindowAlignSetType r
       /* For BAM data columns, we need to get the column's featuresets and add them to the 
        * seq_sets list to pass to the blixem function. */
       seq_sets = zmapWindowAddColumnFeaturesets(window->context_map, seq_sets, column_id, TRUE);
+      features_from_mark = TRUE ; // limit to mark, if set (ignored otherwise)
     }
   else if (window->context_map->isCoverageColumn(column_id))
     {
+      features_from_mark = TRUE ; // limit to mark, if set (ignored otherwise)
+      
       /* For coverage columns, we actually want to call blixem on the related data column,
        * so find the related column and add its featuresets to seq_sets. Do this for the selected
        * featureset or all featuresets in the selected column. */
@@ -5455,9 +5460,8 @@ static GList* keyboardEventBlixemBAM(ZMapWindow window, ZMapWindowAlignSetType r
         {
           GList *focus_features = NULL ; // list of ZMapFeature structs
           char *err_msg = NULL ;
-          bool in_mark = TRUE ; // limit to mark, if set; all otherwise
 
-          if (zmapWindowFocusGetFeatureListFull(window, in_mark, NULL, NULL, &focus_features, &err_msg))
+          if (zmapWindowFocusGetFeatureListFull(window, features_from_mark, NULL, NULL, &focus_features, &err_msg))
             {
               seq_sets = zmapWindowCoverageGetRelatedFeaturesets(window->context_map, focus_features, seq_sets, TRUE) ;
             }
@@ -5483,6 +5487,7 @@ static void keyboardEventBlixem(ZMapWindow window, GdkEventKey *key_event)
   FooCanvasItem *focus_item = zmapWindowFocusGetHotItem(window->focus) ;
 
   ZMapWindowAlignSetType requested_homol_set = ZMAPWINDOW_ALIGNCMD_INVALID ;
+  bool features_from_mark = FALSE ;
 
   if (key_event->state & GDK_CONTROL_MASK)
     {
@@ -5504,10 +5509,14 @@ static void keyboardEventBlixem(ZMapWindow window, GdkEventKey *key_event)
     }
 
   /* For BAM/bigwig columns we also need to pass a list of actual featuresets to blixem */
-  GList *seq_sets = keyboardEventBlixemBAM(window, requested_homol_set) ;
+  GList *seq_sets = keyboardEventBlixemBAM(window, requested_homol_set, features_from_mark) ;
+
+  /* If we requested to limit to the mark but the mark is not set then reset the flag */
+  if (!zMapWindowMarkIsSet(window))
+    features_from_mark = FALSE ;
 
   /* Ok, now call blixem */
-  zmapWindowCallBlixem(window, focus_item, requested_homol_set, NULL, seq_sets, 0.0, 0.0) ;
+  zmapWindowCallBlixem(window, focus_item, requested_homol_set, NULL, seq_sets, 0.0, 0.0, features_from_mark) ;
 
   g_list_free(seq_sets) ;
 }

@@ -1312,7 +1312,8 @@ void zmapWindowItemUnHighlightShowTranslations(ZMapWindow window, FooCanvasItem 
 void zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item,
 			  ZMapWindowAlignSetType requested_homol_set,
 			  ZMapFeatureSet feature_set, GList *source,
-			  double x_pos, double y_pos) ;
+			  double x_pos, double y_pos,
+                          const bool features_from_mark) ;
 
 
 void zmapWindowFeatureItemEventButRelease(GdkEvent *event) ;

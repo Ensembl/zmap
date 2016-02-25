@@ -55,7 +55,8 @@
 void zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item,
                           ZMapWindowAlignSetType requested_homol_set,
                           ZMapFeatureSet feature_set, GList *source,
-                          double x_pos, double y_pos)
+                          double x_pos, double y_pos,
+                          const bool features_from_mark)
 {
   FooCanvasItem *focus_item = NULL, *focus_column = NULL ;
   int window_start, window_end ;
@@ -159,6 +160,7 @@ void zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item,
 
       align->window_start = window_start ;
       align->window_end = window_end ;
+      align->features_from_mark = features_from_mark ;
 
       if (zmapWindowMarkIsSet(window->mark))
         zmapWindowMarkGetSequenceRange(window->mark, &(align->mark_start), &(align->mark_end)) ;

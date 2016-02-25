@@ -150,8 +150,10 @@ typedef enum {
 /* Strings/enums for invoking blixem. */
 #define BLIXEM_MENU_STR            "Blixem"
 #define BLIXEM_OPS_STR             BLIXEM_MENU_STR " - more options"
-#define BLIXEM_READS_FEATURESET    "Paired reads for "
-#define BLIXEM_READS_COL           "All paired reads for "
+#define BLIXEM_READS_FEATURESET    "Blixem reads for %s"
+#define BLIXEM_READS_COL           "Blixem reads for %s"
+#define BLIXEM_READS_FEATURESET_MARK "Blixem reads for %s (marked)"
+#define BLIXEM_READS_COL_MARK      "Blixem reads for %s (marked)"
 
 #define BLIXEM_DNA_STR             "DNA"
 #define BLIXEM_DNAS_STR            BLIXEM_DNA_STR "s"
@@ -192,8 +194,12 @@ typedef enum {
 #define END                        "End"
 
 
-#define REQUEST_READS_FEATURESET   "Request reads for "
-#define REQUEST_READS_COL          "Request all reads for "
+#define REQUEST_READS_STR          COLUMN_CONFIG_STR "/Request reads"
+#define REQUEST_READS_FEATURESET   "%s"
+#define REQUEST_READS_COL          "%s"
+#define REQUEST_READS_FEATURESET_MARK "%s (marked)"
+#define REQUEST_READS_COL_MARK      "%s (marked)"
+
 
 #define COLUMN_COLOUR              "Edit Style"
 #define COLUMN_STYLE_OPTS          "Choose Style"
@@ -212,13 +218,17 @@ enum
     BLIX_MULTI_SETS,                        /* Blixem all matches for all features in the list of columns in the blixem config file. */
     BLIX_READS_FEATURESET,                  /* Blixem related reads data for a coverage featureset. */
     BLIX_READS_COL,                         /* Blixem all related reads data for a coverage column. */
+    BLIX_READS_FEATURESET_MARK,             /* Blixem related reads data in the mark for a coverage featureset. */
+    BLIX_READS_COL_MARK,                    /* Blixem all related reads data in the mark for a coverage column. */
   } ;
 
 
 enum
   {
     ZMAPREADS_FEATURESET,                   /* Load related reads data for a coverage featureset. */
-    ZMAPREADS_COL                           /* Load all related reads data for a coverage column. */
+    ZMAPREADS_COL,                          /* Load all related reads data for a coverage column. */
+    ZMAPREADS_FEATURESET_MARK,              /* Load related marked reads data for a coverage featureset. */
+    ZMAPREADS_COL_MARK                      /* Load all related marked reads data for a coverage column. */
   } ;
 
 
@@ -3687,31 +3697,35 @@ static std::string getBAMMenuNameFromSelection(ItemMenuCBData menu_data,
                        !all_fsets && menu_data->container_set),
                       item_text) ;
 
-  const int max_chars = 50 ; // limit the length of the menu text
+  const int max_chars = 20 ; // limit the length of the menu text
 
   // Get the name of the column (if all_fsets is true) or the selected featureset
   GQuark selection_id = all_fsets ? menu_data->container_set->original_id : menu_data->feature_set->original_id ;
 
-  // Construct the menu item name from the given menu text and the featureset/column id.
+  // Construct the menu item name from the given featureset/column id.
   // Note that underscores indicate mnemonics so replace them with dashes.
-  std::string item_name(menu_text) ;
-  item_name += g_quark_to_string(selection_id) ;
+  // Also limit the length of the name so the menu doesn't become too wide
+  std::string item_name(g_quark_to_string(selection_id)) ;
+
   stringReplace(item_name, "_", "-");
 
   if (item_name.length() > max_chars)
     {
       item_name = item_name.substr(0, max_chars) ;
-      item_name += "..." ;
+      item_name += "[...]" ;
     }
 
-  // Now prefix the branch name
+  // Now concatenate the branch name and menu text
   if (branch_text)
     {
       item_text += branch_text ;
       item_text += "/" ;
     }
 
-  item_text += item_name ;
+  item_text += menu_text ;
+
+  // Replace the %s in the menu text with the item name
+  stringReplace(item_text, "%s", item_name) ;
 
   return item_text ;
 }
@@ -3725,16 +3739,28 @@ ZMapGUIMenuItem zmapWindowMakeMenuBlixemBAMFeatureset(int *start_index_inout,
   static ZMapGUIMenuItemStruct menu[] =
     {
       {ZMAPGUI_MENU_NONE, NULL, ITEM_MENU_INVALID, NULL, NULL},
+      {ZMAPGUI_MENU_NONE, NULL, ITEM_MENU_INVALID, NULL, NULL},
+      {ZMAPGUI_MENU_NONE, NULL, ITEM_MENU_INVALID, NULL, NULL},
+
       {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
     } ;
 
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
 
   int i = 0 ;
-  const int max_elements = 1; // must match number of items in menu list (not including terminator)
+  const int max_elements = 3; // must match number of items in menu list (not including terminator)
+  std::string item_text ;
 
-  std::string item_text = getBAMMenuNameFromSelection(menu_data, BLIXEM_OPS_STR, BLIXEM_READS_FEATURESET, FALSE) ;
-  addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, item_text.c_str(), BLIX_READS_FEATURESET, blixemMenuCB, NULL, "<Shift>A");
+  /* Pass branch as null for this one to put it in the toplevel menu. Note that I've repeated the
+   * same option in the sub-menu as well because I think it's a bit clearer to have all 4 variations on
+   * this theme grouped together regardless of whether one is also in the toplevel */
+  item_text = getBAMMenuNameFromSelection(menu_data, NULL, BLIXEM_READS_FEATURESET_MARK, FALSE) ;
+  addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, item_text.c_str(), BLIX_READS_FEATURESET_MARK, blixemMenuCB, NULL, "<Shift>A");
+
+  item_text = getBAMMenuNameFromSelection(menu_data, BLIXEM_OPS_STR, BLIXEM_READS_FEATURESET, FALSE) ;
+  addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, item_text.c_str(), BLIX_READS_FEATURESET, blixemMenuCB, NULL, NULL);
+  item_text = getBAMMenuNameFromSelection(menu_data, BLIXEM_OPS_STR, BLIXEM_READS_FEATURESET_MARK, FALSE) ;
+  addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, item_text.c_str(), BLIX_READS_FEATURESET_MARK, blixemMenuCB, NULL, NULL);
 
   zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
 
@@ -3749,16 +3775,21 @@ ZMapGUIMenuItem zmapWindowMakeMenuBlixemBAMColumn(int *start_index_inout,
   static ZMapGUIMenuItemStruct menu[] =
     {
       {ZMAPGUI_MENU_NONE, NULL, ITEM_MENU_INVALID, NULL, NULL},
+      {ZMAPGUI_MENU_NONE, NULL, ITEM_MENU_INVALID, NULL, NULL},
+
       {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
     } ;
 
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
 
   int i = 0 ;
-  const int max_elements = 1; // must match number of items in menu list (not including terminator)
+  const int max_elements = 2; // must match number of items in menu list (not including terminator)
+  std::string item_text;
 
-  std::string item_text = getBAMMenuNameFromSelection(menu_data, BLIXEM_OPS_STR, BLIXEM_READS_COL, TRUE) ;
-  addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, item_text.c_str(), BLIX_READS_COL, blixemMenuCB, NULL, "A");
+  item_text = getBAMMenuNameFromSelection(menu_data, BLIXEM_OPS_STR, BLIXEM_READS_COL, TRUE) ;
+  addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, item_text.c_str(), BLIX_READS_COL, blixemMenuCB, NULL, NULL);
+  item_text = getBAMMenuNameFromSelection(menu_data, BLIXEM_OPS_STR, BLIXEM_READS_COL_MARK, TRUE) ;
+  addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, item_text.c_str(), BLIX_READS_COL_MARK, blixemMenuCB, NULL, "A");
 
   zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
 
@@ -3773,16 +3804,21 @@ ZMapGUIMenuItem zmapWindowMakeMenuRequestBAMFeatureset(int *start_index_inout,
   static ZMapGUIMenuItemStruct menu[] =
     {
       {ZMAPGUI_MENU_NONE, NULL, ITEM_MENU_INVALID, NULL, NULL},
+      {ZMAPGUI_MENU_NONE, NULL, ITEM_MENU_INVALID, NULL, NULL},
+
       {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
     } ;
 
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
 
   int i = 0 ;
-  const int max_elements = 1; // must match number of items in menu list (not including terminator)
+  const int max_elements = 2; // must match number of items in menu list (not including terminator)
+  std::string item_text ;
 
-  std::string item_text = getBAMMenuNameFromSelection(menu_data, COLUMN_CONFIG_STR, REQUEST_READS_FEATURESET, FALSE) ;
+  item_text = getBAMMenuNameFromSelection(menu_data, REQUEST_READS_STR, REQUEST_READS_FEATURESET, FALSE) ;
   addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, item_text.c_str(), ZMAPREADS_FEATURESET, requestShortReadsCB, NULL, NULL);
+  item_text = getBAMMenuNameFromSelection(menu_data, REQUEST_READS_STR, REQUEST_READS_FEATURESET_MARK, FALSE) ;
+  addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, item_text.c_str(), ZMAPREADS_FEATURESET_MARK, requestShortReadsCB, NULL, NULL);
 
   zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
 
@@ -3796,16 +3832,21 @@ ZMapGUIMenuItem zmapWindowMakeMenuRequestBAMColumn(int *start_index_inout,
   static ZMapGUIMenuItemStruct menu[] =
     {
       {ZMAPGUI_MENU_NONE, NULL, ITEM_MENU_INVALID, NULL, NULL},
+      {ZMAPGUI_MENU_NONE, NULL, ITEM_MENU_INVALID, NULL, NULL},
+
       {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
     } ;
 
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
 
   int i = 0 ;
-  const int max_elements = 1; // must match number of items in menu list (not including terminator)
+  const int max_elements = 2; // must match number of items in menu list (not including terminator)
+  std::string item_text ;
 
-  std::string item_text = getBAMMenuNameFromSelection(menu_data, COLUMN_CONFIG_STR, REQUEST_READS_COL, TRUE) ;
+  item_text = getBAMMenuNameFromSelection(menu_data, REQUEST_READS_STR, REQUEST_READS_COL, TRUE) ;
   addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, item_text.c_str(), ZMAPREADS_COL, requestShortReadsCB, NULL, NULL);
+  item_text = getBAMMenuNameFromSelection(menu_data, REQUEST_READS_STR, REQUEST_READS_COL_MARK, TRUE) ;
+  addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, item_text.c_str(), ZMAPREADS_COL_MARK, requestShortReadsCB, NULL, NULL);
 
   zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
 
@@ -3858,37 +3899,58 @@ static void requestShortReadsCB(int menu_item_id, gpointer callback_data)
   if (!menu_data)
     return ;
 
-#if 0
-  if (!zmapWindowMarkIsSet(menu_data->window->mark))
+  switch (menu_item_id)
     {
-      zMapMessage("You must set the mark first to select this option","");
-    }
-  else
-#endif
-  if(menu_item_id == ZMAPREADS_FEATURESET)
-    {
-      req_list = zmapWindowCoverageGetRelatedFeaturesets(menu_data->context_map, menu_data->feature_set, req_list, TRUE) ;
-    }
-  else if (menu_item_id == ZMAPREADS_COL)
-    {
-      req_list = zmapWindowCoverageGetRelatedFeaturesets(menu_data->context_map, menu_data->container_set, req_list, TRUE) ;
+    case ZMAPREADS_FEATURESET_MARK:
+      {
+        if (!zmapWindowMarkIsSet(menu_data->window->mark))
+          {
+            zMapMessage("You must set the mark first to select this option","");
+            break ; //only break on error
+          }
+        //else fall through
+      }
+    case ZMAPREADS_FEATURESET:
+      {
+        req_list = zmapWindowCoverageGetRelatedFeaturesets(menu_data->context_map, menu_data->feature_set, req_list, TRUE) ;
+        break ;
+      }
 
-      GQuark fset_id,req_id;
-      ZMapFeatureSource src;
+    case ZMAPREADS_COL_MARK:
+      {
+        if (!zmapWindowMarkIsSet(menu_data->window->mark))
+          {
+            zMapMessage("You must set the mark first to select this option","");
+            break ; //only break on error
+          }
+        //else fall through
+      }
+    case ZMAPREADS_COL:
+      {
+        req_list = zmapWindowCoverageGetRelatedFeaturesets(menu_data->context_map, menu_data->container_set, req_list, TRUE) ;
 
-      l = zmapWindowContainerFeatureSetGetFeatureSets(menu_data->container_set);
-      for(;l; l = l->next)
-        {
+        GQuark fset_id,req_id;
+        ZMapFeatureSource src;
 
-          fset_id = GPOINTER_TO_UINT(l->data);
-          if ((src = (ZMapFeatureSource)g_hash_table_lookup(menu_data->context_map->source_2_sourcedata,GUINT_TO_POINTER(fset_id))))
-            {
-              req_id = src->related_column;
-            }
+        l = zmapWindowContainerFeatureSetGetFeatureSets(menu_data->container_set);
+        for(;l; l = l->next)
+          {
+            fset_id = GPOINTER_TO_UINT(l->data);
+            if ((src = (ZMapFeatureSource)g_hash_table_lookup(menu_data->context_map->source_2_sourcedata,GUINT_TO_POINTER(fset_id))))
+              {
+                req_id = src->related_column;
+              }
 
-          if(req_id)
-            req_list = zmapWindowAddColumnFeaturesets(menu_data->context_map,req_list,req_id,TRUE);
-        }
+            if(req_id)
+              req_list = zmapWindowAddColumnFeaturesets(menu_data->context_map,req_list,req_id,TRUE);
+          }
+        break ;
+      }
+    default:
+      {
+        zMapWarnIfReached() ;
+        break ;
+      }
     }
 
   if(req_list)
@@ -3920,6 +3982,7 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
   ZMapWindowAlignSetType requested_homol_set = ZMAPWINDOW_ALIGNCMD_INVALID ;
   GList *seq_sets = NULL;
+  bool features_from_mark = FALSE ;
 
   if (!menu_data || !menu_data->window || !menu_data->window->context_map)
     return ;
@@ -3929,22 +3992,30 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
     case BLIX_NONE:
       requested_homol_set = ZMAPWINDOW_ALIGNCMD_NONE ;
       break;
+
     case BLIX_SELECTED:
       requested_homol_set = ZMAPWINDOW_ALIGNCMD_FEATURES ;
       break;
+
     case BLIX_EXPANDED:
       requested_homol_set = ZMAPWINDOW_ALIGNCMD_EXPANDED ;
       break;
+
     case BLIX_SET:
       requested_homol_set = ZMAPWINDOW_ALIGNCMD_SET ;
       if (menu_data->feature_set && menu_data->window->context_map->isSeqFeatureSet(menu_data->feature_set->unique_id))
         seq_sets = zmapWindowCoverageGetRelatedFeaturesets(menu_data->context_map, menu_data->feature_set, seq_sets, FALSE);
       break ;
+
     case BLIX_MULTI_SETS:
       requested_homol_set = ZMAPWINDOW_ALIGNCMD_MULTISET ;
       if (menu_data->feature_set && menu_data->window->context_map->isSeqFeatureSet(menu_data->feature_set->unique_id))
         seq_sets = zmapWindowCoverageGetRelatedFeaturesets(menu_data->context_map, menu_data->feature_set, seq_sets, FALSE);
       break;
+
+    case BLIX_READS_FEATURESET_MARK: 
+      features_from_mark = TRUE ;
+      //fall through
     case BLIX_READS_FEATURESET:
       {
         // The user selected a coverage featureset and wants to blixem all related reads.
@@ -3953,6 +4024,10 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
         seq_sets = zmapWindowCoverageGetRelatedFeaturesets(menu_data->context_map, menu_data->feature_set, seq_sets, TRUE) ;
         break;
       }
+
+    case BLIX_READS_COL_MARK:
+      features_from_mark = TRUE ;
+      //fall through
     case BLIX_READS_COL:
       {
         // The user selected a coverage column and wants to blixem all related reads for all
@@ -3970,7 +4045,7 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
 
   if (requested_homol_set)
     zmapWindowCallBlixem(menu_data->window, menu_data->item, requested_homol_set,
-                         menu_data->feature_set, seq_sets, menu_data->x, menu_data->y) ;
+                         menu_data->feature_set, seq_sets, menu_data->x, menu_data->y, features_from_mark) ;
 
   g_free(menu_data) ;
 
