@@ -5428,43 +5428,17 @@ void zmapWindowFetchData(ZMapWindow window,
 }
 
 
-/* Called when the user presses one of the keys to initiate a blixem */
-static void keyboardEventBlixem(ZMapWindow window, GdkEventKey *key_event)
+/* What we blixem is slightly different if it's a BAM or coverage column and we need to supply
+ * the seq_sets list of actual featuresets to blixem.
+ * gb10: We could probably reorganise the blixem-calling code so that it takes care of
+ * all this and then remove the special-case code here...  */
+static GList* keyboardEventBlixemBAM(ZMapWindow window, ZMapWindowAlignSetType requested_homol_set)
 {
-  zMapReturnIfFail(window) ;
-
-  /* get the focus item if there is one. */
-  FooCanvasItem *focus_item = zmapWindowFocusGetHotItem(window->focus) ;
-
-  ZMapWindowAlignSetType requested_homol_set = ZMAPWINDOW_ALIGNCMD_INVALID ;
-
-  if (key_event->state & GDK_CONTROL_MASK)
-    {
-      /* Ctrl-A: blixem all features in the column and any associated columns */
-      requested_homol_set = ZMAPWINDOW_ALIGNCMD_MULTISET ;
-    }
-  else if (key_event->keyval == GDK_a)
-    {
-      /* a: blixem all features in the column */
-      requested_homol_set = ZMAPWINDOW_ALIGNCMD_SET ;
-
-      if(!focus_item)
-        focus_item = (FooCanvasItem *) zmapWindowFocusGetHotColumn(window->focus);
-    }
-  else if (key_event->keyval == GDK_A)
-    {
-      /* Shift-A: blixem only the selected feature(s) */
-      requested_homol_set = ZMAPWINDOW_ALIGNCMD_FEATURES ;
-    }
-
-  /* The behaviour is slightly different if it's a BAM or coverage column and we need to supply
-   * the seq_sets list.
-   * gb10: We could probably reorganise the blixem-calling code so that it takes care of
-   * all this and then remove the special-case code here...  */
+  GList *seq_sets = NULL ;
+  zMapReturnValIfFail(window, seq_sets) ;
 
   const char* column_name = zMapWindowGetHotColumnName(window) ;
   GQuark column_id = zMapStyleCreateID(column_name) ;
-  GList *seq_sets = NULL ;
 
   if (window->context_map->isSeqColumn(column_id))
     {
@@ -5495,6 +5469,42 @@ static void keyboardEventBlixem(ZMapWindow window, GdkEventKey *key_event)
         }
 
     }
+
+  return seq_sets ;
+}
+
+
+/* Called when the user presses one of the keys to initiate a blixem */
+static void keyboardEventBlixem(ZMapWindow window, GdkEventKey *key_event)
+{
+  zMapReturnIfFail(window) ;
+
+  /* get the focus item if there is one. */
+  FooCanvasItem *focus_item = zmapWindowFocusGetHotItem(window->focus) ;
+
+  ZMapWindowAlignSetType requested_homol_set = ZMAPWINDOW_ALIGNCMD_INVALID ;
+
+  if (key_event->state & GDK_CONTROL_MASK)
+    {
+      /* Ctrl-A: blixem all features in the column and any associated columns */
+      requested_homol_set = ZMAPWINDOW_ALIGNCMD_MULTISET ;
+    }
+  else if (key_event->keyval == GDK_a)
+    {
+      /* a: blixem all features in the column */
+      requested_homol_set = ZMAPWINDOW_ALIGNCMD_SET ;
+
+      if(!focus_item)
+        focus_item = (FooCanvasItem *) zmapWindowFocusGetHotColumn(window->focus);
+    }
+  else if (key_event->keyval == GDK_A)
+    {
+      /* Shift-A: blixem only the selected feature(s) */
+      requested_homol_set = ZMAPWINDOW_ALIGNCMD_FEATURES ;
+    }
+
+  /* For BAM/bigwig columns we also need to pass a list of actual featuresets to blixem */
+  GList *seq_sets = keyboardEventBlixemBAM(window, requested_homol_set) ;
 
   /* Ok, now call blixem */
   zmapWindowCallBlixem(window, focus_item, requested_homol_set, NULL, seq_sets, 0.0, 0.0) ;
