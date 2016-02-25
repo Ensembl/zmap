@@ -5508,6 +5508,8 @@ static void keyboardEventBlixem(ZMapWindow window, GdkEventKey *key_event)
 
   /* Ok, now call blixem */
   zmapWindowCallBlixem(window, focus_item, requested_homol_set, NULL, seq_sets, 0.0, 0.0) ;
+
+  g_list_free(seq_sets) ;
 }
 
 

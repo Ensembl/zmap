@@ -801,9 +801,14 @@ gboolean zmapWindowFocusGetFeatureListFull(ZMapWindow window, gboolean in_mark,
         }
       else
         {
-          *focus_column_out = focus_column ;
-          *focus_item_out = focus_item ;
-          *focus_features_out = focus_features ;
+          if (focus_column_out)
+            *focus_column_out = focus_column ;
+
+          if (focus_item_out)
+            *focus_item_out = focus_item ;
+
+          if (focus_features_out)
+            *focus_features_out = focus_features ;
 
           result = TRUE ;
         }
