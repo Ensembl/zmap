@@ -4015,7 +4015,12 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
 
     case BLIX_READS_FEATURESET_MARK: 
       features_from_mark = TRUE ;
-      //fall through
+      if (!zmapWindowMarkIsSet(menu_data->window->mark))
+        {
+          zMapMessage("You must set the mark first to select this option","");
+          break ; //only break on error
+        }
+      //else fall through
     case BLIX_READS_FEATURESET:
       {
         // The user selected a coverage featureset and wants to blixem all related reads.
@@ -4027,7 +4032,12 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
 
     case BLIX_READS_COL_MARK:
       features_from_mark = TRUE ;
-      //fall through
+      if (!zmapWindowMarkIsSet(menu_data->window->mark))
+        {
+          zMapMessage("You must set the mark first to select this option","");
+          break ; //only break on error
+        }
+      //else fall through
     case BLIX_READS_COL:
       {
         // The user selected a coverage column and wants to blixem all related reads for all
