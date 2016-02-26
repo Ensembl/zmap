@@ -238,11 +238,11 @@ static gboolean initBlixemData(ZMapView view, ZMapFeatureBlock block,
                                ZMapHomolType align_type,
                                int offset, int position,
                                int window_start, int window_end,
-                               int mark_start, int mark_end,
+                               int mark_start, int mark_end, const bool features_from_mark,
                                GList *features, ZMapFeatureSet feature_set,
                                ZMapWindowAlignSetType align_set,
                                ZMapBlixemData blixem_data, char **err_msg) ;
-static gboolean setBlixemScope(ZMapBlixemData blixem_data) ;
+static gboolean setBlixemScope(ZMapBlixemData blixem_data, const bool features_from_mark) ;
 static gboolean buildParamString (ZMapBlixemData blixem_data, char **paramString);
 
 static void deleteBlixemData(ZMapBlixemData *blixem_data);
@@ -326,7 +326,8 @@ gboolean zmapViewBlixemLocalSequences(ZMapView view,
 
   status = initBlixemData(view, block, align_type,
                           0, position,
-                          0, 0, 0, 0, NULL, feature_set, ZMAPWINDOW_ALIGNCMD_NONE, blixem_data, &err_msg) ;
+                          0, 0, 0, 0, FALSE, 
+                          NULL, feature_set, ZMAPWINDOW_ALIGNCMD_NONE, blixem_data, &err_msg) ;
 
   blixem_data->errorMsg = NULL ;
   blixem_data->sequence_map = view->view_sequence;
@@ -385,7 +386,7 @@ gboolean zmapViewCallBlixem(ZMapView view,
                             ZMapFeatureBlock block, ZMapHomolType homol_type,
                             int offset, int position,
                             int window_start, int window_end,
-                            int mark_start, int mark_end,
+                            int mark_start, int mark_end, const bool features_from_mark,
                             ZMapWindowAlignSetType align_set,
                             gboolean isSeq,
                             GList *features, ZMapFeatureSet feature_set,
@@ -409,7 +410,7 @@ gboolean zmapViewCallBlixem(ZMapView view,
   if ((status = initBlixemData(view, block, homol_type,
                                offset, position,
                                window_start, window_end,
-                               mark_start, mark_end,
+                               mark_start, mark_end, features_from_mark,
                                features, feature_set, align_set, blixem_data, &err_msg)))
     {
       blixem_data->local_sequences = local_sequences ;
@@ -549,7 +550,7 @@ static gboolean initBlixemData(ZMapView view, ZMapFeatureBlock block,
                                ZMapHomolType align_type,
                                int offset, int position,
                                int window_start, int window_end,
-                               int mark_start, int mark_end,
+                               int mark_start, int mark_end, const bool features_from_mark,
                                GList *features, ZMapFeatureSet feature_set,
                                ZMapWindowAlignSetType align_set,
                                ZMapBlixemData blixem_data, char **err_msg)
@@ -592,7 +593,7 @@ static gboolean initBlixemData(ZMapView view, ZMapFeatureBlock block,
     }
 
   if (status)
-    status = setBlixemScope(blixem_data) ;
+    status = setBlixemScope(blixem_data, features_from_mark) ;
 
   return status ;
 }
@@ -1048,7 +1049,7 @@ static void setPrefs(BlixemConfigData curr_prefs, ZMapBlixemData blixem_data)
 
 
 /* Set blixem scope for sequence/features and initial position of blixem window on sequence. */
-static gboolean setBlixemScope(ZMapBlixemData blixem_data)
+static gboolean setBlixemScope(ZMapBlixemData blixem_data, const bool features_from_mark)
 {
   gboolean status = FALSE ;
   static gboolean scope_debug = FALSE ;
@@ -1058,8 +1059,8 @@ static gboolean setBlixemScope(ZMapBlixemData blixem_data)
 
   if (status)
     {
-      gboolean is_mark ;
-      int scope_range ;
+      gboolean have_mark = FALSE ;
+      int scope_range = 0 ;
 
       scope_range = blixem_data->scope / 2 ;
 
@@ -1070,10 +1071,10 @@ static gboolean setBlixemScope(ZMapBlixemData blixem_data)
 
 
       /* Use the mark coords to set scope ? */
-      is_mark = (blixem_data->mark_start && blixem_data->mark_end) ;
+      have_mark = (blixem_data->mark_start && blixem_data->mark_end) ;
 
       /* Set min/max range for blixem scope. */
-      if (is_mark && blixem_data->scope_from_mark)
+      if (have_mark && blixem_data->scope_from_mark)
         {
           /* Just use the mark */
           blixem_data->scope_min = blixem_data->mark_start ;
@@ -1107,7 +1108,9 @@ static gboolean setBlixemScope(ZMapBlixemData blixem_data)
       blixem_data->features_min = blixem_data->scope_min ;
       blixem_data->features_max = blixem_data->scope_max ;
 
-      if (is_mark && blixem_data->features_from_mark)
+      /* If features-from-mark is set (either in the prefs or in the passed-in variable, which
+       * overrides the prefs) then set the features range to the mark, if the mark is set */
+      if (have_mark && (features_from_mark || blixem_data->features_from_mark))
         {
           blixem_data->features_min = blixem_data->mark_start ;
           blixem_data->features_max = blixem_data->mark_end ;
