@@ -206,7 +206,7 @@ while getopts ":adefghinuvz" opt ; do
 	z  ) install[$aceconn_key]='no'
              install[$ensc_core_key]='no'
              install[$gb_tools_key]='yes'
-             install[$htslib_key]='yes'
+             install[$htslib_key]='no'
              install[$zeromq_key]='no' ;;
 	\? ) zmap_message_exit "Bad arg flag: $usage" ;;
     esac
@@ -279,13 +279,13 @@ for i in "${!install[@]}"
 	
       fi ;;
 
-      # We must have htslib (currently) or we fail.
-      $htslib_key )
-      if [[ ! -f "${dir[$i]}/${test_file[$i]}" ]] ; then
-
-          zmap_message_exit "Aborting.....htslib is not available so ZMap cannot be built."
-
-      fi ;;
+#      # We must have htslib (currently) or we fail.
+#      $htslib_key )
+#      if [[ ! -f "${dir[$i]}/${test_file[$i]}" ]] ; then
+#
+#          zmap_message_exit "Aborting.....htslib is not available so ZMap cannot be built."
+#
+#      fi ;;
 
   #    # We must have zeromq (currently) or we fail.
   #    $zeromq_key )
