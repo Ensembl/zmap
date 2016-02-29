@@ -1,5 +1,5 @@
 
-Request Tracker Tickets Resolved from 14/01/2016 to 19/02/2016
+Request Tracker Tickets Resolved from 14/01/2016 to 29/02/2016
 
 ticket/510659
 id: ticket/510659
@@ -58,6 +58,16 @@ Subject: Feature request: edit source
 Requestors: thibaut@ebi.ac.uk
 Owner: gb10
 Resolved: Fri Feb 19 10:50:36 2016
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
+ticket/516846
+id: ticket/516846
+Queue: zmap
+Subject: pfetch still used by dotter launcher in otter
+Requestors: jgrg@sanger.ac.uk, mpk@sanger.ac.uk
+Owner: jgrg
+Resolved: Mon Feb 29 12:26:44 2016
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
