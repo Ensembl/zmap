@@ -471,6 +471,55 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::createSource(const char *sour
 }
 
 
+void ZMapFeatureSequenceMapStructType::updateSource(const char *source_name, const std::string &url, 
+                                                    const char *featuresets,
+                                                    const char *biotypes,
+                                                    GError **error)
+{
+  return updateSource(source_name, url.c_str(), featuresets, biotypes, error) ;
+}
+
+
+/* Update the source with the given name with the given values */
+void ZMapFeatureSequenceMapStructType::updateSource(const char *source_name,
+                                                    const char *url,
+                                                    const char *featuresets,
+                                                    const char *biotypes,
+                                                    GError **error)
+{
+  ZMapConfigSource source = NULL ;
+  zMapReturnIfFail(url) ;
+
+  source = getSource(source_name) ;
+
+  if (source->url)
+    {
+      g_free(source->url) ;
+      source->url = NULL ;
+    }
+  source->url = g_strdup(url) ;
+
+  if (source->featuresets)
+    {
+      g_free(source->featuresets) ;
+      source->featuresets = NULL ;
+    }
+  if (featuresets && *featuresets)
+    source->featuresets = g_strdup(featuresets) ;
+
+  if (source->biotypes)
+    {
+      g_free(source->biotypes) ;
+      source->biotypes = NULL ;
+    }
+  if (biotypes && *biotypes)
+    source->biotypes = g_strdup(biotypes) ;
+
+  /* Indicate that there are changes that need saving */
+  setFlag(ZMAPFLAG_SAVE_SOURCES, TRUE) ;
+}
+
+
 /* Create a file source and add it to our list of user-created sources. */
 ZMapConfigSource ZMapFeatureSequenceMapStructType::createFileSource(const char *source_name_in, 
                                                                     const char *file)
@@ -568,6 +617,27 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::getSource(const string &sourc
 
       if (iter != sources->end())
         result = iter->second ;
+    }
+
+  return result ;
+}
+
+
+/* Get the source name of the given source struct. Returns a newly-allocated string which should
+ * be free'd with g_free, or NULL if not found */
+char* ZMapFeatureSequenceMapStructType::getSourceName(ZMapConfigSource source)
+{
+  char *result = NULL ;
+
+  if (sources)
+    {
+      for (map<string, ZMapConfigSource>::iterator iter = sources->begin();
+           iter != sources->end();
+           ++iter)
+        {
+          if (iter->second == source)
+            result = g_strdup(iter->first.c_str()) ;
+        }
     }
 
   return result ;

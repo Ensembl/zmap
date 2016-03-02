@@ -1364,10 +1364,11 @@ static void cleanUp(ZMapGuiNotebookAny any_section, void *user_data)
 static ZMapWindowFeatureShow findReusableShow(GPtrArray *window_list, const gboolean editable)
 {
   ZMapWindowFeatureShow reusable_window = NULL ;
-  int i ;
 
   if (window_list && window_list->len)
     {
+      guint i ;
+
       for (i = 0 ; i < window_list->len ; i++)
         {
           GtkWidget *show_widg ;
@@ -1927,7 +1928,7 @@ static gboolean xml_tagvalue_end_cb(gpointer user_data, ZMapXMLElement element,
                 {
                   target = NULL ;                           /* For repeat strtok_r calls. */
 
-                  if (GPOINTER_TO_INT(type->data) == g_quark_from_string("bool") ||
+                  if (GPOINTER_TO_UINT(type->data) == g_quark_from_string("bool") ||
                       GPOINTER_TO_INT(type->data) == G_TYPE_BOOLEAN)
                     {
                       gboolean tmp = FALSE ;
@@ -1944,7 +1945,7 @@ static gboolean xml_tagvalue_end_cb(gpointer user_data, ZMapXMLElement element,
                           zMapLogWarning("Invalid boolean value: %s", new_col) ;
                         }
                     }
-                  else if (GPOINTER_TO_INT(type->data) == g_quark_from_string("int") ||
+                  else if (GPOINTER_TO_UINT(type->data) == g_quark_from_string("int") ||
                            GPOINTER_TO_INT(type->data) == G_TYPE_INT)
                     {
                       int tmp = 0 ;
@@ -1959,7 +1960,7 @@ static gboolean xml_tagvalue_end_cb(gpointer user_data, ZMapXMLElement element,
                           zMapLogWarning("Invalid integer number: %s", new_col) ;
                         }
                     }
-                  else if (GPOINTER_TO_INT(type->data) == g_quark_from_string("float") ||
+                  else if (GPOINTER_TO_UINT(type->data) == g_quark_from_string("float") ||
                            GPOINTER_TO_INT(type->data) == G_TYPE_FLOAT)
                     {
                       float tmp = 0.0 ;
@@ -1979,7 +1980,7 @@ static gboolean xml_tagvalue_end_cb(gpointer user_data, ZMapXMLElement element,
                           zMapLogWarning("Invalid float number: %s", new_col) ;
                         }
                     }
-                  else if (GPOINTER_TO_INT(type->data) == g_quark_from_string("string") ||
+                  else if (GPOINTER_TO_UINT(type->data) == g_quark_from_string("string") ||
                            GPOINTER_TO_INT(type->data) == G_TYPE_STRING)
                     {
                       /* Hardly worth checking but better than nothing ? */
@@ -2186,12 +2187,13 @@ static ZMapGuiNotebook makeTranscriptExtras(ZMapWindow window, ZMapFeature featu
   ZMapGuiNotebookSubsection subsection = NULL ;
   ZMapGuiNotebookParagraph paragraph = NULL ;
   GList *headers = NULL, *types = NULL ;
-  int i = 0 ;
 
   extras_notebook = zMapGUINotebookCreateNotebook(NULL, editable, cleanUp, NULL) ;
 
   if (extras_notebook)
     {
+      guint i = 0 ;
+
       dummy_chapter = zMapGUINotebookCreateChapter(extras_notebook, NULL, NULL) ;
 
       page = zMapGUINotebookCreatePage(dummy_chapter, "Exons") ;
@@ -2784,6 +2786,10 @@ static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_f
        * evidence list in the new feature */
       ZMapFeature scratch_feature = zmapWindowScratchGetFeature(window) ;
       zmapWindowScratchFeatureGetEvidence(window, scratch_feature, zMapFeatureTranscriptSetEvidence, feature) ;
+
+      /* Copy the list of variations to the new transcript */
+      GList *variations = zMapFeatureTranscriptGetVariations(scratch_feature) ;
+      zMapFeatureTranscriptSetVariations(feature, variations) ;
 
       if (chapter_feature->CDS)
         {

@@ -1,5 +1,5 @@
 
-include $(top_srcdir)/Makefile.zmap
+include $(top_srcdir)/Makefile.common
 
 noinst_LTLIBRARIES = libZMapRemoteControl.la
 

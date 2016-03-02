@@ -140,22 +140,22 @@ static AlignStrCanonical alignStrCanonicalCreate(ZMapFeatureAlignFormat align_fo
 static void alignStrCanonicalDestroy(AlignStrCanonical *canon) ;
 static AlignStrOp alignStrCanonicalGetOperator(AlignStrCanonical canon, int i) ;
 static char alignStrCanonicalGetOperatorChar(AlignStrCanonical canon, int i) ;
-static gboolean alignStrCanonicalAddOperator(AlignStrCanonical canon, const AlignStrOpStruct * const op) ;
+static gboolean alignStrCanonicalAddOperator(AlignStrCanonical canon, const AlignStrOpStruct *const op) ;
 static gboolean alignStrCanonicalRemoveOperator(AlignStrCanonical canon, int i) ;
 static AlignStrCanonical alignStrMakeCanonical(const char *match_str, ZMapFeatureAlignFormat align_format) ;
 
-static GArray* blockArrayCreate() ;
-static ZMapAlignBlock blockArrayGetBlock(GArray* const, int index) ;
-static gboolean blockAddBlock(GArray**, const ZMapAlignBlockStruct * const) ;
+static GArray *blockArrayCreate() ;
+static ZMapAlignBlock blockArrayGetBlock(GArray *const, int index) ;
+static gboolean blockAddBlock(GArray**, const ZMapAlignBlockStruct *const) ;
 
-static GArray * alignStrOpArrayCreate() ;
+static GArray *alignStrOpArrayCreate() ;
 static void alignStrOpArrayDestroy(GArray * const align_array) ;
 
-static gboolean alignStrCanon2Homol(AlignStrCanonical canon,
+static gboolean alignStrCigarCanon2Homol(AlignStrCanonical canon,
                                     ZMapStrand ref_strand, ZMapStrand match_strand,
                                     int p_start, int p_end, int c_start, int c_end,
                                     GArray **local_map_out) ;
-static gboolean alignStrCanon2Exons(AlignStrCanonical canon,
+static gboolean alignStrVulgarCanon2Exons(AlignStrCanonical canon,
                                     ZMapStrand ref_strand, ZMapStrand match_strand,
                                     int p_start, int p_end, int c_start, int c_end,
                                     GArray **exons_out, GArray **introns_out, GArray **exon_aligns_out,
@@ -164,17 +164,18 @@ static gboolean alignStrCanon2Exons(AlignStrCanonical canon,
 static gboolean alignFormat2Properties(ZMapFeatureAlignFormat align_format,
                                        AlignStrCanonicalProperties properties) ;
 static AlignStrCanonical homol2AlignStrCanonical(ZMapFeature feature, ZMapFeatureAlignFormat align_format) ;
-static gboolean alignStrCanonical2string(char ** p_string,
+static gboolean alignStrCanonical2string(char **p_string,
                                          AlignStrCanonicalProperties properties,
                                          AlignStrCanonical canon) ;
-static gboolean parseCigarGeneral(const char * const str,
+
+static gboolean parseCigarGeneral(const char *const str,
                                   AlignStrCanonical canon,
                                   AlignStrCanonicalProperties properties,
                                   GError **error) ;
 static gboolean parseGetOpData(int i,
-                               char * const sBuff,
+                               char *const sBuff,
                                size_t buffer_size,
-                               const char ** pArray,
+                               const char **pArray,
                                int nOp,
                                const char * const target,
                                gboolean bLeft) ;
@@ -425,10 +426,10 @@ gboolean zMapFeatureAlignmentString2Gaps(ZMapFeatureAlignFormat align_format,
       result = FALSE ;
       zMapLogWarning("Cannot convert alignment string to canonical format: %s", align_string) ;
     }
-  else if (!(result = (alignStrCanon2Homol(canon, ref_strand, match_strand,
-                                           ref_start, ref_end,
-                                           match_start, match_end,
-                                           &align))))
+  else if (!(result = (alignStrCigarCanon2Homol(canon, ref_strand, match_strand,
+                                                ref_start, ref_end,
+                                                match_start, match_end,
+                                                &align))))
     {
       zMapLogWarning("Cannot convert canonical format to align array: \"%s\"", align_string) ;
     }
@@ -481,7 +482,7 @@ gboolean zMapFeatureAlignmentString2ExonsGaps(ZMapFeatureAlignFormat align_forma
       zMapLogWarning("Cannot convert alignment string to canonical format: %s", align_string) ;
     }
 
-  if (!(result = alignStrCanon2Exons(canon,
+  if (!(result = alignStrVulgarCanon2Exons(canon,
                                      ref_strand, match_strand,
                                      ref_start, ref_end, match_start, match_end,
                                      &exons, &introns, &exon_aligns,
@@ -518,7 +519,7 @@ gboolean zMapFeatureAlignmentString2ExonsGaps(ZMapFeatureAlignFormat align_forma
 // some debug stuff......for the above.....
 void zMapFeatureAlignmentPrintExonsAligns(GArray *exons, GArray *introns, GArray *exon_aligns)
 {
-  int i, j ;
+  guint i, j ;
 
 
   for (i = 0 ; i < exons->len ; i++)
@@ -1959,6 +1960,7 @@ static AlignStrCanonical alignStrMakeCanonical(const char *match_str, ZMapFeatur
 }
 
 
+// WE SHOULD HAVE A SEPARATE ROUTINE FOR HANDLING BAM CIGAR AS IT'S SO DIFFERENT FROM EXONERATE CIGAR
 
 /*
  * Convert the canonical "string" to a zmap align array, note that we do this blindly
@@ -1968,10 +1970,10 @@ static AlignStrCanonical alignStrMakeCanonical(const char *match_str, ZMapFeatur
  *
  *
  */
-static gboolean alignStrCanon2Homol(AlignStrCanonical canon,
-                                    ZMapStrand ref_strand, ZMapStrand match_strand,
-                                    int p_start, int p_end, int c_start, int c_end,
-                                    GArray **local_map_out)
+static gboolean alignStrCigarCanon2Homol(AlignStrCanonical canon,
+                                         ZMapStrand ref_strand, ZMapStrand match_strand,
+                                         int p_start, int p_end, int c_start, int c_end,
+                                         GArray **local_map_out)
 {
   gboolean result = TRUE ;
   int curr_ref, curr_match ;
@@ -2139,12 +2141,12 @@ static gboolean alignStrCanon2Homol(AlignStrCanonical canon,
  *
  *
  */
-static gboolean alignStrCanon2Exons(AlignStrCanonical canon,
-                                    ZMapStrand ref_strand, ZMapStrand match_strand,
-                                    int p_start, int p_end, int c_start, int c_end,
-                                    GArray **exons_out, GArray **introns_out, GArray **exon_aligns_out,
-                                    int *cds_start_out, int *cds_end_out, 
-                                    char **err_string)
+static gboolean alignStrVulgarCanon2Exons(AlignStrCanonical canon,
+                                          ZMapStrand ref_strand, ZMapStrand match_strand,
+                                          int p_start, int p_end, int c_start, int c_end,
+                                          GArray **exons_out, GArray **introns_out, GArray **exon_aligns_out,
+                                          int *cds_start_out, int *cds_end_out, 
+                                          char **err_string)
 {
   gboolean result = TRUE ;
   int curr_ref, curr_match ;
@@ -2799,8 +2801,10 @@ static gboolean alignStrCanon2Exons(AlignStrCanonical canon,
 
   if (result)
     {
-
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      // debugging output.
       zMapFeatureAlignmentPrintExonsAligns(exons, introns, aligns) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
       *exons_out = exons ;
       *introns_out = introns ;
@@ -3994,7 +3998,7 @@ static void parseTestFunction02()
 // Frees the local map array pointed to by each element of the aligns array for vulgar exons.   
 static void freeAligns(GArray *aligns)
 {
-  int i ;
+  guint i ;
 
   for (i = 0 ; i < aligns->len ; i++)
     {

@@ -1132,10 +1132,10 @@ ZMapURL url_parse (const char *url, int *error)
 /* Return the error message string from ERROR_CODE, which should have
    been retrieved from url_parse.  The error message is translated.  */
 
-const char *
-url_error (int error_code)
+const char *url_error (guint error_code)
 {
   assert (error_code >= 0 && error_code < countof (parse_errors));
+
   return _(parse_errors[error_code]);
 }
 

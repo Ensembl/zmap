@@ -32,7 +32,7 @@ AC_PROG_CPP
 AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
-AC_PROG_RANLIB
+
 
 AC_PATH_PROGS(PERL, perl perl5)
 
@@ -278,25 +278,15 @@ AC_ENABLE_STATIC
 AC_PROG_CXXCPP
 AC_PROG_CXX
 
-
 AM_PROG_CC_C_O
 
-#AC_PROG_CC
-
-AC_PROG_LIBTOOL
-
-
+LT_INIT
+LT_LANG([C++])
 
 
 # Tell make to use the ustar tar format as this allows file paths longer than 99 chars.
 #
 AM_INIT_AUTOMAKE([tar-ustar])
-
-
-#AC_LANG(C)
-#AC_LANG([C++])
-
-
 
 
 
@@ -318,21 +308,6 @@ AC_ARG_ENABLE(profile,
         AS_HELP_STRING(--enable-profile,enable profiling debug info compilation (no)),
         prof=$enableval, prof=no)
 
-# um....what's this all about.....-O2 should _not_ be the default....
-#if test "x$prof" = "xyes"; then
-#   CFLAGS="$CFLAGS -pg -g";
-#elif test "x$deb" = "xyes"; then
-#   CFLAGS="$CFLAGS -g";
-#else
-#   CFLAGS="$CFLAGS -O2";
-#fi
-
-CFLAGS="$CFLAGS -g";
-
-# flags that we could potentially use for warnings are:
-#     -Wpedantic -Wall -Wextra
-#
-CXXFLAGS='-g'
 
 AC_SUBST(PKG_CONFIG)
 AC_SUBST(CFLAGS)
@@ -584,13 +559,9 @@ zmapWindow/Makefile
 zmapXML/Makefile
 include/Makefile
 libzmapfoocanvas/Makefile
-libpfetch/Makefile
-libpfetch/tests/Makefile
-libcurlobject/Makefile
 zmap.pc
 dotZMap:dotZmap.in
 ])
-
 
 
 # We've decided not to the doxygen stuff, no one uses it.

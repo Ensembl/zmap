@@ -525,8 +525,10 @@ void ZMapStyleTree::foreach(ZMapStyleForeachFunc func, gpointer data)
 {
   if (func)
     {
-      /* Call the function on this style */
-      (*func)(m_style, data) ;
+      // Call the function on this style, note we may be called before a style has been set on
+      // this object.
+      if (m_style)
+        (*func)(m_style, data) ;
 
       /* Recurse */
       for (std::vector<ZMapStyleTree*>::iterator iter = m_children.begin(); iter != m_children.end(); ++iter)

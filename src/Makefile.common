@@ -10,7 +10,6 @@ ARFLAGS = cru
 # I'm hacking in zmapApp here for now....
 AM_CPPFLAGS = \
 -I$(top_srcdir)/zmapApp \
--g \
 -I$(top_srcdir)/include \
 -I$(top_builddir) \
 -I$(top_srcdir)/htslib \
@@ -20,9 +19,10 @@ AM_CPPFLAGS = \
 @LIBCURL_CPPFLAGS@ \
 $(NULL)
 
-AM_CXXFLAGS = \
--std=c++0x \
-$(NULL)
+AM_CXXFLAGS = -std=c++0x -g -Wall
+
+AM_LDFLAGS = -g -Wall
+
 
 INCLUDE_COMMON = -I$(top_srcdir) -I$(top_srcdir)/include -I.
 
@@ -68,7 +68,5 @@ LIBS_ZMAP = $(top_builddir)/.libs/libZMapApp.a \
 	$(top_builddir)/.libs/libZMapUtils.la \
 	$(top_builddir)/.libs/libzmapfoocanvas.a \
 	$(top_builddir)/.libs/libzmapfoocanvas.la \
-	$(top_builddir)/.libs/libPFetch.a \
-	$(top_builddir)/.libs/libPFetch.la \
 	$(NULL)
 

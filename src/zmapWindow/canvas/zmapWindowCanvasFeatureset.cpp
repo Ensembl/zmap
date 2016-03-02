@@ -3151,10 +3151,7 @@ static void zmap_window_featureset_item_item_init(ZMapWindowFeaturesetItem featu
 {
   char *featureset_id ;
 
-
   featureset_id = (char *)g_quark_to_string(featureset->id) ;
-
-
 
   return ;
 }

@@ -47,9 +47,11 @@
 #include <ZMap/zmap.hpp>
 #include <ZMap/zmapUtilsGUI.hpp>
 #include <ZMap/zmapAppServices.hpp>
+#include <ZMap/zmapUrl.hpp>
 
 #ifdef USE_ENSEMBL
 #include <ZMap/zmapEnsemblUtils.hpp>
+
 #endif
 
 using namespace std ;
@@ -61,10 +63,12 @@ using namespace std ;
 
 #ifdef USE_ENSEMBL
 #define DEFAULT_ENSEMBL_HOST "ensembldb.ensembl.org"
-#define DEFAULT_ENSEMBL_PORT "3306"
+#define DEFAULT_ENSEMBL_PORT1 "3306"
 #define DEFAULT_ENSEMBL_USER "anonymous"
 #define DEFAULT_ENSEMBL_PASS NULL
 #define SOURCE_TYPE_ENSEMBL "Ensembl"
+#define DEFAULT_COLUMNS_LIST "dna ; 3 frame ; 3 frame translation ; show translation ; "
+#define DEFAULT_COLUMNS_LIST_ALL "all ; dna ; 3 frame ; 3 frame translation ; show translation ; "
 #endif
 
 
@@ -85,6 +89,7 @@ typedef struct MainFrameStructName
   GtkWidget *toplevel ;
 
   GtkComboBox *combo ;
+  map<ZMapURLScheme, unsigned int> combo_indices ; /* keep track of which scheme is at which idx */
 
   list<GtkWidget*> file_widgets ;
   GtkWidget *name_widg ;
@@ -100,6 +105,7 @@ typedef struct MainFrameStructName
   GtkWidget *dbprefix_widg ;
   GtkWidget *featuresets_widg ;
   GtkWidget *biotypes_widg ;
+  GtkWidget *dna_check ;
 #endif
 
   ZMapFeatureSequenceMap sequence_map ;
@@ -109,6 +115,13 @@ typedef struct MainFrameStructName
 
 } MainFrameStruct, *MainFrame ;
 
+
+typedef struct SearcListDataStructName
+{
+  GtkEntry *search_entry ;
+  GtkEntry *filter_entry ;
+  GtkTreeModel *tree_model ;
+} SearchListDataStruct, *SearchListData ;
 
 
 static GtkWidget *makePanel(GtkWidget *toplevel,
@@ -124,6 +137,7 @@ static void applyCB(GtkWidget *widget, gpointer cb_data) ;
 static GtkWidget *makeMainFrame(MainFrame main_data, ZMapFeatureSequenceMap sequence_map) ;
 static gboolean applyFile(MainFrame main_data) ;
 static void setWidgetsVisibility(list<GtkWidget*> widget_list, const gboolean visible) ;
+static void updatePanelFromSource(MainFrame main_data, ZMapConfigSource source) ;
 
 #ifdef USE_ENSEMBL
 static void dbnameCB(GtkWidget *widget, gpointer cb_data) ;
@@ -182,6 +196,40 @@ GtkWidget *zMapAppCreateSource(ZMapFeatureSequenceMap sequence_map,
 }
 
 
+/* Show a dialog to edit an existing source */
+GtkWidget *zMapAppEditSource(ZMapFeatureSequenceMap sequence_map,
+                             ZMapConfigSource source,
+                             ZMapAppCreateSourceCB user_func,
+                             gpointer user_data)
+{
+  zMapReturnValIfFail(user_func, NULL) ;
+
+  GtkWidget *toplevel = NULL ;
+  GtkWidget *container ;
+  gpointer seq_data = NULL ;
+
+  toplevel = zMapGUIToplevelNew(NULL, "Edit Source") ;
+
+  gtk_window_set_policy(GTK_WINDOW(toplevel), FALSE, TRUE, FALSE ) ;
+  gtk_container_border_width(GTK_CONTAINER(toplevel), 0) ;
+
+  MainFrame main_data = NULL ;
+  container = makePanel(toplevel, &seq_data, sequence_map, user_func, user_data, &main_data) ;
+
+  gtk_container_add(GTK_CONTAINER(toplevel), container) ;
+  gtk_signal_connect(GTK_OBJECT(toplevel), "destroy",
+                     GTK_SIGNAL_FUNC(toplevelDestroyCB), seq_data) ;
+
+  gtk_widget_show_all(toplevel) ;
+
+  /* Update the panel with the info from the given source. This toggles visibility of the
+   * appropriate widgets so must be done after show_all */
+  updatePanelFromSource(main_data, source) ;
+
+  return toplevel ;
+}
+
+
 
 /*
  *                   Internal routines.
@@ -229,6 +277,131 @@ static GtkWidget *makePanel(GtkWidget *toplevel,
     *main_data_out = main_data ;
 
   return frame ;
+}
+
+
+/* Get the row index in the combo box for the given scheme */
+static int comboGetIndex(MainFrame main_data, ZMapURLScheme scheme)
+{
+  int result = -1 ;
+
+  auto map_iter = main_data->combo_indices.find(scheme) ;
+
+  if (map_iter != main_data->combo_indices.end())
+    result = map_iter->second ;
+
+  return result ;
+}
+
+
+/* After creating the panel, you can update it from an existing source (for editing an existing
+ * source) using this function */
+static void updatePanelFromSource(MainFrame main_data, ZMapConfigSource source)
+{
+  zMapReturnIfFail(main_data) ;
+
+  /* When editing an existing source we currently identify it by name, so we must disable the 
+   * name widget so that the user cannot edit it. Also disable changing the type of source */
+  if (main_data->name_widg)
+    gtk_widget_set_sensitive(main_data->name_widg, FALSE) ;
+
+  if (main_data->combo)
+    gtk_widget_set_sensitive(GTK_WIDGET(main_data->combo), FALSE) ;
+
+  /* Parse values out of the url */
+  int status = 0 ;
+  ZMapURL zmap_url = url_parse(source->url, &status) ;
+
+  /* Update the combo box with this scheme */
+  if (main_data->combo)
+    {
+      /* set to -1 (none) first to make sure we emit a "changed" signal */
+      gtk_combo_box_set_active(main_data->combo, -1) ;
+      gtk_combo_box_set_active(main_data->combo, comboGetIndex(main_data, zmap_url->scheme)) ;
+    }
+
+#ifdef USE_ENSEMBL
+  if (zmap_url && zmap_url->scheme == SCHEME_ENSEMBL)
+    {
+      char *source_name = main_data->sequence_map->getSourceName(source) ;
+      const char *host = zmap_url->host ;
+      char *port = g_strdup_printf("%d", zmap_url->port) ;
+      const char *user = zmap_url->user ;
+      const char *pass = zmap_url->passwd ;
+      char *dbname = zMapURLGetQueryValue(zmap_url->query, "db_name") ;
+      char *dbprefix = zMapURLGetQueryValue(zmap_url->query, "db_prefix") ;
+      char *featuresets = g_strdup(source->featuresets) ;
+      char *featuresets_ptr = featuresets ;
+      const char *biotypes = source->biotypes ;
+      gboolean load_dna = FALSE ;
+
+      /* load_dna is true if featuresets starts with "all". Extract "all" (which would have been
+       * added in because of the flag) from the featuresets list and set the flag instead.
+       * Also extract the default columns list if it's there because we probably added this
+       * in as well. */
+      const int len_all = strlen(DEFAULT_COLUMNS_LIST_ALL) ;
+      const int len_default = strlen(DEFAULT_COLUMNS_LIST) ;
+
+      if (featuresets && 
+          strlen(featuresets) >= len_all && 
+          strncasecmp(featuresets, DEFAULT_COLUMNS_LIST_ALL, len_all) == 0)
+        {
+          load_dna = TRUE ;
+          featuresets = featuresets + len_all ; // skip to the next char after the default cols
+        }
+      else if (featuresets && 
+               strlen(featuresets) >= len_default && 
+               strncasecmp(featuresets, DEFAULT_COLUMNS_LIST, len_default) == 0)
+        {
+          load_dna = TRUE ;
+          featuresets = featuresets + len_default ; // skip to the next char after the default cols
+        }
+
+      if (source_name && main_data->name_widg)
+        gtk_entry_set_text(GTK_ENTRY(main_data->name_widg), source_name) ;
+      if (host && main_data->host_widg)
+        gtk_entry_set_text(GTK_ENTRY(main_data->host_widg), host) ;
+      if (port && main_data->port_widg)
+        gtk_entry_set_text(GTK_ENTRY(main_data->port_widg), port) ;
+      if (user && main_data->user_widg)
+        gtk_entry_set_text(GTK_ENTRY(main_data->user_widg), user) ;
+      if (pass && main_data->pass_widg)
+        gtk_entry_set_text(GTK_ENTRY(main_data->pass_widg), pass) ;
+      if (dbname && main_data->dbname_widg)
+        gtk_entry_set_text(GTK_ENTRY(main_data->dbname_widg), dbname) ;
+      if (dbprefix && main_data->dbprefix_widg)
+        gtk_entry_set_text(GTK_ENTRY(main_data->dbprefix_widg), dbprefix) ;
+      if (featuresets && main_data->featuresets_widg)
+        gtk_entry_set_text(GTK_ENTRY(main_data->featuresets_widg), featuresets) ;
+      if (biotypes && main_data->biotypes_widg)
+        gtk_entry_set_text(GTK_ENTRY(main_data->biotypes_widg), biotypes) ;
+      if (main_data->dna_check)
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(main_data->dna_check), load_dna) ;
+
+      if (source_name)
+        g_free(source_name) ;
+      if (port)
+        g_free(port) ;
+      if (dbname)
+        g_free(dbname) ;
+      if (dbprefix)
+        g_free(dbprefix) ;
+      if (featuresets_ptr)
+        g_free(featuresets_ptr) ;
+    }
+#endif
+
+  if (zmap_url && (zmap_url->scheme == SCHEME_FILE || zmap_url->scheme == SCHEME_PIPE))
+    {
+      char *source_name = main_data->sequence_map->getSourceName(source) ;
+
+      gtk_entry_set_text(GTK_ENTRY(main_data->name_widg), source_name) ;
+      gtk_entry_set_text(GTK_ENTRY(main_data->path_widg), zmap_url->path) ;
+
+      if (source_name)
+        g_free(source_name) ;
+    }
+
 }
 
 
@@ -308,7 +481,7 @@ static char* comboGetValue(GtkComboBox *combo)
     {
       GtkTreeModel *model = gtk_combo_box_get_model(GTK_COMBO_BOX(combo));
       
-      gtk_tree_model_get(model, &iter, 0, &result, -1);
+      gtk_tree_model_get(model, &iter, NAME_COLUMN, &result, -1);
     }
 
   return result ;
@@ -356,17 +529,25 @@ static GtkComboBox *createComboBox(MainFrame main_data)
   GtkCellRenderer *renderer = gtk_cell_renderer_text_new();
   gtk_cell_layout_pack_start(GTK_CELL_LAYOUT(combo), renderer, FALSE);
   gtk_cell_layout_set_attributes(GTK_CELL_LAYOUT(combo), renderer, "text", 0, NULL);
- 
+
+  /* Add the rows to the combo box */
+  unsigned int combo_index = 0 ;
+
   GtkTreeIter iter;
   gtk_list_store_append(store, &iter);
-  gtk_list_store_set(store, &iter, 0, SOURCE_TYPE_FILE, -1);
-
+  gtk_list_store_set(store, &iter, NAME_COLUMN, SOURCE_TYPE_FILE, -1);
   gtk_combo_box_set_active_iter(combo, &iter);
+
+  main_data->combo_indices[SCHEME_FILE] = combo_index ;
+  ++combo_index ;
 
 #ifdef USE_ENSEMBL
   gtk_list_store_append(store, &iter);
-  gtk_list_store_set(store, &iter, 0, SOURCE_TYPE_ENSEMBL, -1);
+  gtk_list_store_set(store, &iter, NAME_COLUMN, SOURCE_TYPE_ENSEMBL, -1);
   gtk_combo_box_set_active_iter(combo, &iter);
+
+  main_data->combo_indices[SCHEME_ENSEMBL] = combo_index ;
+  ++combo_index ;
 #endif /* USE_ENSEMBL */
 
   g_signal_connect(G_OBJECT(combo), "changed", G_CALLBACK(sourceTypeChangedCB), main_data);
@@ -427,7 +608,7 @@ static GtkWidget *makeMainFrame(MainFrame main_data, ZMapFeatureSequenceMap sequ
   col += 3 ;
 
   main_data->host_widg = makeEntryWidget("Host :", DEFAULT_ENSEMBL_HOST, NULL, table, &row, col, cols - 1, FALSE, &main_data->ensembl_widgets) ;
-  main_data->port_widg = makeEntryWidget("Port :", DEFAULT_ENSEMBL_PORT, NULL, table, &row, col, cols - 1, FALSE, &main_data->ensembl_widgets) ;
+  main_data->port_widg = makeEntryWidget("Port :", DEFAULT_ENSEMBL_PORT1, NULL, table, &row, col, cols - 1, FALSE, &main_data->ensembl_widgets) ;
   main_data->user_widg = makeEntryWidget("Username :", DEFAULT_ENSEMBL_USER, NULL, table, &row, col, cols - 1, FALSE, &main_data->ensembl_widgets) ;
   main_data->pass_widg = makeEntryWidget("Password :", DEFAULT_ENSEMBL_PASS, "Can be empty if not required", table, &row, col, cols - 1, FALSE, &main_data->ensembl_widgets) ;
 
@@ -457,6 +638,16 @@ static GtkWidget *makeMainFrame(MainFrame main_data, ZMapFeatureSequenceMap sequ
   gtk_signal_connect(GTK_OBJECT(biotypes_button), "clicked", GTK_SIGNAL_FUNC(biotypesCB), main_data) ;
   gtk_table_attach(table, biotypes_button, cols - 1, cols, row - 1, row, GTK_SHRINK, GTK_SHRINK, xpad, ypad) ;
   main_data->ensembl_widgets.push_back(biotypes_button) ;
+  ++row ;
+
+  /* Add a check button to specify whether to load DNA */
+  col = 0 ;
+  main_data->dna_check = gtk_check_button_new_with_label("Load DNA") ;
+  gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(main_data->dna_check), FALSE) ;
+  gtk_widget_set_tooltip_text(main_data->dna_check, "Tick this button to load DNA, if available (not advised for very large regions)") ;
+  gtk_table_attach(table, main_data->dna_check, col, col + 1, row - 1, row, GTK_SHRINK, GTK_SHRINK, xpad, ypad) ;
+  main_data->ensembl_widgets.push_back(main_data->dna_check) ;
+  ++row ;
 
 #endif /* USE_ENSEMBL */
 
@@ -663,6 +854,7 @@ static std::string constructUrl(const char *host, const char *port,
 static gboolean applyEnsembl(MainFrame main_frame)
 {
   gboolean ok = FALSE ;
+  char *tmp = NULL ;
 
   const char *source_name = getEntryText(GTK_ENTRY(main_frame->name_widg)) ;
   const char *host = getEntryText(GTK_ENTRY(main_frame->host_widg)) ;
@@ -672,7 +864,8 @@ static gboolean applyEnsembl(MainFrame main_frame)
   const char *dbname = getEntryText(GTK_ENTRY(main_frame->dbname_widg)) ;
   const char *dbprefix = getEntryText(GTK_ENTRY(main_frame->dbprefix_widg)) ;
   const char *featuresets = getEntryText(GTK_ENTRY(main_frame->featuresets_widg)) ;
-  const char *biotypes = getEntryText(GTK_ENTRY(main_frame->featuresets_widg)) ;
+  const char *biotypes = getEntryText(GTK_ENTRY(main_frame->biotypes_widg)) ;
+  const gboolean load_dna = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(main_frame->dna_check)) ;
 
   if (!source_name)
     {
@@ -692,6 +885,25 @@ static gboolean applyEnsembl(MainFrame main_frame)
       
       std::string url = constructUrl(host, port, user, pass, dbname, dbprefix) ;
 
+      /* If loading dna (which for now implies 3ft etc too) then prefix the featuresets list with
+         the dna, 3ft etc. column names. */
+      if (load_dna)
+        {
+          if (featuresets)
+            {
+              tmp = g_strdup_printf("%s%s", DEFAULT_COLUMNS_LIST, featuresets) ;
+              featuresets = tmp ;
+            }
+          else
+            {
+              /* Normally if we specify any featuresets then zmap will load only those and will
+               * exclude all non-named featuresets. However, here the user hasn't really named
+               * any so we still want to load all other featuresets. For now, prefix the list
+               * with "all" to indicate this is the intent. Really we need a better way to do this... */
+              featuresets = g_strdup(DEFAULT_COLUMNS_LIST_ALL) ;
+            }
+        }
+
       (main_frame->user_func)(source_name, url, featuresets, biotypes, main_frame->user_data, &tmp_error) ;
 
       if (tmp_error)
@@ -699,6 +911,9 @@ static gboolean applyEnsembl(MainFrame main_frame)
 
       ok = TRUE ;
     }
+
+  if (tmp)
+    g_free(tmp) ;
 
   return ok ;
 }
@@ -820,9 +1035,53 @@ gboolean search_equal_func_cb(GtkTreeModel *model,
 }
 
 
-static GtkTreeView* createListWidget(MainFrame main_data, list<string> *val_list, GtkEntry *search_entry)
+/* Callback used to determine if a given row in the filtered tree model is visible */
+static gboolean tree_model_filter_visible_cb(GtkTreeModel *model, GtkTreeIter *iter, gpointer user_data)
 {
+  gboolean result = FALSE ;
+
+  GtkEntry *search_entry = GTK_ENTRY(user_data) ;
+  zMapReturnValIfFail(search_entry, result) ;
+
+  const char *text = gtk_entry_get_text(search_entry) ;
+  char *column_name = NULL ;
+
+  gtk_tree_model_get(model, iter,
+                     NAME_COLUMN, &column_name,
+                     -1) ;
+
+  if (!text || *text == 0)
+    {
+      /* If text isn't specified, show everything */
+      result = TRUE ;
+    }
+  else if (column_name && 
+           *column_name != 0 && 
+           my_strcasestr(column_name, text) != NULL)
+    {
+      result = TRUE ;
+    }
+
+  g_free(column_name) ;
+
+  return result ;
+}
+
+
+static GtkTreeView* createListWidget(MainFrame main_data, list<string> *val_list, 
+                                     SearchListData search_data, const gboolean allow_multiple)
+{
+  /* Create the data store */
   GtkListStore *store = gtk_list_store_new(N_COLUMNS, G_TYPE_STRING) ;
+
+  /* Create a filtered version of the data store */
+  GtkTreeModel *filtered = gtk_tree_model_filter_new(GTK_TREE_MODEL(store), NULL) ;
+  search_data->tree_model = filtered ;
+
+  gtk_tree_model_filter_set_visible_func(GTK_TREE_MODEL_FILTER(filtered), 
+                                         tree_model_filter_visible_cb, 
+                                         search_data->filter_entry,
+                                         NULL);
 
   /* Loop through all of the database names */
   for (list<string>::const_iterator val_iter = val_list->begin(); val_iter != val_list->end(); ++val_iter)
@@ -833,16 +1092,19 @@ static GtkTreeView* createListWidget(MainFrame main_data, list<string> *val_list
       gtk_list_store_set(store, &store_iter, NAME_COLUMN, val_iter->c_str(), -1);
     }
 
-  GtkTreeView *tree_view = GTK_TREE_VIEW(gtk_tree_view_new_with_model(GTK_TREE_MODEL(store))) ;
+  /* Create the tree widget */
+  GtkTreeView *tree_view = GTK_TREE_VIEW(gtk_tree_view_new_with_model(GTK_TREE_MODEL(filtered))) ;
 
+  /* Set various properties on the tree widget */
   gtk_tree_view_set_enable_search(tree_view, FALSE);
   gtk_tree_view_set_search_column(tree_view, NAME_COLUMN);
-  gtk_tree_view_set_search_entry(tree_view, search_entry) ;
+  gtk_tree_view_set_search_entry(tree_view, search_data->search_entry) ;
   gtk_tree_view_set_search_equal_func(tree_view, search_equal_func_cb, NULL, NULL) ;
 
   GtkTreeSelection *tree_selection = gtk_tree_view_get_selection(tree_view) ;
-  gtk_tree_selection_set_mode(tree_selection, GTK_SELECTION_MULTIPLE);
+  gtk_tree_selection_set_mode(tree_selection, allow_multiple ? GTK_SELECTION_MULTIPLE : GTK_SELECTION_SINGLE);
 
+  /* Create the columns */
   GtkCellRenderer *renderer = gtk_cell_renderer_text_new();
   GtkTreeViewColumn *column = gtk_tree_view_column_new_with_attributes("Database name", 
                                                                        renderer, 
@@ -907,15 +1169,51 @@ static gboolean setEntryFromSelection(GtkEntry *entry, GtkTreeView *tree_view)
 }
 
 
+/* Callback called when the user hits the enter key in the filter text entry box */
+static void filter_entry_activate_cb(GtkEntry *entry, gpointer user_data)
+{
+  SearchListData search_data = (SearchListData)user_data ;
+  zMapReturnIfFail(search_data->tree_model) ;
+
+  GtkTreeModelFilter *filter = GTK_TREE_MODEL_FILTER(search_data->tree_model) ;
+
+  /* Refilter the filtered model */
+  if (filter)
+    gtk_tree_model_filter_refilter(filter) ;
+}
+
+
+static void clear_button_cb(GtkButton *button, gpointer user_data)
+{
+  SearchListData search_data = (SearchListData)user_data ;
+  zMapReturnIfFail(search_data->tree_model) ;
+
+  if (search_data->search_entry)
+    gtk_entry_set_text(search_data->search_entry, "") ;
+
+  if (search_data->filter_entry)
+    gtk_entry_set_text(search_data->filter_entry, "") ;
+
+  /* Refilter the filtered model */
+  GtkTreeModelFilter *filter = GTK_TREE_MODEL_FILTER(search_data->tree_model) ;
+  if (filter)
+    gtk_tree_model_filter_refilter(filter) ;
+}
+
+
 /* Create and run a dialog to show the given list of values in a gtk tree view and to set the
  * given entry widget with the result when the user selects a row and hits ok. If the user
  * selects multiple values then it sets a semi-colon-separated list in the entry widget. */
-static gboolean runListDialog(MainFrame main_data, list<string> *values_list, GtkEntry *entry_widg)
+static gboolean runListDialog(MainFrame main_data, 
+                              list<string> *values_list, 
+                              GtkEntry *entry_widg,
+                              const char *title,
+                              const char allow_multiple)
 {
   gboolean ok = FALSE ;
   zMapReturnValIfFail(main_data && values_list, ok) ;
 
-  GtkWidget *dialog = gtk_dialog_new_with_buttons("Select database",
+  GtkWidget *dialog = gtk_dialog_new_with_buttons(title,
                                                   NULL,
                                                   (GtkDialogFlags)(GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT),
                                                   GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
@@ -932,17 +1230,35 @@ static gboolean runListDialog(MainFrame main_data, list<string> *values_list, Gt
 
   GtkBox *content = GTK_BOX(GTK_DIALOG(dialog)->vbox) ;
 
+  /* Search/filter toolbar */
   GtkWidget *hbox = gtk_hbox_new(FALSE, 0) ;
   gtk_box_pack_start(content, hbox, FALSE, FALSE, 0) ;
+
   gtk_box_pack_start(GTK_BOX(hbox), gtk_label_new("Search:"), FALSE, FALSE, 0) ;
   GtkEntry *search_entry = GTK_ENTRY(gtk_entry_new()) ;
   gtk_box_pack_start(GTK_BOX(hbox), GTK_WIDGET(search_entry), FALSE, FALSE, 0) ;
 
+  gtk_box_pack_start(GTK_BOX(hbox), gtk_label_new("Filter:"), FALSE, FALSE, 0) ;
+  GtkEntry *filter_entry = GTK_ENTRY(gtk_entry_new()) ;
+  gtk_box_pack_start(GTK_BOX(hbox), GTK_WIDGET(filter_entry), FALSE, FALSE, 0) ;
+  gtk_widget_set_tooltip_text(GTK_WIDGET(search_entry), "Search for values containing this text. Press the up/down arrows to progress to next/previous match.") ;
+
+  GtkWidget *button = gtk_button_new_with_mnemonic("C_lear") ;
+  gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
+  gtk_widget_set_tooltip_text(button, "Clear the search/filter boxes") ;
+  gtk_widget_set_tooltip_text(GTK_WIDGET(filter_entry), "Show only values containing this text. Press enter to apply the filter.") ;
+
+  SearchListDataStruct search_data = {search_entry, filter_entry, NULL} ;
+  g_signal_connect(G_OBJECT(filter_entry), "activate", G_CALLBACK(filter_entry_activate_cb), &search_data) ;
+  g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(clear_button_cb), &search_data) ;
+
+
+  /* Scrolled list of all values */
   GtkWidget *scrollwin = gtk_scrolled_window_new(NULL, NULL) ;
   gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrollwin), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
   gtk_box_pack_start(content, GTK_WIDGET(scrollwin), TRUE, TRUE, 0) ;
 
-  GtkTreeView *list_widget = createListWidget(main_data, values_list, search_entry) ;
+  GtkTreeView *list_widget = createListWidget(main_data, values_list, &search_data, allow_multiple) ;
   gtk_container_add(GTK_CONTAINER(scrollwin), GTK_WIDGET(list_widget)) ;
 
   gtk_widget_show_all(dialog) ;
@@ -980,7 +1296,7 @@ static void dbnameCB(GtkWidget *widget, gpointer cb_data)
 
   if (db_list)
     {
-      runListDialog(main_data, db_list, GTK_ENTRY(main_data->dbname_widg)) ;
+      runListDialog(main_data, db_list, GTK_ENTRY(main_data->dbname_widg), "Select database", FALSE) ;
       delete db_list ;
     }
   else
@@ -1009,7 +1325,7 @@ static void featuresetsCB(GtkWidget *widget, gpointer cb_data)
 
       if (featuresets_list)
         {
-          runListDialog(main_data, featuresets_list, GTK_ENTRY(main_data->featuresets_widg)) ;
+          runListDialog(main_data, featuresets_list, GTK_ENTRY(main_data->featuresets_widg), "Select featureset(s)", TRUE) ;
           delete featuresets_list ;
         }
       else
@@ -1043,7 +1359,7 @@ static void biotypesCB(GtkWidget *widget, gpointer cb_data)
 
       if (biotypes_list)
         {
-          runListDialog(main_data, biotypes_list, GTK_ENTRY(main_data->biotypes_widg)) ;
+          runListDialog(main_data, biotypes_list, GTK_ENTRY(main_data->biotypes_widg), "Select biotype(s)", TRUE) ;
           delete biotypes_list ;
         }
       else
@@ -1058,5 +1374,6 @@ static void biotypesCB(GtkWidget *widget, gpointer cb_data)
 
   return ;
 }
+
 
 #endif /* USE_ENSEMBL */

@@ -2215,13 +2215,13 @@ static void translate_string_types_to_gtypes(gpointer list_data, gpointer new_li
   GType type;
   gboolean known_type = TRUE;
 
-  if (g_quark_from_string("bool") == GPOINTER_TO_INT(list_data))
+  if (g_quark_from_string("bool") == GPOINTER_TO_UINT(list_data))
     type = G_TYPE_BOOLEAN ;
-  if (g_quark_from_string("int") == GPOINTER_TO_INT(list_data))
+  if (g_quark_from_string("int") == GPOINTER_TO_UINT(list_data))
     type = G_TYPE_INT ;
-  else if (g_quark_from_string("float") == GPOINTER_TO_INT(list_data))
+  else if (g_quark_from_string("float") == GPOINTER_TO_UINT(list_data))
     type = G_TYPE_FLOAT ;
-  else if (g_quark_from_string("string") == GPOINTER_TO_INT(list_data))
+  else if (g_quark_from_string("string") == GPOINTER_TO_UINT(list_data))
     type = G_TYPE_STRING ;
   else
     known_type = FALSE;

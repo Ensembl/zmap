@@ -94,7 +94,7 @@ typedef struct _ZMapURLStruct
 char *url_escape(const char *) ;
 
 ZMapURL url_parse(const char *, int *) ;
-const char *url_error(int) ;
+const char *url_error(guint) ;
 char *url_full_path(const ZMapURL) ;
 void url_set_dir(ZMapURL, const char *) ;
 void url_set_file(ZMapURL, const char *) ;

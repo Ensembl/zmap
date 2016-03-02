@@ -77,7 +77,7 @@ case $opsys in
 	    # Now add LDFLAGS to args so they get through to configure.
 	    LDFLAGS_args="$LDFLAGS $LDFLAGS_args"
 
-	    CXXFLAGS='-g'
+	    CXXFLAGS=''
 
 	    ;; # end x86_64
 
@@ -107,12 +107,11 @@ case $opsys in
 	    fi
 
             # Stuff rdynamic in.....
-            CFLAGS_args="-rdynamic $CFLAGS"
-            LDFLAGS_args="-rdynamic $LDFLAGS"
+            #CFLAGS_args="-rdynamic $CFLAGS"
+            #LDFLAGS_args="-rdynamic $LDFLAGS"
 
 
-	    CXXFLAGS='-std=c++0x -g'
-	    LDFLAGS="-g $LDFLAGS"
+	    CXXFLAGS=''
 
 
 	    # Now add LDFLAGS to args so they get through to configure.
@@ -154,6 +153,8 @@ case $opsys in
 
 esac
 
+
+export CXXFLAGS
 
 
 CC_param="CC=$CC_args"

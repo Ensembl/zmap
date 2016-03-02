@@ -429,7 +429,7 @@ void zMapDNAReverseComplement(char *sequence_in, int length_in)
   static  unsigned char rev[256] = {'\0'} ;
   unsigned char *s_ptr, *e_ptr ;
   size_t length ;
-  int i ;
+  size_t i ;
 
   /* could be done at compile time for max efficiency but not portable (EBCDIC ??). */
   /* IUPAC */
@@ -462,9 +462,7 @@ void zMapDNAReverseComplement(char *sequence_in, int length_in)
 
   s_ptr = sequence ;
   e_ptr = sequence + (length - 1) ;
-  for (i = 0 ;
-       i < (length + 1) / 2 ;
-       s_ptr++, e_ptr--, i++)
+  for (i = 0 ; i < (length + 1) / 2 ; s_ptr++, e_ptr--, i++)
     {
       char s, e ;
 

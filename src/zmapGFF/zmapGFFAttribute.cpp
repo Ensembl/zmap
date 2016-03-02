@@ -441,7 +441,7 @@ gboolean zMapAttParseClass(ZMapGFFAttribute pAttribute, ZMapHomolType * const pc
 gboolean zMapAttParsePID(ZMapGFFAttribute pAttribute, double * const pdReturnValue)
 {
   static const char* sMyName = "zMapAttParsePID()" ;
-  static const unsigned int iExpectedFields = 1 ;
+  static const int iExpectedFields = 1 ;
   static const char *sFormat = "%lg" ;
   gboolean bResult = FALSE ;
   *pdReturnValue = 0.0 ;
@@ -475,7 +475,7 @@ gboolean zMapAttParsePID(ZMapGFFAttribute pAttribute, double * const pdReturnVal
 gboolean zMapAttParseAlign(ZMapGFFAttribute pAttribute, int * const piStart, int * const piEnd, ZMapStrand * const pStrand)
 {
   static const char *sMyName = "zMapAttParseAlign()" ;
-  static const unsigned int iExpectedFields = 3 ;
+  static const int iExpectedFields = 3 ;
   static const char *sFormat = "%d%d %c" ;
   char cStrand = '\0' ;
   int iTemp ;
@@ -529,7 +529,7 @@ gboolean zMapAttParseAlign(ZMapGFFAttribute pAttribute, int * const piStart, int
 gboolean zMapAttParseCDSStartNotFound(ZMapGFFAttribute pAttribute, int * const piOut)
 {
   static const char *sMyName = "zMapAttParseCDSStartNotFound()" ;
-  static const unsigned int iExpectedFields = 1;
+  static const int iExpectedFields = 1;
   static const char *sFormat = "%d %*s" ;
   int iTemp = 0 ;
   gboolean bResult = FALSE ;
@@ -585,7 +585,7 @@ gboolean zMapAttParseCDSEndNotFound(ZMapGFFAttribute pAttribute)
 gboolean zMapAttParseLength(ZMapGFFAttribute pAttribute , int* const piLength )
 {
   static const char *sMyName = "zMapAttParseLength()" ;
-  static const unsigned int iExpectedFields = 1;
+  static const int iExpectedFields = 1;
   static const char *sFormat = "%d" ;
   gboolean bResult = FALSE ;
   int iLength = 0 ;
@@ -621,7 +621,7 @@ gboolean zMapAttParseNameV2(ZMapGFFAttribute pAttribute, GQuark *const SO_acc_ou
 {
   gboolean bResult = FALSE ;
   static const char *sMyName = "zMapAttParseNameV2()" ;
-  static const unsigned int iExpectedFields = 2 ;
+  static const int iExpectedFields = 2 ;
   static const char *sFormat = "%s - %50[^\"]%*s" ;
   char name_str[ZMAPGFF_MAX_FIELD_CHARS + 1] = "" ;
   char variation_str[ZMAPGFF_MAX_FIELD_CHARS + 1] = "" ;
@@ -1220,7 +1220,7 @@ gboolean zMapAttParseSource(ZMapGFFAttribute pAttribute , char ** const sOut )
 gboolean zMapAttParseTargetV2(ZMapGFFAttribute pAttribute, char ** const sOut01, char ** const sOut02)
 {
   static const char *sFormat = "%*[\"]%*[^:]%*[:]%50[^\"]%*[\"]%s" ;
-  static const unsigned int iExpectedFields = 2 ;
+  static const int iExpectedFields = 2 ;
   static const char *sMyName = "zMapAttParseTargetV2()" ;
   gboolean bResult = FALSE ;
   char sString01[ZMAPGFF_MAX_FIELD_CHARS + 1] = "" ;
@@ -1262,7 +1262,7 @@ gboolean zMapAttParseTargetV2(ZMapGFFAttribute pAttribute, char ** const sOut01,
 gboolean zMapAttParseAssemblySource(ZMapGFFAttribute pAttribute, char ** const sOut01, char ** const sOut02)
 {
   static const char *sFormat = "%*[\"]%*[^:]%*[:]%50[^\"]%*[\"]%s" ;
-  static const unsigned int iExpectedFields = 2 ;
+  static const int iExpectedFields = 2 ;
   static const char *sMyName = "zMapAttParseAssemblySource()" ;
   gboolean bResult = FALSE ;
   char sString01[ZMAPGFF_MAX_FIELD_CHARS + 1] = "" ;
@@ -1292,7 +1292,7 @@ gboolean zMapAttParseAssemblySource(ZMapGFFAttribute pAttribute, char ** const s
 gboolean zMapAttParseAnyTwoStrings(ZMapGFFAttribute pAttribute, char ** const sOut01, char ** const sOut02)
 {
   static const char *sFormat = "%*[\"]%50[^\"]%*[\"]%*s";
-  static const unsigned int iExpectedFields = 2 ;
+  static const int iExpectedFields = 2 ;
   static const char *sMyName = "zMapAttParseAnyTwoStrings()" ;
   gboolean bResult = FALSE ;
   char sString01[ZMAPGFF_MAX_FIELD_CHARS + 1] = "" ;
@@ -1355,7 +1355,7 @@ gboolean zMapAttParseGaps(ZMapGFFAttribute pAttribute, GArray ** const pGaps, ZM
   gboolean bResult = FALSE ;
   static const char *sMyName = "zMapAttParseGaps()" ;
   static const char *sFormat = "%d%d%d%d" ;
-  static const unsigned int iExpectedFields = 4 ;
+  static const int iExpectedFields = 4 ;
   if (!pAttribute)
     return bResult ;
   const char *sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
@@ -1620,8 +1620,8 @@ gboolean zMapAttParseAssemblyPath(ZMapGFFAttribute pAttribute, char ** const psO
     *sStrandForward = "+",
     *sStrandReverse = "-" ;
   static const unsigned int iExpectedMinFields = 4 ;
-  static const unsigned int iExpectedFields1 = 1 ;
-  static const unsigned int iExpectedFields2 = 2 ;
+  static const int iExpectedFields1 = 1 ;
+  static const int iExpectedFields2 = 2 ;
   unsigned int i, iTokens = 0, iTokenLimit = 1000 ;
   int iLength = 0 ;
   char **sTokens = NULL ;

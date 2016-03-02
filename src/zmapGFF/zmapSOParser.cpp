@@ -686,7 +686,7 @@ gboolean zMapSOIDIsValid(const ZMapSOID pID)
 unsigned int zMapSOIDParseString(const char * const sString)
 {
   static const char* const sFormatSO = "SO:%d" ;
-  static const unsigned int iExpectedFields = 1 ;
+  static const int iExpectedFields = 1 ;
   unsigned int iResult = ZMAPSO_ID_UNK ;
 
   if (     !sString
@@ -1493,7 +1493,7 @@ static gboolean zMapSOParseIsObs(ZMapSOParser const pParser)
   static const char * const sFormat = "is_obsolete:%s";
   static const char * const sTrue = "true" ;
   static const char * const sFalse = "false" ;
-  static const unsigned int iExpectedFields = 1 ;
+  static const int iExpectedFields = 1 ;
   gboolean bResult = FALSE ;
 
   /*
@@ -1558,7 +1558,7 @@ static gboolean zMapSOParseIsObs(ZMapSOParser const pParser)
 static gboolean zMapSOParseID(ZMapSOParser const pParser)
 {
   static const char * const sFormatID = "id:%s" ;
-  static const unsigned int iExpectedFields = 1 ;
+  static const int iExpectedFields = 1 ;
   gboolean bResult = FALSE ;
 
   /*
@@ -1616,7 +1616,7 @@ static gboolean zMapSOParseID(ZMapSOParser const pParser)
 static gboolean zMapSOParseName(ZMapSOParser const pParser)
 {
   static const char * const sFormatName = "name:%s" ;
-  static const unsigned int iExpectedFields = 1 ;
+  static const int iExpectedFields = 1 ;
   gboolean bResult = FALSE ;
 
   /*

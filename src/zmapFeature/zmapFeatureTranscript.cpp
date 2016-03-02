@@ -466,7 +466,7 @@ bool zMapFeatureTranscriptHasAlignParts(ZMapFeature feature)
 }
 
 // exon_index from zero.
-GArray *zMapFeatureTranscriptGetAlignParts(ZMapFeature feature, int exon_index)
+GArray *zMapFeatureTranscriptGetAlignParts(ZMapFeature feature, guint exon_index)
 {
   GArray *exon_aligns = NULL ;
 
@@ -1069,7 +1069,7 @@ void zmapFeatureTranscriptCopyFeature(ZMapFeature orig_feature, ZMapFeature new_
   // nested copy, it's a list of lists...
   if (orig_feature->feature.transcript.exon_aligns != NULL)
     {
-      int i ;
+      guint i ;
       GArray *orig_array_aligns, *new_array_aligns ;
 
       orig_array_aligns = orig_feature->feature.transcript.exon_aligns ;
@@ -1080,7 +1080,7 @@ void zmapFeatureTranscriptCopyFeature(ZMapFeature orig_feature, ZMapFeature new_
       for (i = 0 ; i < orig_array_aligns->len ; i++)
         {
           GArray *orig_aligns, *new_aligns ;
-          int j ;
+          guint j ;
 
           orig_aligns = g_array_index(orig_array_aligns, GArray *, i) ;
 
@@ -1122,7 +1122,7 @@ void zmapFeatureTranscriptDestroyFeature(ZMapFeature feature)
 
   if (feature->feature.transcript.exon_aligns)
     {
-      int i ;
+      guint i ;
 
       for (i = 0 ; i < feature->feature.transcript.exon_aligns->len ; i++)
         {
@@ -1894,7 +1894,7 @@ GList* zMapFeatureTranscriptGetEvidence(ZMapFeature feature)
 }
 
 /* Set the evidence list for the given transcript. Takes ownership of the list
- * if it succeeds or free's the list if it doesn't. */
+ * if it succeeds or free's the list if it doesn't (but doesn't free the data). */
 void zMapFeatureTranscriptSetEvidence(GList *evidence, gpointer data)
 {
   ZMapFeature feature = (ZMapFeature)data ;
@@ -1906,6 +1906,26 @@ void zMapFeatureTranscriptSetEvidence(GList *evidence, gpointer data)
   else
     {
       g_list_free(evidence) ;
+    }
+}
+
+GList* zMapFeatureTranscriptGetVariations(ZMapFeature feature)
+{
+  GList *result = NULL ;
+
+  if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
+    result = feature->feature.transcript.variations ;
+
+  return result ;
+}
+
+/* Set the variations list for the given transcript. Makes its own copy
+ * of the list container (but does not make a copy of the data). */
+void zMapFeatureTranscriptSetVariations(ZMapFeature feature, GList *variations)
+{
+  if (feature && feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT && variations)
+    {
+      feature->feature.transcript.variations = g_list_copy(variations) ;
     }
 }
 
