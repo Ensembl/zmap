@@ -40,7 +40,75 @@
 #include <zmapView_P.hpp>
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-#include <zmapViewServer.hpp>
+#include <zmapViewServer_P.hpp>
+
+
+/* Represents a sub-step to a connection that forms part of a step. */
+typedef struct ZMapViewConnectionRequestStructType
+{
+  StepListStepState state ;
+
+  gboolean has_failed ;                             /* Set TRUE if callback returns FALSE. */
+
+  ZMapThreadReply reply ;                           /* Return code from request. */
+
+  gpointer request_data ;                 // pointer to parent connection's data
+
+} ZMapViewConnectionRequestStruct ;
+
+
+
+
+
+/* Represents a dispatchable step that is part of an overall request. */
+typedef struct ZMapViewConnectionStepStructType
+{
+  StepListStepState state ;
+
+  StepListActionOnFailureType on_fail ;                   /* What action to take if any part of
+                                                 this step fails. */
+
+  gdouble start_time ;                              /* start/end time of step. */
+  gdouble end_time ;
+
+  ZMapServerReqType request ;                       /* Type of request. */
+
+  ZMapViewConnectionRequest connection_req ;
+
+} ZMapViewConnectionStepStruct, *ZMapViewConnectionStep ;
+
+
+
+
+
+
+
+
+/* Represents a request composed of a list of dispatchable steps
+ * which should be executed one at a time, waiting until each step is completed
+ * before executing the next. */
+typedef struct ZMapViewConnectionStepListStructType
+{
+  GList *current ;                                          /* Step being currently managed, set
+                                                               to first step on initialisation,
+                                                               NULL on termination. */
+
+  GList *steps ;                                            /* List of ZMapViewConnectionStep to
+                                                               be dispatched. */
+
+  StepListDispatchCB dispatch_func ;                        /* Called prior to dispatching requests. */
+  StepListProcessDataCB process_func ;                      /* Called when each request is processed. */
+  StepListFreeDataCB free_func ;                            /* Called to free requests. */
+
+  /* we may need a list of all connections here. */
+
+} ZMapViewConnectionStepListStruct ;
+
+
+
+
+
+
 
 
 /* Used in stepListFindRequest() to search for a step or a connection. */
@@ -61,6 +129,10 @@ typedef struct
 
 
 
+
+
+
+
 static void stepFindReq(gpointer data, gpointer user_data) ;
 static ZMapViewConnectionStep stepListFindStep(ZMapViewConnectionStepList step_list, ZMapServerReqType request_type) ;
 static void stepDestroy(gpointer data, gpointer user_data) ;
@@ -71,6 +143,15 @@ static void stepDestroy(gpointer data, gpointer user_data) ;
 /*
  *                  External interface functions.
  */
+
+
+bool zMapConnectionIsFinished(ZMapViewConnectionRequest request)
+{
+  bool is_finished = request->state ;
+
+  return is_finished ;
+}
+
 
 
 
@@ -87,10 +168,34 @@ static void stepDestroy(gpointer data, gpointer user_data) ;
  */
 
 
+StepListActionOnFailureType zMapStepOnFailAction(ZMapViewConnectionStep step)
+{
+  return step->on_fail ;
+}
+
+void zMapStepSetState(ZMapViewConnectionStep step, StepListStepState state)
+{
+  step->state = state ;
+
+  return ;
+}
+
+ZMapServerReqType zMapStepGetRequest(ZMapViewConnectionStep step)
+{
+  ZMapServerReqType request ;
+
+  request = step->request ;
+
+  return request ;
+}
+
+
+
+
 /* Make the step list. */
 ZMapViewConnectionStepList zmapViewStepListCreate(StepListDispatchCB dispatch_func,
-						  StepListProcessDataCB process_func,
-						  StepListFreeDataCB free_func)
+                                                  StepListProcessDataCB process_func,
+                                                  StepListFreeDataCB free_func)
 {
   ZMapViewConnectionStepList step_list ;
 
@@ -101,6 +206,45 @@ ZMapViewConnectionStepList zmapViewStepListCreate(StepListDispatchCB dispatch_fu
   step_list->free_func = free_func ;
 
   return step_list ;
+}
+
+
+// create a complete step list. each step will be processed is a request is added
+// steps default to STEPLIST_INVALID
+ZMapViewConnectionStepList zmapViewStepListCreateFull(StepListDispatchCB dispatch_func,
+                                                      StepListProcessDataCB process_func,
+                                                      StepListFreeDataCB free_func)
+{
+  ZMapViewConnectionStepList step_list;
+
+  step_list = zmapViewStepListCreate(dispatch_func,
+				     process_func,
+				     free_func) ;
+  zmapViewStepListAddStep(step_list, ZMAP_SERVERREQ_CREATE,    REQUEST_ONFAIL_CANCEL_THREAD) ;
+  zmapViewStepListAddStep(step_list, ZMAP_SERVERREQ_OPEN,      REQUEST_ONFAIL_CANCEL_THREAD) ;
+  zmapViewStepListAddStep(step_list, ZMAP_SERVERREQ_GETSERVERINFO, REQUEST_ONFAIL_CANCEL_THREAD) ;
+  zmapViewStepListAddStep(step_list, ZMAP_SERVERREQ_FEATURESETS, REQUEST_ONFAIL_CANCEL_THREAD) ;
+  zmapViewStepListAddStep(step_list, ZMAP_SERVERREQ_STYLES,    REQUEST_ONFAIL_CANCEL_THREAD) ;
+  zmapViewStepListAddStep(step_list, ZMAP_SERVERREQ_NEWCONTEXT,REQUEST_ONFAIL_CANCEL_THREAD) ;
+  zmapViewStepListAddStep(step_list, ZMAP_SERVERREQ_FEATURES,  REQUEST_ONFAIL_CANCEL_THREAD) ;
+  zmapViewStepListAddStep(step_list, ZMAP_SERVERREQ_SEQUENCE,  REQUEST_ONFAIL_CANCEL_THREAD) ;
+  zmapViewStepListAddStep(step_list, ZMAP_SERVERREQ_GETSTATUS,  REQUEST_ONFAIL_CANCEL_THREAD) ;
+  zmapViewStepListAddStep(step_list, ZMAP_SERVERREQ_TERMINATE, REQUEST_ONFAIL_CANCEL_THREAD) ;
+
+  return(step_list);
+
+}
+
+
+// Returns the connection step that is currently being executed.
+ZMapViewConnectionStep zmapViewStepListGetCurrentStep(ZMapViewConnectionStepList step_list)
+{
+  ZMapViewConnectionStep curr_step = NULL ;
+
+  if (step_list->current && step_list->current->data)
+    curr_step = (ZMapViewConnectionStep)(step_list->current->data) ;
+
+  return curr_step ;
 }
 
 
@@ -155,40 +299,12 @@ ZMapViewConnectionRequest zmapViewStepListAddServerReq(ZMapViewConnectionStepLis
 
 
 
-// create a complete step list. each step will be processed is a request is added
-// steps default to STEPLIST_INVALID
-ZMapViewConnectionStepList zmapViewConnectionStepListCreate(StepListDispatchCB dispatch_func,
-							    StepListProcessDataCB process_func,
-							    StepListFreeDataCB free_func)
-{
-  ZMapViewConnectionStepList step_list;
-
-  step_list = zmapViewStepListCreate(dispatch_func,
-				     process_func,
-				     free_func) ;
-  zmapViewStepListAddStep(step_list, ZMAP_SERVERREQ_CREATE,    REQUEST_ONFAIL_CANCEL_THREAD) ;
-  zmapViewStepListAddStep(step_list, ZMAP_SERVERREQ_OPEN,      REQUEST_ONFAIL_CANCEL_THREAD) ;
-  zmapViewStepListAddStep(step_list, ZMAP_SERVERREQ_GETSERVERINFO, REQUEST_ONFAIL_CANCEL_THREAD) ;
-  zmapViewStepListAddStep(step_list, ZMAP_SERVERREQ_FEATURESETS, REQUEST_ONFAIL_CANCEL_THREAD) ;
-  zmapViewStepListAddStep(step_list, ZMAP_SERVERREQ_STYLES,    REQUEST_ONFAIL_CANCEL_THREAD) ;
-  zmapViewStepListAddStep(step_list, ZMAP_SERVERREQ_NEWCONTEXT,REQUEST_ONFAIL_CANCEL_THREAD) ;
-  zmapViewStepListAddStep(step_list, ZMAP_SERVERREQ_FEATURES,  REQUEST_ONFAIL_CANCEL_THREAD) ;
-  zmapViewStepListAddStep(step_list, ZMAP_SERVERREQ_SEQUENCE,  REQUEST_ONFAIL_CANCEL_THREAD) ;
-  zmapViewStepListAddStep(step_list, ZMAP_SERVERREQ_GETSTATUS,  REQUEST_ONFAIL_CANCEL_THREAD) ;
-  zmapViewStepListAddStep(step_list, ZMAP_SERVERREQ_TERMINATE, REQUEST_ONFAIL_CANCEL_THREAD) ;
-
-  return(step_list);
-
-}
-
-
 /* The meat of the step list stuff, check step list to see where we are and dispatch next
  * step if we are ready for it.
  *
  *  */
-void zmapViewStepListIter(ZMapViewConnection view_con)
+void zmapViewStepListIter(ZMapViewConnectionStepList step_list, ZMapThread thread, gpointer connection_data)
 {
-  ZMapViewConnectionStepList step_list = view_con->step_list;
   gboolean result = FALSE;
 
   if (step_list->current)
@@ -202,14 +318,15 @@ void zmapViewStepListIter(ZMapViewConnection view_con)
 	case STEPLIST_PENDING:
 	  {
 	    /* All requests are in STEPLIST_PENDING state and after dispatching will go into STEPLIST_DISPATCHED. */
+            ZMapServerReqAny request_any = (ZMapServerReqAny)(curr_step->connection_req->request_data) ;
 
             /* Call users dispatch func. */
 	    if ((step_list->dispatch_func))
-	      result = step_list->dispatch_func(view_con, (ZMapServerReqAny)(curr_step->connection_req->request_data)) ;
+	      result = step_list->dispatch_func(request_any, connection_data) ;
 
 	    if (result || !(step_list->dispatch_func))
 	      {
-		zMapThreadRequest(view_con->thread, curr_step->connection_req->request_data) ;
+		zMapThreadRequest(thread, request_any) ;
 
 		curr_step->connection_req->state = STEPLIST_DISPATCHED ;
 		curr_step->state = STEPLIST_DISPATCHED ;

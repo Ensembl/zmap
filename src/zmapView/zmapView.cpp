@@ -60,10 +60,6 @@
 #include <zmapView_P.hpp>
 
 
-
-#include <zmapView_P.hpp>
-
-
 /* Define thread debug messages, used in checkStateConnections() mostly. */
 #define THREAD_DEBUG_MSG_PREFIX " Reply from slave thread %s, "
 
@@ -543,9 +539,8 @@ gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view
 
 
       /* Start polling function that checks state of this view and its connections,
-       * this will wait until the connections reply, process their replies and call
-       * zmapViewStepListIter() again.
-       */
+       * this will wait until the connections reply, process their replies and then
+       * execute any further steps. */
       startStateConnectionChecking(zmap_view) ;
     }
 
@@ -3341,12 +3336,16 @@ static gboolean checkStateConnections(ZMapView zmap_view)
                       }
                     else
                       {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
                         step = (ZMapViewConnectionStep) view_con->step_list->current->data;      //request->step ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+                        step = zmapViewStepListGetCurrentStep(view_con->step_list) ;
 
                         if (reply == ZMAPTHREAD_REPLY_REQERROR)
                           {
                             /* This means the request failed for some reason. */
-                            if (err_msg  && step->on_fail != REQUEST_ONFAIL_CONTINUE)
+                            if (err_msg  && zMapStepOnFailAction(step) != REQUEST_ONFAIL_CONTINUE)
                               {
                                 THREAD_DEBUG_MSG_FULL(thread, view_con, request_type, reply,
                                                       "Source has returned error \"%s\"", err_msg) ;
@@ -3364,7 +3363,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
                             zmapViewStepListStepProcessRequest(view_con, request) ;
 
-                            if (request->state == STEPLIST_FINISHED)
+                            if (zMapConnectionIsFinished(request))
                               {
                                 this_step_finished = TRUE ;
                                 request_type = req_any->type ;
@@ -3400,10 +3399,10 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
                     if (reply == ZMAPTHREAD_REPLY_REQERROR)
                       {
-                        if (step->on_fail == REQUEST_ONFAIL_CANCEL_THREAD
-                            || step->on_fail == REQUEST_ONFAIL_CANCEL_STEPLIST)
+                        if (zMapStepOnFailAction(step) == REQUEST_ONFAIL_CANCEL_THREAD
+                            || zMapStepOnFailAction(step) == REQUEST_ONFAIL_CANCEL_STEPLIST)
                           {
-                            if (step->on_fail == REQUEST_ONFAIL_CANCEL_THREAD)
+                            if (zMapStepOnFailAction(step) == REQUEST_ONFAIL_CANCEL_THREAD)
                               kill_connection = TRUE ;
 
                             /* Remove request from all steps.... */
@@ -3415,7 +3414,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
                           }
                         else
                           {
-                            step->state = STEPLIST_FINISHED ;
+                            zMapStepSetState(step, STEPLIST_FINISHED) ;
                           }
 
 
@@ -3475,11 +3474,15 @@ static gboolean checkStateConnections(ZMapView zmap_view)
                   {
                     ZMapViewConnectionStep step ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
                     step = (ZMapViewConnectionStep) view_con->step_list->current->data;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+                    step = zmapViewStepListGetCurrentStep(view_con->step_list) ;
 
                     /* THIS LOGIC CAN'T BE RIGHT....IF WE COME IN HERE IT'S BECAUSE THE THREAD
                      * HAS ACTUALLY DIED AND NOT JUST QUIT....CHECK STATUS SET IN SLAVES... */
-                    if (step->on_fail != REQUEST_ONFAIL_CONTINUE)
+                    if (zMapStepOnFailAction(step) != REQUEST_ONFAIL_CONTINUE)
                       {
                         /* Thread has failed for some reason and we should clean up. */
                         if (err_msg && view_con->show_warning)
@@ -3495,7 +3498,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
                         /* mark the current step as finished or else we won't move on
                          * this was buried in zmapViewStepListStepProcessRequest()
                          */
-                        step->state = STEPLIST_FINISHED ;
+                        zMapStepSetState(step, STEPLIST_FINISHED) ;
 
                         /* Reset the reply from the slave. */
                         zMapThreadSetReply(thread, ZMAPTHREAD_REPLY_WAIT) ;
@@ -3584,12 +3587,19 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
               is_continue = FALSE ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
               if (view_con->step_list &&
                   view_con->step_list->current &&
                   view_con->step_list->current->data)
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+                if (view_con->step_list && (step = zmapViewStepListGetCurrentStep(view_con->step_list)))
                 {
-                  step = (ZMapViewConnectionStep) view_con->step_list->current->data;
-                  is_continue = (step->on_fail == REQUEST_ONFAIL_CONTINUE);
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+                  step = (ZMapViewConnectionStep) view_con->step_list->current->data ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+                  is_continue = (zMapStepOnFailAction(step) == REQUEST_ONFAIL_CONTINUE) ;
                 }
 
               /* We are going to remove an item from the list so better move on from
@@ -3605,7 +3615,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
               if (reply == ZMAPTHREAD_REPLY_QUIT && view_con->thread_status != THREAD_STATUS_FAILED)
                 {
-                  if (step->request == ZMAP_SERVERREQ_TERMINATE)  /* normal OK status in response */
+                  if (zMapStepGetRequest(step) == ZMAP_SERVERREQ_TERMINATE)  /* normal OK status in response */
                     {
                       view_con->thread_status = THREAD_STATUS_OK ;
                     }
@@ -3626,7 +3636,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
               if (zmapViewStepListIsNext(view_con->step_list))
                 {
 
-                  zmapViewStepListIter(view_con) ;
+                  zmapViewStepListIter(view_con->step_list, view_con->thread, view_con) ;
                   has_step_list++;
 
                   all_steps_finished = FALSE ;
@@ -5091,7 +5101,7 @@ static void doBlixemCmd(ZMapView view, ZMapWindowCallbackCommandAlign align_cmd)
                                                      view_con, ZMAP_SERVERREQ_GETSEQUENCE, req_any, REQUEST_ONFAIL_CANCEL_STEPLIST) ;
 
               /* Start the step list. */
-              zmapViewStepListIter(view_con) ;
+              zmapViewStepListIter(view_con->step_list, view_con->thread, view_con) ;
             }
         }
     }

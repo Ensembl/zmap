@@ -45,9 +45,7 @@
 #include <zmapView_P.hpp>
 
 
-
-
-#include <zmapViewServer.hpp>
+#include <zmapViewServer_P.hpp>
 
 
 
@@ -113,7 +111,7 @@ typedef struct DrawableDataStructType
 
 
 
-static gboolean dispatchContextRequests(ZMapViewConnection view_con, ZMapServerReqAny req_any) ;
+static gboolean dispatchContextRequests(ZMapServerReqAny req_any, gpointer connection_data) ;
 static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAny req_any) ;
 static void freeDataRequest(ZMapServerReqAny req_any) ;
 
@@ -125,9 +123,20 @@ static void findStyleCB(gpointer data, gpointer user_data) ;
 static void drawableCB(ZMapFeatureTypeStyle style, gpointer user_data) ;
 
 
+
+LoadFeaturesData zMapServerCreateLoadFeatures(GList *feature_sets) ;
+LoadFeaturesData zMapServerCopyLoadFeatures(LoadFeaturesData loaded_features_in) ;
+void zMapServerDestroyLoadFeatures(LoadFeaturesData loaded_features) ;
+
+
+
+
+
 /*
  *                  External interface functions.
  */
+
+
 
 void zMapServerSetScheme(ZMapViewSessionServer server, ZMapURLScheme scheme)
 {
@@ -253,17 +262,17 @@ THE COMMENTS ETC ETC....HORRIBLE, HORRIBLE, HORRIBLE......
 /* Allocate a connection and send over the request to get the sequence displayed. */
 /* NB: this is called from zmapViewLoadFeatures() and commandCB (for DNA only) */
 ZMapViewConnection zMapServerCreateViewConnection(ZMapView zmap_view,
-                                               ZMapViewConnection view_con,
-                                               ZMapFeatureContext context,
-                                               char *server_url, char *format,
-                                               int timeout, char *version,
-                                               gboolean req_styles,
-                                               char *styles_file,
-                                               GList *req_featuresets,
-                                               GList *req_biotypes,
-                                               gboolean dna_requested,
-                                               gint features_start, gint features_end,
-                                               gboolean terminate)
+                                                  ZMapViewConnection view_con,
+                                                  ZMapFeatureContext context,
+                                                  char *server_url, char *format,
+                                                  int timeout, char *version,
+                                                  gboolean req_styles,
+                                                  char *styles_file,
+                                                  GList *req_featuresets,
+                                                  GList *req_biotypes,
+                                                  gboolean dna_requested,
+                                                  gint features_start, gint features_end,
+                                                  gboolean terminate)
 {
 
   ZMapThread thread ;
@@ -378,9 +387,9 @@ ZMapViewConnection zMapServerCreateViewConnection(ZMapView zmap_view,
       connect_data->loaded_features = zMapServerCreateLoadFeatures(NULL) ;
 
 
-      view_con->step_list = zmapViewConnectionStepListCreate(dispatchContextRequests,
-                                                             processDataRequests,
-                                                             freeDataRequest);
+      view_con->step_list = zmapViewStepListCreateFull(dispatchContextRequests,
+                                                       processDataRequests,
+                                                       freeDataRequest);
 
       /* Record info. for this session. */
       zmapViewSessionAddServer(view_con->server, urlObj, format) ;
@@ -434,7 +443,7 @@ ZMapViewConnection zMapServerCreateViewConnection(ZMapView zmap_view,
         {
           /* MH17 NOTE
            * These calls are here in the order they should be executed in for clarity
-           * but the order chosen is defined in zmapViewConnectionStepListCreate()
+           * but the order chosen is defined in zmapViewStepListCreateFull()
            * this code could be reordered without any effect
            * the step list is operated as an array indexed by request type
            */
@@ -451,7 +460,7 @@ ZMapViewConnection zMapServerCreateViewConnection(ZMapView zmap_view,
         zmap_view->connection_list = g_list_append(zmap_view->connection_list, view_con) ;
 
       /* Start the connection to the source. */
-      zmapViewStepListIter(view_con) ;
+      zmapViewStepListIter(view_con->step_list, view_con->thread, view_con) ;
     }
   else
     {
@@ -698,9 +707,10 @@ void zmapViewSessionFreeServer(ZMapViewSessionServer server_data)
 /* This is _not_ a generalised dispatch function, it handles a sequence of requests that
  * will end up fetching a feature context from a source. The steps are interdependent
  * and data from one step must be available to the next. */
-static gboolean dispatchContextRequests(ZMapViewConnection connection, ZMapServerReqAny req_any)
+static gboolean dispatchContextRequests(ZMapServerReqAny req_any, gpointer connection_data)
 {
   gboolean result = TRUE ;
+  ZMapViewConnection connection = (ZMapViewConnection)connection_data ;
   ConnectionData connect_data = (ConnectionData)(connection->request_data) ;
 
 //zMapLogWarning("%s: dispatch %d",connection->url, req_any->type);
