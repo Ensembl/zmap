@@ -35,6 +35,9 @@
 
 #include <zmapDataSource.hpp>
 
+
+#ifdef USE_HTSLIB
+
 /*
  * HTS header. Temporary location.
  */
@@ -42,6 +45,9 @@
 #include "/nfs/users/nfs_s/sm23/Work/htslib-develop/htslib/sam.h" */
 #include <htslib/hts.h>
 #include <htslib/sam.h>
+
+#endif
+
 
 
 /*
@@ -53,6 +59,9 @@ typedef struct ZMapDataSourceGIOStruct_
     ZMapDataSourceType type ;
     GIOChannel *io_channel ;
   } ZMapDataSourceGIOStruct , *ZMapDataSourceGIO  ;
+
+
+#ifdef USE_HTSLIB
 
 typedef struct ZMapDataSourceHTSFileStruct_
   {
@@ -69,6 +78,10 @@ typedef struct ZMapDataSourceHTSFileStruct_
          * source,
          * so_type ;
   } ZMapDataSourceHTSFileStruct , *ZMapDataSourceHTSFile;
+
+#endif
+
+
 
 /*
  * This is for temporary data that need to be stored while

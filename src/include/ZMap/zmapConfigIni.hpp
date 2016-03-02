@@ -45,15 +45,16 @@ struct ZMapFeatureColumnStructType ;
 #define ZMAP_DEFAULT_FEATURESETS "DNA ; 3 Frame ; 3 Frame Translation ; Show Translation ; Annotation "
 
 
-/* This enum lists the types of config files that can be supplied */
+/* This enum lists the types of config files that can be supplied. The order of this list is the
+ * order of preference if the same stanza occurs in multiple different config files */
 typedef enum
   {
     ZMAPCONFIG_FILE_NONE,
 
     ZMAPCONFIG_FILE_BUFFER, /* Config read from a text buffer rather than a file*/
     ZMAPCONFIG_FILE_STYLES, /* Styles file */
-    ZMAPCONFIG_FILE_USER,   /* User-specified config file */
     ZMAPCONFIG_FILE_PREFS,  /* Global user preferences file */
+    ZMAPCONFIG_FILE_USER,   /* User-specified config file */
     ZMAPCONFIG_FILE_ZMAP,   /* Default zmap config file */
     ZMAPCONFIG_FILE_SYS,    /* Default system config file */
 
@@ -183,6 +184,7 @@ ZMapConfigIniContext zMapConfigIniContextProvide(const char *config_file, ZMapCo
 ZMapConfigIniContext zMapConfigIniContextProvideNamed(const char *config_file, const char *stanza_name, ZMapConfigIniFileType file_type) ;
 
 gboolean zMapConfigIniHasStanza(ZMapConfigIni config, const char *stanza_name, GKeyFile **which);
+gboolean zMapConfigIniHasStanzaAll(ZMapConfigIni config, const char *stanza_name, GList **which);
 
 GList *zMapConfigIniContextGetSources(ZMapConfigIniContext context) ;
 GList *zMapConfigIniContextGetNamed(ZMapConfigIniContext context, char *stanza_name) ;
@@ -191,7 +193,7 @@ GHashTable * zmapConfigIniGetDefaultStyles(void);
 gboolean zMapConfigIniGetStylesFromFile(char *config_file,
 					char *styles_list, char *styles_file, GHashTable **styles_out, const char *buffer);
 GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context,GHashTable *ghash,
-                                              std::map<GQuark, ZMapFeatureColumnStructType*> columns);
+                                              std::map<GQuark, ZMapFeatureColumnStructType*> &columns);
 
 gboolean zMapConfigLegacyStyles(char *config_file) ;
 

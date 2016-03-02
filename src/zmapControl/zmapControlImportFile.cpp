@@ -1269,7 +1269,7 @@ static void importFileCB(gpointer cb_data)
       if (file_type == ZMAPSOURCE_FILE_GFF)
         {
           /* Just load the file directly */
-          server = sequence_map->createFileSource(file_txt, source_txt) ;
+          server = sequence_map->createFileSource(source_txt, file_txt) ;
         }
       else
         {
@@ -1304,8 +1304,12 @@ static void importFileCB(gpointer cb_data)
                *   be linked correctly. This means it won't be recognised as a bam.
                * - blixem won't work (until it can load bam files directly, or unless the user
                *   has preconfigured the source in the blixem config). */
-              zMapLogWarning("%s", "Pipe script not availble; using htslib") ;
+#ifdef USE_HTSLIB
+              zMapLogWarning("%s", "Pipe script not available; using htslib") ;
               server = sequence_map->createFileSource(file_txt, source_txt) ;
+#else
+              zMapLogWarning("%s", "Pipe script not availble.") ;
+#endif
             }
           else
             {

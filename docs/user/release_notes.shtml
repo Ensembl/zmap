@@ -6,6 +6,16 @@
 <body>
 <h2>ZMap - Release Notes</h2>
 
+<h4>Version 2.5.2</h4>
+<ul>
+  <li>SIRT:515503 Fix a bug where columns in the [columns] stanza are not created unless they are also in the "columns" field in the [ZMap] stanza. This was a regression introduced in v2.4.0.
+</ul>
+  
+<h4>Version 2.5.1</h4>
+<ul>
+  <li>Fix a compile error on some machines due to a missing reference to a header file
+</ul>
+  
 <h4>Version 2.5.0</h4>
 <ul>
   <li>ZMap's main window (shown when you start ZMap without arguments) now has buttons which let you easily add sources for either an Ensembl database or a file. For Ensembl sources, you can search for a list of databases/featuresets/biotypes. The public host details are provided by default, or you can enter your own host. The sources can be saved to a config file for re-use.

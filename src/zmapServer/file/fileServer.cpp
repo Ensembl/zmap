@@ -103,7 +103,9 @@ static ZMapServerResponseType destroyConnection(void *server) ;
  */
 static ZMapServerResponseType fileGetHeader(FileServer server);
 static ZMapServerResponseType fileGetHeader_GIO(FileServer server) ;
+#ifdef USE_HTSLIB
 static ZMapServerResponseType fileGetHeader_HTS(FileServer server) ;
+#endif
 static ZMapServerResponseType fileGetSequence(FileServer server);
 
 static void getConfiguration(FileServer server) ;
@@ -894,6 +896,7 @@ static ZMapServerResponseType fileGetHeader_GIO(FileServer server)
 }
 
 
+#ifdef USE_HTSLIB
 /*
  * Header for a HTS file. The server calling code expects the server->buffer_line
  * to contain a non-zero length string in order for it to decide that the source
@@ -928,6 +931,7 @@ static ZMapServerResponseType fileGetHeader_HTS(FileServer server)
 
   return result ;
 }
+#endif
 
 
 
@@ -953,10 +957,12 @@ static ZMapServerResponseType fileGetHeader(FileServer server)
     {
       result = fileGetHeader_GIO(server) ;
     }
+#ifdef USE_HTSLIB
   else if (data_source_type ==   ZMAPDATASOURCE_TYPE_HTS)
     {
       result = fileGetHeader_HTS(server) ;
     }
+#endif
 
   return result ;
 }

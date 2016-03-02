@@ -30,7 +30,9 @@
 #ifndef ZMAP_WINDOW_P_H
 #define ZMAP_WINDOW_P_H
 
+#include <list>
 #include <gtk/gtk.h>
+
 #include <ZMap/zmapUtilsGUI.hpp>
 #include <ZMap/zmapFeature.hpp>
 #include <ZMap/zmapDraw.hpp>
@@ -706,7 +708,6 @@ typedef struct
 
   ZMapFeature feature;                    /* only used in item callbacks */
   ZMapFeatureSet feature_set ;            /* Only used in column callbacks... */
-  GQuark req_id;					/* set to request if any */
   ZMapWindowContainerFeatureSet container_set;  /* we can get a/the featureset from this */
                                                 /* be good to loose the featureset member */
                                                 /* is this true: column contains mixed features */
@@ -1053,9 +1054,13 @@ typedef struct
 {
   char    *location;
   char    *cookie_jar;
+  char    *proxy;
+  char    *cainfo;
   char    *mode;
   int      port;
   gboolean full_record;
+  gboolean verbose;
+  long     ipresolve;
 } PFetchUserPrefsStruct;
 
 typedef struct
@@ -1307,7 +1312,8 @@ void zmapWindowItemUnHighlightShowTranslations(ZMapWindow window, FooCanvasItem 
 void zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item,
 			  ZMapWindowAlignSetType requested_homol_set,
 			  ZMapFeatureSet feature_set, GList *source,
-			  double x_pos, double y_pos) ;
+			  double x_pos, double y_pos,
+                          const bool features_from_mark) ;
 
 
 void zmapWindowFeatureItemEventButRelease(GdkEvent *event) ;
@@ -1527,12 +1533,18 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
 ZMapGUIMenuItem zmapWindowMakeMenuSearchListOps(int *start_index_inout,
 						ZMapGUIMenuItemCallbackFunc callback_func,
 						gpointer callback_data) ;
-ZMapGUIMenuItem zmapWindowMakeMenuBlixemBAM(int *start_index_inout,
-					    ZMapGUIMenuItemCallbackFunc callback_func,
-					    gpointer callback_data) ;
-ZMapGUIMenuItem zmapWindowMakeMenuRequestBAM(int *start_index_inout,
-					     ZMapGUIMenuItemCallbackFunc callback_func,
-					     gpointer callback_data) ;
+ZMapGUIMenuItem zmapWindowMakeMenuBlixemBAMFeatureset(int *start_index_inout,
+                                                      ZMapGUIMenuItemCallbackFunc callback_func,
+                                                      gpointer callback_data) ;
+ZMapGUIMenuItem zmapWindowMakeMenuBlixemBAMColumn(int *start_index_inout,
+                                                  ZMapGUIMenuItemCallbackFunc callback_func,
+                                                  gpointer callback_data) ;
+ZMapGUIMenuItem zmapWindowMakeMenuRequestBAMFeatureset(int *start_index_inout,
+                                                       ZMapGUIMenuItemCallbackFunc callback_func,
+                                                       gpointer callback_data) ;
+ZMapGUIMenuItem zmapWindowMakeMenuRequestBAMColumn(int *start_index_inout,
+                                                   ZMapGUIMenuItemCallbackFunc callback_func,
+                                                   gpointer callback_data) ;
 
 ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
 				       ZMapGUIMenuItemCallbackFunc callback_func,
@@ -1968,6 +1980,15 @@ void zmapWindowStateRevCompRegion(ZMapWindow window, double *a, double *b);
 void zmapWindowHighlightEvidenceCB(GList *evidence, gpointer user_data) ;
 
 GList * zmapWindowAddColumnFeaturesets(ZMapFeatureContextMap map, GList *glist, GQuark column_id, gboolean unique_id) ;
+
+bool zmapWindowCoverageGetDataColumns(ZMapFeatureContextMap context_map, ZMapFeatureSet feature_set, std::list<GQuark> *column_ids_out = NULL) ;
+bool zmapWindowCoverageGetDataColumns(ZMapFeatureContextMap context_map, ZMapWindowContainerFeatureSet container_set, std::list<GQuark> *column_ids_out = NULL) ;
+GList* zmapWindowCoverageGetRelatedFeaturesets(ZMapFeatureContextMap context_map, ZMapFeatureSet feature_set,
+                                               GList *req_list, bool unique_id) ;
+GList* zmapWindowCoverageGetRelatedFeaturesets(ZMapFeatureContextMap context_map, GList *feature_sets,
+                                               GList *req_list, bool unique_id) ;
+GList* zmapWindowCoverageGetRelatedFeaturesets(ZMapFeatureContextMap context_map, ZMapWindowContainerFeatureSet container_set,
+                                               GList *req_list, bool unique_id) ;
 
 /* Malcolms.... */
 void foo_bug_set(void *key, const char *id) ;

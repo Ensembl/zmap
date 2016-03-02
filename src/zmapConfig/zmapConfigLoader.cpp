@@ -731,7 +731,7 @@ GList *zMapConfigString2QuarkIDList(const char *string_list)
 
 GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context, 
                                               GHashTable *ghash, 
-                                              std::map<GQuark, ZMapFeatureColumn> columns)
+                                              std::map<GQuark, ZMapFeatureColumn> &columns)
 {
   GKeyFile *gkf;
   gchar ** keys,**freethis;
@@ -939,7 +939,7 @@ g_strfreev(freethis);
 GHashTable *zMapConfigIniGetColumnGroups(ZMapConfigIniContext context)
 {
   GHashTable *column_groups = NULL ;
-  GKeyFile *gkf;
+  GList *gkf_list = NULL ;
   gchar ** keys, **freethis ;
   GList *columns;
   gsize len = 0;
@@ -950,30 +950,47 @@ GHashTable *zMapConfigIniGetColumnGroups(ZMapConfigIniContext context)
 
   column_groups = g_hash_table_new(NULL, NULL) ;
 
-  if(zMapConfigIniHasStanza(context->config, ZMAPSTANZA_COLUMN_GROUPS, &gkf))
+  /* Get a list of all key files that contain the columm-groups stanza. We must check all of them
+   * because different key-value pairs may exist in each and we want to merge them */
+  if(zMapConfigIniHasStanzaAll(context->config, ZMAPSTANZA_COLUMN_GROUPS, &gkf_list))
     {
-      freethis = keys = g_key_file_get_keys(gkf,ZMAPSTANZA_COLUMN_GROUPS,&len,NULL);
-
-      for(;len--;keys++)
+      /* Loop through each key file. */
+      for (GList *gkf_item = gkf_list; gkf_item; gkf_item = gkf_item->next)
         {
-          names = g_key_file_get_string(gkf,ZMAPSTANZA_COLUMN_GROUPS,*keys,NULL);
+          GKeyFile *gkf = (GKeyFile*)(gkf_item->data) ;
 
-          if(!names || !*names)
+          /* Loop through all of the keys in the stanza */
+          freethis = keys = g_key_file_get_keys(gkf,ZMAPSTANZA_COLUMN_GROUPS,&len,NULL);
+
+          for(;len--;keys++)
             {
-              if (!*names)    /* Can this even happen ? */
-                g_free(names) ;
+              /* Get the value, which is a list of column names */
+              names = g_key_file_get_string(gkf,ZMAPSTANZA_COLUMN_GROUPS,*keys,NULL);
 
-              continue ;
+              if(!names || !*names)
+                {
+                  if (!*names)    /* Can this even happen ? */
+                    g_free(names) ;
+
+                  continue ;
+                }
+
+              /* Create the group ID from the key. This featureset will not actually exist, it's virtual */
+              group_id = zMapStyleCreateID(*keys);
+
+              /* Convert the list of names to a GList of column name quarks */
+              columns = zMapConfigString2QuarkList(names,FALSE);
+              g_free(names);
+              names = NULL ;
+
+              /* Add the group name and columns list to the hash table of column_groups, if it is
+               * not already there (higher priority key files are earlier in the list so we
+               * discard duplicates in later, lower priority key files). */
+              if (g_hash_table_lookup(column_groups,GUINT_TO_POINTER(group_id)))
+                g_list_free(columns);
+              else
+                g_hash_table_insert(column_groups,GUINT_TO_POINTER(group_id), columns);
             }
-
-          /* this featureset will not actually exist, it's virtual */
-          group_id = zMapStyleCreateID(*keys);
-
-          columns = zMapConfigString2QuarkList(names,FALSE);
-          g_free(names);
-          names = NULL ;
-
-          g_hash_table_insert(column_groups,GUINT_TO_POINTER(group_id), columns);
         }
 
       if(freethis)
@@ -1590,6 +1607,9 @@ static ZMapConfigIniContextKeyEntry get_app_group_data(const char **stanza_name,
     { ZMAPSTANZA_APP_SOURCES,            G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_APP_STYLE_FROM_METHOD,  G_TYPE_BOOLEAN, NULL, FALSE },
     { ZMAPSTANZA_APP_XREMOTE_DEBUG,      G_TYPE_BOOLEAN, NULL, FALSE },
+    { ZMAPSTANZA_APP_CURL_DEBUG,         G_TYPE_BOOLEAN, NULL, FALSE },
+    { ZMAPSTANZA_APP_CURL_IPRESOLVE,     G_TYPE_STRING,  NULL, FALSE },
+    { ZMAPSTANZA_APP_CURL_CAINFO,        G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_APP_REPORT_THREAD,      G_TYPE_BOOLEAN, NULL, FALSE },
     { ZMAPSTANZA_APP_NAVIGATOR_SETS,     G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_APP_SEQ_DATA,           G_TYPE_STRING,  NULL, FALSE },

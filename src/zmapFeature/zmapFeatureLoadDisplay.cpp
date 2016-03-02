@@ -67,9 +67,9 @@ static ZMapFeatureContextExecuteStatus updateContextFeatureSetStyle(GQuark key,
                                                                     char **err_out) ;
 
 
-/*
- *              ZMapFeatureContextMap routines
- */
+/**********************************************************************
+ *                       ZMapFeatureContextMap
+ **********************************************************************/
 
 
 /* get the column struct for a featureset */
@@ -358,6 +358,7 @@ bool ZMapFeatureContextMapStructType::updateContextColumns(_ZMapConfigIniContext
   return TRUE ;
 }
 
+
 bool ZMapFeatureContextMapStructType::updateContextColumnGroups(_ZMapConfigIniContextStruct *context, 
                                                                 ZMapConfigIniFileType file_type)
 {
@@ -369,9 +370,31 @@ bool ZMapFeatureContextMapStructType::updateContextColumnGroups(_ZMapConfigIniCo
 
 
 
-/*
- *              ZMapFeatureSequenceMap routines
+/* If this featureset has a related column, then return the ID of that column.
+ * Return 0 otherwise.
+ * FTM this means fset is coverage and the related is the real data (a one way relation)
  */
+GQuark ZMapFeatureContextMapStructType::getRelatedColumnID(const GQuark fset_id)
+{
+  GQuark q = 0;
+  ZMapFeatureSource src = NULL ;
+
+  src = (ZMapFeatureSource)g_hash_table_lookup(source_2_sourcedata,GUINT_TO_POINTER(fset_id));
+  if(src)
+    q = src->related_column;
+  else
+    zMapLogWarning("Can't find source data for featureset '%s'.",g_quark_to_string(fset_id));
+
+  return q;
+}
+
+
+
+
+
+/**********************************************************************
+ *                      ZMapFeatureSequenceMap
+ **********************************************************************/
 
 ZMapFeatureSequenceMapStructType* ZMapFeatureSequenceMapStructType::copy()
 {
@@ -468,6 +491,55 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::createSource(const char *sour
     }
 
   return source ;
+}
+
+
+void ZMapFeatureSequenceMapStructType::updateSource(const char *source_name, const std::string &url, 
+                                                    const char *featuresets,
+                                                    const char *biotypes,
+                                                    GError **error)
+{
+  return updateSource(source_name, url.c_str(), featuresets, biotypes, error) ;
+}
+
+
+/* Update the source with the given name with the given values */
+void ZMapFeatureSequenceMapStructType::updateSource(const char *source_name,
+                                                    const char *url,
+                                                    const char *featuresets,
+                                                    const char *biotypes,
+                                                    GError **error)
+{
+  ZMapConfigSource source = NULL ;
+  zMapReturnIfFail(url) ;
+
+  source = getSource(source_name) ;
+
+  if (source->url)
+    {
+      g_free(source->url) ;
+      source->url = NULL ;
+    }
+  source->url = g_strdup(url) ;
+
+  if (source->featuresets)
+    {
+      g_free(source->featuresets) ;
+      source->featuresets = NULL ;
+    }
+  if (featuresets && *featuresets)
+    source->featuresets = g_strdup(featuresets) ;
+
+  if (source->biotypes)
+    {
+      g_free(source->biotypes) ;
+      source->biotypes = NULL ;
+    }
+  if (biotypes && *biotypes)
+    source->biotypes = g_strdup(biotypes) ;
+
+  /* Indicate that there are changes that need saving */
+  setFlag(ZMAPFLAG_SAVE_SOURCES, TRUE) ;
 }
 
 
@@ -568,6 +640,27 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::getSource(const string &sourc
 
       if (iter != sources->end())
         result = iter->second ;
+    }
+
+  return result ;
+}
+
+
+/* Get the source name of the given source struct. Returns a newly-allocated string which should
+ * be free'd with g_free, or NULL if not found */
+char* ZMapFeatureSequenceMapStructType::getSourceName(ZMapConfigSource source)
+{
+  char *result = NULL ;
+
+  if (sources)
+    {
+      for (map<string, ZMapConfigSource>::iterator iter = sources->begin();
+           iter != sources->end();
+           ++iter)
+        {
+          if (iter->second == source)
+            result = g_strdup(iter->first.c_str()) ;
+        }
     }
 
   return result ;

@@ -1579,6 +1579,8 @@ int zMapFeatureTranscriptGetCDSStart(ZMapFeature feature) ;
 int zMapFeatureTranscriptGetCDSEnd(ZMapFeature feature) ;
 GList* zMapFeatureTranscriptGetEvidence(ZMapFeature feature) ;
 void zMapFeatureTranscriptSetEvidence(GList *evidence, gpointer data) ;
+GList* zMapFeatureTranscriptGetVariations(ZMapFeature feature) ;
+void zMapFeatureTranscriptSetVariations(ZMapFeature feature, GList *variations) ;
 ZMapFeature zMapFeatureTranscriptShallowCopy(ZMapFeature src) ;
 bool zMapFeatureTranscriptHasAlignParts(ZMapFeature feature) ;
 GArray *zMapFeatureTranscriptGetAlignParts(ZMapFeature feature, guint exon_index) ;

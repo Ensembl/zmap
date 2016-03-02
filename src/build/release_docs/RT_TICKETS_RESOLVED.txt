@@ -1,5 +1,5 @@
 
-Request Tracker Tickets Resolved from 11/11/2015 to 18/12/2015
+Request Tracker Tickets Resolved from 11/11/2015 to 26/01/2016
 
 ticket/326083
 id: ticket/326083
@@ -68,6 +68,16 @@ Subject: Development ZMap - column loading broken
 Requestors: mg13@sanger.ac.uk
 Owner: gb10
 Resolved: Fri Dec 11 08:47:08 2015
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
+ticket/510987
+id: ticket/510987
+Queue: zmap
+Subject: Zmap has now crashed twice
+Requestors: erb@sanger.ac.uk
+Owner: edgrif
+Resolved: Thu Jan 21 16:07:33 2016
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 

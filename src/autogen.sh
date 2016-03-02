@@ -62,13 +62,13 @@ function fetch_lib
 
     git clone $3 $1 $tmp_dir || zmap_message_exit "could not clone $1 into $PWD/$tmp_dir"
 
-    cp -rf ./$tmp_dir/* ./$2
+    # Copy the entire contents of the temp directory to the destination directory. Note that 
+    # the dot on the end of the source directory is essential for including hidden files. We
+    # need to include the hidden .git directory so that we can determine the correct git version
+    # number for the library.
+    cp -rf ./$tmp_dir/. ./$2
 
     rm -rf ./$tmp_dir
-
-    # SHOULD WE BE DOING THIS ????? NOT TOO SURE....
-    # Make sure the placeholder files (.gitignore, README) are their original zmap versions
-    #git checkout ./$2/
 
     zmap_message_out "Finished cloning $1 into $2"
 
@@ -206,7 +206,7 @@ while getopts ":adefghinuvz" opt ; do
 	z  ) install[$aceconn_key]='no'
              install[$ensc_core_key]='no'
              install[$gb_tools_key]='yes'
-             install[$htslib_key]='yes'
+             install[$htslib_key]='no'
              install[$zeromq_key]='no' ;;
 	\? ) zmap_message_exit "Bad arg flag: $usage" ;;
     esac
@@ -279,13 +279,13 @@ for i in "${!install[@]}"
 	
       fi ;;
 
-      # We must have htslib (currently) or we fail.
-      $htslib_key )
-      if [[ ! -f "${dir[$i]}/${test_file[$i]}" ]] ; then
-
-          zmap_message_exit "Aborting.....htslib is not available so ZMap cannot be built."
-
-      fi ;;
+#      # We must have htslib (currently) or we fail.
+#      $htslib_key )
+#      if [[ ! -f "${dir[$i]}/${test_file[$i]}" ]] ; then
+#
+#          zmap_message_exit "Aborting.....htslib is not available so ZMap cannot be built."
+#
+#      fi ;;
 
   #    # We must have zeromq (currently) or we fail.
   #    $zeromq_key )

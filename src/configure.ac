@@ -32,7 +32,7 @@ AC_PROG_CPP
 AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
-AC_PROG_RANLIB
+
 
 AC_PATH_PROGS(PERL, perl perl5)
 
@@ -58,9 +58,16 @@ AX_CXX_COMPILE_STDCXX_0X()
 #
 AM_CONDITIONAL([USE_ACECONN], [ test -f "$srcdir/AceConn/configure.ac" ])
 AM_COND_IF([USE_ACECONN],
+           [ echo 'Aceconn is defined !!!' ])
+AM_COND_IF([USE_ACECONN],
            [AC_DEFINE([USE_ACECONN], [1], [AceConn interface is available.])])
 AM_COND_IF([USE_ACECONN],
            [AC_SUBST([USE_ACECONN], [use_aceconn])])
+
+
+
+
+
 
 # Check for ensembl
 #
@@ -278,25 +285,15 @@ AC_ENABLE_STATIC
 AC_PROG_CXXCPP
 AC_PROG_CXX
 
-
 AM_PROG_CC_C_O
 
-#AC_PROG_CC
-
-AC_PROG_LIBTOOL
-
-
+LT_INIT
+LT_LANG([C++])
 
 
 # Tell make to use the ustar tar format as this allows file paths longer than 99 chars.
 #
 AM_INIT_AUTOMAKE([tar-ustar])
-
-
-#AC_LANG(C)
-#AC_LANG([C++])
-
-
 
 
 

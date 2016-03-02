@@ -57,6 +57,8 @@ GtkWidget *zMapAppGetSequenceView(ZMapAppGetSequenceViewCB user_func, gpointer u
                                   ZMapFeatureSequenceMap sequence_map, gboolean display_sequence) ;
 GtkWidget *zMapAppCreateSource(ZMapFeatureSequenceMap sequence_map, 
                                ZMapAppCreateSourceCB user_func, gpointer user_data) ;
+GtkWidget *zMapAppEditSource(ZMapFeatureSequenceMap sequence_map, ZMapConfigSource source,
+                             ZMapAppCreateSourceCB user_func, gpointer user_data) ;
 GtkWidget *zMapCreateSequenceViewWidg(ZMapAppGetSequenceViewCB user_func, gpointer user_data,
 				      ZMapFeatureSequenceMap sequence_map, gboolean display_sequence) ;
 void zMapAppMergeSequenceName(ZMapFeatureSequenceMap seq_map_inout, const char *sequence_name, 

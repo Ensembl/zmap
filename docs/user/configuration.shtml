@@ -242,11 +242,15 @@ clearly terminated. </td></tr>
 <tr>
 <th>"source" </th><td>String </td><td>"" </td><td>A list of data sources to use to request feature data.  </td></tr>
 <tr>
-
 <th>"navigatorsets" </th><td>String </td><td>"" </td><td>A list of feature sets to use in a navigator window.  </td></tr>
 <tr>
 <tr>
 <th>"columns" </th><td>String </td><td>""</td><td>If specified this defines the left to right display order of feature columns on the screen. Featuresets are mapped into columns (by default 1-1).  By convention strand specific columns appear to the left of '3-Frame' and the columns are sorted to the left or right (in this order on each side) of '3-Frame' depending on whether they appear in this list before or after '3-Frame' Reverse strand columns appera left of the strand separator, again in this order.  If not specified, column ordering is defined by the ordering of the data source definitions and the featuresets suppoerted by them.  If only a fraction of the supported columns are defined in this option any remaining ones are displayed on the right.
+<tr>
+<th>"curl-debug" </th><td>Boolean </td><td>false </td><td>Set to 'true' to enable debug output from curl.  </td></tr>
+<tr>
+<th>"ipresolve" </th><td>String </td><td>"" </td><td>Set to 'ipv4' or 'ipv6' to force curl to use that option.  </td></tr>
+
 </td></tr>
 <tr>
 </tbody></table>

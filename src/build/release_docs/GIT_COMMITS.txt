@@ -1,6 +1,9 @@
 
 Git commits for  from commit "production" until commit "release/2.5.0"
 
+cea05aa 2016-01-22 Add new config to docs - DOC
+e661e40 2016-01-22 Add libcurl verbose and ipresolve config options - NEW FEATURE 'libcurl'
+c5ad055 2016-01-19 Fix problems using localhost for ensembl db - RT 510659
 5c0a8c7 2015-12-10 Fix bug with otter sources not loading - REGRESSION FIX
 9387976 2015-12-10 Remove unused RT_Test and server directories. NEW FEATURE
 eeba5e7 2015-12-10 Removed foocanvas, moved to it's own zmap_foocanvas respository. NEW FEATURE

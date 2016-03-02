@@ -43,7 +43,10 @@
 #include <zmapDataSource_P.hpp>
 
 static gboolean read_line_gio(GIOChannel * const gio_channel,  GString * const str ) ;
+
+#ifdef USE_HTSLIB
 static gboolean read_line_hts(ZMapDataSourceHTSFile const hts_file, GString * const str ) ;
+#endif
 
 /*
  * The SO terms that contain the string "read" are as follows:
@@ -106,6 +109,7 @@ ZMapDataSource zMapDataSourceCreate(const char * const file_name, GError **error
             }
         }
     }
+#ifdef USE_HTSLIB
   else if (source_type == ZMAPDATASOURCE_TYPE_HTS)
     {
       ZMapDataSourceHTSFile file = NULL ;
@@ -140,6 +144,7 @@ ZMapDataSource zMapDataSourceCreate(const char * const file_name, GError **error
             }
         }
     }
+#endif
 
   if (error)
     g_propagate_error(error_out, error) ;
@@ -186,6 +191,7 @@ gboolean zMapDataSourceIsOpen(ZMapDataSource const source)
           result = TRUE ;
         }
     }
+#ifdef USE_HTSLIB
   else if (source && source->type == ZMAPDATASOURCE_TYPE_HTS)
     {
       htsFile *hts_file = ((ZMapDataSourceHTSFile) source)->hts_file ;
@@ -194,6 +200,7 @@ gboolean zMapDataSourceIsOpen(ZMapDataSource const source)
           result = TRUE ;
         }
     }
+#endif
 
   return result ;
 }
@@ -226,6 +233,7 @@ gboolean zMapDataSourceDestroy( ZMapDataSource *p_data_source )
           zMapLogCritical("Could not close GIOChannel in zMapDataSourceDestroy(), %s", "") ;
         }
     }
+#ifdef USE_HTSLIB
   else if (data_source->type == ZMAPDATASOURCE_TYPE_HTS)
     {
       ZMapDataSourceHTSFile file = (ZMapDataSourceHTSFile) data_source ;
@@ -247,6 +255,7 @@ gboolean zMapDataSourceDestroy( ZMapDataSource *p_data_source )
           result = TRUE ;
         }
     }
+#endif
 
   /*
    * If we suceeded in closing the stored
@@ -294,6 +303,7 @@ static gboolean read_line_gio(GIOChannel * const pChannel,  GString * const str 
   return result ;
 }
 
+#ifdef USE_HTSLIB
 /*
  * Read a record from a HTS file and turn it into GFFv3.
  */
@@ -431,6 +441,7 @@ static gboolean read_line_hts(ZMapDataSourceHTSFile const hts_file, GString * co
 
   return result ;
 }
+#endif
 
 
 /*
@@ -453,11 +464,13 @@ gboolean zMapDataSourceReadLine (ZMapDataSource const data_source , GString * co
       ZMapDataSourceGIO file = (ZMapDataSourceGIO) data_source ;
       result = read_line_gio(file->io_channel, pStr ) ;
     }
+#ifdef USE_HTSLIB
   else if (data_source->type == ZMAPDATASOURCE_TYPE_HTS)
     {
       ZMapDataSourceHTSFile file = (ZMapDataSourceHTSFile) data_source ;
       result = read_line_hts(file, pStr ) ;
     }
+#endif
 
   return result ;
 }
@@ -495,11 +508,13 @@ gboolean zMapDataSourceGetGFFVersion(ZMapDataSource const data_source, int * con
       if (pError)
         g_error_free(pError) ;
     }
+#ifdef USE_HTSLIB
   else if (data_source->type == ZMAPDATASOURCE_TYPE_HTS)
     {
       *p_out_val = ZMAPGFF_VERSION_3 ;
       result = TRUE ;
     }
+#endif
 
   return result ;
 }
@@ -543,6 +558,7 @@ ZMapDataSourceType zMapDataSourceTypeFromFilename(const char * const file_name )
         {
           type = ZMAPDATASOURCE_TYPE_GIO ;
         }
+#ifdef USE_HTSLIB
       else if (!g_ascii_strcasecmp(pos, ext02))
         {
           type = ZMAPDATASOURCE_TYPE_HTS ;
@@ -555,12 +571,14 @@ ZMapDataSourceType zMapDataSourceTypeFromFilename(const char * const file_name )
         {
           type = ZMAPDATASOURCE_TYPE_HTS ;
         }
+#endif
     }
 
   return type ;
 }
 
 
+#ifdef USE_HTSLIB
 /* Read the HTS file header and look for the sequence name data.
  * This assumes that we have already opened the file and called
  * hts_hdr = sam_hdr_read() ;
@@ -601,3 +619,4 @@ gboolean zMapDataSourceReadHTSHeader(ZMapDataSource source, const char *sequence
 
   return result ;
 }
+#endif
