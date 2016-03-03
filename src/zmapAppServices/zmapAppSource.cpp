@@ -339,8 +339,8 @@ static void updatePanelFromSource(MainFrame main_data, ZMapConfigSource source)
        * added in because of the flag) from the featuresets list and set the flag instead.
        * Also extract the default columns list if it's there because we probably added this
        * in as well. */
-      const int len_all = strlen(DEFAULT_COLUMNS_LIST_ALL) ;
-      const int len_default = strlen(DEFAULT_COLUMNS_LIST) ;
+      const unsigned int len_all = strlen(DEFAULT_COLUMNS_LIST_ALL) ;
+      const unsigned int len_default = strlen(DEFAULT_COLUMNS_LIST) ;
 
       if (featuresets && 
           strlen(featuresets) >= len_all && 

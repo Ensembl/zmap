@@ -353,21 +353,33 @@ void zMapLogTime(int what, int how, long data, const char *string_arg)
   return ;
 }
 
+const char *zMapLogGetLogFilePath(void)
+{
+  const char* log_file_path = NULL ;
+  ZMapLog log = log_G ;
+
+  if (log)
+    log_file_path = log->active_handler.log_path ;
+
+  return log_file_path ;
+}
+
+
 int zMapLogFileSize(void)
 {
   int size = -1 ;
   ZMapLog log = log_G ;
-  struct stat file_stats ;
 
-  /* zMapAssert(log) ; */
-  if (!log)
-    return size ;
-
-  if (log->log_to_file)
+  if (log)
     {
-      if (g_stat(log->active_handler.log_path, &file_stats) == 0)
+      struct stat file_stats ;
+
+      if (log->log_to_file)
         {
-          size = file_stats.st_size ;
+          if (g_stat(log->active_handler.log_path, &file_stats) == 0)
+            {
+              size = file_stats.st_size ;
+            }
         }
     }
 
