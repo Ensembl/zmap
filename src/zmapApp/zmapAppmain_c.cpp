@@ -241,16 +241,25 @@ int main(int argc, char *argv[])
     {
       zMapWriteStartMsg() ;
 
-      char *msg = g_strdup_printf("Logging to file: \"'%s\"",
+      char *msg = g_strdup_printf("Logging to file \"%s\"",
                                   (zMapLogGetLogFilePath() ? zMapLogGetLogFilePath() : "stdout/stderr")) ;
       zmapAppConsoleLogMsg(verbose_startup_logging_G, INIT_FORMAT, msg) ;
       g_free(msg) ;
     }
 
-  zmapAppConsoleLogMsg(app_context->verbose_startup_logging, INIT_FORMAT, "Reading configuration file.") ;
+
 
   /* Get general zmap configuration from config. file. */
-  getConfiguration(app_context, config_file) ;
+  {
+    char *msg = g_strdup_printf("Reading configuration file \"%s\"", config_file) ;
+    
+    zmapAppConsoleLogMsg(app_context->verbose_startup_logging, INIT_FORMAT, msg) ;
+
+    getConfiguration(app_context, config_file) ;
+
+    g_free(msg) ;
+  }
+
 
 
   {
@@ -688,27 +697,31 @@ static gboolean configureLog(char *config_file, char *config_dir, GError **error
               char *full_dir ;
 
               full_dir = zMapGetDir(tmp_string, TRUE, TRUE) ;
+
               logfile_path = zMapGetFile(full_dir, log_name, TRUE, "rw", &g_error) ;
-              g_free(full_dir) ;
 
               if (g_error)
                 {
-                  char *msg = g_strdup_printf("Cannot use configured directory '%s' for log file: %s", config_dir, g_error->message) ;
+                  char *msg = g_strdup_printf("Cannot use configured directory '%s' for log file: %s",
+                                              config_dir, g_error->message) ;
                   zmapAppConsoleLogMsg(verbose_startup_logging_G, INIT_FORMAT, msg) ;
                   g_free(msg) ;
 
                   g_error_free(g_error) ;
                   g_error = NULL ;
                 }
+
+              g_free(full_dir) ;
             }
 
 
-          /* user specified file, default to zmap.log */
+          /* user specified file use that, otherwise we default to "zmap.log" */
           if (zMapConfigIniContextGetString(context, ZMAPSTANZA_LOG_CONFIG,
                                             ZMAPSTANZA_LOG_CONFIG,
                                             ZMAPSTANZA_LOG_FILENAME, &tmp_string))
             {
               g_free(log_name) ;
+
               log_name = tmp_string;
             }
 
@@ -742,9 +755,6 @@ static gboolean configureLog(char *config_file, char *config_dir, GError **error
           g_free(full_dir) ;
         }
 
-      /* all our strings need freeing */
-      g_free(log_name) ;
-
       if (logfile_path)
         {
           result = zMapLogConfigure(logging, log_to_file,
@@ -759,6 +769,10 @@ static gboolean configureLog(char *config_file, char *config_dir, GError **error
           result = FALSE ;
           g_propagate_error(error, g_error) ;
         }
+
+      // Tidy up.
+      g_free(log_name) ;
+
     }
 
   return result ;
