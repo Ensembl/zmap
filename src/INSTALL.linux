@@ -50,6 +50,7 @@ in this directory.
 
 
 Tips
+----
 
 You may need to run make install using sudo if you do not have root privileges,
 i.e.:
