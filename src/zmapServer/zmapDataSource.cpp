@@ -31,9 +31,12 @@
  *-------------------------------------------------------------------
  */
 #include <ZMap/zmap.hpp>
+
+#include <map>
 #include <stdlib.h>
 #include <string.h>
 #include <glib.h>
+
 #include <ZMap/zmapUtils.hpp>
 #include <ZMap/zmapGLibUtils.hpp>
 #include <ZMap/zmapConfigIni.hpp>
@@ -41,6 +44,9 @@
 #include <ZMap/zmapGFF.hpp>
 #include <ZMap/zmapServerProtocol.hpp>
 #include <zmapDataSource_P.hpp>
+
+using namespace std ;
+
 
 static gboolean read_line_gio(GIOChannel * const gio_channel,  GString * const str ) ;
 
@@ -86,18 +92,19 @@ ZMapDataSource zMapDataSourceCreate(const char * const file_name, GError **error
 {
   static const char * open_mode = "r" ;
   ZMapDataSource data_source = NULL ;
-  ZMapDataSourceType source_type = ZMAPDATASOURCE_TYPE_UNK ;
+  ZMapDataSourceType source_type = ZMapDataSourceType::UNK ;
   GError *error = NULL ;
   zMapReturnValIfFail(file_name && *file_name, data_source ) ;
 
-  source_type = zMapDataSourceTypeFromFilename(file_name) ;
-  if (source_type == ZMAPDATASOURCE_TYPE_GIO)
+  source_type = zMapDataSourceTypeFromFilename(file_name, &error) ;
+
+  if (!error && source_type == ZMapDataSourceType::GIO)
     {
       ZMapDataSourceGIO file = NULL ;
       file = (ZMapDataSourceGIO) g_new0(ZMapDataSourceGIOStruct, 1) ;
       if (file != NULL)
         {
-          file->type = ZMAPDATASOURCE_TYPE_GIO ;
+          file->type = ZMapDataSourceType::GIO ;
           file->io_channel = g_io_channel_new_file(file_name, open_mode, &error) ;
           if (file->io_channel != NULL && !error)
             {
@@ -110,13 +117,13 @@ ZMapDataSource zMapDataSourceCreate(const char * const file_name, GError **error
         }
     }
 #ifdef USE_HTSLIB
-  else if (source_type == ZMAPDATASOURCE_TYPE_HTS)
+  else if (!error && source_type == ZMapDataSourceType::HTS)
     {
       ZMapDataSourceHTSFile file = NULL ;
       file = (ZMapDataSourceHTSFile) g_new0(ZMapDataSourceHTSFileStruct, 1) ;
       if (file != NULL)
         {
-          file->type = ZMAPDATASOURCE_TYPE_HTS ;
+          file->type = ZMapDataSourceType::HTS ;
           file->hts_file = hts_open(file_name, open_mode);
 
           if (file->hts_file)
@@ -162,7 +169,7 @@ ZMapDataSource zMapDataSourceCreateFromGIO(GIOChannel * const io_channel)
   file = (ZMapDataSourceGIO) g_new0(ZMapDataSourceGIOStruct, 1) ;
   if (file != NULL)
     {
-      file->type = ZMAPDATASOURCE_TYPE_GIO ;
+      file->type = ZMapDataSourceType::GIO ;
       file->io_channel = io_channel ;
       if (file->io_channel != NULL)
         {
@@ -183,7 +190,7 @@ ZMapDataSource zMapDataSourceCreateFromGIO(GIOChannel * const io_channel)
 gboolean zMapDataSourceIsOpen(ZMapDataSource const source)
 {
   gboolean result = FALSE ;
-  if (source && source->type == ZMAPDATASOURCE_TYPE_GIO)
+  if (source && source->type == ZMapDataSourceType::GIO)
     {
       GIOChannel *io_channel = ((ZMapDataSourceGIO) source)->io_channel ;
       if (io_channel)
@@ -192,7 +199,7 @@ gboolean zMapDataSourceIsOpen(ZMapDataSource const source)
         }
     }
 #ifdef USE_HTSLIB
-  else if (source && source->type == ZMAPDATASOURCE_TYPE_HTS)
+  else if (source && source->type == ZMapDataSourceType::HTS)
     {
       htsFile *hts_file = ((ZMapDataSourceHTSFile) source)->hts_file ;
       if (hts_file)
@@ -215,7 +222,7 @@ gboolean zMapDataSourceDestroy( ZMapDataSource *p_data_source )
   zMapReturnValIfFail(p_data_source && *p_data_source , result ) ;
   ZMapDataSource data_source = *p_data_source ;
 
-  if (data_source->type == ZMAPDATASOURCE_TYPE_GIO)
+  if (data_source->type == ZMapDataSourceType::GIO)
     {
       GIOStatus gio_status = G_IO_STATUS_NORMAL ;
       GError *err = NULL ;
@@ -234,7 +241,7 @@ gboolean zMapDataSourceDestroy( ZMapDataSource *p_data_source )
         }
     }
 #ifdef USE_HTSLIB
-  else if (data_source->type == ZMAPDATASOURCE_TYPE_HTS)
+  else if (data_source->type == ZMapDataSourceType::HTS)
     {
       ZMapDataSourceHTSFile file = (ZMapDataSourceHTSFile) data_source ;
       if (file)
@@ -275,7 +282,7 @@ gboolean zMapDataSourceDestroy( ZMapDataSource *p_data_source )
  */
 ZMapDataSourceType zMapDataSourceGetType(ZMapDataSource data_source )
 {
-  zMapReturnValIfFail(data_source, ZMAPDATASOURCE_TYPE_UNK ) ;
+  zMapReturnValIfFail(data_source, ZMapDataSourceType::UNK ) ;
   return data_source->type ;
 }
 
@@ -458,14 +465,14 @@ static gboolean read_line_hts(ZMapDataSourceHTSFile const hts_file, GString * co
 gboolean zMapDataSourceReadLine (ZMapDataSource const data_source , GString * const pStr )
 {
   gboolean result = FALSE ;
-  zMapReturnValIfFail(data_source && (data_source->type != ZMAPDATASOURCE_TYPE_UNK) && pStr, result ) ;
-  if (data_source->type == ZMAPDATASOURCE_TYPE_GIO)
+  zMapReturnValIfFail(data_source && (data_source->type != ZMapDataSourceType::UNK) && pStr, result ) ;
+  if (data_source->type == ZMapDataSourceType::GIO)
     {
       ZMapDataSourceGIO file = (ZMapDataSourceGIO) data_source ;
       result = read_line_gio(file->io_channel, pStr ) ;
     }
 #ifdef USE_HTSLIB
-  else if (data_source->type == ZMAPDATASOURCE_TYPE_HTS)
+  else if (data_source->type == ZMapDataSourceType::HTS)
     {
       ZMapDataSourceHTSFile file = (ZMapDataSourceHTSFile) data_source ;
       result = read_line_hts(file, pStr ) ;
@@ -482,13 +489,13 @@ gboolean zMapDataSourceGetGFFVersion(ZMapDataSource const data_source, int * con
 {
   int out_val = ZMAPGFF_VERSION_UNKNOWN ;
   gboolean result = FALSE ;
-  zMapReturnValIfFail(data_source && (data_source->type != ZMAPDATASOURCE_TYPE_UNK) && p_out_val, result ) ;
+  zMapReturnValIfFail(data_source && (data_source->type != ZMapDataSourceType::UNK) && p_out_val, result ) ;
 
   /*
    * We treat two cases. The HTS case must always return ZMAPGFF_VERSION_3
    * since we are converting HTS record data to GFF later on as it is read.
    */
-  if (data_source->type == ZMAPDATASOURCE_TYPE_GIO)
+  if (data_source->type == ZMapDataSourceType::GIO)
     {
       ZMapDataSourceGIO file = (ZMapDataSourceGIO) data_source ;
       GString *pString = g_string_new(NULL) ;
@@ -509,7 +516,7 @@ gboolean zMapDataSourceGetGFFVersion(ZMapDataSource const data_source, int * con
         g_error_free(pError) ;
     }
 #ifdef USE_HTSLIB
-  else if (data_source->type == ZMAPDATASOURCE_TYPE_HTS)
+  else if (data_source->type == ZMapDataSourceType::HTS)
     {
       *p_out_val = ZMAPGFF_VERSION_3 ;
       result = TRUE ;
@@ -523,20 +530,27 @@ gboolean zMapDataSourceGetGFFVersion(ZMapDataSource const data_source, int * con
  * Inspect the filename string (might include the path on the front, but this is
  * (ignored) for the extension to determine type:
  *
- *       *.gff                            ZMAPDATASOURCE_TYPE_GIO
- *       *.[sam,bam,cram]                 ZMAPDATASOURCE_TYPE_HTS
- *       *.<everything_else>              ZMAPDATASOURCE_TYPE_UNK
+ *       *.gff                            ZMapDataSourceType::GIO
+ *       *.[sam,bam,cram]                 ZMapDataSourceType::HTS
+ *       *.<everything_else>              ZMapDataSourceType::UNK
  */
-ZMapDataSourceType zMapDataSourceTypeFromFilename(const char * const file_name )
+ZMapDataSourceType zMapDataSourceTypeFromFilename(const char * const file_name, GError **error_out)
 {
-  static const char
-    dot = '.',
-    *ext01 = "gff",
-    *ext02 = "sam",
-    *ext03 = "bam",
-    *ext04 = "cram" ;
-  ZMapDataSourceType type = ZMAPDATASOURCE_TYPE_UNK ;
-  char * pos = NULL, *tmp = (char*) file_name ;
+  static const map<string, ZMapDataSourceType> file_extensions = 
+    {
+       {"gff",  ZMapDataSourceType::GIO}
+#ifdef USE_HTSLIB
+      ,{"sam",  ZMapDataSourceType::HTS}
+      ,{"bam",  ZMapDataSourceType::HTS}
+      ,{"cram", ZMapDataSourceType::HTS}
+#endif
+    };
+
+  static const char dot = '.' ;
+  ZMapDataSourceType type = ZMapDataSourceType::UNK ;
+  GError *error = NULL ;
+  char * pos = NULL ;
+  char *tmp = (char*) file_name ;
   zMapReturnValIfFail( file_name && *file_name, type ) ;
 
   /*
@@ -554,25 +568,33 @@ ZMapDataSourceType zMapDataSourceTypeFromFilename(const char * const file_name )
    */
   if (pos)
     {
-      if (!g_ascii_strcasecmp(pos, ext01))
+      string file_ext(pos) ;
+      auto found_iter = file_extensions.find(file_ext) ;
+      
+      if (found_iter != file_extensions.end())
         {
-          type = ZMAPDATASOURCE_TYPE_GIO ;
+          type = found_iter->second ;
         }
-#ifdef USE_HTSLIB
-      else if (!g_ascii_strcasecmp(pos, ext02))
+      else
         {
-          type = ZMAPDATASOURCE_TYPE_HTS ;
+          string expected("");
+          for (auto iter = file_extensions.begin(); iter != file_extensions.end(); ++iter)
+            expected += " ." + iter->first ;
+
+          g_set_error(&error, g_quark_from_string("ZMap"), 99,
+                      "Unrecognised file extension .'%s'. Expected one of:%s", 
+                      file_ext.c_str(), expected.c_str()) ;
         }
-      else if (!g_ascii_strcasecmp(pos, ext03))
-        {
-          type = ZMAPDATASOURCE_TYPE_HTS ;
-        }
-      else if (!g_ascii_strcasecmp(pos, ext04))
-        {
-          type = ZMAPDATASOURCE_TYPE_HTS ;
-        }
-#endif
     }
+  else
+    {
+      g_set_error(&error, g_quark_from_string("ZMap"), 99,
+                  "File name does not have an extension so cannot determine type: '%s'",
+                  file_name) ;
+    }
+
+  if (error)
+    g_propagate_error(error_out, error) ;
 
   return type ;
 }

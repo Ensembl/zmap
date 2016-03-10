@@ -40,15 +40,7 @@ typedef struct ZMapDataSourceStruct_ *ZMapDataSource ;
 /*
  * Enumeration to represent different source types.
  */
-typedef enum
-  {
-    ZMAPDATASOURCE_TYPE_GIO,
-    ZMAPDATASOURCE_TYPE_HTS,
-    ZMAPDATASOURCE_TYPE_UNK
-  } ZMapDataSourceType ;
-#define ZMAPDATASOURCE_TYPE_NUMBER ZMAPDATASOURCE_TYPE_UNK
-
-
+enum class ZMapDataSourceType {GIO, HTS, UNK} ;
 
 
 typedef struct ZMapDataSourceStruct_
@@ -75,7 +67,7 @@ ZMapDataSourceType zMapDataSourceGetType(ZMapDataSource source ) ;
 gboolean zMapDataSourceReadHTSHeader(ZMapDataSource source, const char *sequence) ;
 gboolean zMapDataSourceReadLine (ZMapDataSource const data_pipe , GString * const str) ;
 gboolean zMapDataSourceGetGFFVersion(ZMapDataSource const source, int * const out_val) ;
-ZMapDataSourceType zMapDataSourceTypeFromFilename(const char * const) ;
+ZMapDataSourceType zMapDataSourceTypeFromFilename(const char * const, GError **error_out = NULL) ;
 
 
 
