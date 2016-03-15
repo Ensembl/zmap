@@ -1508,7 +1508,7 @@ static ZMapGUIMenuItem makeMenuPfetchOps(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {ZMAPGUI_MENU_NORMAL, "Pfetch this feature", ITEM_MENU_PFETCH,  itemMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Fetch DB Entry", ITEM_MENU_PFETCH,  itemMenuCB, NULL},
       {ZMAPGUI_MENU_NONE, NULL,                    ITEM_MENU_INVALID, NULL,       NULL}
     } ;
 
