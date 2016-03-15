@@ -100,12 +100,6 @@ gboolean zMapCanvasFeaturesetDrawBoxMacro(ZMapWindowFeaturesetItem featureset,
 void zMapCanvasFeaturesetDrawSpliceHighlights(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
                                               GdkDrawable *drawable, double x1, double x2) ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-GdkColor *zMapCanvasDrawGetColinearColour(int end_1, int start_2, int threshold) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 gboolean zMapCanvasDrawBoxGapped(GdkDrawable *drawable,
                                  ZMapCanvasDrawColinearColours colinear_colours,
                                  int fill_set, int outline_set,
@@ -115,11 +109,6 @@ gboolean zMapCanvasDrawBoxGapped(GdkDrawable *drawable,
                                  AlignGap gapped) ;
 
 ZMapCanvasDrawColinearColours zMapCanvasDrawAllocColinearColours(GdkColormap *colour_map) ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-GdkColor *zMapCanvasDrawGetColinearColour(ZMapCanvasDrawColinearColours colinear_colours, int end_1, int start_2, int threshold) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 ColinearityType zMapCanvasDrawGetColinearity(int end_1, int start_2, int threshold) ;
 GdkColor *zMapCanvasDrawGetColinearGdkColor(ZMapCanvasDrawColinearColours colinear_colours, ColinearityType ct) ;
 void zMapCanvasDrawFreeColinearColours(ZMapCanvasDrawColinearColours colinear_colours) ;
