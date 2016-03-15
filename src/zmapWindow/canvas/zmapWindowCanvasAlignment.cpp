@@ -148,47 +148,6 @@ GList* zMapWindowCanvasAlignmentGetAllMatchBlocks(FooCanvasItem *item)
 }
 
 
-/* given an alignment sub-feature return the colour or the colinearity line to the next sub-feature */
-static GdkColor *getFwdColinearColour(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasAlignment align)
-{
-  GdkColor *colinear_colour = NULL ;
-  ZMapWindowCanvasAlignment next = NULL ;
-  int start2 = 0, end1 = 0;
-  int threshold = 0 ;
-  ZMapHomol h1,h2;
-
-  zMapReturnValIfFail(align && align->feature.feature, NULL) ;
-
-  next = (ZMapWindowCanvasAlignment) align->feature.right ;
-
-  /* apparently this works thro revcomp:
-   *
-   * "When match is from reverse strand of homol then homol blocks are in reversed order
-   * but coords are still _forwards_. Revcomping reverses order of homol blocks
-   * but as before coords are still forwards."
-   */
-  if (align->feature.feature->strand == align->feature.feature->feature.homol.strand)
-    {
-      h1 = &align->feature.feature->feature.homol;
-      h2 = &next->feature.feature->feature.homol;
-    }
-  else
-    {
-      h2 = &align->feature.feature->feature.homol;
-      h1 = &next->feature.feature->feature.homol;
-    }
-
-  end1 = h1->y2;
-  start2 = h2->y1;
-  threshold = (int)zMapStyleGetWithinAlignError(*align->feature.feature->style) ;
-
-  colinear_colour = zMapCanvasDrawGetColinearColour(ZMAP_WINDOW_FEATURESET_ITEM(featureset)->colinear_colours,
-                                                    end1, start2, threshold) ;
-
-  return colinear_colour ;
-}
-
-
 static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featureset,
                                                   ZMapWindowCanvasFeature feature,
                                                   GdkDrawable *drawable,
@@ -1102,9 +1061,11 @@ static AlignGap makeGapped(ZMapFeature feature, double offset, FooCanvasItem *fo
   GArray *gaps ;
   int n ;
   int i ;
+  ZMapAlignBlock last_ab ;
   AlignGap last_box, last_ag ;
   int prev_q2, next_q1 ;
   int threshold ;
+  bool align_same_strand ;
 
   zMapReturnValIfFail(foo && feature, NULL) ;
 
@@ -1112,10 +1073,15 @@ static AlignGap makeGapped(ZMapFeature feature, double offset, FooCanvasItem *fo
 
   threshold = (int)zMapStyleGetWithinAlignError(*(feature->style)) ;
 
+  if (feature->strand == feature->feature.homol.strand)
+    align_same_strand = true ;
+  else
+    align_same_strand = false ;
+
   gaps = align_gaps ;
   n = align_gaps->len ;
 
-  for (i = 0, prev_q2 = 0, next_q1 = 0, last_box = NULL, last_ag = NULL ; i < n ; i++)
+  for (i = 0, prev_q2 = 0, next_q1 = 0, last_ab = NULL, last_box = NULL, last_ag = NULL ; i < n ; i++)
     {
       AlignGap ag = NULL ;
       ZMapAlignBlock ab ;
@@ -1182,9 +1148,30 @@ static AlignGap makeGapped(ZMapFeature feature, double offset, FooCanvasItem *fo
 
               if (ag->type == GAP_VLINE_INTRON)
                 {
+                  int prev_end, curr_start ;
+
                   next_q1 = ab->q1 ;
 
-                  ag->colinearity = zMapCanvasDrawGetColinearity(prev_q2, next_q1, threshold) ;
+                  if (align_same_strand)
+                    {
+                      prev_end = last_ab->q2 ;
+                      curr_start = ab->q1 ;
+                    }
+                  else
+                    {
+                      prev_end = ab->q2 ;
+                      curr_start = last_ab->q1 ;
+                    }
+                  
+                  // zMapCanvasDrawGetColinearity() IS RUBBISH AND NEEDS TO BE REPLACED.....
+                  ag->colinearity = zMapCanvasDrawGetColinearity(prev_end, curr_start, threshold) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+                  if (ag->colinearity != COLINEAR_PERFECT)
+                    zMapLogMessage("*** Calling zMapCanvasDrawGetColinearity()"
+                                   "with prev_end = %d\tcurr_start = %d",
+                                   prev_end, curr_start) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
                 }
 
               last_ag = ag ;
@@ -1216,11 +1203,64 @@ static AlignGap makeGapped(ZMapFeature feature, double offset, FooCanvasItem *fo
         }
 
       prev_q2 = ab->q2 ;
+
+      last_ab = ab ;
     }
 
   return display_ag ;
 }
 
 
+
+
+/* given an alignment sub-feature return the colour or the colinearity line to the next sub-feature */
+static GdkColor *getFwdColinearColour(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasAlignment align)
+{
+  GdkColor *colinear_colour = NULL ;
+  ZMapWindowCanvasAlignment next = NULL ;
+  int start2 = 0, end1 = 0;
+  int threshold = 0 ;
+  ZMapHomol h1,h2;
+
+  zMapReturnValIfFail(align && align->feature.feature, NULL) ;
+
+  next = (ZMapWindowCanvasAlignment) align->feature.right ;
+
+  /* apparently this works thro revcomp:
+   *
+   * "When match is from reverse strand of homol then homol blocks are in reversed order
+   * but coords are still _forwards_. Revcomping reverses order of homol blocks
+   * but as before coords are still forwards."
+   */
+  if (align->feature.feature->strand == align->feature.feature->feature.homol.strand)
+    {
+      h1 = &align->feature.feature->feature.homol;
+      h2 = &next->feature.feature->feature.homol;
+    }
+  else
+    {
+      h2 = &align->feature.feature->feature.homol;
+      h1 = &next->feature.feature->feature.homol;
+    }
+
+  end1 = h1->y2;
+  start2 = h2->y1;
+
+  threshold = (int)zMapStyleGetWithinAlignError(*align->feature.feature->style) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  colinear_colour = zMapCanvasDrawGetColinearColour(ZMAP_WINDOW_FEATURESET_ITEM(featureset)->colinear_colours,
+                                                    end1, start2, threshold) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  ColinearityType ct ;
+
+  ct = zMapCanvasDrawGetColinearity(end1, start2, threshold) ;
+
+  colinear_colour = zMapCanvasDrawGetColinearGdkColor(ZMAP_WINDOW_FEATURESET_ITEM(featureset)->colinear_colours, ct) ;
+
+
+  return colinear_colour ;
+}
 
 
