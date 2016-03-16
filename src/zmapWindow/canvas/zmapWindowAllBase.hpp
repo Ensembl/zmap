@@ -34,12 +34,28 @@
 
 #include <libzmapfoocanvas/libfoocanvas.h>
 
+
+// SHOULD THESE GO INTO THE ALIGNMENT CODE...PERHAPS NOT, MIGHT BE USED IN
+// TRANSCRIPT CODE IN THE END.
+
 /* currently needed in alignmentfeatuer and featureset, if we stop using it in
  * alignment then it should go to the featureset internal header. */
 /* Colours for matches to indicate degrees of colinearity. */
-#define ZMAP_WINDOW_MATCH_PERFECT       "green"
-#define ZMAP_WINDOW_MATCH_COLINEAR      "orange"
 #define ZMAP_WINDOW_MATCH_NOTCOLINEAR   "red"
+#define ZMAP_WINDOW_MATCH_COLINEAR      "orange"
+#define ZMAP_WINDOW_MATCH_PERFECT       "green"
+
+
+/* Used to specify the degree of colinearity between two alignment blocks. */
+typedef enum
+  {
+    COLINEAR_INVALID,
+    COLINEAR_NOT,                                          /* blocks not colinear. */
+    COLINEAR_IMPERFECT,                                    /* blocks colinear but not contiguous. */
+    COLINEAR_PERFECT,                                      /* blocks colinear and contiguous. */
+    COLINEARITY_N_TYPE
+  } ColinearityType ;
+
 
 
 /*

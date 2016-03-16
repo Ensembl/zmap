@@ -32,6 +32,8 @@
 #ifndef ZMAP_CANVAS_ALIGNMENT_H
 #define ZMAP_CANVAS_ALIGNMENT_H
 
+#include <zmapWindowAllBase.hpp>
+
 
 /* Different parts of a gapped alignment. */
 typedef enum

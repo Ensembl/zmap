@@ -43,6 +43,7 @@
 
 #include <ZMap/zmapString.hpp>    /* testing only. */
 
+#include <config.h>
 #include <ZMap/zmapConfigIni.hpp>
 #include <ZMap/zmapConfigStanzaStructs.hpp>
 #include <ZMap/zmapConfigStrings.hpp>
@@ -1305,10 +1306,11 @@ static void importFileCB(gpointer cb_data)
                * - blixem won't work (until it can load bam files directly, or unless the user
                *   has preconfigured the source in the blixem config). */
 #ifdef USE_HTSLIB
-              zMapLogWarning("%s", "Pipe script not available; using htslib") ;
-              server = sequence_map->createFileSource(file_txt, source_txt) ;
+              zMapLogMessage("%s", "Pipe script not available; using htslib") ;
+              server = sequence_map->createFileSource(source_txt, file_txt) ;
 #else
-              zMapLogWarning("%s", "Pipe script not availble.") ;
+              err_msg = "Cannot load features; pipe script not available: " ;
+              err_msg += script_err ;
 #endif
             }
           else

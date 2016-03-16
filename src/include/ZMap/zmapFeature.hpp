@@ -150,16 +150,6 @@ typedef enum
   } ZMapFeatureRangeOverlapType ;
 
 
-/* Used to specify the degree of colinearity between two alignment blocks. */
-typedef enum
-  {
-    COLINEAR_INVALID,
-    COLINEAR_NOT,                                          /* blocks not colinear. */
-    COLINEAR_IMPERFECT,                                    /* blocks colinear but not contiguous. */
-    COLINEAR_PERFECT,                                      /* blocks colinear and contiguous. */
-    COLINEARITY_N_TYPE
-  } ColinearityType ;
-
 /* THIS NEEDS SPLITTING IT'S A CONFUSION OF TYPES....clone ends are completely different from
    splice ends.....sigh... */
 typedef enum {ZMAPBOUNDARY_NONE = 0, ZMAPBOUNDARY_CLONE_END,

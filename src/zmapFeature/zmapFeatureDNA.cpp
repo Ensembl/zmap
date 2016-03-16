@@ -156,7 +156,7 @@ static int dnaApplyVariation(GString *dna_str,
   if (!old_str && !new_str)
     {
       /* Nothing to do ! */
-      zMapWarning("Invalid variation string '%s'\n", variation_str) ;
+      zMapLogWarning("Invalid variation string '%s'\n", variation_str) ;
     }
   else if (!old_str)
     {
@@ -175,7 +175,7 @@ static int dnaApplyVariation(GString *dna_str,
         }
       else
         {
-          zMapWarning("Expected 2-coord position for insertion '%s' but got %d,%d\n",
+          zMapLogWarning("Expected 2-coord position for insertion '%s' but got %d,%d\n",
                       variation_str, start, end) ;
         }
     }
@@ -191,7 +191,7 @@ static int dnaApplyVariation(GString *dna_str,
         }
       else
         {
-          zMapWarning("Expected length for deletion '%s' to be %d but got %d [%d,%d]\n",
+          zMapLogWarning("Expected length for deletion '%s' to be %d but got %d [%d,%d]\n",
                       variation_str, old_len, replacement_len, start, end) ;
         }
     }
@@ -208,7 +208,7 @@ static int dnaApplyVariation(GString *dna_str,
         }
       else
         {
-          zMapWarning("Expected original length for variation to be '%s' to be %d but got %d [%d,%d]\n",
+          zMapLogWarning("Expected original length for variation to be '%s' to be %d but got %d [%d,%d]\n",
                       variation_str, old_len, replacement_len, start, end) ;
         }
     }
@@ -246,7 +246,7 @@ static int zmapFeatureDNAApplyVariation(GString *result_str,
        * or ask the user what they want to do. Disallow for now? */
       if (0)//variationIsMulti(variation_str))
         {
-          zMapWarning("Cannot apply multiple variations to transcript sequence: %s", variation_str) ;
+          zMapLogWarning("Cannot apply multiple variations to transcript sequence: %s", variation_str) ;
         }
       else
         {
@@ -722,7 +722,7 @@ static void fetch_exon_sequence(gpointer exon_data, gpointer user_data)
         }
       else
         {
-          zMapWarning("Failed to fetch exon sequence: DNA length %d is less than offset %d\n", dna_len, offset) ;
+          zMapLogWarning("Failed to fetch exon sequence: DNA length %d is less than offset %d\n", dna_len, offset) ;
         }
     }
 

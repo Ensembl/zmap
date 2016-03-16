@@ -23,18 +23,6 @@ To install in the default location (usually /opt/local/bin):
     make 
     make install 
 
-You can then run the programs by typing the executable name (i.e. zmap). Run
-zmap with the --help argument to see help about command-line arguments and other
-usage information:
-
-  zmap --help
-
-There are sample files in the "examples" directory that you can use to try out
-ZMap, e.g.:
-
-  cd examples
-  zmap --conf_dir=./ features.gff
-
 
 To install in a different location, or for help with dependencies or for more
 detailed instructions on configure see the tips below and also the INSTALL file
@@ -42,6 +30,7 @@ in this directory.
 
 
 Tips
+----
 
 You may need to run make install using sudo if you do not have root privileges,
 i.e.:
