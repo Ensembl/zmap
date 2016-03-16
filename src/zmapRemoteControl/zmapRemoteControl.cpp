@@ -42,7 +42,8 @@
 #include <stdint.h>                                         /* Needed for event status type for zeromq. */
 #include <string.h>
 #include <errno.h>
-#include <gtk/gtk.h>
+
+#include <glib.h>
 #include <glib/gprintf.h>
 #include <zmq.h>
 

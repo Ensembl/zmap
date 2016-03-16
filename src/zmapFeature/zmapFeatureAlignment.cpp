@@ -2080,7 +2080,7 @@ static gboolean alignStrCigarCanon2Homol(AlignStrCanonical canon,
                 }
               default:
                 {
-                  zMapWarning("Unrecognized operator '%c' in align string\n", op->op) ;
+                  zMapLogWarning("Unrecognized operator '%c' in align string\n", op->op) ;
                   zMapWarnIfReached() ;
 
                   break ;
