@@ -4004,13 +4004,15 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
     case BLIX_SET:
       requested_homol_set = ZMAPWINDOW_ALIGNCMD_SET ;
       if (menu_data->feature_set && menu_data->window->context_map->isSeqFeatureSet(menu_data->feature_set->unique_id))
-        seq_sets = zmapWindowCoverageGetRelatedFeaturesets(menu_data->context_map, menu_data->feature_set, seq_sets, FALSE);
+        seq_sets = g_list_append(seq_sets, GINT_TO_POINTER(menu_data->feature_set->unique_id)) ;
+      seq_sets = zmapWindowCoverageGetRelatedFeaturesets(menu_data->context_map, menu_data->feature_set, seq_sets, FALSE);
       break ;
 
     case BLIX_MULTI_SETS:
       requested_homol_set = ZMAPWINDOW_ALIGNCMD_MULTISET ;
       if (menu_data->feature_set && menu_data->window->context_map->isSeqFeatureSet(menu_data->feature_set->unique_id))
-        seq_sets = zmapWindowCoverageGetRelatedFeaturesets(menu_data->context_map, menu_data->feature_set, seq_sets, FALSE);
+        seq_sets = g_list_append(seq_sets, GINT_TO_POINTER(menu_data->feature_set->unique_id)) ;
+      seq_sets = zmapWindowCoverageGetRelatedFeaturesets(menu_data->context_map, menu_data->feature_set, seq_sets, FALSE);
       break;
 
     case BLIX_READS_FEATURESET_MARK: 
