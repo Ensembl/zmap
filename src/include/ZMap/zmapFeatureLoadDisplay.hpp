@@ -42,6 +42,7 @@
 #include <map>
 
 
+struct ZMapFeatureSetStructType ;
 struct _ZMapConfigSourceStruct ;
 struct ZMapFeatureAnyStructType ;
 
@@ -232,9 +233,12 @@ typedef struct ZMapFeatureContextMapStructType
   GHashTable *column_groups ;
 
 
-  gboolean isCoverageColumn(GQuark column_id) ;
   gboolean isSeqColumn(GQuark column_id) ;
   gboolean isSeqFeatureSet(GQuark fset_id) ;
+  gboolean isSeqFeatureSet(ZMapFeatureSetStructType *feature_set) ;
+  gboolean isCoverageColumn(GQuark column_id) ;
+  gboolean isCoverageFeatureSet(GQuark fset_id) ;
+  gboolean isCoverageFeatureSet(ZMapFeatureSetStructType *feature_set) ;
 
   ZMapFeatureColumn getSetColumn(GQuark set_id) ;
   GList *getColumnFeatureSets(GQuark column_id, gboolean unique_id) ;

@@ -189,31 +189,6 @@ GList *ZMapFeatureContextMapStructType::getColumnFeatureSets(GQuark column_id, g
 }
 
 
-/* from column_id return whether if is configured from seq-data= featuresets (coverage side) */
-gboolean ZMapFeatureContextMapStructType::isCoverageColumn(GQuark column_id)
-{
-  gboolean result = FALSE ;
-  ZMapFeatureSource src;
-  GList *fsets;
-
-  fsets = getColumnFeatureSets(column_id, TRUE);
-
-  for (; fsets ; fsets = fsets->next)
-    {
-      GQuark fset_id = (GQuark)GPOINTER_TO_INT(fsets->data) ;
-      src = getSource(fset_id) ;
-
-      if(src && src->related_column)
-        {
-          result = TRUE;
-          break ;
-        }
-    }
-
-  return result;
-}
-
-
 /* from column_id return whether it is configured from seq-data= featuresets (data side) */
 gboolean ZMapFeatureContextMapStructType::isSeqColumn(GQuark column_id)
 {
@@ -239,6 +214,7 @@ gboolean ZMapFeatureContextMapStructType::isSeqColumn(GQuark column_id)
 }
 
 
+/* Return true if the featureset with the given unique_id is a short-read data type */
 gboolean ZMapFeatureContextMapStructType::isSeqFeatureSet(GQuark fset_id)
 {
   gboolean result = FALSE ;
@@ -246,6 +222,68 @@ gboolean ZMapFeatureContextMapStructType::isSeqFeatureSet(GQuark fset_id)
 
   if(src && src->is_seq)
     result = TRUE;
+
+  return result;
+}
+
+
+/* Return true if the given featureset is a short-read data type */
+gboolean ZMapFeatureContextMapStructType::isSeqFeatureSet(ZMapFeatureSet feature_set)
+{
+  gboolean result = FALSE ;
+
+  if (feature_set)
+    result = isSeqFeatureSet(feature_set->unique_id);
+
+  return result;
+}
+
+
+/* from column_id return whether if is configured from seq-data= featuresets (coverage side) */
+gboolean ZMapFeatureContextMapStructType::isCoverageColumn(GQuark column_id)
+{
+  gboolean result = FALSE ;
+  ZMapFeatureSource src;
+  GList *fsets;
+
+  fsets = getColumnFeatureSets(column_id, TRUE);
+
+  for (; fsets ; fsets = fsets->next)
+    {
+      GQuark fset_id = (GQuark)GPOINTER_TO_INT(fsets->data) ;
+      src = getSource(fset_id) ;
+
+      if(src && src->related_column)
+        {
+          result = TRUE;
+          break ;
+        }
+    }
+
+  return result;
+}
+
+
+/* Return true if the featureset with the given unique_id is a coverage data type */
+gboolean ZMapFeatureContextMapStructType::isCoverageFeatureSet(GQuark fset_id)
+{
+  gboolean result = FALSE ;
+  ZMapFeatureSource src = getSource(fset_id) ;
+
+  if(src && src->related_column)
+    result = TRUE;
+
+  return result;
+}
+
+
+/* Return true if the given featureset is a coverage data type */
+gboolean ZMapFeatureContextMapStructType::isCoverageFeatureSet(ZMapFeatureSet feature_set)
+{
+  gboolean result = FALSE ;
+
+  if (feature_set)
+    result = isCoverageFeatureSet(feature_set->unique_id);
 
   return result;
 }
