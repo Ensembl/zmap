@@ -1,6 +1,7 @@
 
 Git commits for  from commit "production" until commit "release/2.7.0"
 
+9710b29 2016-03-22 Fix a bug calling blixem on bam columns - RT 521742
 2e47bb8 2016-03-16 Fix typo in Charlie's name - DOC
 d00a915 2016-03-16 I noticed several uses of gtk level stuff from code that will be run in threads so have removed them. - DEVELOP
 184b8fb 2016-03-16 Fix a bug importing file using htslib - BUG FIX

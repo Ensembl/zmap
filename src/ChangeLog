@@ -1,3 +1,20 @@
+2016-03-22  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix a bug calling blixem on bam columns - RT 521742
+ src/zmapWindow/zmapWindowMenus.cpp | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+2016-03-22  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Remove various texts that say "pfetch", it isn't pfetch any more. - TRIVIAL
+ src/zmapWindow/zmapWindowFeature.cpp | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+2016-03-17  zmap  <zmap@sanger.ac.uk>
+ ZMap version 2.6.1-47-g2e47bb8 - Update RT and git commit reports
+ src/ChangeLog                                  | 758 +++++++++----------------
+ src/build/release_docs/GIT_COMMITS.txt         |  29 +-
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt |  84 +--
+ 3 files changed, 317 insertions(+), 554 deletions(-)
+
 2016-03-16  Gemma Guest  <gb10@sanger.ac.uk>
  Fix typo in Charlie's name - DOC
  docs/user/manual/ZMap_User_Manual.pdf | Bin 5236740 -> 5236740 bytes
