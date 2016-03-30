@@ -834,7 +834,7 @@ static gboolean param_value_diffs(char **value, const char *parent_value, const 
             {
               /* Separate value into a list colour strings and search for each individual colour
                * string (i.e. "normal border black") in the parent value */
-              GList *list = zMapConfigString2QuarkList(*value, FALSE);
+              GList *list = zMapConfigString2QuarkGList(*value, FALSE);
               GString *diffs_string = NULL ;
               
               for (GList *item = list ; item ; item = item->next)

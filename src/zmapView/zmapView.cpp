@@ -2017,7 +2017,7 @@ void zMapViewSetUpServerConnection(ZMapView zmap_view, ZMapConfigSource current_
             {
               /* req all featuresets  as a list of their quark names. */
               /* we need non canonicalised name to get Capitalised name on the status display */
-              req_featuresets = zMapConfigString2QuarkList(current_server->featuresets,FALSE) ;
+              req_featuresets = zMapConfigString2QuarkGList(current_server->featuresets,FALSE) ;
 
               if(!zmap_view->columns_set)
                 {
@@ -2029,7 +2029,7 @@ void zMapViewSetUpServerConnection(ZMapView zmap_view, ZMapConfigSource current_
           if(current_server->biotypes)
             {
               /* req all biotypes  as a list of their quark names. */
-              req_biotypes = zMapConfigString2QuarkList(current_server->biotypes,FALSE) ;
+              req_biotypes = zMapConfigString2QuarkGList(current_server->biotypes,FALSE) ;
             }
 
           terminate = g_str_has_prefix(current_server->url,"pipe://");
@@ -2539,7 +2539,7 @@ static void getIniData(ZMapView view, char *config_str, GList *req_sources)
                                         ZMAPSTANZA_APP_CONFIG,
                                         ZMAPSTANZA_APP_NAVIGATOR_SETS,&str))
         {
-          view->navigator_set_names = zMapConfigString2QuarkList(str,FALSE);
+          view->navigator_set_names = zMapConfigString2QuarkGList(str,FALSE);
 
           if (view->navigator_window)
             zMapWindowNavigatorMergeInFeatureSetNames(view->navigator_window, view->navigator_set_names);
@@ -2601,7 +2601,7 @@ static void getIniData(ZMapView view, char *config_str, GList *req_sources)
                 && g_ascii_strncasecmp(src->url,"file", 4) != 0)
               continue;
 
-            featuresets = zMapConfigString2QuarkList(src->featuresets,FALSE) ;
+            featuresets = zMapConfigString2QuarkGList(src->featuresets,FALSE) ;
 
             // MH17: need to add server name as default featureset
             //  -> it doesn't have one due to GLib config file rubbish
@@ -2745,7 +2745,7 @@ static void getIniData(ZMapView view, char *config_str, GList *req_sources)
                                          ZMAPSTANZA_APP_CONFIG,
                                          ZMAPSTANZA_APP_SEQ_DATA,&str))
           {
-            view->context_map.seq_data_featuresets = zMapConfigString2QuarkIDList(str);
+            view->context_map.seq_data_featuresets = zMapConfigString2QuarkIDGList(str);
           }
 
         /* add a flag for each seq_data featureset */

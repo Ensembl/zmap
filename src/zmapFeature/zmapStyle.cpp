@@ -2585,7 +2585,7 @@ static void zmap_feature_type_style_set_property_full(ZMapFeatureTypeStyle style
       break;
 
     case STYLE_PARAM_TYPE_QUARK_LIST_ID:
-      * (GList **) (((size_t) style) + param->offset)   = zMapConfigString2QuarkList( (gchar *) g_value_get_string(value) ,TRUE);
+      * (GList **) (((size_t) style) + param->offset)   = zMapConfigString2QuarkGList( (gchar *) g_value_get_string(value) ,TRUE);
       break;
 
     case STYLE_PARAM_TYPE_GLYPH_SHAPE:          // copy structure into ours

@@ -788,7 +788,7 @@ static void getUserPrefsFile(ZMapView view,
       if (zMapConfigIniContextGetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
                                        ZMAPSTANZA_BLIXEM_DNA_FS, &tmp_string))
         {
-          GList *dna_sets = zMapConfigString2QuarkList(tmp_string,FALSE);
+          GList *dna_sets = zMapConfigString2QuarkGList(tmp_string,FALSE);
           file_prefs->assoc_featuresets = g_list_concat(file_prefs->assoc_featuresets, dna_sets) ;
           g_free(tmp_string);
           file_prefs->is_set.assoc_featuresets = TRUE ;
@@ -797,7 +797,7 @@ static void getUserPrefsFile(ZMapView view,
       if (zMapConfigIniContextGetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
                                        ZMAPSTANZA_BLIXEM_PROT_FS, &tmp_string))
         {
-          GList *protein_sets = zMapConfigString2QuarkList(tmp_string,FALSE);
+          GList *protein_sets = zMapConfigString2QuarkGList(tmp_string,FALSE);
           file_prefs->assoc_featuresets = g_list_concat(file_prefs->assoc_featuresets, protein_sets) ;
           g_free(tmp_string);
           file_prefs->is_set.assoc_featuresets = TRUE ;
@@ -806,7 +806,7 @@ static void getUserPrefsFile(ZMapView view,
       if (zMapConfigIniContextGetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
                                        ZMAPSTANZA_BLIXEM_FS, &tmp_string))
         {
-          GList *assoc_featuresets = zMapConfigString2QuarkList(tmp_string,FALSE);
+          GList *assoc_featuresets = zMapConfigString2QuarkGList(tmp_string,FALSE);
           file_prefs->assoc_featuresets = g_list_concat(file_prefs->assoc_featuresets, assoc_featuresets) ;
           g_free(tmp_string);
           file_prefs->is_set.assoc_featuresets = TRUE ;

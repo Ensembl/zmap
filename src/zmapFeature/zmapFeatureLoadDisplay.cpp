@@ -740,7 +740,7 @@ void ZMapFeatureSequenceMapStructType::constructSources(const char *filename,
       if (!sources)
         sources = new map<string, ZMapConfigSource> ;
 
-      GList *names_list = zMapConfigString2QuarkIDList(source_names) ;
+      GList *names_list = zMapConfigString2QuarkIDGList(source_names) ;
 
       // loop through all config sources
       GList *source_item = settings_list ;

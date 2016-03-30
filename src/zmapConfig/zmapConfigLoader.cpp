@@ -47,6 +47,8 @@
 #include <zmapConfigIni_P.hpp>
 
 
+using namespace std ;
+
 
 typedef struct
 {
@@ -651,9 +653,9 @@ char *zMapConfigNormaliseWhitespace(char *str,gboolean cannonical)
  * however it seems to run
  */
 
-GList *zmapConfigString2QuarkListExtra(const char *string_list, gboolean cannonical,gboolean unique_id)
+list<GQuark> zmapConfigString2QuarkListExtra(const char *string_list, gboolean cannonical,gboolean unique_id)
 {
-  GList *list = NULL;
+  list<GQuark> result;
   gchar **str_array = NULL,**strv;
   char *name;
   GQuark val;
@@ -672,32 +674,75 @@ GList *zmapConfigString2QuarkListExtra(const char *string_list, gboolean cannoni
               else
                 val = g_quark_from_string(name);
 
-              list = g_list_prepend(list,GUINT_TO_POINTER(val)) ;
+              result.push_back(val) ;
             }
         }
     }
 
-  list = g_list_reverse(list) ;      /* see glib doc for g_list_append() */
+  if (str_array)
+    g_strfreev(str_array);
+
+  return result ;
+}
+
+/* Same as zmapConfigString2QuarkListExtra but returns a GList instead of std::list. */
+GList *zmapConfigString2QuarkGListExtra(const char *string_list, gboolean cannonical,gboolean unique_id)
+{
+  GList *result = NULL;
+  gchar **str_array = NULL,**strv;
+  char *name;
+  GQuark val;
+
+  if (string_list)
+    str_array = g_strsplit(string_list,";",0);
+
+  if (str_array)
+    {
+      for (strv = str_array;*strv;strv++)
+        {
+          if ((name = zMapConfigNormaliseWhitespace(*strv, cannonical)) && *name)
+            {
+              if(unique_id)
+                val = zMapStyleCreateID(name);
+              else
+                val = g_quark_from_string(name);
+
+              result = g_list_prepend(result,GUINT_TO_POINTER(val)) ;
+            }
+        }
+    }
+
+  result = g_list_reverse(result) ;      /* see glib doc for g_list_append() */
 
   if (str_array)
     g_strfreev(str_array);
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  zMap_g_quark_list_print(list) ;     /* debug.... */
+  zMap_g_quark_list_print(result) ;     /* debug.... */
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-  return list ;
+  return result ;
 }
 
-GList *zMapConfigString2QuarkList(const char *string_list, gboolean cannonical)
+list<GQuark> zMapConfigString2QuarkList(const char *string_list, gboolean cannonical)
 {
   return zmapConfigString2QuarkListExtra(string_list,cannonical,FALSE);
 }
 
-GList *zMapConfigString2QuarkIDList(const char *string_list)
+list<GQuark> zMapConfigString2QuarkIDList(const char *string_list)
 {
   return zmapConfigString2QuarkListExtra(string_list,TRUE,TRUE);
+}
+
+GList *zMapConfigString2QuarkGList(const char *string_list, gboolean cannonical)
+{
+  return zmapConfigString2QuarkGListExtra(string_list,cannonical,FALSE);
+}
+
+GList *zMapConfigString2QuarkIDGList(const char *string_list)
+{
+  return zmapConfigString2QuarkGListExtra(string_list,TRUE,TRUE);
 }
 
 
@@ -795,7 +840,7 @@ GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context,
           GFFset->feature_set_text = g_strdup(desc);
           g_hash_table_replace(ghash,GUINT_TO_POINTER(column_id),GFFset);
 #endif
-          sources = zMapConfigString2QuarkList(names,FALSE);
+          sources = zMapConfigString2QuarkGList(names,FALSE);
 
           g_free(names);
           names = NULL ;
@@ -887,7 +932,7 @@ GHashTable *zMapConfigIniGetFeatureset2Featureset(ZMapConfigIniContext context,
               continue;
             }
 
-          sources = zMapConfigString2QuarkList(names,FALSE);
+          sources = zMapConfigString2QuarkGList(names,FALSE);
           g_free(names);
           names = NULL ;
 
@@ -939,7 +984,7 @@ g_strfreev(freethis);
 GHashTable *zMapConfigIniGetColumnGroups(ZMapConfigIniContext context)
 {
   GHashTable *column_groups = NULL ;
-  GList *gkf_list = NULL ;
+  list<GKeyFile*> gkf_list ;
   gchar ** keys, **freethis ;
   GList *columns;
   gsize len = 0;
@@ -952,12 +997,12 @@ GHashTable *zMapConfigIniGetColumnGroups(ZMapConfigIniContext context)
 
   /* Get a list of all key files that contain the columm-groups stanza. We must check all of them
    * because different key-value pairs may exist in each and we want to merge them */
-  if(zMapConfigIniHasStanzaAll(context->config, ZMAPSTANZA_COLUMN_GROUPS, &gkf_list))
+  if(zMapConfigIniHasStanzaAll(context->config, ZMAPSTANZA_COLUMN_GROUPS, gkf_list))
     {
       /* Loop through each key file. */
-      for (GList *gkf_item = gkf_list; gkf_item; gkf_item = gkf_item->next)
+      for (auto gkf_iter = gkf_list.begin(); gkf_iter != gkf_list.end(); ++gkf_iter)
         {
-          GKeyFile *gkf = (GKeyFile*)(gkf_item->data) ;
+          GKeyFile *gkf = *gkf_iter;
 
           /* Loop through all of the keys in the stanza */
           freethis = keys = g_key_file_get_keys(gkf,ZMAPSTANZA_COLUMN_GROUPS,&len,NULL);
@@ -979,7 +1024,7 @@ GHashTable *zMapConfigIniGetColumnGroups(ZMapConfigIniContext context)
               group_id = zMapStyleCreateID(*keys);
 
               /* Convert the list of names to a GList of column name quarks */
-              columns = zMapConfigString2QuarkList(names,FALSE);
+              columns = zMapConfigString2QuarkGList(names,FALSE);
               g_free(names);
               names = NULL ;
 
@@ -1001,13 +1046,66 @@ GHashTable *zMapConfigIniGetColumnGroups(ZMapConfigIniContext context)
 }
 
 
+static void mergeColumnsLists(list<GQuark> &src_list, list<GQuark> &dest_list)
+{
+  if (dest_list.size() < 1)
+    {
+      // Just use the src list
+      dest_list = src_list ;
+    }
+  else if (src_list.size() > 0)
+    {
+      // Merge src into dest. 
+
+      // Loop through all items in src list.
+      auto src_iter_prev = src_list.begin();
+      for (auto src_iter = src_list.begin(); src_iter != src_list.end(); ++src_iter)
+        {
+          GQuark src = *src_iter ;
+
+          // See if this item is already in the dest list
+          list<GQuark>::iterator dest_iter = find(dest_list.begin(), dest_list.end(), src) ;
+          if (dest_iter == dest_list.end())
+            {
+              // It's not in the dest list so we need to add it. Add it into dest_list just after
+              // the previous item from src_list to try to keep things grouped together.
+
+              // If the prev item is the same as the current item that means it's the first in the
+              // list. 
+              if (src_iter_prev == src_iter)
+                {
+                  // There is no previous item. Add the src item to the start of the dest_list.
+                  dest_list.push_front(src) ;
+                }
+              else
+                {
+                  // Find the previous src item in the dest list (it should be there because we
+                  // have processed it already).
+                  dest_iter = find(dest_list.begin(), dest_list.end(), *src_iter_prev) ;
+
+                  // Add the src item just after the prev item.
+                  if (dest_iter != dest_list.end())
+                    {
+                      ++dest_iter ;
+                      dest_list.insert(dest_iter, src);
+                    }
+                }
+            }
+
+          src_iter_prev = src_iter ;
+        }
+    }
+
+}
+
+
 // get the complete list of columns to display, in order
 // somewhere this gets mangled by strandedness
 std::map<GQuark, ZMapFeatureColumn> *zMapConfigIniGetColumns(ZMapConfigIniContext context)
 {
   std::map<GQuark, ZMapFeatureColumn> *columns_table = NULL ;
-  GKeyFile *gkf;
-  GList *columns = NULL,*col;
+  list<GKeyFile*> gkf_list ;
+  list<GQuark> columns ;
   gchar *colstr;
   ZMapFeatureColumn f_col;
   GHashTable *col_desc;
@@ -1020,29 +1118,35 @@ std::map<GQuark, ZMapFeatureColumn> *zMapConfigIniGetColumns(ZMapConfigIniContex
   // nb there is a small memory leak if we config description for non-existant columns
   col_desc   = zMapConfigIniGetQQHash(context,ZMAPSTANZA_COLUMN_DESCRIPTION_CONFIG,QQ_STRING);
 
-  /* Add the columns from the config file */
-  if(zMapConfigIniHasStanza(context->config,ZMAPSTANZA_APP_CONFIG,&gkf))
+  /* Add the columns from the config file(s) */
+  if(zMapConfigIniHasStanzaAll(context->config,ZMAPSTANZA_APP_CONFIG,gkf_list))
     {
-      colstr = g_key_file_get_string(gkf, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_COLUMNS,NULL);
+      for (auto gkf_iter = gkf_list.begin(); gkf_iter != gkf_list.end(); ++gkf_iter)
+        {
+          colstr = g_key_file_get_string(*gkf_iter, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_COLUMNS,NULL);
 
-      if(colstr && *colstr)
-        columns = zMapConfigString2QuarkList(colstr,FALSE);
+          if(colstr && *colstr)
+            {
+              list<GQuark> new_list = zMapConfigString2QuarkList(colstr,FALSE) ;
+              mergeColumnsLists(new_list, columns) ;
+            }
+        }
     }
 
-  if (!columns)
+  if (columns.size() < 1)
     {
       /* Use default list of columns */
       columns = zMapConfigString2QuarkList(ZMAP_DEFAULT_FEATURESETS, FALSE) ;
     }
 
   /* Add the hard-coded strand-separator column at the start of the list */
-  col = g_list_prepend(columns, GUINT_TO_POINTER(g_quark_from_string(ZMAP_FIXED_STYLE_STRAND_SEPARATOR)));
+  columns.push_front(g_quark_from_string(ZMAP_FIXED_STYLE_STRAND_SEPARATOR));
 
   /* Loop through the list and create the column struct, and add it to the columns_table */
-  for(; col;col = col->next)
+  for(auto col = columns.begin(); col != columns.end(); ++col)
     {
       f_col = g_new0(ZMapFeatureColumnStruct,1);
-      f_col->column_id = GPOINTER_TO_UINT(col->data);
+      f_col->column_id = *col;
 
       desc = (char *) g_quark_to_string(f_col->column_id);
       f_col->unique_id = zMapFeatureSetCreateID(desc);

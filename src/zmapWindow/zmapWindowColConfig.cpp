@@ -781,7 +781,7 @@ static void loaded_page_apply_styles(LoadedPageData page_data)
                       /* Remove the old style(s) */
                       if (old_style_names)
                         {
-                          GList *old_style_ids = zMapConfigString2QuarkIDList(old_style_names) ;
+                          GList *old_style_ids = zMapConfigString2QuarkIDGList(old_style_names) ;
                           
                           for (GList *item = old_style_ids; item; item = g_list_next(item))
                             {
