@@ -270,7 +270,7 @@ static ColConfigure configure_create(ZMapWindow window, ZMapWindowColConfigureMo
 static void requestDestroyCB(gpointer data, guint callback_action, GtkWidget *widget) ;
 static void destroyCB(GtkWidget *widget, gpointer cb_data) ;
 static void saveCB(gpointer cb_data, guint callback_action, GtkWidget *widget) ;
-static void saveColumnsConfig(ZMapWindow window, const char *filename) ;
+static void saveColumnsConfig(ColConfigure configure_data, const char *filename) ;
 
 static void helpCB(gpointer data, guint callback_action, GtkWidget *w) ;
 static void helpDisplayCB(gpointer data, guint callback_action, GtkWidget *w) ;
@@ -434,6 +434,9 @@ void zmapWindowColumnConfigure(ZMapWindow                 window,
       gtk_notebook_set_current_page(GTK_NOTEBOOK(configure_data->notebook), page_no);
 
       gtk_widget_show_all(window->col_config_window);
+
+      if (GTK_IS_WINDOW(window->col_config_window))
+        gtk_window_present(GTK_WINDOW(window->col_config_window)) ;
     }
 
   return ;
@@ -2953,7 +2956,7 @@ static void saveCB(gpointer cb_data, guint callback_action, GtkWidget *widget)
 
   static char *filename = NULL ;
 
-  saveColumnsConfig(configure_data->window, filename) ;
+  saveColumnsConfig(configure_data, filename) ;
 
   return ;
 }
@@ -3650,9 +3653,15 @@ static gboolean zmapAddSizingSignalHandlers(GtkWidget *widget, gboolean debug,
   return TRUE;
 }
 
-static void saveColumnsConfig(ZMapWindow window, const char *filename)
+/* Apply changes and save the columns configuration to the user prefs */
+static void saveColumnsConfig(ColConfigure configure_data, const char *filename)
 {
-  zMapReturnIfFail(window) ;
+  zMapReturnIfFail(configure_data && configure_data->window) ;
+
+  ZMapWindow window = configure_data->window ; 
+
+  /* Apply any changes first */
+  notebook_foreach_page(configure_data->notebook, FALSE, NOTEBOOK_APPLY_FUNC, NULL);
 
   ZMapConfigIniFileType file_type = ZMAPCONFIG_FILE_PREFS ;
 
