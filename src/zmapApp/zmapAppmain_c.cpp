@@ -1151,7 +1151,6 @@ static void checkInputFileForSequenceDetails(const char* const filename,
                                              const gboolean allow_multiple,
                                              GError **error)
 {
-  gboolean result = FALSE ;
   GError *tmp_error = NULL ;
   GError *gff_pipe_err = NULL ;
   int gff_version = 0 ;
@@ -1212,24 +1211,12 @@ static void checkInputFileForSequenceDetails(const char* const filename,
                 {
                   *(gff_line->str + terminator_pos) = '\0' ; /* Remove terminating newline. */
 
-                  if (zMapGFFParseHeader(parser, gff_line->str, &done_header, &header_state))
-                    {
-                      if (done_header)
-                        {
-                          result = TRUE ;
-                          break ;
-                        }
-                      else
-                        {
-                          gff_line = g_string_truncate(gff_line, 0) ;  /* Reset line to empty. */
-                        }
-                    }
+                  bool more_header = zMapGFFParseHeader(parser, gff_line->str, &done_header, &header_state) ;
+
+                  if (more_header)
+                    gff_line = g_string_truncate(gff_line, 0) ;  /* Reset line for next pass */
                   else
-                    {
-                      g_set_error(&tmp_error, ZMAP_APP_ERROR, ZMAPAPP_ERROR_GFF_HEADER,
-                                  "Error reading GFF header for file %s", filename) ;
-                      break ;
-                    }
+                    break ;
                 }
             }
           else
@@ -1240,10 +1227,15 @@ static void checkInputFileForSequenceDetails(const char* const filename,
         }
     }
 
-  if (result && !tmp_error)
+  if (!tmp_error)
     {
       /* Cache the sequence details in a sequence map - merge with an existing sequence map if
        * possible, otherwise create a new one. */
+      /* gb10: Note that the sequence/start/end will be null here if there was no sequence-region
+       * header. In this case just merge with the first sequence map found. If the user has
+       * passed sensible files they will be picked up. (Otherwise, zmap will attempt to load
+       * the features from the fail but will not find anything in this region so will return 
+       * nothing for this file and will hopefully give a sensible error message.) */
       char *sequence = zMapGFFGetSequenceName(parser) ;
       int start = zMapGFFGetFeaturesStart(parser) ;
       int end = zMapGFFGetFeaturesEnd(parser) ;
@@ -1311,14 +1303,12 @@ static void checkInputFileForSequenceDetails(const char* const filename,
                           "Error creating sequence map for file %s", filename);
             }
         }
-    }
-  else if (!tmp_error)
-    {
-      /* If result is false then tmp_error should be set, but it's possible it might not be if we
-       * didn't find a full header in the GFF file. */
-      g_set_error(&tmp_error, ZMAP_APP_ERROR, ZMAPAPP_ERROR_CHECK_FILE,
-                  "Error reading GFF header information for file %s", filename);
-    }
+      else
+        {
+          /* No sequence-region header in the file; allow this for now. ZMap may error later
+           * on if no sequence was specified anywhere. */
+        }
+     }
 
   if (tmp_error && parser)
     zMapGFFDestroyParser(parser) ;
