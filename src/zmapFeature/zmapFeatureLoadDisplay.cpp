@@ -387,14 +387,17 @@ bool ZMapFeatureContextMapStructType::updateContextColumns(_ZMapConfigIniContext
     }
 
   stringstream result;
+  bool first = true;
   for(auto iter = ordered_list.begin(); iter != ordered_list.end(); ++iter)
     {
       /* Don't save the strand separator order - its position is always the same */
-      if (*iter != zMapStyleCreateID(ZMAP_FIXED_STYLE_STRAND_SEPARATOR))
+      if (*iter != g_quark_from_string(ZMAP_FIXED_STYLE_STRAND_SEPARATOR))
         {
-          if(iter != ordered_list.begin())
-            result << ";";
-          result << g_quark_to_string(*iter);
+          if(!first)
+            result << ";" ;
+
+          result << g_quark_to_string(*iter) ;
+          first = false ;
         }
     }
 
