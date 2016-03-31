@@ -301,20 +301,35 @@ static void printItem(FooCanvasItem *item)
 {
   double x1, y1, x2, y2 ;
   double wx1, wy1, wx2, wy2 ;
+  double cx1, cy1, cx2, cy2 ;
 
+  // Get founds of an item in its _parents_ coordinates (see next step)
   foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2) ;
 
+  // We have the items coords in parent space so find out there those _parent_ coords are in world
+  // space.
   wx1 = x1 ; wy1 = y1 ; wx2 = x2 ; wy2 = y2 ;
-  foo_canvas_item_i2w(item, &wx1, &wy1) ;
-  foo_canvas_item_i2w(item, &wx2, &wy2) ;
+  foo_canvas_item_i2w(item->parent, &wx1, &wy1) ;
+  foo_canvas_item_i2w(item->parent, &wx2, &wy2) ;
+
+  // Now find out where those world coords are in canvas coords
+  cx1 = wx1 ; cy1 = wy1 ; cx2 = wx2 ; cy2 = wy2 ;
+  foo_canvas_w2c_rect_d(item->canvas, &cx1, &cy1, &cx2, &cy2) ;
 
 
   if (FOO_IS_CANVAS_GROUP(item))
     {
       FooCanvasGroup *group = (FooCanvasGroup *)item ;
 
-      zMapDebugPrintf("FOO_CANVAS_GROUP Parent->Group: %p -> %p    Pos: %.f, %.f    Bounds: %.f -> %.f,  %.f -> %.f    World bounds: %.f -> %.f,  %.f -> %.f\n",
-             group->item.parent, group, group->xpos, group->ypos, x1, x2, y1, y2, wx1, wx2, wy1, wy2) ;
+      zMapDebugPrintf("FOO_CANVAS_GROUP Parent->Group: %p -> %p    Pos: %.f, %.f"
+                      "    Bounds: %.f -> %.f,  %.f -> %.f"
+                      "    World bounds: %.f -> %.f,  %.f -> %.f"
+                      "    Canvas bounds: %.f -> %.f,  %.f -> %.f"
+                      "\n",
+                      group->item.parent, group, group->xpos, group->ypos,
+                      x1, x2, y1, y2,
+                      cx1, cx2, cy1, cy2,
+                      wx1, wx2, wy1, wy2) ;
     }
   else
     {
