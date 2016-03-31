@@ -32,6 +32,7 @@
 
 #include <ZMap/zmap.hpp>
 
+#include <algorithm>
 #include <string.h>/* memset */
 #include <glib.h>
 
@@ -1039,10 +1040,11 @@ list<GQuark> zMapConfigIniMergeColumnsLists(list<GQuark> &src_list,
           GQuark src = unique ? zMapStyleCreateIDFromID(*src_iter) : *src_iter ;
 
           // See if this item is already in the dest list
-          // The lambda function converts to unique ids so that the search is case-insensitive
-          auto dest_iter = find_if(dest_list.begin(), dest_list.end(), 
-                                   [src](const GQuark &dest)
-                                   {return zMapStyleCreateIDFromID(dest) == zMapStyleCreateIDFromID(src);}) ;
+          auto dest_iter = find_if(dest_list.begin(), dest_list.end(), [&](const GQuark &dest)->bool
+                                   {
+                                     // lambda to convert to unique ids to be case-insensitive
+                                     return zMapStyleCreateIDFromID(dest) == zMapStyleCreateIDFromID(src);
+                                   }) ;
 
           if (dest_iter == dest_list.end())
             {
