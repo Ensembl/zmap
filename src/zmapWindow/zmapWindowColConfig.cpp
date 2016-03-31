@@ -32,6 +32,7 @@
 #include <ZMap/zmap.hpp>
 
 #include <string.h>
+#include <list>
 
 #include <ZMap/zmapUtils.hpp>
 #include <ZMap/zmapGLibUtils.hpp>
@@ -40,6 +41,7 @@
 #include <zmapWindowContainers.hpp>
 #include <gbtools/gbtools.hpp>
 
+using namespace std ;
 
 
 /* Labels for column state, used in code and the help page. */
@@ -2414,7 +2416,7 @@ static GtkTreeModel* loaded_cols_panel_create_tree_model(LoadedPageData page_dat
   zMapReturnValIfFail(page_data && page_data->window && page_data->window->context_map, model) ;
 
   /* Get list of column structs in current display order */
-  GList *columns_list = page_data->window->context_map->getOrderedColumnsList() ;
+  list<ZMapFeatureColumn> columns_list = page_data->window->context_map->getOrderedColumnsList() ;
 
   /* Create a tree store containing one row per column */
   GtkListStore *store = gtk_list_store_new(N_COLUMNS, G_TYPE_STRING, 
@@ -2424,9 +2426,9 @@ static GtkTreeModel* loaded_cols_panel_create_tree_model(LoadedPageData page_dat
 
   /* Loop through all columns in display order (columns are shown in mirror order on the rev
    * strand but we always use forward-strand order) */
-  for (GList *col_iter = columns_list; col_iter; col_iter = col_iter->next)
+  for (auto col_iter = columns_list.begin(); col_iter != columns_list.end(); ++col_iter)
     {
-      ZMapFeatureColumn column = (ZMapFeatureColumn)(col_iter->data) ;
+      ZMapFeatureColumn column = *col_iter ;
 
       FooCanvasGroup *column_group_fwd = zmapWindowGetColumnByID(page_data->window, ZMAPSTRAND_FORWARD, column->unique_id) ;
       FooCanvasGroup *column_group_rev = zmapWindowGetColumnByID(page_data->window, ZMAPSTRAND_REVERSE, column->unique_id) ;
