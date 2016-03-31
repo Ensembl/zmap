@@ -6732,7 +6732,7 @@ static void jumpColumn(ZMapWindow window, guint keyval)
             }
 
           // Only highlight if we have found a next column.
-          if (focus_column))
+          if (focus_column)
             {
               highlight_column = TRUE ;
             }
