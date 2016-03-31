@@ -1046,59 +1046,6 @@ GHashTable *zMapConfigIniGetColumnGroups(ZMapConfigIniContext context)
 }
 
 
-static void mergeColumnsLists(list<GQuark> &src_list, list<GQuark> &dest_list)
-{
-  if (dest_list.size() < 1)
-    {
-      // Just use the src list
-      dest_list = src_list ;
-    }
-  else if (src_list.size() > 0)
-    {
-      // Merge src into dest. 
-
-      // Loop through all items in src list.
-      auto src_iter_prev = src_list.begin();
-      for (auto src_iter = src_list.begin(); src_iter != src_list.end(); ++src_iter)
-        {
-          GQuark src = *src_iter ;
-
-          // See if this item is already in the dest list
-          list<GQuark>::iterator dest_iter = find(dest_list.begin(), dest_list.end(), src) ;
-          if (dest_iter == dest_list.end())
-            {
-              // It's not in the dest list so we need to add it. Add it into dest_list just after
-              // the previous item from src_list to try to keep things grouped together.
-
-              // If the prev item is the same as the current item that means it's the first in the
-              // list. 
-              if (src_iter_prev == src_iter)
-                {
-                  // There is no previous item. Add the src item to the start of the dest_list.
-                  dest_list.push_front(src) ;
-                }
-              else
-                {
-                  // Find the previous src item in the dest list (it should be there because we
-                  // have processed it already).
-                  dest_iter = find(dest_list.begin(), dest_list.end(), *src_iter_prev) ;
-
-                  // Add the src item just after the prev item.
-                  if (dest_iter != dest_list.end())
-                    {
-                      ++dest_iter ;
-                      dest_list.insert(dest_iter, src);
-                    }
-                }
-            }
-
-          src_iter_prev = src_iter ;
-        }
-    }
-
-}
-
-
 // get the complete list of columns to display, in order
 // somewhere this gets mangled by strandedness
 std::map<GQuark, ZMapFeatureColumn> *zMapConfigIniGetColumns(ZMapConfigIniContext context)
@@ -1128,7 +1075,7 @@ std::map<GQuark, ZMapFeatureColumn> *zMapConfigIniGetColumns(ZMapConfigIniContex
           if(colstr && *colstr)
             {
               list<GQuark> new_list = zMapConfigString2QuarkList(colstr,FALSE) ;
-              mergeColumnsLists(new_list, columns) ;
+              columns = zMapConfigIniMergeColumnsLists(new_list, columns) ;
             }
         }
     }

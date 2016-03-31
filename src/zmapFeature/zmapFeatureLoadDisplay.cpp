@@ -32,6 +32,7 @@
 
 #include <string.h>
 #include <unistd.h>
+#include <sstream>
 
 #include <zmapFeature_P.hpp>
 
@@ -302,7 +303,24 @@ ZMapFeatureSource ZMapFeatureContextMapStructType::createSource(const GQuark fse
 /* Get a GList of column IDs as GQuarks in the correct order according to the 'order' field in
  * each ZMapFeatureColumn struct (from the context_map.columns hash table).
  * Returns a new GList which should be free'd with g_list_free() */
-GList* ZMapFeatureContextMapStructType::getOrderedColumnsListIDs()
+list<GQuark> ZMapFeatureContextMapStructType::getOrderedColumnsListIDs()
+{
+  list<GQuark> result ;
+
+  for (map<GQuark, ZMapFeatureColumn>::iterator iter = columns->begin() ; 
+       iter != columns->end(); 
+       ++iter)
+    {
+      result.push_back(iter->first);
+    }
+
+  //result.sort(colIDOrderCB);
+
+  return result ;
+}
+
+/* Same as getOrdererdColumnsListIDs but returns a GList */
+GList* ZMapFeatureContextMapStructType::getOrderedColumnsGListIDs()
 {
   GList *result = NULL ;
 
@@ -345,16 +363,37 @@ bool ZMapFeatureContextMapStructType::updateContextColumns(_ZMapConfigIniContext
 {
   zMapReturnValIfFail(context, FALSE) ;
 
-  /* Update the context with the columns, if they need saving */
-  GList *ordered_list = getOrderedColumnsListIDs() ;
-  char *result = zMap_g_list_quark_to_string(ordered_list, NULL) ;
+  /* Get the new order of columns in zmap */
+  list<GQuark> ordered_list = getOrderedColumnsListIDs() ;
+
+  /* We need to preserve any old order in the file if it is the user prefs file. That is because
+   * there may be columns they've previously saved that aren't in the current zmap and we don't
+   * want to wipe that out, so merge the new order with the old list */
+  if (file_type == ZMAPCONFIG_FILE_PREFS)
+    {
+      char *value = NULL ;
+      zMapConfigIniContextGetString(context,
+                                    ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+                                    ZMAPSTANZA_APP_COLUMNS, &value);
+      if (value)
+        {
+          list<GQuark> old_list = zMapConfigString2QuarkList(value, FALSE) ;
+          ordered_list = zMapConfigIniMergeColumnsLists(ordered_list, old_list) ;
+        }
+    }
+
+  stringstream result;
+  for(auto iter = ordered_list.begin(); iter != ordered_list.end(); ++iter)
+    {
+      if(iter != ordered_list.begin())
+        result << ";";
+      result << *iter;
+    }
 
   zMapConfigIniContextSetString(context, file_type,
                                 ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
-                                ZMAPSTANZA_APP_COLUMNS, result);
+                                ZMAPSTANZA_APP_COLUMNS, result.str().c_str());
 
-  g_free(result) ;
-  
   return TRUE ;
 }
 

@@ -686,7 +686,7 @@ static void loaded_page_apply_reorder_columns(LoadedPageData page_data)
       if (page_data->window->feature_set_names)
         g_list_free(page_data->window->feature_set_names) ;
 
-      page_data->window->feature_set_names = page_data->window->context_map->getOrderedColumnsListIDs() ;
+      page_data->window->feature_set_names = page_data->window->context_map->getOrderedColumnsGListIDs() ;
 
       /* Redraw */
       zmapWindowBusy(page_data->window, FALSE) ;
@@ -3659,9 +3659,6 @@ static void saveColumnsConfig(ColConfigure configure_data, const char *filename)
   zMapReturnIfFail(configure_data && configure_data->window) ;
 
   ZMapWindow window = configure_data->window ; 
-
-  /* Apply any changes first */
-  notebook_foreach_page(configure_data->notebook, FALSE, NOTEBOOK_APPLY_FUNC, NULL);
 
   ZMapConfigIniFileType file_type = ZMAPCONFIG_FILE_PREFS ;
 

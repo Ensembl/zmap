@@ -2058,7 +2058,7 @@ static void viewWindowsMergeColumns(ZMapView zmap_view)
        *
        * due to constraints w/ old config we need to give the window a list of column name quarks in order
        */
-      GList *columns = zmap_view->context_map.getOrderedColumnsListIDs() ;
+      GList *columns = zmap_view->context_map.getOrderedColumnsGListIDs() ;
 
       g_list_foreach(zmap_view->window_list, invoke_merge_in_names, columns);
 
