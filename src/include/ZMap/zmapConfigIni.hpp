@@ -211,7 +211,7 @@ void zMapConfigIniSetQQHash(ZMapConfigIniContext context, ZMapConfigIniFileType 
 
 GKeyFile *zMapConfigIniGetKeyFile(ZMapConfigIniContext config, ZMapConfigIniFileType file_type) ;
 
-std::list<GQuark> zMapConfigIniMergeColumnsLists(std::list<GQuark> &src_list, std::list<GQuark> &dest_list) ;
+std::list<GQuark> zMapConfigIniMergeColumnsLists(std::list<GQuark> &src_list, std::list<GQuark> &dest_list, const bool unique = false) ;
 
 GHashTable *zMapConfigIniGetFeatureset2Featureset(ZMapConfigIniContext context,
 						  GHashTable *fset_src, GHashTable *fset2col) ;

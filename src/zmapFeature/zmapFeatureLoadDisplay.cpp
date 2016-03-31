@@ -368,7 +368,7 @@ bool ZMapFeatureContextMapStructType::updateContextColumns(_ZMapConfigIniContext
   zMapReturnValIfFail(context, FALSE) ;
 
   /* Get the new order of columns in zmap */
-  list<GQuark> ordered_list = getOrderedColumnsListIDs() ;
+  list<GQuark> ordered_list = getOrderedColumnsListIDs(false) ;
 
   /* We need to preserve any old order in the file if it is the user prefs file. That is because
    * there may be columns they've previously saved that aren't in the current zmap and we don't

@@ -1002,13 +1002,30 @@ GKeyFile *zMapConfigIniGetKeyFile(ZMapConfigIniContext context,
 
 
 /* Given two lists of column names, merge the src list into the dest list. Any items that are not
- * in dest list are added as close to a known position as possible based on adjacent items' positions. */
-list<GQuark> zMapConfigIniMergeColumnsLists(list<GQuark> &src_list, list<GQuark> &dest_list)
+ * in dest list are added as close to a known position as possible based on adjacent items'
+ * positions. If unique is true, the dest_list must be a list of unique ids and the result will 
+ * be a list of unique ids; otherwise, original ids are used */
+list<GQuark> zMapConfigIniMergeColumnsLists(list<GQuark> &src_list, 
+                                            list<GQuark> &dest_list,
+                                            const bool unique)
 {
   if (dest_list.size() < 1)
     {
       // Just use the src list
-      dest_list = src_list ;
+      if (unique)
+        {
+          // convert to unique ids
+          for (auto src_iter = src_list.begin(); src_iter != src_list.end(); ++src_iter)
+            {
+              /* Convert src id to a unique id */
+              GQuark src = zMapStyleCreateID(g_quark_to_string(*src_iter)) ;
+              dest_list.push_back(src) ;
+            }
+        }
+      else
+        {
+          dest_list = src_list ;
+        }
     }
   else if (src_list.size() > 0)
     {
@@ -1018,10 +1035,15 @@ list<GQuark> zMapConfigIniMergeColumnsLists(list<GQuark> &src_list, list<GQuark>
       auto src_iter_prev = src_list.begin();
       for (auto src_iter = src_list.begin(); src_iter != src_list.end(); ++src_iter)
         {
-          GQuark src = *src_iter ;
+          /* Convert src id to a unique id */
+          GQuark src = unique ? zMapStyleCreateIDFromID(*src_iter) : *src_iter ;
 
           // See if this item is already in the dest list
-          list<GQuark>::iterator dest_iter = find(dest_list.begin(), dest_list.end(), src) ;
+          // The lambda function converts to unique ids so that the search is case-insensitive
+          auto dest_iter = find_if(dest_list.begin(), dest_list.end(), 
+                                   [src](const GQuark &dest)
+                                   {return zMapStyleCreateIDFromID(dest) == zMapStyleCreateIDFromID(src);}) ;
+
           if (dest_iter == dest_list.end())
             {
               // It's not in the dest list so we need to add it. Add it into dest_list just after
