@@ -922,6 +922,17 @@ GQuark zMapStyleCreateID(const char *style)
   return style_id ;
 }
 
+/* Same as zMapStyleCreateID() but takes a quark. */
+GQuark zMapStyleCreateIDFromID(const GQuark &orig_id)
+{
+  GQuark style_id = 0 ;
+
+  const char *style = g_quark_to_string(orig_id) ;
+  style_id = zMapStyleCreateID(style) ;
+
+  return style_id ;
+}
+
 
 
 /* Check that every name has a style, if the style can't be found, remove the name from the list. */

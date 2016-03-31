@@ -1326,6 +1326,7 @@ gboolean zMapStyleHasMode(ZMapFeatureTypeStyle style);
 
 char *zMapStyleCreateName(const char *style_name) ;
 GQuark zMapStyleCreateID(const char *style_name) ;
+GQuark zMapStyleCreateIDFromID(const GQuark &orig_id) ;
 
 
 ZMapFeatureTypeStyle zMapStyleGetPredefined(char *style_name) ;

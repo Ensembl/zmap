@@ -32,6 +32,7 @@
 
 #include <string.h>
 #include <unistd.h>
+#include <sstream>
 
 #include <zmapFeature_P.hpp>
 
@@ -53,7 +54,7 @@ typedef gboolean (*HashListExportValueFunc)(const char *key_str, const char *val
  */
 
 static gint colIDOrderCB(gconstpointer a, gconstpointer b,gpointer user_data) ;
-static gint colOrderCB(gconstpointer a, gconstpointer b,gpointer user_data) ;
+static bool colOrderCB(const ZMapFeatureColumn &first, const ZMapFeatureColumn &second) ;
 
 static void updateContextHashList(ZMapConfigIniContext context,
                                   ZMapConfigIniFileType file_type, 
@@ -302,7 +303,28 @@ ZMapFeatureSource ZMapFeatureContextMapStructType::createSource(const GQuark fse
 /* Get a GList of column IDs as GQuarks in the correct order according to the 'order' field in
  * each ZMapFeatureColumn struct (from the context_map.columns hash table).
  * Returns a new GList which should be free'd with g_list_free() */
-GList* ZMapFeatureContextMapStructType::getOrderedColumnsListIDs()
+list<GQuark> ZMapFeatureContextMapStructType::getOrderedColumnsListIDs(const bool unique)
+{
+  list<GQuark> result ;
+
+  /* We can't easily get a sorted list of IDs from the map that are sorted by column order
+   * number. This isn't likely to be performance-critical so just get the ordered list of structs
+   * and loop through that to get the IDs */
+  list<ZMapFeatureColumn> col_list = getOrderedColumnsList() ;
+  for (auto iter = col_list.begin(); iter != col_list.end(); ++iter)
+    {
+      ZMapFeatureColumn col = *iter ;
+      if (unique)
+        result.push_back(col->unique_id) ;
+      else
+        result.push_back(col->column_id) ;
+    }
+
+  return result ;
+}
+
+/* Same as getOrdererdColumnsListIDs but returns a GList */
+GList* ZMapFeatureContextMapStructType::getOrderedColumnsGListIDs()
 {
   GList *result = NULL ;
 
@@ -322,18 +344,18 @@ GList* ZMapFeatureContextMapStructType::getOrderedColumnsListIDs()
 /* Get a GList of columns as ZMapFeatureColumn structs in the correct order according to 
  * the 'order' field in the struct (from the context_map.columns hash table).
  * Returns a new GList which should be free'd with g_list_free() */
-GList* ZMapFeatureContextMapStructType::getOrderedColumnsList()
+list<ZMapFeatureColumn> ZMapFeatureContextMapStructType::getOrderedColumnsList()
 {
-  GList *result = NULL ;
+  list<ZMapFeatureColumn> result ;
 
   for (map<GQuark, ZMapFeatureColumn>::iterator iter = columns->begin() ; 
        iter != columns->end(); 
        ++iter)
     {
-      result = g_list_prepend(result, iter->second);
+      result.push_back(iter->second);
     }
 
-  result = g_list_sort_with_data(result, colOrderCB, columns);
+  result.sort(colOrderCB);
 
   return result ;
 }
@@ -345,16 +367,44 @@ bool ZMapFeatureContextMapStructType::updateContextColumns(_ZMapConfigIniContext
 {
   zMapReturnValIfFail(context, FALSE) ;
 
-  /* Update the context with the columns, if they need saving */
-  GList *ordered_list = getOrderedColumnsListIDs() ;
-  char *result = zMap_g_list_quark_to_string(ordered_list, NULL) ;
+  /* Get the new order of columns in zmap */
+  list<GQuark> ordered_list = getOrderedColumnsListIDs(false) ;
+
+  /* We need to preserve any old order in the file if it is the user prefs file. That is because
+   * there may be columns they've previously saved that aren't in the current zmap and we don't
+   * want to wipe that out, so merge the new order with the old list */
+  if (file_type == ZMAPCONFIG_FILE_PREFS)
+    {
+      char *value = NULL ;
+      zMapConfigIniContextGetString(context,
+                                    ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+                                    ZMAPSTANZA_APP_COLUMNS, &value);
+      if (value)
+        {
+          list<GQuark> old_list = zMapConfigString2QuarkList(value, FALSE) ;
+          ordered_list = zMapConfigIniMergeColumnsLists(ordered_list, old_list) ;
+        }
+    }
+
+  stringstream result;
+  bool first = true;
+  for(auto iter = ordered_list.begin(); iter != ordered_list.end(); ++iter)
+    {
+      /* Don't save the strand separator order - its position is always the same */
+      if (*iter != g_quark_from_string(ZMAP_FIXED_STYLE_STRAND_SEPARATOR))
+        {
+          if(!first)
+            result << ";" ;
+
+          result << g_quark_to_string(*iter) ;
+          first = false ;
+        }
+    }
 
   zMapConfigIniContextSetString(context, file_type,
                                 ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
-                                ZMAPSTANZA_APP_COLUMNS, result);
+                                ZMAPSTANZA_APP_COLUMNS, result.str().c_str());
 
-  g_free(result) ;
-  
   return TRUE ;
 }
 
@@ -740,7 +790,7 @@ void ZMapFeatureSequenceMapStructType::constructSources(const char *filename,
       if (!sources)
         sources = new map<string, ZMapConfigSource> ;
 
-      GList *names_list = zMapConfigString2QuarkIDList(source_names) ;
+      GList *names_list = zMapConfigString2QuarkIDGList(source_names) ;
 
       // loop through all config sources
       GList *source_item = settings_list ;
@@ -931,26 +981,19 @@ static gint colIDOrderCB(gconstpointer a, gconstpointer b,gpointer user_data)
 }
 
 
-static gint colOrderCB(gconstpointer a, gconstpointer b,gpointer user_data)
+static bool colOrderCB(const ZMapFeatureColumn &pa, const ZMapFeatureColumn &pb)
 {
-  ZMapFeatureColumn pa = NULL,pb = NULL;
-  map<GQuark, ZMapFeatureColumn> *columns = (map<GQuark, ZMapFeatureColumn>*) user_data;
+  bool result = true ;
 
-  if (columns && a && b)
+  if(pa && pb)
     {
-      pa = (ZMapFeatureColumn)a ;
-      pb = (ZMapFeatureColumn)b ;
-
-      if(pa && pb)
-        {
-          if(pa->order < pb->order)
-            return(-1);
-          if(pa->order > pb->order)
-            return(1);
-        }
+      if(pa->order < pb->order)
+        result = true ;
+      else
+        result = false ;
     }
 
-  return(0);
+  return result ;
 }
 
 /* Update the given context with the given hash table of ids mapped to a glist of ids. This is

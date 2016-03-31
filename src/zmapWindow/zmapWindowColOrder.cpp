@@ -37,6 +37,7 @@
 #include <zmapWindow_P.hpp>
 #include <zmapWindowContainers.hpp>
 
+using namespace std ;
 
 
 typedef struct OrderColumnsDataStructType
@@ -108,7 +109,7 @@ static void orderPositionColumns(ZMapWindow window)
     printf("%s: starting column ordering\n", __PRETTY_FUNCTION__);
 
   // Get the current order
-  GList *orig_columns = NULL ;
+  list<ZMapFeatureColumn> orig_columns ;
 
   if (window->context_map)
     orig_columns = window->context_map->getOrderedColumnsList() ;
@@ -132,9 +133,9 @@ static void orderPositionColumns(ZMapWindow window)
 
   // Now loop through the original ordered list and append any that weren't in the feature_set_names to
   // the end.
-  for (GList *col_item = orig_columns; col_item; col_item = col_item->next)
+  for (auto col_iter = orig_columns.begin(); col_iter != orig_columns.end(); ++col_iter)
     {
-      ZMapFeatureColumn column = (ZMapFeatureColumn)(col_item->data) ;
+      ZMapFeatureColumn column = *col_iter ;
 
       // look up this column id and see if the order is set in the names hash
       guint order = GPOINTER_TO_INT(g_hash_table_lookup(order_data.names_hash, GINT_TO_POINTER(column->unique_id))) ;
@@ -173,7 +174,6 @@ static void orderPositionColumns(ZMapWindow window)
     window->feature_set_names = g_list_reverse(window->feature_set_names);
 
   g_hash_table_destroy(order_data.names_hash);
-  g_list_free(orig_columns) ;
 
   if (order_debug_G)
     {

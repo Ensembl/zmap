@@ -43,6 +43,8 @@
 #include <ZMap/zmapGLibUtils.hpp>
 #include <zmapConfigIni_P.hpp>
 
+using namespace std ;
+
 
 #undef WITH_LOGGING
 
@@ -834,7 +836,7 @@ static gboolean param_value_diffs(char **value, const char *parent_value, const 
             {
               /* Separate value into a list colour strings and search for each individual colour
                * string (i.e. "normal border black") in the parent value */
-              GList *list = zMapConfigString2QuarkList(*value, FALSE);
+              GList *list = zMapConfigString2QuarkGList(*value, FALSE);
               GString *diffs_string = NULL ;
               
               for (GList *item = list ; item ; item = item->next)
@@ -996,4 +998,88 @@ GKeyFile *zMapConfigIniGetKeyFile(ZMapConfigIniContext context,
     result = context->config->key_file[file_type] ;
 
   return result ;
+}
+
+
+/* Given two lists of column names, merge the src list into the dest list. Any items that are not
+ * in dest list are added as close to a known position as possible based on adjacent items'
+ * positions. If unique is true, the dest_list must be a list of unique ids and the result will 
+ * be a list of unique ids; otherwise, original ids are used */
+list<GQuark> zMapConfigIniMergeColumnsLists(list<GQuark> &src_list, 
+                                            list<GQuark> &dest_list,
+                                            const bool unique)
+{
+  if (dest_list.size() < 1)
+    {
+      // Just use the src list
+      if (unique)
+        {
+          // convert to unique ids
+          for (auto src_iter = src_list.begin(); src_iter != src_list.end(); ++src_iter)
+            {
+              /* Convert src id to a unique id */
+              GQuark src = zMapStyleCreateID(g_quark_to_string(*src_iter)) ;
+              dest_list.push_back(src) ;
+            }
+        }
+      else
+        {
+          dest_list = src_list ;
+        }
+    }
+  else if (src_list.size() > 0)
+    {
+      // Merge src into dest. 
+
+      // Loop through all items in src list.
+      auto src_iter_prev = src_list.begin();
+      for (auto src_iter = src_list.begin(); src_iter != src_list.end(); ++src_iter)
+        {
+          /* Convert src id to a unique id */
+          GQuark src = unique ? zMapStyleCreateIDFromID(*src_iter) : *src_iter ;
+
+          // See if this item is already in the dest list
+          // The lambda function converts to unique ids so that the search is case-insensitive
+          auto dest_iter = find_if(dest_list.begin(), dest_list.end(), 
+                                   [src](const GQuark &dest)
+                                   {return zMapStyleCreateIDFromID(dest) == zMapStyleCreateIDFromID(src);}) ;
+
+          if (dest_iter == dest_list.end())
+            {
+              // It's not in the dest list so we need to add it. Add it into dest_list just after
+              // the previous item from src_list to try to keep things grouped together.
+
+              // If the prev item is the same as the current item that means it's the first in the
+              // list. 
+              if (src_iter_prev == src_iter)
+                {
+                  // There is no previous item. Add the src item to the start of the dest_list.
+                  dest_list.push_front(src) ;
+                }
+              else
+                {
+                  // Find the previous src item in the dest list (it should be there because we
+                  // have processed it already).
+                  dest_iter = find(dest_list.begin(), dest_list.end(), *src_iter_prev) ;
+
+                  // Add the src item just after the prev item.
+                  if (dest_iter != dest_list.end())
+                    {
+                      ++dest_iter ;
+                      dest_list.insert(dest_iter, src);
+                    }
+                }
+            }
+          else
+            {
+              // It's already in the dest list so we don't need to add it. However, if the case is
+              // different then use the case from the src
+              *dest_iter = src ;
+            }
+
+          src_iter_prev = src_iter ;
+        }
+    }
+
+  return dest_list;
 }
