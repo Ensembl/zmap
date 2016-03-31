@@ -118,14 +118,6 @@ void context_update_style(ZMapFeatureTypeStyle style, gpointer data);
  */
 
 
-
-/* WHAT ON EARTH IS THIS ABOUT...??????? */
-void zMapConfigIniGetStanza(ZMapConfigIni config, const char *stanza_name)
-{
-  return ;
-}
-
-
 ZMapConfigIniContext zMapConfigIniContextCreate(const char *config_file)
 {
   ZMapConfigIniContext context = NULL;
