@@ -1070,6 +1070,12 @@ list<GQuark> zMapConfigIniMergeColumnsLists(list<GQuark> &src_list,
                     }
                 }
             }
+          else
+            {
+              // It's already in the dest list so we don't need to add it. However, if the case is
+              // different then use the case from the src
+              *dest_iter = src ;
+            }
 
           src_iter_prev = src_iter ;
         }
