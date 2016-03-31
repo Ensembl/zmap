@@ -389,9 +389,13 @@ bool ZMapFeatureContextMapStructType::updateContextColumns(_ZMapConfigIniContext
   stringstream result;
   for(auto iter = ordered_list.begin(); iter != ordered_list.end(); ++iter)
     {
-      if(iter != ordered_list.begin())
-        result << ";";
-      result << g_quark_to_string(*iter);
+      /* Don't save the strand separator order - its position is always the same */
+      if (*iter != zMapStyleCreateID(ZMAP_FIXED_STYLE_STRAND_SEPARATOR))
+        {
+          if(iter != ordered_list.begin())
+            result << ";";
+          result << g_quark_to_string(*iter);
+        }
     }
 
   zMapConfigIniContextSetString(context, file_type,
