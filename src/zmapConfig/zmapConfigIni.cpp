@@ -51,7 +51,9 @@ using namespace std ;
 
 
 
-
+// Unnamed namespace for internal linkage
+namespace
+{
 
 typedef struct
 {
@@ -77,10 +79,6 @@ typedef struct
 } UpdateStyleDataStruct, *UpdateStyleData ;
 
 
-// Unnamed namespace for internal linkage
-namespace
-{
-
 /* Case-insensitive comparison of two strings (as GQuarks) */
 class GQuarkNCaseCmp
 {
@@ -97,21 +95,21 @@ private:
   GQuark m_val;
 } ;
 
+
+GList *copy_keys(ZMapConfigIniContextKeyEntryStruct *keys);
+void check_required(gpointer list_data, gpointer user_data);
+gboolean check_required_keys(ZMapConfigIniContext context,
+                             ZMapConfigIniContextStanzaEntry stanza);
+GType get_stanza_key_type(ZMapConfigIniContext context,
+                          const char *stanza_name,
+                          const char *stanza_type,
+                          const char *key_name);
+gint match_name_type(gconstpointer list_data, gconstpointer user_data);
+void setErrorMessage(ZMapConfigIniContext context,char *error_message);
+void context_update_style(ZMapFeatureTypeStyle style, gpointer data);
+
+
 } // Unnamed namespace
-
-
-static GList *copy_keys(ZMapConfigIniContextKeyEntryStruct *keys);
-static void check_required(gpointer list_data, gpointer user_data);
-static gboolean check_required_keys(ZMapConfigIniContext context,
-    ZMapConfigIniContextStanzaEntry stanza);
-static GType get_stanza_key_type(ZMapConfigIniContext context,
-                                 const char *stanza_name,
-                                 const char *stanza_type,
-                                 const char *key_name);
-static gint match_name_type(gconstpointer list_data, gconstpointer user_data);
-static void setErrorMessage(ZMapConfigIniContext context,char *error_message);
-static void context_update_style(ZMapFeatureTypeStyle style, gpointer data);
-
 
 
 
@@ -234,18 +232,6 @@ gchar *zMapConfigIniContextErrorMessage(ZMapConfigIniContext context)
   e = context->error_message ;
 
   return e ;
-}
-
-static void setErrorMessage(ZMapConfigIniContext context,char *error_message)
-{
-  zMapReturnIfFail(context) ;
-
-  if (context->error_message)
-    g_free(context->error_message);
-
-  context->error_message = error_message;
-
-  return ;
 }
 
 gchar *zMapConfigIniContextKeyFileErrorMessage(ZMapConfigIniContext context)
@@ -667,315 +653,6 @@ gboolean zMapConfigIniContextSetValue(ZMapConfigIniContext context,
 }
 
 
-
-
-
-
-/*
- *                   Internal functions
- */
-
-
-static void check_required(gpointer list_data, gpointer user_data)
-{
-  CheckRequiredKeys checking_data = (CheckRequiredKeys)user_data;
-  ZMapConfigIniContextKeyEntry key = (ZMapConfigIniContextKeyEntry)list_data;
-  ZMapConfigIniContextStanzaEntry stanza;
-  ZMapConfigIniContext context;
-
-  context = checking_data->context;
-  stanza  = checking_data->stanza;
-
-  if(checking_data->result && !context->error_message && key->required)
-    {
-      GValue *value = NULL;
-
-      if(zMapConfigIniGetValue(context->config,
-                               stanza->stanza_name,
-                               key->key,
-                               &value, key->type))
-        {
-          checking_data->result = TRUE;
-          g_value_unset(value);
-          g_free(value);
-        }
-      else
-        {
-          checking_data->result = FALSE;
-          setErrorMessage(context,
-          g_strdup_printf("Failed to get required key '%s' in stanza %s",
-          key->key, stanza->stanza_name));
-        }
-    }
-
-  return ;
-}
-
-static gboolean check_required_keys(ZMapConfigIniContext context, ZMapConfigIniContextStanzaEntry stanza)
-{
-  CheckRequiredKeysStruct checking_data = {};
-
-  checking_data.context = context;
-  checking_data.stanza  = stanza;
-  checking_data.result  = TRUE;
-
-  g_list_foreach(stanza->keys, check_required, &checking_data);
-
-  return checking_data.result;
-}
-
-
-
-/* here we want to prefer exact matches of name and type */
-/* then we'll only match types with a name == * already in the list */
-static gint match_name_type(gconstpointer list_data, gconstpointer user_data)
-{
-  ZMapConfigIniContextStanzaEntry query = (ZMapConfigIniContextStanzaEntry)user_data;
-  ZMapConfigIniContextStanzaEntry list_entry = (ZMapConfigIniContextStanzaEntry)list_data;
-  gint result = -1;
-
-  /* Look for exact name matches first */
-  if(g_ascii_strcasecmp( query->stanza_name, list_entry->stanza_name ) == 0)
-    {
-      /* Checking that the types match.  Necessary? */
-      if(g_ascii_strcasecmp( query->stanza_type, list_entry->stanza_type ) == 0)
-        {
-          query->keys = list_entry->keys;
-          result = 0;           /* zero == found */
-        }
-      else
-        result = 1;
-    }
-  /* not an exact name match, do the types match? */
-  else if(g_ascii_strcasecmp( query->stanza_type, list_entry->stanza_type ) == 0)
-    {
-      /* make sure the stanza_name == * in the list the context
-       * has. This is so stanzas with different names can have the
-       * same basic type. e.g. the same list of keys/info/G_TYPE data
-       * for keys... */
-      if(g_ascii_strcasecmp(list_entry->stanza_name, "*") == 0)
-        {
-          query->keys = list_entry->keys;
-          result = 0;           /* zero == found */
-        }
-      else
-        result = 1;
-    }
-  else
-    result = -1;
-
-  return result;
-}
-
-
-
-static gint match_key(gconstpointer list_data, gconstpointer user_data)
-{
-  ZMapConfigIniContextKeyEntry query = (ZMapConfigIniContextKeyEntry)user_data;
-  ZMapConfigIniContextKeyEntry list_key = (ZMapConfigIniContextKeyEntry)list_data;
-  gint result = -1;
-
-  if(g_ascii_strcasecmp(query->key, list_key->key) == 0)
-    {
-      query->type = list_key->type;
-      result = 0;
-    }
-
-  return result ;
-}
-
-
-static GType get_stanza_key_type(ZMapConfigIniContext context,
-                                 const char *stanza_name,
-                                 const char *stanza_type,
-                                 const char *key_name)
-{
-  ZMapConfigIniContextStanzaEntryStruct user_request = {NULL};
-  GList *entry_found = NULL;
-  GType type = 0;
-
-  user_request.stanza_name = stanza_name;
-  user_request.stanza_type = stanza_type;
-
-  if((entry_found = g_list_find_custom(context->groups, &user_request, match_name_type)))
-    {
-      ZMapConfigIniContextKeyEntryStruct key_request = {};
-      GList *key_found = NULL;
-
-      key_request.key = key_name;
-
-      if((key_found = g_list_find_custom(user_request.keys, &key_request, match_key)))
-        type = key_request.type;
-    }
-
-  return type;
-}
-
-static GList *copy_keys(ZMapConfigIniContextKeyEntryStruct *keys)
-{
-  GList *new_keys = NULL;
-
-  while(keys && keys->key)
-    {
-      ZMapConfigIniContextKeyEntry k = NULL;
-
-      if((k = g_new0(ZMapConfigIniContextKeyEntryStruct, 1)))
-        {
-          k->key      = keys->key;
-          k->type     = keys->type;
-          k->required = keys->required;
-          k->set_property = keys->set_property;
-          new_keys    = g_list_append(new_keys, k);
-        }
-
-      keys++;
-    }
-
-  return new_keys;
-}
-
-
-/* Check if there are differences between the given parameter value and its parent value. Returns
- * true if there are differences. It may update the value pointer to a new string if there are
- * partial differences, e.g. if some colours in a colours string but others do not then it will
- * only return the differing colours. */
-static gboolean param_value_diffs(char **value, const char *parent_value, const char *param_name)
-{
-  gboolean diffs = TRUE ;
-  
-  if (value && *value && parent_value)
-    {
-      if (strlen(parent_value) == strlen(*value) && 
-          strncasecmp(parent_value, *value, strlen(*value)) == 0)
-        {
-          /* Strings are identical, so there are no diffs */
-          diffs = FALSE ;
-        }
-      else
-        {
-          /* Strings differ, but if it's a colours string then we only want to export the
-           * specific colour types that are different, rather than the whole string */
-          if (strcmp(param_name, ZMAPSTYLE_PROPERTY_COLOURS) == 0 || 
-              strcmp(param_name, ZMAPSTYLE_PROPERTY_TRANSCRIPT_CDS_COLOURS) == 0)
-            {
-              /* Separate value into a list colour strings and search for each individual colour
-               * string (i.e. "normal border black") in the parent value */
-              GList *list = zMapConfigString2QuarkGList(*value, FALSE);
-              GString *diffs_string = NULL ;
-              
-              for (GList *item = list ; item ; item = item->next)
-                {
-                  const char *cur_string = g_quark_to_string(GPOINTER_TO_INT(item->data)) ;
-
-                  /* If it doesn't exist in the parent, then include it in the diffs string */
-                  if (!strstr(parent_value, cur_string))
-                    {
-                      if (!diffs_string)
-                        diffs_string = g_string_new(cur_string) ;
-                      else
-                        g_string_append_printf(diffs_string, " ; %s", cur_string) ;
-                    }
-                }
-
-              if (diffs_string)
-                {
-                  /* Replace original string with the string containing just the diffs */
-                  g_free(*value) ;
-                  *value = g_string_free(diffs_string, FALSE) ;
-                  diffs = TRUE ;
-                }
-            }
-          else
-            {
-              /* Not a colours string, so there are straight diffs */
-              diffs = TRUE ;
-            }
-        }
-    }
-
-  return diffs ;
-}
-
-
-/* Update the context given in the user data with the style given in the value. This loops
- * through all the parameters that are set in the style and updates them in the context's  */
-static void context_update_style(ZMapFeatureTypeStyle style, gpointer data)
-{
-  UpdateStyleData update_data = (UpdateStyleData)data ;
-
-  zMapReturnIfFail(style && 
-                   style->unique_id &&
-                   update_data && 
-                   update_data->context && 
-                   update_data->context->config &&
-                   update_data->context->config->key_file[ZMAPCONFIG_FILE_STYLES]) ;
-  
-  /* Loop through each possible parameter type */
-  for (int param_id = STYLE_PROP_NONE + 1 ; param_id < _STYLE_PROP_N_ITEMS; ++param_id)
-    {
-      const char *param_name = zmapStyleParam2Name((ZMapStyleParamId)param_id) ;
-      gboolean ok = TRUE ;
-
-      /* Check for various params that we don't want to export */
-      if (!param_name ||
-          strcmp(param_name, ZMAPSTYLE_PROPERTY_NAME) == 0 ||
-          strcmp(param_name, ZMAPSTYLE_PROPERTY_DESCRIPTION) == 0 ||
-          strcmp(param_name, ZMAPSTYLE_PROPERTY_IS_SET) == 0 ||
-          strcmp(param_name, ZMAPSTYLE_PROPERTY_DISPLAYABLE) == 0 ||
-          strcmp(param_name, ZMAPSTYLE_PROPERTY_ORIGINAL_ID) == 0 ||
-          strcmp(param_name, ZMAPSTYLE_PROPERTY_UNIQUE_ID) == 0 ||
-          strcmp(param_name, ZMAPSTYLE_PROPERTY_GFF_SOURCE) == 0 ||
-          strcmp(param_name, ZMAPSTYLE_PROPERTY_GLYPH_SHAPE) == 0 
-          )
-        {
-           ok = FALSE ;
-        }
-
-      if (ok)
-        {
-          char *value = zMapStyleGetValueAsString(style, (ZMapStyleParamId)param_id) ;
-
-          if (value)
-            {
-              /* If the style has a parent with the same value then only include that value in the
-               * parent, i.e. exclude it from this child. Always include the parent-style value
-               * itself though. */
-              if (ok && strcmp(param_name, "parent-style") != 0 && style->parent_id)
-                {
-                  ZMapFeatureTypeStyle parent_style = update_data->styles->find_style(style->parent_id) ;
-
-                  if (parent_style)
-                    {
-                      /* Get the value of this field in the parent (or the parent's parent etc.) */
-                      char *parent_value = zMapStyleGetValueAsString(parent_style, (ZMapStyleParamId)param_id) ;
-
-                      /* If child value is the same as parent value, flag that we don't want to continue */
-                      ok = param_value_diffs(&value, parent_value, param_name) ;
-
-                      if (parent_value)
-                        g_free(parent_value) ;
-                    }
-                }
-
-              if (ok)
-                {
-                  const char *stanza_name = g_quark_to_string(style->original_id) ;
-
-                  if (!stanza_name)
-                    stanza_name = g_quark_to_string(style->unique_id) ;
-
-                  g_key_file_set_string(update_data->context->config->key_file[ZMAPCONFIG_FILE_STYLES], stanza_name, param_name, value);
-                }
-
-              g_free(value) ;
-            }
-        }
-    }
-
-  return ;
-}
-
-
 /*
  * Write a named stanza from values in a hash table
  * NOTE: this function operates differently from normal ConfigIni in that we do not know
@@ -1104,3 +781,328 @@ list<GQuark> zMapConfigIniMergeColumnsLists(list<GQuark> &src_list,
 
   return dest_list;
 }
+
+
+
+
+/*
+ *                   Internal functions
+ */
+
+// Unnamed namespace
+namespace
+{
+
+void setErrorMessage(ZMapConfigIniContext context,char *error_message)
+{
+  zMapReturnIfFail(context) ;
+
+  if (context->error_message)
+    g_free(context->error_message);
+
+  context->error_message = error_message;
+
+  return ;
+}
+
+void check_required(gpointer list_data, gpointer user_data)
+{
+  CheckRequiredKeys checking_data = (CheckRequiredKeys)user_data;
+  ZMapConfigIniContextKeyEntry key = (ZMapConfigIniContextKeyEntry)list_data;
+  ZMapConfigIniContextStanzaEntry stanza;
+  ZMapConfigIniContext context;
+
+  context = checking_data->context;
+  stanza  = checking_data->stanza;
+
+  if(checking_data->result && !context->error_message && key->required)
+    {
+      GValue *value = NULL;
+
+      if(zMapConfigIniGetValue(context->config,
+                               stanza->stanza_name,
+                               key->key,
+                               &value, key->type))
+        {
+          checking_data->result = TRUE;
+          g_value_unset(value);
+          g_free(value);
+        }
+      else
+        {
+          checking_data->result = FALSE;
+          setErrorMessage(context,
+          g_strdup_printf("Failed to get required key '%s' in stanza %s",
+          key->key, stanza->stanza_name));
+        }
+    }
+
+  return ;
+}
+
+gboolean check_required_keys(ZMapConfigIniContext context, ZMapConfigIniContextStanzaEntry stanza)
+{
+  CheckRequiredKeysStruct checking_data = {};
+
+  checking_data.context = context;
+  checking_data.stanza  = stanza;
+  checking_data.result  = TRUE;
+
+  g_list_foreach(stanza->keys, check_required, &checking_data);
+
+  return checking_data.result;
+}
+
+
+
+/* here we want to prefer exact matches of name and type */
+/* then we'll only match types with a name == * already in the list */
+gint match_name_type(gconstpointer list_data, gconstpointer user_data)
+{
+  ZMapConfigIniContextStanzaEntry query = (ZMapConfigIniContextStanzaEntry)user_data;
+  ZMapConfigIniContextStanzaEntry list_entry = (ZMapConfigIniContextStanzaEntry)list_data;
+  gint result = -1;
+
+  /* Look for exact name matches first */
+  if(g_ascii_strcasecmp( query->stanza_name, list_entry->stanza_name ) == 0)
+    {
+      /* Checking that the types match.  Necessary? */
+      if(g_ascii_strcasecmp( query->stanza_type, list_entry->stanza_type ) == 0)
+        {
+          query->keys = list_entry->keys;
+          result = 0;           /* zero == found */
+        }
+      else
+        result = 1;
+    }
+  /* not an exact name match, do the types match? */
+  else if(g_ascii_strcasecmp( query->stanza_type, list_entry->stanza_type ) == 0)
+    {
+      /* make sure the stanza_name == * in the list the context
+       * has. This is so stanzas with different names can have the
+       * same basic type. e.g. the same list of keys/info/G_TYPE data
+       * for keys... */
+      if(g_ascii_strcasecmp(list_entry->stanza_name, "*") == 0)
+        {
+          query->keys = list_entry->keys;
+          result = 0;           /* zero == found */
+        }
+      else
+        result = 1;
+    }
+  else
+    result = -1;
+
+  return result;
+}
+
+
+
+gint match_key(gconstpointer list_data, gconstpointer user_data)
+{
+  ZMapConfigIniContextKeyEntry query = (ZMapConfigIniContextKeyEntry)user_data;
+  ZMapConfigIniContextKeyEntry list_key = (ZMapConfigIniContextKeyEntry)list_data;
+  gint result = -1;
+
+  if(g_ascii_strcasecmp(query->key, list_key->key) == 0)
+    {
+      query->type = list_key->type;
+      result = 0;
+    }
+
+  return result ;
+}
+
+
+GType get_stanza_key_type(ZMapConfigIniContext context,
+                                 const char *stanza_name,
+                                 const char *stanza_type,
+                                 const char *key_name)
+{
+  ZMapConfigIniContextStanzaEntryStruct user_request = {NULL};
+  GList *entry_found = NULL;
+  GType type = 0;
+
+  user_request.stanza_name = stanza_name;
+  user_request.stanza_type = stanza_type;
+
+  if((entry_found = g_list_find_custom(context->groups, &user_request, match_name_type)))
+    {
+      ZMapConfigIniContextKeyEntryStruct key_request = {};
+      GList *key_found = NULL;
+
+      key_request.key = key_name;
+
+      if((key_found = g_list_find_custom(user_request.keys, &key_request, match_key)))
+        type = key_request.type;
+    }
+
+  return type;
+}
+
+GList *copy_keys(ZMapConfigIniContextKeyEntryStruct *keys)
+{
+  GList *new_keys = NULL;
+
+  while(keys && keys->key)
+    {
+      ZMapConfigIniContextKeyEntry k = NULL;
+
+      if((k = g_new0(ZMapConfigIniContextKeyEntryStruct, 1)))
+        {
+          k->key      = keys->key;
+          k->type     = keys->type;
+          k->required = keys->required;
+          k->set_property = keys->set_property;
+          new_keys    = g_list_append(new_keys, k);
+        }
+
+      keys++;
+    }
+
+  return new_keys;
+}
+
+
+/* Check if there are differences between the given parameter value and its parent value. Returns
+ * true if there are differences. It may update the value pointer to a new string if there are
+ * partial differences, e.g. if some colours in a colours string but others do not then it will
+ * only return the differing colours. */
+gboolean param_value_diffs(char **value, const char *parent_value, const char *param_name)
+{
+  gboolean diffs = TRUE ;
+  
+  if (value && *value && parent_value)
+    {
+      if (strlen(parent_value) == strlen(*value) && 
+          strncasecmp(parent_value, *value, strlen(*value)) == 0)
+        {
+          /* Strings are identical, so there are no diffs */
+          diffs = FALSE ;
+        }
+      else
+        {
+          /* Strings differ, but if it's a colours string then we only want to export the
+           * specific colour types that are different, rather than the whole string */
+          if (strcmp(param_name, ZMAPSTYLE_PROPERTY_COLOURS) == 0 || 
+              strcmp(param_name, ZMAPSTYLE_PROPERTY_TRANSCRIPT_CDS_COLOURS) == 0)
+            {
+              /* Separate value into a list colour strings and search for each individual colour
+               * string (i.e. "normal border black") in the parent value */
+              GList *list = zMapConfigString2QuarkGList(*value, FALSE);
+              GString *diffs_string = NULL ;
+              
+              for (GList *item = list ; item ; item = item->next)
+                {
+                  const char *cur_string = g_quark_to_string(GPOINTER_TO_INT(item->data)) ;
+
+                  /* If it doesn't exist in the parent, then include it in the diffs string */
+                  if (!strstr(parent_value, cur_string))
+                    {
+                      if (!diffs_string)
+                        diffs_string = g_string_new(cur_string) ;
+                      else
+                        g_string_append_printf(diffs_string, " ; %s", cur_string) ;
+                    }
+                }
+
+              if (diffs_string)
+                {
+                  /* Replace original string with the string containing just the diffs */
+                  g_free(*value) ;
+                  *value = g_string_free(diffs_string, FALSE) ;
+                  diffs = TRUE ;
+                }
+            }
+          else
+            {
+              /* Not a colours string, so there are straight diffs */
+              diffs = TRUE ;
+            }
+        }
+    }
+
+  return diffs ;
+}
+
+
+/* Update the context given in the user data with the style given in the value. This loops
+ * through all the parameters that are set in the style and updates them in the context's  */
+void context_update_style(ZMapFeatureTypeStyle style, gpointer data)
+{
+  UpdateStyleData update_data = (UpdateStyleData)data ;
+
+  zMapReturnIfFail(style && 
+                   style->unique_id &&
+                   update_data && 
+                   update_data->context && 
+                   update_data->context->config &&
+                   update_data->context->config->key_file[ZMAPCONFIG_FILE_STYLES]) ;
+  
+  /* Loop through each possible parameter type */
+  for (int param_id = STYLE_PROP_NONE + 1 ; param_id < _STYLE_PROP_N_ITEMS; ++param_id)
+    {
+      const char *param_name = zmapStyleParam2Name((ZMapStyleParamId)param_id) ;
+      gboolean ok = TRUE ;
+
+      /* Check for various params that we don't want to export */
+      if (!param_name ||
+          strcmp(param_name, ZMAPSTYLE_PROPERTY_NAME) == 0 ||
+          strcmp(param_name, ZMAPSTYLE_PROPERTY_DESCRIPTION) == 0 ||
+          strcmp(param_name, ZMAPSTYLE_PROPERTY_IS_SET) == 0 ||
+          strcmp(param_name, ZMAPSTYLE_PROPERTY_DISPLAYABLE) == 0 ||
+          strcmp(param_name, ZMAPSTYLE_PROPERTY_ORIGINAL_ID) == 0 ||
+          strcmp(param_name, ZMAPSTYLE_PROPERTY_UNIQUE_ID) == 0 ||
+          strcmp(param_name, ZMAPSTYLE_PROPERTY_GFF_SOURCE) == 0 ||
+          strcmp(param_name, ZMAPSTYLE_PROPERTY_GLYPH_SHAPE) == 0 
+          )
+        {
+           ok = FALSE ;
+        }
+
+      if (ok)
+        {
+          char *value = zMapStyleGetValueAsString(style, (ZMapStyleParamId)param_id) ;
+
+          if (value)
+            {
+              /* If the style has a parent with the same value then only include that value in the
+               * parent, i.e. exclude it from this child. Always include the parent-style value
+               * itself though. */
+              if (ok && strcmp(param_name, "parent-style") != 0 && style->parent_id)
+                {
+                  ZMapFeatureTypeStyle parent_style = update_data->styles->find_style(style->parent_id) ;
+
+                  if (parent_style)
+                    {
+                      /* Get the value of this field in the parent (or the parent's parent etc.) */
+                      char *parent_value = zMapStyleGetValueAsString(parent_style, (ZMapStyleParamId)param_id) ;
+
+                      /* If child value is the same as parent value, flag that we don't want to continue */
+                      ok = param_value_diffs(&value, parent_value, param_name) ;
+
+                      if (parent_value)
+                        g_free(parent_value) ;
+                    }
+                }
+
+              if (ok)
+                {
+                  const char *stanza_name = g_quark_to_string(style->original_id) ;
+
+                  if (!stanza_name)
+                    stanza_name = g_quark_to_string(style->unique_id) ;
+
+                  g_key_file_set_string(update_data->context->config->key_file[ZMAPCONFIG_FILE_STYLES], stanza_name, param_name, value);
+                }
+
+              g_free(value) ;
+            }
+        }
+    }
+
+  return ;
+}
+
+
+} // Unnamed namespace
