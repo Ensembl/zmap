@@ -77,6 +77,29 @@ typedef struct
 } UpdateStyleDataStruct, *UpdateStyleData ;
 
 
+// Unnamed namespace for internal linkage
+namespace
+{
+
+/* Case-insensitive comparison of two strings (as GQuarks) */
+class GQuarkNCaseCmp
+{
+public:
+  GQuarkNCaseCmp(const GQuark &val) : m_val(val) {} ;
+
+  bool operator()(const GQuark &compare_val) const
+  {
+    // convert to unique ids to be case-insensitive
+    return zMapStyleCreateIDFromID(compare_val) == zMapStyleCreateIDFromID(m_val);
+  }
+
+private:
+  GQuark m_val;
+} ;
+
+} // Unnamed namespace
+
+
 static GList *copy_keys(ZMapConfigIniContextKeyEntryStruct *keys);
 static void check_required(gpointer list_data, gpointer user_data);
 static gboolean check_required_keys(ZMapConfigIniContext context,
@@ -1040,11 +1063,7 @@ list<GQuark> zMapConfigIniMergeColumnsLists(list<GQuark> &src_list,
           GQuark src = unique ? zMapStyleCreateIDFromID(*src_iter) : *src_iter ;
 
           // See if this item is already in the dest list
-          auto dest_iter = find_if(dest_list.begin(), dest_list.end(), [&](const GQuark &dest)->bool
-                                   {
-                                     // lambda to convert to unique ids to be case-insensitive
-                                     return zMapStyleCreateIDFromID(dest) == zMapStyleCreateIDFromID(src);
-                                   }) ;
+          auto dest_iter = find_if(dest_list.begin(), dest_list.end(), GQuarkNCaseCmp(src)) ;
 
           if (dest_iter == dest_list.end())
             {
