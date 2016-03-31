@@ -1818,6 +1818,7 @@ FooCanvasGroup *zmapWindowFocusGetHotColumn(ZMapWindowFocus focus) ;
 void zmapWindowFocusDestroy(ZMapWindowFocus focus) ;
 
 FooCanvasGroup *zmapWindowGetFirstColumn(ZMapWindow window, ZMapStrand strand) ;
+FooCanvasGroup *zmapWindowGetLastColumn(ZMapWindow window, ZMapStrand strand) ;
 FooCanvasGroup *zmapWindowGetColumnByID(ZMapWindow window, ZMapStrand strand, GQuark column_id) ;
 
 void zmapWindowFocusHideFocusItems(ZMapWindowFocus focus, GList **hidden_items);

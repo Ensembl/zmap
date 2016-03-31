@@ -37,10 +37,12 @@
 #include <zmapWindow_P.hpp>
 
 
+typedef enum {FIRST_COL, LAST_COL} ColPositionType ;
 
 typedef struct
 {
   ZMapStrand strand ;
+  ColPositionType col_position ;
   GQuark column_id ;
   FooCanvasGroup *column_group ;
 } StrandColStruct, *StrandCol ;
@@ -133,14 +135,33 @@ void zmapWindowSetPixelxy(ZMapWindow window, double pixels_per_unit_x, double pi
 
 
 /* Returns the leftmost column if the forward strand is requested, the right most if
- * the reverse strand is requested. The column must have features and must be displayed.
+ * the reverse strand is requested. The column must have features and must be displayed
+ * otherwise NULL is returned if no columns match this (can happen on reverse strand).
  *
  * NOTE column will be in the first block of the first align. */
 FooCanvasGroup *zmapWindowGetFirstColumn(ZMapWindow window, ZMapStrand strand)
 {
+  StrandColStruct strand_data = {strand, FIRST_COL, 0, NULL} ;
+
   zMapReturnValIfFail(window, NULL) ;
 
-  StrandColStruct strand_data = {strand, 0, NULL} ;
+  zmapWindowContainerUtilsExecute(window->feature_root_group, ZMAPCONTAINER_LEVEL_BLOCK,
+                                  getFirstForwardCol, &strand_data) ;
+
+  return strand_data.column_group ;
+}
+
+
+/* Returns the rightmost column if the forward strand is requested, the leftmost if
+ * the reverse strand is requested. The column must have features and must be displayed
+ * otherwise NULL is returned if no columns match this (can happen on reverse strand).
+ *
+ * NOTE column will be in the first block of the first align. */
+FooCanvasGroup *zmapWindowGetLastColumn(ZMapWindow window, ZMapStrand strand)
+{
+  StrandColStruct strand_data = {strand, LAST_COL, 0, NULL} ;
+
+  zMapReturnValIfFail(window, NULL) ;
 
   zmapWindowContainerUtilsExecute(window->feature_root_group, ZMAPCONTAINER_LEVEL_BLOCK,
                                   getFirstForwardCol, &strand_data) ;
@@ -155,7 +176,7 @@ FooCanvasGroup *zmapWindowGetColumnByID(ZMapWindow window, ZMapStrand strand, GQ
 {
   zMapReturnValIfFail(window, NULL) ;
 
-  StrandColStruct strand_data = {strand, column_id, NULL} ;
+  StrandColStruct strand_data = {strand, FIRST_COL, column_id, NULL} ;
 
   zmapWindowContainerUtilsExecute(window->feature_root_group, ZMAPCONTAINER_LEVEL_BLOCK,
                                   getColByID, &strand_data) ;
@@ -206,54 +227,84 @@ static void getFirstForwardCol(ZMapWindowContainerGroup container, FooCanvasPoin
 {
   StrandCol strand_data = (StrandCol)func_data ;
 
-  zMapReturnIfFail(func_data) ;
-
   /* Only look for a column in the requested strand. */
   if (container_level == ZMAPCONTAINER_LEVEL_BLOCK)
     {
+      // Only look if we haven't yet found a column (no way to abort from search).
       if (!(strand_data->column_group))
         {
-          /* Haven't found it yet so look for a column that's visible and has features. */
           FooCanvasGroup *strand_columns, *column = NULL ;
           GList *col_ptr ;
 
+          /* Look for a column that's visible and has features and is not the strand separator ! */
           strand_columns = (FooCanvasGroup *)zmapWindowContainerGetFeatures(container) ;
 
           if (strand_data->strand == ZMAPSTRAND_FORWARD)
-            col_ptr = (strand_columns->item_list) ;
+            {
+              if (strand_data->col_position == FIRST_COL)
+                col_ptr = (strand_columns->item_list) ;
+              else
+                col_ptr = (strand_columns->item_list_end) ;
+            }
           else
-            col_ptr = (strand_columns->item_list_end) ;
+            {
+              if (strand_data->col_position == FIRST_COL)
+                col_ptr = (strand_columns->item_list_end) ;
+              else
+                col_ptr = (strand_columns->item_list) ;
+            }
           
-#if 0
-          /*! \todo #warning getFirstForwarsCol() code needs adjusting, commented out temporarily */
           while (col_ptr)
             {
+
               column = (FooCanvasGroup *)(col_ptr->data) ;
 
-              if (checkItem(FOO_CANVAS_ITEM(column), GINT_TO_POINTER(FALSE)) &&
-                  ZMAP_IS_CONTAINER_GROUP(column) &&
-                  && (zmapWindowContainerHasFeatures(ZMAP_CONTAINER_GROUP(column)) ||
-                      zmapWindowContainerFeatureSetShowWhenEmpty(ZMAP_CONTAINER_FEATURESET(column))))
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+              ZMapWindowContainerFeatureSet container_set ;
+              char *name ;
+
+
+              container_set = ZMAP_CONTAINER_FEATURESET(column) ;
+
+              name = zmapWindowContainerFeaturesetGetColumnUniqueName(container_set) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+              
+              // check for column item that is visible, is not the strand separator, is on the
+              // right strand and either has features or can be shown empty.
+              if (zmapWindowItemIsShown(FOO_CANVAS_ITEM(column))
+                  && ZMAP_IS_CONTAINER_GROUP(column)
+                  && (zMapWindowContainerFeatureSetGetUniqueId(ZMAP_CONTAINER_FEATURESET(column))
+                      != zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_STRAND_SEPARATOR))
+                  && (zmapWindowContainerFeatureSetGetStrand(ZMAP_CONTAINER_FEATURESET(column))
+                      == strand_data->strand)
+                  && (zmapWindowContainerHasFeatures(ZMAP_CONTAINER_GROUP(column))
+                      || zmapWindowContainerFeatureSetShowWhenEmpty(ZMAP_CONTAINER_FEATURESET(column))))
                 {
+                  strand_data->column_group = column ;
+
                   break ;
                 }
               else
                 {
                   if (strand_data->strand == ZMAPSTRAND_FORWARD)
-                    col_ptr = col_ptr->next ;
+                    {
+                      if (strand_data->col_position == FIRST_COL)
+                        col_ptr = col_ptr->next ;
+                      else
+                        col_ptr = col_ptr->prev ;
+                    }
                   else
-                    col_ptr = col_ptr->prev ;
+                    {
+                      if (strand_data->col_position == FIRST_COL)
+                        col_ptr = col_ptr->prev ;
+                      else
+                        col_ptr = col_ptr->next ;
+                    }
                 }
             }
-
-          strand_data->column_group = column ;
-#else
-          column = (FooCanvasGroup *)(col_ptr->data) ;
-          strand_data->column_group = column ;
-#endif
-
         }
-
     }
 
   return ;
