@@ -45,11 +45,14 @@
 
 
 
-
-
 static void getVisibleCanvas(ZMapWindow window,
                              double *screenx1_out, double *screeny1_out,
                              double *screenx2_out, double *screeny2_out) ;
+
+
+static void newGetWorldBounds(FooCanvasItem *item,
+                              double *rootx1_out, double *rooty1_out,
+                              double *rootx2_out, double *rooty2_out) ;
 
 
 
@@ -206,7 +209,42 @@ void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
 }
 
 
+/* Finds the feature item in a window corresponding to the supplied feature item...which is
+ * usually one from a different window....
+ *
+ * This routine can return NULL if the user has two different sequences displayed and hence
+ * there will be items in one window that are not present in another.
+ */
+FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem *item)
+{
+  FooCanvasItem *matching_item = NULL ;
+  ZMapFeature feature ;
+  ZMapWindowContainerFeatureSet container;
 
+  /* Retrieve the feature item info from the canvas item. */
+  if ((feature = zMapWindowCanvasItemGetFeature(item)))
+    {
+      container = (ZMapWindowContainerFeatureSet)zmapWindowContainerCanvasItemGetContainer(item) ;
+
+      matching_item = zmapWindowFToIFindFeatureItem(window,window->context_to_item,
+                                                    container->strand, container->frame,
+                                                    feature) ;
+    }
+
+  return matching_item ;
+}
+
+
+
+
+
+
+
+
+
+//
+//                Package routines.
+//
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -385,19 +423,6 @@ void zmapWindowUnHighlightFocusItems(ZMapWindow window)
  */
 
 
-/*
-
-   (TYPE)zmapWindowItemGetFeatureAny(ITEM, STRUCT_TYPE)
-
-#define zmapWindowItemGetFeatureSet(ITEM)   (ZMapFeatureContext)zmapWindowItemGetFeatureAnyType((ITEM), ZMAPFEATURE_STRUCT_CONTEXT)
-#define zmapWindowItemGetFeatureAlign(ITEM) (ZMapFeatureAlign)zmapWindowItemGetFeatureAnyType((ITEM), ZMAPFEATURE_STRUCT_ALIGN)
-#define zmapWindowItemGetFeatureBlock(ITEM) (ZMapFeatureBlock)zmapWindowItemGetFeatureAnyType((ITEM), ZMAPFEATURE_STRUCT_BLOCK)
-#define zmapWindowItemGetFeatureSet(ITEM)   (ZMapFeatureSet)zmapWindowItemGetFeatureAnyType((ITEM), ZMAPFEATURE_STRUCT_FEATURESET)
-#define zmapWindowItemGetFeature(ITEM)      (ZMapFeature)zmapWindowItemGetFeatureAnyType((ITEM), ZMAPFEATURE_STRUCT_FEATURE)
-#define zmapWindowItemGetFeatureAny(ITEM)   zmapWindowItemGetFeatureAnyType((ITEM), -1)
- */
-
-
 ZMapFeatureBlock zmapWindowItemGetFeatureBlock(FooCanvasItem *item)
 {
   ZMapFeatureBlock block = NULL ;
@@ -484,7 +509,7 @@ FooCanvasItem *zmapWindowItemGetTrueItem(FooCanvasItem *item)
 
 
 /*
- * THESE FUNCTIONS ALL FEEL LIKE THEY SHOULD BE IN THE items directory somewhere.....
+ * MANY OF THESE FUNCTIONS ALL FEEL LIKE THEY SHOULD BE IN THE items directory somewhere.....
  * THERE IS MUCH CODE THAT SHOULD BE MOVED FROM HERE INTO THERE.....
  */
 
@@ -502,32 +527,8 @@ FooCanvasGroup *zmapWindowItemGetParentContainer(FooCanvasItem *feature_item)
 
 
 
-/* Finds the feature item in a window corresponding to the supplied feature item...which is
- * usually one from a different window....
- *
- * This routine can return NULL if the user has two different sequences displayed and hence
- * there will be items in one window that are not present in another.
- */
-FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem *item)
-{
-  FooCanvasItem *matching_item = NULL ;
-  ZMapFeature feature ;
-  ZMapWindowContainerFeatureSet container;
 
-  /* Retrieve the feature item info from the canvas item. */
-  if ((feature = zMapWindowCanvasItemGetFeature(item)))
-    {
-      container = (ZMapWindowContainerFeatureSet)zmapWindowContainerCanvasItemGetContainer(item) ;
-
-      matching_item = zmapWindowFToIFindFeatureItem(window,window->context_to_item,
-                                                    container->strand, container->frame,
-                                                    feature) ;
-    }
-
-  return matching_item ;
-}
-
-
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* Finds the feature item child in a window corresponding to the supplied feature item..which is
  * usually one from a different window....
  * A feature item child is something like the feature item representing an exon within a transcript. */
@@ -553,6 +554,8 @@ FooCanvasItem *zMapWindowFindFeatureItemChildByItem(ZMapWindow window, FooCanvas
 
   return matching_item ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 /*
@@ -623,6 +626,8 @@ gboolean zmapWindowItemIsOnScreen(ZMapWindow window, FooCanvasItem *item, gboole
   /* Get the items world coords. */
   my_foo_canvas_item_get_world_bounds(item, &itemx1_out, &itemy1_out, &itemx2_out, &itemy2_out) ;
 
+
+
   /* Compare them. */
   if (completely)
     {
@@ -645,6 +650,8 @@ gboolean zmapWindowItemIsOnScreen(ZMapWindow window, FooCanvasItem *item, gboole
 }
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* Scroll to the specified item.
  * If necessary, recalculate the scroll region, then scroll to the item
  * and highlight it.
@@ -665,6 +672,8 @@ gboolean zMapWindowScrollToItem(ZMapWindow window, FooCanvasItem *item)
 
   return result ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 /* Moves to the given item and optionally changes the size of the scrolled region
@@ -880,11 +889,25 @@ void zmapWindowScrollToItem(ZMapWindow window, FooCanvasItem *item)
   getVisibleCanvas(window, &screenx1_out, &screeny1_out, &screenx2_out, &screeny2_out) ;
 
   /* Get the items world coords. */
-  my_foo_canvas_item_get_world_bounds(item, &itemx1_out, &itemy1_out, &itemx2_out, &itemy2_out) ;
+  newGetWorldBounds(item, &itemx1_out, &itemy1_out, &itemx2_out, &itemy2_out) ;
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  // debug....
+  double x1 = itemx1_out, y1 = itemy1_out, x2 = itemx2_out, y2 = itemy2_out ;
+
+
+  foo_canvas_w2c_rect_d(window->canvas,
+                        &x1, &y1,
+                        &x2, &y2);
 
   /* Get the current scroll offsets in world coords. */
   foo_canvas_get_scroll_offsets(window->canvas, &curr_x, &curr_y) ;
   foo_canvas_c2w(window->canvas, curr_x, curr_y, &x_offset, &y_offset) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
 
   /* Work out whether any scrolling is required. */
   if (itemx1_out > screenx2_out || itemx2_out < screenx1_out)
@@ -1086,8 +1109,19 @@ void my_foo_canvas_item_get_world_bounds(FooCanvasItem *item,
   g_return_if_fail (rootx1_out != NULL || rooty1_out != NULL || rootx2_out != NULL || rooty2_out != NULL ) ;
 
   foo_canvas_item_get_bounds(item, &rootx1, &rooty1, &rootx2, &rooty2) ;
+
+  // debugging
+  double new_rootx1 = rootx1, new_rootx2 = rootx2, new_rooty1 = rooty1, new_rooty2 = rooty2 ;
+
+  foo_canvas_item_i2w(item->parent, &new_rootx1, &new_rooty1) ;
+  foo_canvas_item_i2w(item->parent, &new_rootx2, &new_rooty2) ;
+
+
+
   foo_canvas_item_i2w(item, &rootx1, &rooty1) ;
   foo_canvas_item_i2w(item, &rootx2, &rooty2) ;
+
+
 
   if (rootx1_out)
     *rootx1_out = rootx1 ;
@@ -1101,6 +1135,59 @@ void my_foo_canvas_item_get_world_bounds(FooCanvasItem *item,
   return ;
 }
 
+
+// The above function does not return the results we want for our canvas...somehow we have weird
+// coords within our group whereas the actual group position is correct......
+//
+// This function tries to get round this by using the group position as the origin of
+// its position calculation.
+//
+// THIS ISN'T SATISFACTORY and should be redone once the reason for the discrepancy is
+// discovered.
+//
+// Returns the _world_ bounds of an item, no function exists in FooCanvas to do this.
+//
+static void newGetWorldBounds(FooCanvasItem *item,
+                              double *rootx1_out, double *rooty1_out,
+                              double *rootx2_out, double *rooty2_out)
+{
+  if (FOO_IS_CANVAS_GROUP(item))
+    {
+      FooCanvasGroup *group = (FooCanvasGroup *)item ;
+      double x1, x2, y1, y2 ;
+      double rootx1, rootx2, rooty1, rooty2 ;
+
+      // Base our calculation on the group 
+      x1 = group->xpos ;
+      y1 = group->ypos ;
+
+      foo_canvas_item_get_bounds(item, &rootx1, &rooty1, &rootx2, &rooty2) ;
+
+      x2 = x1 + (rootx2 - rootx1) ;
+
+      y2 = y1 + (rooty2 - rooty1) ;
+
+      foo_canvas_item_i2w(item->parent, &x1, &y1) ;
+      foo_canvas_item_i2w(item->parent, &x2, &y2) ;
+
+      if (rootx1_out)
+        *rootx1_out = x1 ;
+      if (rooty1_out)
+        *rooty1_out = y1 ;
+      if (rootx2_out)
+        *rootx2_out = x2 ;
+      if (rooty2_out)
+        *rooty2_out = y2 ;
+    }
+  else
+    {
+      printf("oh dear\n") ;
+
+
+    }
+
+  return ;
+}
 
 
 
@@ -1280,14 +1367,6 @@ void zmapWindowItemGetVisibleWorld(ZMapWindow window,
 
 
 
-
-
-
-
-
-
-
-
 /* Get the visible portion of the canvas. */
 static void getVisibleCanvas(ZMapWindow window,
                              double *screenx1_out, double *screeny1_out,
@@ -1308,6 +1387,45 @@ static void getVisibleCanvas(ZMapWindow window,
 
   foo_canvas_window_to_world(window->canvas, x1, y1, screenx1_out, screeny1_out) ;
   foo_canvas_window_to_world(window->canvas, x2, y2, screenx2_out, screeny2_out) ;
+
+
+  int cx1, cy1, cx2, cy2 ;
+  double wx1, wy1, wx2, wy2 ;
+
+  cx1 = (int)x1 ;
+  cx2 = (int)x2 ;
+  cy1 = (int)y1 ;
+  cy2 = (int)y2 ;
+
+  
+  wx1 = wy1 = wx2 = wy2 = 0.0 ;
+
+  foo_canvas_c2w(window->canvas, cx1, cy1, &wx1, &wy1) ;
+
+  foo_canvas_w2c(window->canvas, wx1, wy1, &cx1, &cy1) ;
+
+  foo_canvas_c2w(window->canvas, cx2, cy2, &wx2, &wy2) ;
+
+  foo_canvas_w2c(window->canvas, wx2, wy2, &cx2, &cy2) ;
+
+
+
+
+  // more experiments....
+  GtkLayout *layout = (GtkLayout *)(window->canvas) ;
+
+  guint width, height ;
+
+  gtk_layout_get_size (layout,
+                       &width,
+                       &height) ;
+
+  GtkAdjustment *new_hadjust, *new_vadjust ;
+
+  new_hadjust = gtk_layout_get_hadjustment(layout) ;
+
+  new_vadjust = gtk_layout_get_vadjustment(layout) ;
+
 
   return ;
 }
