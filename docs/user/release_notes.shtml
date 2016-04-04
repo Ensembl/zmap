@@ -6,6 +6,14 @@
 <body>
 <h2>ZMap - Release Notes</h2>
 
+<h4>Version 2.6.0</h4>
+<ul>
+  <li>RT516368: Add an Edit button to standalone-ZMap's main window so that you can edit sources.
+  <li>Add a Filter box to the search dialog for looking up Ensembl databases/featuresets/biotypes.
+  <li>RT514113: Fixed a bug with Ensembl where transcripts weren't always being loaded if their logic_name is different to the gene's logic_name.
+  <li>Fixed a bug in ZMap's Create Source dialog where the incorrect text was being used for the biotypes list
+</ul>
+
 <h4>Version 2.5.2</h4>
 <ul>
   <li>SIRT:515503 Fix a bug where columns in the [columns] stanza are not created unless they are also in the "columns" field in the [ZMap] stanza. This was a regression introduced in v2.4.0.

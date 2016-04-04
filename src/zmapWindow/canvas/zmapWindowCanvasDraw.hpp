@@ -33,6 +33,8 @@
 #define ZMAP_CANVAS_DRAW_H
 
 #include <glib.h>
+
+#include <zmapWindowAllBase.hpp>
 #include <zmapWindowCanvasFeatureset.hpp>
 #include <zmapWindowCanvasAlignment.hpp>
 
@@ -98,8 +100,6 @@ gboolean zMapCanvasFeaturesetDrawBoxMacro(ZMapWindowFeaturesetItem featureset,
 void zMapCanvasFeaturesetDrawSpliceHighlights(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
                                               GdkDrawable *drawable, double x1, double x2) ;
 
-GdkColor *zMapCanvasDrawGetColinearColour(int end_1, int start_2, int threshold) ;
-
 gboolean zMapCanvasDrawBoxGapped(GdkDrawable *drawable,
                                  ZMapCanvasDrawColinearColours colinear_colours,
                                  int fill_set, int outline_set,
@@ -109,7 +109,6 @@ gboolean zMapCanvasDrawBoxGapped(GdkDrawable *drawable,
                                  AlignGap gapped) ;
 
 ZMapCanvasDrawColinearColours zMapCanvasDrawAllocColinearColours(GdkColormap *colour_map) ;
-GdkColor *zMapCanvasDrawGetColinearColour(ZMapCanvasDrawColinearColours colinear_colours, int end_1, int start_2, int threshold) ;
 ColinearityType zMapCanvasDrawGetColinearity(int end_1, int start_2, int threshold) ;
 GdkColor *zMapCanvasDrawGetColinearGdkColor(ZMapCanvasDrawColinearColours colinear_colours, ColinearityType ct) ;
 void zMapCanvasDrawFreeColinearColours(ZMapCanvasDrawColinearColours colinear_colours) ;

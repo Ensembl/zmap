@@ -192,6 +192,7 @@ gboolean zMapLogConfigure(gboolean logging, gboolean log_to_file,
 void zMapWriteStartMsg(void) ;
 void zMapWriteStopMsg(void) ;
 gboolean zMapLogStart(GError **error) ;
+const char *zMapLogGetLogFilePath(void) ;
 int zMapLogFileSize(void) ;
 gboolean zMapLogStop(void) ;
 void zMapLogStack(void);

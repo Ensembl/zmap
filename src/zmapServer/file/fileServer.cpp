@@ -103,7 +103,9 @@ static ZMapServerResponseType destroyConnection(void *server) ;
  */
 static ZMapServerResponseType fileGetHeader(FileServer server);
 static ZMapServerResponseType fileGetHeader_GIO(FileServer server) ;
+#ifdef USE_HTSLIB
 static ZMapServerResponseType fileGetHeader_HTS(FileServer server) ;
+#endif
 static ZMapServerResponseType fileGetSequence(FileServer server);
 
 static void getConfiguration(FileServer server) ;
@@ -794,7 +796,7 @@ static ZMapServerResponseType fileGetHeader_GIO(FileServer server)
     done_header = FALSE ;
   ZMapGFFHeaderState header_state = GFF_HEADER_NONE ;
 
-  zMapReturnValIfFail(server->data_source->type == ZMAPDATASOURCE_TYPE_GIO, result) ;
+  zMapReturnValIfFail(server->data_source->type == ZMapDataSourceType::GIO, result) ;
 
   /*
    * Read lines from the source.
@@ -894,6 +896,7 @@ static ZMapServerResponseType fileGetHeader_GIO(FileServer server)
 }
 
 
+#ifdef USE_HTSLIB
 /*
  * Header for a HTS file. The server calling code expects the server->buffer_line
  * to contain a non-zero length string in order for it to decide that the source
@@ -903,7 +906,7 @@ static ZMapServerResponseType fileGetHeader_GIO(FileServer server)
 static ZMapServerResponseType fileGetHeader_HTS(FileServer server)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
-  zMapReturnValIfFail(server->data_source->type == ZMAPDATASOURCE_TYPE_HTS, result) ;
+  zMapReturnValIfFail(server->data_source->type == ZMapDataSourceType::HTS, result) ;
 
   /*
    * Attempt to read HTS header and then...
@@ -928,6 +931,7 @@ static ZMapServerResponseType fileGetHeader_HTS(FileServer server)
 
   return result ;
 }
+#endif
 
 
 
@@ -937,7 +941,7 @@ static ZMapServerResponseType fileGetHeader_HTS(FileServer server)
 static ZMapServerResponseType fileGetHeader(FileServer server)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
-  ZMapDataSourceType data_source_type = ZMAPDATASOURCE_TYPE_UNK ;
+  ZMapDataSourceType data_source_type = ZMapDataSourceType::UNK ;
 
   /*
    * reset done flag for seq else skip the data
@@ -949,14 +953,16 @@ static ZMapServerResponseType fileGetHeader(FileServer server)
    * Call different functions for different file types.
    */
   data_source_type = zMapDataSourceGetType(server->data_source) ;
-  if (data_source_type == ZMAPDATASOURCE_TYPE_GIO)
+  if (data_source_type == ZMapDataSourceType::GIO)
     {
       result = fileGetHeader_GIO(server) ;
     }
-  else if (data_source_type ==   ZMAPDATASOURCE_TYPE_HTS)
+#ifdef USE_HTSLIB
+  else if (data_source_type ==   ZMapDataSourceType::HTS)
     {
       result = fileGetHeader_HTS(server) ;
     }
+#endif
 
   return result ;
 }
@@ -1214,7 +1220,7 @@ static void setErrMsg(FileServer server, const char *new_msg)
   if (server->last_err_msg)
     g_free(server->last_err_msg) ;
 
-  error_msg = g_strdup_printf("error: \"%s\" request: \"%s\",", new_msg, server->path) ;
+  error_msg = g_strdup_printf("error: %s\nrequest: %s\n", new_msg, server->path) ;
 
   server->last_err_msg = error_msg ;
 

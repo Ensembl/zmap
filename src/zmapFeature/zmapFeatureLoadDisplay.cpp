@@ -67,9 +67,9 @@ static ZMapFeatureContextExecuteStatus updateContextFeatureSetStyle(GQuark key,
                                                                     char **err_out) ;
 
 
-/*
- *              ZMapFeatureContextMap routines
- */
+/**********************************************************************
+ *                       ZMapFeatureContextMap
+ **********************************************************************/
 
 
 /* get the column struct for a featureset */
@@ -358,6 +358,7 @@ bool ZMapFeatureContextMapStructType::updateContextColumns(_ZMapConfigIniContext
   return TRUE ;
 }
 
+
 bool ZMapFeatureContextMapStructType::updateContextColumnGroups(_ZMapConfigIniContextStruct *context, 
                                                                 ZMapConfigIniFileType file_type)
 {
@@ -369,9 +370,31 @@ bool ZMapFeatureContextMapStructType::updateContextColumnGroups(_ZMapConfigIniCo
 
 
 
-/*
- *              ZMapFeatureSequenceMap routines
+/* If this featureset has a related column, then return the ID of that column.
+ * Return 0 otherwise.
+ * FTM this means fset is coverage and the related is the real data (a one way relation)
  */
+GQuark ZMapFeatureContextMapStructType::getRelatedColumnID(const GQuark fset_id)
+{
+  GQuark q = 0;
+  ZMapFeatureSource src = NULL ;
+
+  src = (ZMapFeatureSource)g_hash_table_lookup(source_2_sourcedata,GUINT_TO_POINTER(fset_id));
+  if(src)
+    q = src->related_column;
+  else
+    zMapLogWarning("Can't find source data for featureset '%s'.",g_quark_to_string(fset_id));
+
+  return q;
+}
+
+
+
+
+
+/**********************************************************************
+ *                      ZMapFeatureSequenceMap
+ **********************************************************************/
 
 ZMapFeatureSequenceMapStructType* ZMapFeatureSequenceMapStructType::copy()
 {

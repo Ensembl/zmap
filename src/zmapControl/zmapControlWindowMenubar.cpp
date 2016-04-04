@@ -152,11 +152,12 @@ static GtkItemFactoryEntry menu_items[] = {
     { (char*)"/_Help",         NULL,         NULL, 0, (char*)"<LastBranch>" },
     /*{ (char*)"/Help/General Help", NULL,     allHelpCB, ZMAPGUI_HELP_GENERAL, NULL }, */
     { (char*)"/Help/Quick Start Guide", NULL, G_CALLBACK(allHelpCB), ZMAPGUI_HELP_QUICK_START, NULL },
-    { (char*)"/Help/Keyboard & Mouse", NULL,  G_CALLBACK(allHelpCB), ZMAPGUI_HELP_KEYBOARD, NULL },
-    { (char*)"/Help/Feature Filtering", NULL,  G_CALLBACK(allHelpCB), ZMAPGUI_HELP_FILTER, NULL },
+    { (char*)"/Help/Keyboard & Mouse",  NULL, G_CALLBACK(allHelpCB), ZMAPGUI_HELP_KEYBOARD, NULL },
+    { (char*)"/Help/Feature Filtering", NULL, G_CALLBACK(allHelpCB), ZMAPGUI_HELP_FILTER, NULL },
     { (char*)"/Help/Alignment Display", NULL, G_CALLBACK(allHelpCB), ZMAPGUI_HELP_ALIGNMENT_DISPLAY, NULL },
-    { (char*)"/Help/Release Notes", NULL,     G_CALLBACK(allHelpCB), ZMAPGUI_HELP_RELEASE_NOTES, NULL },
-    { (char*)"/Help/About ZMap",    NULL,     G_CALLBACK(aboutCB), 0, NULL }
+    { (char*)"/Help/User Manual",       NULL, G_CALLBACK(allHelpCB), ZMAPGUI_HELP_MANUAL, NULL },
+    { (char*)"/Help/Release Notes",     NULL, G_CALLBACK(allHelpCB), ZMAPGUI_HELP_RELEASE_NOTES, NULL },
+    { (char*)"/Help/About ZMap",        NULL, G_CALLBACK(aboutCB), 0, NULL }
   };
 
 

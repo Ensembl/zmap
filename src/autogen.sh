@@ -151,7 +151,7 @@ declare -A dir=( [$aceconn_key]='AceConn' [$ensc_core_key]='ensc-core' [$gb_tool
 declare -A test_file=( [$aceconn_key]='configure.ac' [$ensc_core_key]='src/Makefile' [$gb_tools_key]='configure.ac'
     [$htslib_key]='Makefile' [$zeromq_key]='configure.in' )
 
-declare -A branch=( [$aceconn_key]='' [$ensc_core_key]='-b feature/zmap' [$gb_tools_key]=''
+declare -A branch=( [$aceconn_key]='' [$ensc_core_key]='' [$gb_tools_key]=''
     [$htslib_key]='' [$zeromq_key]='' )
 
 
@@ -206,7 +206,7 @@ while getopts ":adefghinuvz" opt ; do
 	z  ) install[$aceconn_key]='no'
              install[$ensc_core_key]='no'
              install[$gb_tools_key]='yes'
-             install[$htslib_key]='yes'
+             install[$htslib_key]='no'
              install[$zeromq_key]='no' ;;
 	\? ) zmap_message_exit "Bad arg flag: $usage" ;;
     esac
@@ -279,13 +279,13 @@ for i in "${!install[@]}"
 	
       fi ;;
 
-      # We must have htslib (currently) or we fail.
-      $htslib_key )
-      if [[ ! -f "${dir[$i]}/${test_file[$i]}" ]] ; then
-
-          zmap_message_exit "Aborting.....htslib is not available so ZMap cannot be built."
-
-      fi ;;
+#      # We must have htslib (currently) or we fail.
+#      $htslib_key )
+#      if [[ ! -f "${dir[$i]}/${test_file[$i]}" ]] ; then
+#
+#          zmap_message_exit "Aborting.....htslib is not available so ZMap cannot be built."
+#
+#      fi ;;
 
   #    # We must have zeromq (currently) or we fail.
   #    $zeromq_key )

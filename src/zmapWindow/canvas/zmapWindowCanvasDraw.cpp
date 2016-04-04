@@ -854,22 +854,6 @@ ZMapCanvasDrawColinearColours zMapCanvasDrawAllocColinearColours(GdkColormap *co
 }
 
 
-// Given coords between sub-features return the colour of the colinearity line 
-// between sub-features.
-// 
-GdkColor *zMapCanvasDrawGetColinearColour(ZMapCanvasDrawColinearColours colinear_colours,
-                                          int end_1, int start_2, int threshold)
-{
-  GdkColor *colinear_colour = NULL ;
-  ColinearityType ct ;
-
-  ct = zMapCanvasDrawGetColinearity(end_1, start_2, threshold) ;
-
-  colinear_colour = zMapCanvasDrawGetColinearGdkColor(colinear_colours, ct) ;
-
-  return colinear_colour ;
-}
-
 // Given a end/start/threshold return the type of colinearity for the gap
 // represented by the  end -> start  coords.
 ColinearityType zMapCanvasDrawGetColinearity(int end_1, int start_2, int threshold)

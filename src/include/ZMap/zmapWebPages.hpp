@@ -51,6 +51,7 @@
 
 #define ZMAPWEB_KEYBOARD_DOC  "keyboard_mouse.shtml"
 #define ZMAPWEB_FILTER_DOC  "filter_window.shtml"
+#define ZMAPWEB_MANUAL  "ZMap_User_Manual.pdf"
 
 
 #endif /* ZMAP_WEBPAGES_H */

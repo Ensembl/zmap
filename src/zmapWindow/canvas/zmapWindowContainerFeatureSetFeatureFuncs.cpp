@@ -576,7 +576,7 @@ static void unfilterFeaturesCB(ZMapWindowContainerGroup container, FooCanvasPoin
         container_set = ZMAP_CONTAINER_FEATURESET(zmapWindowContainerChildGetParent(FOO_CANVAS_ITEM(container))) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-        char *col_name ;
+        const char *col_name ;
 
         col_name = zmapWindowContainerFeaturesetGetColumnName(container_set) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
@@ -665,7 +665,7 @@ static void processFilterColumns(ZMapWindowContainerGroup container, FooCanvasPo
         ZMapWindowContainerFeatureSet selected_container_set = filter_data->selected_container_set ;
         ZMapWindowFeaturesetItem featureset_item ;
 
-        char *col_name ;
+        const char *col_name ;
 
 
         container_set = ZMAP_CONTAINER_FEATURESET(zmapWindowContainerChildGetParent(FOO_CANVAS_ITEM(container))) ;
@@ -733,7 +733,7 @@ static void filterColumn(FeatureFilter filter_data, ZMapWindowFeaturesetItem fea
   GList *grouped_features ;
   GList *match_list ;
   /* debug..... */
-  char *col_name ;
+  const char *col_name ;
   zmapWindowCanvasFeatureType feature_type ;
 
 

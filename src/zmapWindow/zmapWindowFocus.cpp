@@ -205,9 +205,9 @@ int focus_cache_id_G = 0;
  */
 
 
-char *zMapWindowGetHotColumnName(ZMapWindow window)
+const char *zMapWindowGetHotColumnName(ZMapWindow window)
 {
-  char *column_name = NULL ;
+  const char *column_name = NULL ;
   ZMapWindowContainerFeatureSet column ;
 
   if ((column = window->focus->focus_column))
@@ -767,18 +767,18 @@ GList *zmapWindowFocusGetFeatureList(ZMapWindowFocus focus)
 gboolean zmapWindowFocusGetFeatureListFull(ZMapWindow window, gboolean in_mark,
                                            FooCanvasGroup **focus_column_out,
                                            FooCanvasItem **focus_item_out,
-                                           GList **filterfeatures_out,
+                                           GList **focus_features_out,
                                            char **err_msg)
 {
   gboolean result = FALSE ;
   FooCanvasGroup *focus_column ;
   FooCanvasItem *focus_item ;
-  GList *filterfeatures = NULL ;
+  GList *focus_features = NULL ;
   int mark_start = 0, mark_end = 0 ;
 
   if (!((focus_column = zmapWindowFocusGetHotColumn(window->focus))
         && (focus_item = zmapWindowFocusGetHotItem(window->focus))
-        && (filterfeatures = zmapWindowFocusGetFeatureList(window->focus))))
+        && (focus_features = zmapWindowFocusGetFeatureList(window->focus))))
     {
       /* We can't do anything if there is no highlight feature. */
       *err_msg = g_strdup_printf("%s", "No features selected.") ;
@@ -786,24 +786,29 @@ gboolean zmapWindowFocusGetFeatureListFull(ZMapWindow window, gboolean in_mark,
   else
     {
       /* If the mark is set then exclude any features not overlapping it, this may
-         accidentally result in there being no features for filtering. */
+         accidentally result in there being no features returned. */
       if (in_mark && zmapWindowMarkIsSet(window->mark) && zmapWindowMarkGetSequenceRange(window->mark,
                                                                                          &mark_start, &mark_end))
         {
-          filterfeatures = zMapFeatureGetOverlapFeatures(filterfeatures,
+          focus_features = zMapFeatureGetOverlapFeatures(focus_features,
                                                          mark_start, mark_end,
                                                          ZMAPFEATURE_OVERLAP_ALL) ;
         }
 
-      if (!filterfeatures)
+      if (!focus_features)
         {
-          *err_msg = g_strdup_printf("%s", "Current mark excludes all selected filter features.") ;
+          *err_msg = g_strdup_printf("%s", "Current mark excludes all selected features.") ;
         }
       else
         {
-          *focus_column_out = focus_column ;
-          *focus_item_out = focus_item ;
-          *filterfeatures_out = filterfeatures ;
+          if (focus_column_out)
+            *focus_column_out = focus_column ;
+
+          if (focus_item_out)
+            *focus_item_out = focus_item ;
+
+          if (focus_features_out)
+            *focus_features_out = focus_features ;
 
           result = TRUE ;
         }

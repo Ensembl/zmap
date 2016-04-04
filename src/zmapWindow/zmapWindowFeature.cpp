@@ -56,8 +56,8 @@ using namespace gbtools ;
 
 
 #define PFETCH_READ_SIZE 80        /* about a line */
-#define PFETCH_FAILED_PREFIX "PFetch failed:"
-#define PFETCH_TITLE_FORMAT "pfetch %s\"%s\""
+#define PFETCH_FAILED_PREFIX "DB fetch failed:"
+#define PFETCH_TITLE_FORMAT "DB fetch %s\"%s\""
 #define PFETCH_FULL_RECORD_ARG "-F "
 
 
@@ -74,7 +74,9 @@ typedef struct PFetchDataStructType
   GtkTextBuffer *text_buffer;
   char *title;
   gulong widget_destroy_handler_id;
-  PFetchHandle pfetch;
+
+  Pfetch *pfetch ;
+
   gboolean got_response;
 } PFetchDataStruct, *PFetchData ;
 
@@ -98,14 +100,14 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
 
 static gboolean canvasItemDestroyCB(FooCanvasItem *item, gpointer data) ;
 
-static void handle_dialog_close(GtkWidget *dialog, gpointer user_data);
+
 
 static gboolean factoryTopItemCreated(FooCanvasItem *top_item, GCallback featureset_callback_func,
                                       ZMapWindowFeatureStack feature_stack, gpointer handler_data);
 
-static PFetchStatus pfetch_reader_func(PFetchHandle *handle, char *text, guint *actual_read,
-                                       GError *error, gpointer user_data) ;
-static PFetchStatus pfetch_closed_func(gpointer user_data) ;
+static bool pfetch_reader_func(char *text, guint *actual_read, char **error, gpointer user_data) ;
+static void pfetch_closed_func(gpointer user_data) ;
+static void handle_dialog_close(GtkWidget *dialog, gpointer user_data);
 
 static void handleXRemoteReply(gboolean reply_ok, char *reply_error,
 			       char *command, RemoteCommandRCType command_rc, char *reason, char *reply,
@@ -264,103 +266,84 @@ gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
 
 void zmapWindowPfetchEntry(ZMapWindow window, char *sequence_name)
 {
-  PFetchData pfetch_data = g_new0(PFetchDataStruct, 1);
-  PFetchHandle    pfetch = NULL;
+  PFetchData pfetch_data ;
   PFetchUserPrefsStruct prefs = {NULL};
   GString *pfetch_args_str ;
 
-  zMapReturnIfFail(window && window->sequence );
+  zMapReturnIfFail(window && sequence_name) ;
 
-  if((zmapWindowGetPFetchUserPrefs(window->sequence->config_file, &prefs)) && (prefs.location != NULL))
+  if (!(zmapWindowGetPFetchUserPrefs(window->sequence->config_file, &prefs)) || (prefs.location == NULL))
     {
+      zMapWarning("%s", "Failed to obtain preferences for pfetch.\n"
+                  "ZMap's config file needs at least pfetch "
+                  "entry in the ZMap stanza.");
+    }
+  else
+    {
+      // Allocate our callback struct, this is freed in the close dialog callback.
+      pfetch_data = g_new0(PFetchDataStruct, 1) ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      GType pfetch_type = PFETCH_TYPE_HTTP_HANDLE;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-      GType pfetch_type ;
-      GError *fetch_error = NULL ;
 
-      if(prefs.mode && strncmp(prefs.mode, "pipe", 4) == 0)
-        pfetch_type = PFETCH_TYPE_PIPE_HANDLE ;
+      if (prefs.mode && strncmp(prefs.mode, "pipe", 4) == 0)
+        {
+          pfetch_data->pfetch = new PfetchPipe(prefs.location,
+                                               pfetch_reader_func, pfetch_reader_func, pfetch_closed_func,
+                                               pfetch_data) ;
+        }
       else
-        pfetch_type = PFETCH_TYPE_HTTP_HANDLE ;
-
-      pfetch_data->pfetch = pfetch = PFetchHandleNew(pfetch_type);
-
-      const char *pfetch_args = prefs.full_record ? PFETCH_FULL_RECORD_ARG : "";
-
-      if((pfetch_data->title = g_strdup_printf(PFETCH_TITLE_FORMAT, pfetch_args, sequence_name)))
         {
-          pfetch_data->dialog = zMapGUIShowTextFull(pfetch_data->title, "pfetching...\n",
-                                                    FALSE, NULL, &(pfetch_data->text_buffer));
-
-          pfetch_data->widget_destroy_handler_id =
-            g_signal_connect(G_OBJECT(pfetch_data->dialog), "destroy",
-                             G_CALLBACK(handle_dialog_close), pfetch_data);
+          pfetch_data->pfetch = new PfetchHttp(prefs.location, prefs.port,
+                                               prefs.cookie_jar, prefs.ipresolve, prefs.cainfo, prefs.proxy,
+                                               pfetch_reader_func, pfetch_reader_func, pfetch_closed_func,
+                                               pfetch_data) ;
         }
 
-      PFetchHandleSettings(pfetch,
-                           "full",        prefs.full_record,
-                           "pfetch",      prefs.location,
-                           "isoform-seq", TRUE,
-                           "debug",       prefs.verbose,
-                           NULL);
+      pfetch_data->pfetch->setEntryType(prefs.full_record) ;
 
-      if(PFETCH_IS_HTTP_HANDLE(pfetch))
-        {
-          PFetchHandleSettings(pfetch,
-                               "port",       prefs.port,
-                               "cookie-jar", prefs.cookie_jar,
-                               "ipresolve",  prefs.ipresolve,
-                               "cainfo",  prefs.cainfo,
-                               NULL);
-
-          if(prefs.proxy)
-            PFetchHandleSettings(pfetch,
-                                 "proxy",      prefs.proxy,
-                                 NULL);
-        }
+      pfetch_data->pfetch->setDebug(prefs.verbose) ;
 
       if (prefs.location)
         g_free(prefs.location);
       if (prefs.cookie_jar)
         g_free(prefs.cookie_jar);
 
-      g_signal_connect(G_OBJECT(pfetch), "reader", G_CALLBACK(pfetch_reader_func), pfetch_data);
+      // Show the DB fetch dialog with a message of "DB fetching..."
+      const char *pfetch_args = prefs.full_record ? PFETCH_FULL_RECORD_ARG : "";
 
-      g_signal_connect(G_OBJECT(pfetch), "error",  G_CALLBACK(pfetch_reader_func), pfetch_data);
+      pfetch_data->title = g_strdup_printf(PFETCH_TITLE_FORMAT, pfetch_args, sequence_name) ;
 
-      g_signal_connect(G_OBJECT(pfetch), "closed", G_CALLBACK(pfetch_closed_func), pfetch_data);
+      pfetch_data->dialog = zMapGUIShowTextFull(pfetch_data->title, "DB fetching...\n",
+                                                FALSE, NULL, &(pfetch_data->text_buffer));
+
+      pfetch_data->widget_destroy_handler_id =
+        g_signal_connect(G_OBJECT(pfetch_data->dialog), "destroy",
+                         G_CALLBACK(handle_dialog_close), pfetch_data);
+
 
       pfetch_args_str = g_string_new("") ;
 
       g_string_append_printf(pfetch_args_str, "%s", sequence_name) ;
 
 
-      // WHY IS THIS LOCK STUFF HERE.....SHOULD BE IN A LOWER LAYER....AND...THEY ARE ONLY NEEDED
-      // FOR THE PIPE VERSION...SORT THIS OUT....
+      // Try to fetch the sequence.
 
       /* It would seem that PFetchHandleFetch() calls g_spawn_async_with_pipes() which is not
        * thread safe so lock round it...should locks be in pfetch code ?? */
       zMapThreadForkLock();   // see zmapThreads.c
 
-      if(PFetchHandleFetch(pfetch, pfetch_args_str->str, &fetch_error) == PFETCH_STATUS_FAILED)
-        {
-          zMapWarning("Error fetching sequence '%s':%s", sequence_name, fetch_error->message) ;
+      char *err_msg = NULL ;
 
-          g_error_free(fetch_error) ;
+
+      if (!(pfetch_data->pfetch->fetch(pfetch_args_str->str, &err_msg)))
+        {
+          zMapWarning("Error fetching sequence '%s':%s", sequence_name, err_msg) ;
+
+          free((void *)err_msg) ;
         }
 
       zMapThreadForkUnlock();
 
-
       g_string_free(pfetch_args_str, TRUE) ;
-    }
-  else
-    {
-      zMapWarning("%s", "Failed to obtain preferences for pfetch.\n"
-                  "ZMap's config file needs at least pfetch "
-                  "entry in the ZMap stanza.");
     }
 
   return ;
@@ -1226,15 +1209,17 @@ void zmapWindowFeatureContract(ZMapWindow window, FooCanvasItem *foo,
 }
 
 
+// Callback functions for DB fetching sequence.
+//
 
-
-static PFetchStatus pfetch_reader_func(PFetchHandle *handle, char *text, guint *actual_read,
-                                       GError *error, gpointer user_data)
+// Called when there is something to read from pfetch.
+static bool pfetch_reader_func(char *text, guint *actual_read, char **error, gpointer user_data)
 {
+  bool status = true ;
   PFetchData pfetch_data = (PFetchData)user_data;
-  PFetchStatus status    = PFETCH_STATUS_OK;
 
-  if(actual_read && *actual_read > 0 && pfetch_data)
+
+  if (actual_read && *actual_read > 0 && pfetch_data)
     {
       GtkTextBuffer *text_buffer = GTK_TEXT_BUFFER(pfetch_data->text_buffer);
 
@@ -1247,30 +1232,33 @@ static PFetchStatus pfetch_reader_func(PFetchHandle *handle, char *text, guint *
       pfetch_data->got_response = TRUE;
     }
 
-  return status;
+  return status ;
 }
 
-static PFetchStatus pfetch_closed_func(gpointer user_data)
+// Called when connection (pipe) to pfetch is closed.
+static void pfetch_closed_func(gpointer user_data)
 {
-  PFetchStatus status = PFETCH_STATUS_OK;
 #ifdef DEBUG_ONLY
   printf("pfetch closed\n");
 #endif        /* DEBUG_ONLY */
-  return status;
-}
-
-/* GtkObject destroy signal handler */
-static void handle_dialog_close(GtkWidget *dialog, gpointer user_data)
-{
-  PFetchData pfetch_data   = (PFetchData)user_data;
-  pfetch_data->text_buffer = NULL;
-  pfetch_data->widget_destroy_handler_id = 0; /* can we get this more than once? */
-
-  if(pfetch_data->pfetch)
-    pfetch_data->pfetch = PFetchHandleDestroy(pfetch_data->pfetch);
 
   return ;
 }
+
+
+/* Called when pfetch dialog showing sequence is closed by user. */
+static void handle_dialog_close(GtkWidget *dialog, gpointer user_data)
+{
+  PFetchData pfetch_data = (PFetchData)user_data ;
+
+  delete pfetch_data->pfetch ;
+
+  g_free(pfetch_data) ;
+
+  return ;
+}
+
+
 
 
 static gboolean factoryTopItemCreated(FooCanvasItem *top_item, GCallback featureset_callback_func,

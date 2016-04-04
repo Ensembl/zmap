@@ -874,14 +874,14 @@ void zmapWindowContainerFeatureSetSetDisplay(ZMapWindowContainerFeatureSet conta
  * \return The quark that represents the current display name.
  */
 
-char *zmapWindowContainerFeaturesetGetColumnName(ZMapWindowContainerFeatureSet container_set)
+const char *zmapWindowContainerFeaturesetGetColumnName(ZMapWindowContainerFeatureSet container_set)
 {
-  char *column_name = NULL ;
+  const char *column_name = NULL ;
 
   zMapReturnValIfFail(container_set, column_name) ;
 
   if (ZMAP_IS_CONTAINER_FEATURESET(container_set))
-    column_name = (char *)g_quark_to_string(container_set->original_id) ;
+    column_name = g_quark_to_string(container_set->original_id) ;
 
   return column_name ;
 }

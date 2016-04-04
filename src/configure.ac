@@ -58,9 +58,16 @@ AX_CXX_COMPILE_STDCXX_0X()
 #
 AM_CONDITIONAL([USE_ACECONN], [ test -f "$srcdir/AceConn/configure.ac" ])
 AM_COND_IF([USE_ACECONN],
+           [ echo 'Aceconn is defined !!!' ])
+AM_COND_IF([USE_ACECONN],
            [AC_DEFINE([USE_ACECONN], [1], [AceConn interface is available.])])
 AM_COND_IF([USE_ACECONN],
            [AC_SUBST([USE_ACECONN], [use_aceconn])])
+
+
+
+
+
 
 # Check for ensembl
 #

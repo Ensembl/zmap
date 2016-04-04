@@ -420,7 +420,7 @@ static gint qsortColumnsCB(gconstpointer colA, gconstpointer colB, gpointer user
 static void printCB(gpointer data, gpointer user_data)
 {
   ZMapWindowContainerFeatureSet featureset = (ZMapWindowContainerFeatureSet)data ;
-  char *col_name ;
+  const char *col_name ;
   ZMapStrand strand ;
 
   col_name = zmapWindowContainerFeaturesetGetColumnName(featureset) ;

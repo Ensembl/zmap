@@ -228,26 +228,38 @@ int main(int argc, char *argv[])
 
 
   /* Set up logging for application....NO LOGGING BEFORE THIS. */
-  if (!zMapLogCreate(NULL) || !configureLog(config_file, config_dir, &g_error))
+  if (!configureLog(config_file, config_dir, &g_error))
     {
-      zmapAppConsoleLogMsg(TRUE, "Error creating log file: %s", (g_error ? g_error->message : "<no error message>")) ;
+      zmapAppConsoleLogMsg(TRUE, "Error creating log file: %s",  g_error->message) ;
+
+      g_error_free(g_error) ;
+      g_error = NULL ;
+
       zmapAppDoTheExit(EXIT_FAILURE) ;
     }
   else
     {
-      if (g_error)
-        {
-          g_error_free(g_error) ;
-          g_error = NULL ;
-        }
-
       zMapWriteStartMsg() ;
+
+      char *msg = g_strdup_printf("Logging to file \"%s\"",
+                                  (zMapLogGetLogFilePath() ? zMapLogGetLogFilePath() : "stdout/stderr")) ;
+      zmapAppConsoleLogMsg(verbose_startup_logging_G, INIT_FORMAT, msg) ;
+      g_free(msg) ;
     }
 
-  zmapAppConsoleLogMsg(app_context->verbose_startup_logging, INIT_FORMAT, "Reading configuration file.") ;
+
 
   /* Get general zmap configuration from config. file. */
-  getConfiguration(app_context, config_file) ;
+  {
+    char *msg = g_strdup_printf("Reading configuration file \"%s\"", config_file) ;
+    
+    zmapAppConsoleLogMsg(app_context->verbose_startup_logging, INIT_FORMAT, msg) ;
+
+    getConfiguration(app_context, config_file) ;
+
+    g_free(msg) ;
+  }
+
 
 
   {
@@ -602,83 +614,131 @@ static gboolean getConfiguration(ZMapAppContext app_context, char *config_file)
  * in the user's home directory. */
 static gboolean configureLog(char *config_file, char *config_dir, GError **error)
 {
-  gboolean result = TRUE ;/* if no config, we can't fail to configure */
-  GError *g_error = NULL ;
-  ZMapConfigIniContext context ;
-  gboolean logging, log_to_file, show_process, show_code, show_time, catch_glib, echo_glib ;
-  char *log_name, *logfile_path = NULL ;
-
-  /* ZMap's default values (as opposed to the logging packages...). */
-  logging = TRUE ;
-  log_to_file = TRUE  ;
-  show_process = FALSE ;
-  show_code = TRUE ;
-  show_time = FALSE ;
-  catch_glib = TRUE ;
-  echo_glib = TRUE ;
-  /* if we run config free we use .ZMap, creating it if necessary */
-  log_name = g_strdup(ZMAPLOG_FILENAME) ;
+  gboolean result = FALSE ;
 
 
-  if (config_file && (context = zMapConfigIniContextProvide(config_file, ZMAPCONFIG_FILE_NONE)))
+  if (!(result = zMapLogCreate(NULL)))
     {
-      gboolean tmp_bool ;
-      char *tmp_string = NULL;
+      g_set_error_literal(error, ZMAP_APP_ERROR, ZMAPAPP_ERROR_LOG_CREATION,
+                          "Failed to create logging object.") ;
+    }
+  else
+    {
+      GError *g_error = NULL ;
+      ZMapConfigIniContext context ;
+      gboolean logging, log_to_file, show_process, show_code, show_time, catch_glib, echo_glib ;
+      char *log_name, *logfile_path = NULL ;
 
-      /* logging at all */
-      if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_LOG_CONFIG,
-                                         ZMAPSTANZA_LOG_CONFIG,
-                                         ZMAPSTANZA_LOG_LOGGING, &tmp_bool))
-        logging = tmp_bool ;
+      /* ZMap's default values (as opposed to the logging packages...). */
+      logging = TRUE ;
+      log_to_file = TRUE  ;
+      show_process = FALSE ;
+      show_code = TRUE ;
+      show_time = FALSE ;
+      catch_glib = TRUE ;
+      echo_glib = TRUE ;
 
-      /* logging to the file */
-      if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_LOG_CONFIG,
-                                         ZMAPSTANZA_LOG_CONFIG,
-                                         ZMAPSTANZA_LOG_FILE, &tmp_bool))
-        log_to_file = tmp_bool ;
+      /* if we run config free we use .ZMap, creating it if necessary */
+      log_name = g_strdup(ZMAPLOG_FILENAME) ;
 
-      /* how much detail to show...process/pid... */
-      if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_LOG_CONFIG,
-                                         ZMAPSTANZA_LOG_CONFIG,
-                                         ZMAPSTANZA_LOG_SHOW_PROCESS, &tmp_bool))
-        show_process = tmp_bool ;
 
-      /* how much detail to show...code... */
-      if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_LOG_CONFIG,
-                                         ZMAPSTANZA_LOG_CONFIG,
-                                         ZMAPSTANZA_LOG_SHOW_CODE, &tmp_bool))
-        show_code = tmp_bool;
-
-      /* how much detail to show...time... */
-      if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_LOG_CONFIG,
-                                         ZMAPSTANZA_LOG_CONFIG,
-                                         ZMAPSTANZA_LOG_SHOW_TIME, &tmp_bool))
-        show_time = tmp_bool;
-
-      /* catch GLib errors, else they stay on stdout */
-      if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_LOG_CONFIG,
-                                         ZMAPSTANZA_LOG_CONFIG,
-                                         ZMAPSTANZA_LOG_CATCH_GLIB, &tmp_bool))
-        catch_glib = tmp_bool;
-
-      /* catch GLib errors, else they stay on stdout */
-      if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_LOG_CONFIG,
-                                         ZMAPSTANZA_LOG_CONFIG,
-                                         ZMAPSTANZA_LOG_ECHO_GLIB, &tmp_bool))
-        echo_glib = tmp_bool;
-
-      /* See if there is a user-specified directory to use for logfile path */
-      if (zMapConfigIniContextGetFilePath(context, ZMAPSTANZA_LOG_CONFIG,
-                                          ZMAPSTANZA_LOG_CONFIG,
-                                          ZMAPSTANZA_LOG_DIRECTORY, &tmp_string))
+      if (config_file && (context = zMapConfigIniContextProvide(config_file, ZMAPCONFIG_FILE_NONE)))
         {
-          char *full_dir = zMapGetDir(tmp_string, TRUE, TRUE) ;
+          gboolean tmp_bool ;
+          char *tmp_string = NULL;
+
+          /* logging at all */
+          if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_LOG_CONFIG,
+                                             ZMAPSTANZA_LOG_CONFIG,
+                                             ZMAPSTANZA_LOG_LOGGING, &tmp_bool))
+            logging = tmp_bool ;
+
+          /* logging to the file */
+          if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_LOG_CONFIG,
+                                             ZMAPSTANZA_LOG_CONFIG,
+                                             ZMAPSTANZA_LOG_FILE, &tmp_bool))
+            log_to_file = tmp_bool ;
+
+          /* how much detail to show...process/pid... */
+          if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_LOG_CONFIG,
+                                             ZMAPSTANZA_LOG_CONFIG,
+                                             ZMAPSTANZA_LOG_SHOW_PROCESS, &tmp_bool))
+            show_process = tmp_bool ;
+
+          /* how much detail to show...code... */
+          if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_LOG_CONFIG,
+                                             ZMAPSTANZA_LOG_CONFIG,
+                                             ZMAPSTANZA_LOG_SHOW_CODE, &tmp_bool))
+            show_code = tmp_bool;
+
+          /* how much detail to show...time... */
+          if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_LOG_CONFIG,
+                                             ZMAPSTANZA_LOG_CONFIG,
+                                             ZMAPSTANZA_LOG_SHOW_TIME, &tmp_bool))
+            show_time = tmp_bool;
+
+          /* catch GLib errors, else they stay on stdout */
+          if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_LOG_CONFIG,
+                                             ZMAPSTANZA_LOG_CONFIG,
+                                             ZMAPSTANZA_LOG_CATCH_GLIB, &tmp_bool))
+            catch_glib = tmp_bool;
+
+          /* catch GLib errors, else they stay on stdout */
+          if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_LOG_CONFIG,
+                                             ZMAPSTANZA_LOG_CONFIG,
+                                             ZMAPSTANZA_LOG_ECHO_GLIB, &tmp_bool))
+            echo_glib = tmp_bool;
+
+          /* See if there is a user-specified directory to use for logfile path */
+          if (zMapConfigIniContextGetFilePath(context, ZMAPSTANZA_LOG_CONFIG,
+                                              ZMAPSTANZA_LOG_CONFIG,
+                                              ZMAPSTANZA_LOG_DIRECTORY, &tmp_string))
+            {
+              char *full_dir ;
+
+              full_dir = zMapGetDir(tmp_string, TRUE, TRUE) ;
+
+              logfile_path = zMapGetFile(full_dir, log_name, TRUE, "rw", &g_error) ;
+
+              if (g_error)
+                {
+                  char *msg = g_strdup_printf("Cannot use configured directory '%s' for log file: %s",
+                                              config_dir, g_error->message) ;
+                  zmapAppConsoleLogMsg(verbose_startup_logging_G, INIT_FORMAT, msg) ;
+                  g_free(msg) ;
+
+                  g_error_free(g_error) ;
+                  g_error = NULL ;
+                }
+
+              g_free(full_dir) ;
+            }
+
+
+          /* user specified file use that, otherwise we default to "zmap.log" */
+          if (zMapConfigIniContextGetString(context, ZMAPSTANZA_LOG_CONFIG,
+                                            ZMAPSTANZA_LOG_CONFIG,
+                                            ZMAPSTANZA_LOG_FILENAME, &tmp_string))
+            {
+              g_free(log_name) ;
+
+              log_name = tmp_string;
+            }
+
+          /* config context needs freeing */
+          zMapConfigIniContextDestroy(context);
+        }
+
+      if (!logfile_path && config_dir)
+        {
+          /* See if we can get logfile path from the given config_dir */
+          char *full_dir = zMapGetDir(config_dir, FALSE, FALSE) ;
           logfile_path = zMapGetFile(full_dir, log_name, TRUE, "rw", &g_error) ;
           g_free(full_dir) ;
 
           if (g_error)
             {
-              char *msg = g_strdup_printf("Cannot use configured directory '%s' for log file: %s", config_dir, g_error->message) ;
+              char *msg = g_strdup_printf("Cannot use conf_dir '%s' for log file: %s", config_dir, g_error->message) ;
               zmapAppConsoleLogMsg(verbose_startup_logging_G, INIT_FORMAT, msg) ;
               g_free(msg) ;
 
@@ -687,65 +747,32 @@ static gboolean configureLog(char *config_file, char *config_dir, GError **error
             }
         }
 
-
-      /* user specified file, default to zmap.log */
-      if (zMapConfigIniContextGetString(context, ZMAPSTANZA_LOG_CONFIG,
-                                        ZMAPSTANZA_LOG_CONFIG,
-                                        ZMAPSTANZA_LOG_FILENAME, &tmp_string))
+      if (!logfile_path)
         {
-          g_free(log_name) ;
-          log_name = tmp_string;
+          /* Use the default directory for logfile path. Create the full path and mkdir if necessary. */
+          char *full_dir = zMapGetDir(ZMAP_USER_CONFIG_DIR, TRUE, TRUE) ;
+          logfile_path = zMapGetFile(full_dir, log_name, TRUE, "rw", &g_error) ;
+          g_free(full_dir) ;
         }
 
-      /* config context needs freeing */
-      zMapConfigIniContextDestroy(context);
-    }
+      if (logfile_path)
+        {
+          result = zMapLogConfigure(logging, log_to_file,
+                                    show_process, show_code, show_time,
+                                    catch_glib, echo_glib,
+                                    logfile_path, &g_error) ;
+        }
 
-  if (!logfile_path && config_dir)
-    {
-      /* See if we can get logfile path from the given config_dir */
-      char *full_dir = zMapGetDir(config_dir, FALSE, FALSE) ;
-      logfile_path = zMapGetFile(full_dir, log_name, TRUE, "rw", &g_error) ;
-      g_free(full_dir) ;
-
+      // Error handling all over the place sigh.....
       if (g_error)
         {
-          char *msg = g_strdup_printf("Cannot use conf_dir '%s' for log file: %s", config_dir, g_error->message) ;
-          zmapAppConsoleLogMsg(verbose_startup_logging_G, INIT_FORMAT, msg) ;
-          g_free(msg) ;
-
-          g_error_free(g_error) ;
-          g_error = NULL ;
+          result = FALSE ;
+          g_propagate_error(error, g_error) ;
         }
-    }
 
-  if (!logfile_path)
-    {
-      /* Use the default directory for logfile path. Create the full path and mkdir if necessary. */
-      char *full_dir = zMapGetDir(ZMAP_USER_CONFIG_DIR, TRUE, TRUE) ;
-      logfile_path = zMapGetFile(full_dir, log_name, TRUE, "rw", &g_error) ;
-      g_free(full_dir) ;
-    }
+      // Tidy up.
+      g_free(log_name) ;
 
-  /* all our strings need freeing */
-  g_free(log_name) ;
-
-  if (logfile_path)
-    {
-      char *msg = g_strdup_printf("Setting up logging to '%s'", logfile_path) ;
-      zmapAppConsoleLogMsg(verbose_startup_logging_G, INIT_FORMAT, msg) ;
-      g_free(msg) ;
-
-      result = zMapLogConfigure(logging, log_to_file,
-                                show_process, show_code, show_time,
-                                catch_glib, echo_glib,
-                                logfile_path, &g_error) ;
-    }
-
-  if (g_error)
-    {
-      result = FALSE ;
-      g_propagate_error(error, g_error) ;
     }
 
   return result ;

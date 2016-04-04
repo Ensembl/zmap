@@ -240,6 +240,7 @@ typedef struct ZMapFeatureContextMapStructType
   GList *getColumnFeatureSets(GQuark column_id, gboolean unique_id) ;
   GList* getOrderedColumnsListIDs() ;
   GList* getOrderedColumnsList() ;
+  GQuark getRelatedColumnID(const GQuark fset_id) ;
 
   bool updateContextColumns(_ZMapConfigIniContextStruct *context, ZMapConfigIniFileType file_type) ;
   bool updateContextColumnGroups(_ZMapConfigIniContextStruct *context, ZMapConfigIniFileType file_type) ;

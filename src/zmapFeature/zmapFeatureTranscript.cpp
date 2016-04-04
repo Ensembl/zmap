@@ -852,7 +852,7 @@ gboolean zMapFeatureTranscriptMergeIntron(ZMapFeature transcript, Coord x1, Coor
   /* Disallow merging an intron that would leave us with no exon at the start/end */
   if (x1 <= transcript->x1 || x2 >= transcript->x2)
     {
-      zMapWarning("%s", "Cannot merge an intron whose start/end lies outside the transcript range.") ;
+      zMapLogWarning("%s", "Cannot merge an intron whose start/end lies outside the transcript range.") ;
       g_error_free(tmp_error) ;
     }
   else
@@ -872,7 +872,7 @@ gboolean zMapFeatureTranscriptMergeIntron(ZMapFeature transcript, Coord x1, Coor
 
   if (tmp_error)
     {
-      zMapWarning("%s", tmp_error->message) ;
+      zMapLogWarning("%s", tmp_error->message) ;
       g_error_free(tmp_error) ;
       result = FALSE ;
     }
