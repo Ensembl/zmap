@@ -606,7 +606,9 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::createFileSource(const char *
   src->group = SOURCE_GROUP_START ;        // default_value
   src->featuresets = g_strdup(ZMAP_DEFAULT_FEATURESETS) ;
 
-  if (strncasecmp(file, "http://", 7) != 0 && strncasecmp(file, "ftp://", 6) != 0)
+  if (strncasecmp(file, "http://", 7) != 0 && 
+      strncasecmp(file, "https://", 8) != 0 &&
+      strncasecmp(file, "ftp://", 6) != 0)
     src->url = g_strdup_printf("file:///%s", file) ;
 
   /* Add the source to our list. Use the filename as the source name if none given */

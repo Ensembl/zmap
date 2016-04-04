@@ -281,9 +281,19 @@ static GtkWidget *makePanel(GtkWidget *toplevel,
 
 
 /* Get the row index in the combo box for the given scheme */
-static int comboGetIndex(MainFrame main_data, ZMapURLScheme scheme)
+static int comboGetIndex(MainFrame main_data, ZMapURLScheme scheme_in)
 {
   int result = -1 ;
+
+  /* We lump file/http/https/ftp all under a single 'file' option */
+  ZMapURLScheme scheme = scheme_in ;
+
+  if (scheme_in == SCHEME_HTTP || 
+#ifdef HAVE_SSL
+      SCHEME_HTTPS || 
+#endif
+      SCHEME_FTP)
+    scheme = SCHEME_FILE ;
 
   auto map_iter = main_data->combo_indices.find(scheme) ;
 
@@ -391,7 +401,14 @@ static void updatePanelFromSource(MainFrame main_data, ZMapConfigSource source)
     }
 #endif
 
-  if (zmap_url && (zmap_url->scheme == SCHEME_FILE || zmap_url->scheme == SCHEME_PIPE))
+  if (zmap_url && 
+      (zmap_url->scheme == SCHEME_FILE || 
+       zmap_url->scheme == SCHEME_HTTP || 
+#ifdef HAVE_SSL
+       zmap_url->scheme == SCHEME_HTTPS || 
+#endif
+       zmap_url->scheme == SCHEME_FTP || 
+       zmap_url->scheme == SCHEME_PIPE))
     {
       char *source_name = main_data->sequence_map->getSourceName(source) ;
 
