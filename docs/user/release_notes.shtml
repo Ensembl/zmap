@@ -6,6 +6,16 @@
 <body>
 <h2>ZMap - Release Notes</h2>
 
+<h4>Version 2.7.0</h4>
+<ul>
+  <li>RT '519209' BAM colinear line colour
+  <li> RT '515503'bug reading the columns stanza
+  <li>RT 521742 bug calling blixem on bam columns
+  <li>RT 514386 Zmap crash pfetching
+  <li>RT 516368 Feature request: edit source
+</ul>
+
+
 <h4>Version 2.6.0</h4>
 <ul>
   <li>RT516368: Add an Edit button to standalone-ZMap's main window so that you can edit sources.
