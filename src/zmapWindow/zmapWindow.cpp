@@ -48,6 +48,7 @@
 #include <ZMap/zmapConfigIni.hpp>
 #include <ZMap/zmapConfigStrings.hpp>
 #include <ZMap/zmapSOParser.hpp>
+#include <ZMap/zmapSkipList.hpp>
 #include <zmapWindowState.hpp>
 #include <zmapWindowContainerGroup.hpp>
 #include <zmapWindowContainers.hpp>
@@ -6544,89 +6545,169 @@ static void getMaxBounds(gpointer data, gpointer user_data)
 static void jumpFeature(ZMapWindow window, guint keyval)
 {
   FooCanvasItem *focus_item ;
+  ZMapWindowFeaturesetItem featureset_item ;
   FooCanvasGroup *focus_column ;
   gboolean move_focus = FALSE, highlight_item = FALSE ;
+  ZMapFeature curr_feature, next_feature ;
+  ZMapWindowCanvasFeature curr_canvas_feature, next_canvas_feature ;
+  ZMapSkipList sl ;
 
-  zMapReturnIfFail(window) ;
 
-  // THIS SEEMS LIKE A BAD IDEA TO DEFAULT TO THE FIRST FEATURE IN THE FIRST COLUMN...COULD BE
-  // VERY ANNOYING FOR THE USER TO SUDDENLY JUMP THERE....
-
-  /* Is there is a highlighted feature then move to next one,
-   * if not default to the first feature in the leftmost forward strand column. */
+  // Is there is a highlighted feature then move to next one and highlight that, do nothing if
+  // there isn't one, seems like a bad idea to try to guess which features the user wanted to
+  // cursor through.
   if ((focus_item = zmapWindowFocusGetHotItem(window->focus)))
     {
-      move_focus = TRUE ;
+      GList *feature_sets ;
+      ZMapSkipList cached_sl ;
 
+      // Interrogate the current focus_item to retrieve the current hot feature.
       focus_item = zmapWindowItemGetTrueItem(focus_item) ;
-    }
-  else
-    {
-      ZMapWindowContainerGroup focus_container;
+
+      curr_feature = zMapWindowCanvasItemGetFeature(focus_item) ;
+
+      focus_column = zmapWindowFocusGetHotColumn(window->focus) ;
 
 
-      if (!(focus_column = zmapWindowFocusGetHotColumn(window->focus)))
+
+      // OK THIS SHOULD BE A LOOP THROUGH THE FEATURE SETS UNTIL WE FIND THE CURR FEATURE.....
+
+      // OK...THIS ACTUALLY LOOKS WRONG....IF THERE ARE MULTIPLE FEATURESETS AND FEATURES THEY ARE
+      // ALL HELD IN ONE FOO FEATURESET AND THERE IS ONLY ONE SKIP LIST WHICH MAKES IT ALL SIMPLER
+
+      // Should we take this list and plough through them all over time.....should check which feature
+      // set the current feature is in.....
+      feature_sets = zmapWindowContainerFeatureSetGetFeatureSets((ZMapWindowContainerFeatureSet)focus_column) ;
+
+      zMap_g_list_quark_print(feature_sets, "Column featuresets:", FALSE) ;
+
+      // Only gets the first....think about what to do here....if there are multiple featuresets in a column.
+      featureset_item = zmapWindowContainerGetFeatureSetItem((ZMapWindowContainerFeatureSet)focus_column) ;
+
+      //zMapWindowCanvasFeaturesetPrintFeatureList(featureset_item) ;
+
+
+      sl = zMapWindowCanvasFeaturesetFindFeature(featureset_item, curr_feature) ;
+      curr_canvas_feature = (ZMapWindowCanvasFeature)(sl->data) ;
+
+
+      // Get the curr-ptr from the featureset item ? see if it's the same feature as the
+      // highlighted one and if is use the cached one ??
+      if ((cached_sl = zMapWindowCanvasFeaturesetGetCurrFeature(featureset_item)))
         {
-          focus_column = zmapWindowGetFirstColumn(window, ZMAPSTRAND_FORWARD) ;
+          ZMapWindowCanvasFeature cached_currfeat ;
+          ZMapFeature cached_feature ;
+
+          cached_currfeat = (ZMapWindowCanvasFeature)(cached_sl->data) ;
+          cached_feature = zMapWindowCanvasFeatureGetFeature(cached_currfeat) ;
+
+
+          if (cached_feature->original_id == curr_feature->original_id)
+            {
+              sl = cached_sl ;
+              curr_canvas_feature = cached_currfeat ;
+            }
+
         }
 
-      if (ZMAP_IS_CONTAINER_GROUP(focus_column))
-        {
-          focus_container = ZMAP_CONTAINER_GROUP(focus_column);
 
-          if (keyval == GDK_Down)
-            focus_item = zmapWindowContainerGetNthFeatureItem(focus_container, ZMAPCONTAINER_ITEM_FIRST) ;
-          else
-            focus_item = zmapWindowContainerGetNthFeatureItem(focus_container, ZMAPCONTAINER_ITEM_LAST) ;
 
-          /* If the item is a valid feature item then we get it highlighted, otherwise we must search
-           * for the next valid one. */
-          if (checkItem(focus_item, GINT_TO_POINTER(TRUE)))
-            highlight_item = TRUE ;
-          else
-            move_focus = TRUE ;
-        }
+      // ok, we can unhighlight any features/columns currently highlighted prior to highlighting a
+      //   new hot feature.
+      zmapWindowUnHighlightFocusItems(window) ;
+
+      move_focus = TRUE ;      
     }
 
-  /* Unhighlight any features/columns currently highlighted. */
-  zmapWindowUnHighlightFocusItems(window) ;
 
   /* If we need to jump features then do it. */
   if (move_focus)
     {
       ZMapContainerItemDirection direction ;
+      bool wrapped = false ;
 
+      // Which was does he user want to go ?
       if (keyval == GDK_Up)
         direction = ZMAPCONTAINER_ITEM_PREV ;
       else
         direction = ZMAPCONTAINER_ITEM_NEXT ;
 
-
-      if ((focus_item = zmapWindowContainerGetNextFeatureItem(focus_item, direction, TRUE,
-                                                              checkItem, GINT_TO_POINTER(TRUE))))
+      // Look through the skiplist which is the ordered list of features sorted by position and
+      // find the next one that is not the same feature and is further down or further right.
+      // Currently this does not work smoothly for alignments as they are bumped into sub-columns
+      // that for each alignment sequence and of course this imposes a different order on the
+      // features from the the skiplist order...not easy to do much about that....
+      do
         {
-          move_focus = TRUE ;
-          highlight_item = TRUE ;
-        }
+          if (direction == ZMAPCONTAINER_ITEM_NEXT)
+            {
+              if (sl->next)
+                {
+                  sl = sl->next ;
+                }
+              else
+                {
+                  sl = zMapSkipListFirst(sl) ;
+                  wrapped = true ;
+                }
+            }
+          else
+            {
+              if (sl->prev)
+                {
+                  sl = sl->prev ;
+                }
+              else
+                {
+                  sl = zMapSkipListLast(sl) ;
+                  wrapped = true ;
+                }
+            }
 
+          zMapWindowCanvasFeaturesetSetCurrFeature(featureset_item, sl) ;
+
+
+          next_canvas_feature = (ZMapWindowCanvasFeature)(sl->data) ;
+          next_feature = zMapWindowCanvasFeatureGetFeature(next_canvas_feature) ;
+
+          if ((wrapped && next_feature->original_id != curr_feature->original_id)
+              || ((direction == ZMAPCONTAINER_ITEM_NEXT
+                   && (next_feature->original_id != curr_feature->original_id
+                       && (next_feature->x1 > curr_feature->x1
+                           || zMapWindowCanvasFeatureGetBumpOffset(next_canvas_feature)
+                           > zMapWindowCanvasFeatureGetBumpOffset(curr_canvas_feature))))
+                  || (direction == ZMAPCONTAINER_ITEM_PREV
+                      && (next_feature->original_id != curr_feature->original_id
+                          && (next_feature->x1 < curr_feature->x1
+                              || zMapWindowCanvasFeatureGetBumpOffset(next_canvas_feature)
+                              < zMapWindowCanvasFeatureGetBumpOffset(curr_canvas_feature))))))
+            break ;
+
+        } while (true) ;
+
+      // Set the new hot feature in the featureset canvas item and in the focus hotlist.
+      zMapWindowCanvasItemSetFeaturePointer((ZMapWindowCanvasItem)focus_item, next_feature) ;
+
+      zmapWindowFocusSetHotItem(window->focus, focus_item, next_feature) ;
+
+      highlight_item = TRUE ;
     }
 
 
-  /* if we need to highlight a feature then do it. */
+  /* if we need to highlight a feature then do it, this call gets it done in all windows. */
   if (highlight_item)
     {
       gboolean replace_highlight = TRUE, highlight_same_names = FALSE ;
 
-      ZMapFeature feature ;
+      if (ZMAPFEATURE_IS_ALIGNMENT(next_feature))
+        highlight_same_names = TRUE ;
 
-      zmapWindowHighlightObject(window, focus_item, TRUE, FALSE, FALSE) ;
-
-      feature = zmapWindowItemGetFeature(focus_item);
-
-
-      /* Pass information about the object clicked on back to the application. */
-      zmapWindowUpdateInfoPanel(window, feature, NULL, focus_item, NULL, 0, 0, 0, 0,
+      zmapWindowUpdateInfoPanel(window, next_feature, NULL, focus_item, NULL, 0, 0, 0, 0,
                                 NULL, replace_highlight, highlight_same_names, FALSE, NULL) ;
+
+
+      // and then we need to scroll to the feature if it's not on the screen....
+      zmapWindowScrollToFeature(window, FOO_CANVAS_ITEM(focus_column), next_canvas_feature) ;      
     }
 
 
@@ -6757,6 +6838,9 @@ static void jumpColumn(ZMapWindow window, guint keyval)
       zmapWindowFocusSetHotColumn(window->focus, focus_column,NULL) ;
 
       zmapWindowFocusHighlightHotColumn(window->focus) ;
+
+
+      // should use updateinfopanel call here but not sure how to call it.....
 
       // Update displayed details about column by calling layer above us.
       select.feature_desc.struct_type = ZMAPFEATURE_STRUCT_FEATURESET ;
@@ -7794,7 +7878,7 @@ void zmapWindowHighlightEvidenceCB(GList *evidence, gpointer user_data)
    */
 
   zmapWindowFocusAddItemsType(highlight_data->window->focus, evidence_items,
-                              NULL /* menu_data->item */, WINDOW_FOCUS_GROUP_EVIDENCE);
+                              NULL /* menu_data->item */, NULL, WINDOW_FOCUS_GROUP_EVIDENCE);
 
 
   g_list_free(evidence);
