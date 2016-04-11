@@ -194,11 +194,6 @@ gboolean zMapWindowUnhighlightFeature(ZMapWindow window, ZMapFeature feature)
 
 
 /* Highlight a feature or list of related features (e.g. all hits for same query sequence). */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
-                               gboolean replace_highlight_item, gboolean highlight_same_names, gboolean sub_part)
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
                                gboolean replace_highlight_item, gboolean highlight_same_names,
                                ZMapFeatureSubPart sub_part)
@@ -247,10 +242,6 @@ FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem 
 //
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
-                               gboolean replace_highlight_item, gboolean highlight_same_names, gboolean sub_part)
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
                                gboolean replace_highlight_item, gboolean highlight_same_names,
                                ZMapFeatureSubPart sub_part)
@@ -295,7 +286,7 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
               zmapWindowFToIPrintList(set_items) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-            zmapWindowFocusAddItems(window->focus, set_items, item) ; // item is the hot one
+            zmapWindowFocusAddItems(window->focus, set_items, item, feature) ; // item is the hot one
 
             g_list_free(set_items) ;
           }
@@ -308,11 +299,6 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
       }
     default:
       {
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-        /* Try highlighting both the item and its column. */
-        zmapWindowFocusAddItem(window->focus, item, feature);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
         zmapWindowFocusAddItemType(window->focus, item, feature, sub_part, WINDOW_FOCUS_GROUP_FOCUS) ;
       }
       break ;
@@ -598,16 +584,16 @@ gboolean zmapWindowItemIsVisible(FooCanvasItem *item)
  * definitive answer is required use zmapWindowItemIsVisible instead. */
 gboolean zmapWindowItemIsShown(FooCanvasItem *item)
 {
-  gboolean visible = FALSE;
+  gboolean visible = FALSE ;
 
-  if (!FOO_IS_CANVAS_ITEM(item))
-    return visible ;
+  if (FOO_IS_CANVAS_ITEM(item))
+    {
+      g_object_get(G_OBJECT(item),
+                   "visible", &visible,
+                   NULL) ;
+    }
 
-  g_object_get(G_OBJECT(item),
-               "visible", &visible,
-               NULL);
-
-  return visible;
+  return visible ;
 }
 
 
@@ -651,30 +637,6 @@ gboolean zmapWindowItemIsOnScreen(ZMapWindow window, FooCanvasItem *item, gboole
 
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* Scroll to the specified item.
- * If necessary, recalculate the scroll region, then scroll to the item
- * and highlight it.
- */
-gboolean zMapWindowScrollToItem(ZMapWindow window, FooCanvasItem *item)
-{
-  gboolean result = FALSE ;
-
-  if (!window || !item)
-    return result ;
-
-  if ((result = zmapWindowItemIsShown(item)))
-    {
-      zmapWindowItemCentreOnItem(window, item, FALSE, 100.0) ;
-
-      result = TRUE ;
-    }
-
-  return result ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 
 /* Moves to the given item and optionally changes the size of the scrolled region
  * in order to display the item. */
@@ -687,6 +649,9 @@ void zmapWindowItemCentreOnItem(ZMapWindow window, FooCanvasItem *item,
   return ;
 }
 
+
+
+// THIS FUNCTION SEEMS UTTERLY, UTTERLY BROKEN..............
 
 /* Moves to a subpart of an item, note the coords sub_start/sub_end need to be item coords,
  * NOT world coords. If sub_start == sub_end == 0.0 then the whole item is centred on. */
@@ -868,9 +833,6 @@ void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
 }
 
 
-
-
-
 /* Scrolls to an item if that item is not visible on the scren.
  *
  * NOTE: scrolling is only done in the axis in which the item is completely
@@ -948,6 +910,140 @@ void zmapWindowScrollToItem(ZMapWindow window, FooCanvasItem *item)
 
   return ;
 }
+
+
+
+/* Scrolls to a feature if that feature is not visible on the screen.
+ *
+ * NOTE: scrolling is only done in the axis in which the item is completely
+ * invisible, the other axis is left unscrolled so that the visible portion
+ * of the feature remains unaltered.
+ *  */
+void zmapWindowScrollToFeature(ZMapWindow window,
+                               FooCanvasItem *feature_column_item, ZMapWindowCanvasFeature canvas_feature)
+{
+
+  ZMapFeature feature ;
+  double feature_offset, feature_width ;
+  double screenx1_out, screeny1_out, screenx2_out, screeny2_out ;
+  double itemx1_out, itemy1_out, itemx2_out, itemy2_out ;
+  double feature_start_w = 0.0, feature_end_w = 0.0 ;
+  gboolean do_x = FALSE, do_y = FALSE ;
+  double x_position, y_position ;
+  int curr_x, curr_y ;
+  gboolean result ;
+
+
+  
+  feature = zMapWindowCanvasFeatureGetFeature(canvas_feature) ;
+  feature_offset = zMapWindowCanvasFeatureGetBumpOffset(canvas_feature) ;
+  feature_width = zMapWindowCanvasFeatureGetWidth(canvas_feature) ;
+
+  /* Work out which part of the canvas is visible currently in world bounds. */
+  getVisibleCanvas(window, &screenx1_out, &screeny1_out, &screenx2_out, &screeny2_out) ;
+
+  /* Get the items world coords. */
+  newGetWorldBounds(feature_column_item, &itemx1_out, &itemy1_out, &itemx2_out, &itemy2_out) ;
+
+  // Get the features start/end in world coords
+  result = zmapWindowSeqToWorldCoords(window,
+                                      feature->x1, feature->x2, &feature_start_w, &feature_end_w) ;
+
+  // Set y to features coords.
+  itemy1_out = feature_start_w ;
+  itemy2_out = feature_end_w ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  // Set x to features bump offset.
+  double tmp_x1 = 0.0, tmp_x2 = 0.0 ;
+
+  foo_canvas_w2c(window->canvas, x_position, y_position, &curr_x, NULL) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+
+  itemx1_out += feature_offset ;
+  itemx2_out = (itemx1_out + feature_width) ;
+
+
+  x_position = itemx1_out ;
+  y_position = itemy1_out ;
+
+
+
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  // debug....
+  double x1 = itemx1_out, y1 = itemy1_out, x2 = itemx2_out, y2 = itemy2_out ;
+
+
+  foo_canvas_w2c_rect_d(window->canvas,
+                        &x1, &y1,
+                        &x2, &y2);
+
+  /* Get the current scroll offsets in world coords. */
+  foo_canvas_get_scroll_offsets(window->canvas, &curr_x, &curr_y) ;
+  foo_canvas_c2w(window->canvas, curr_x, curr_y, &x_position, &y_position) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+  /* Work out whether any scrolling is required. */
+  if (itemx1_out > screenx2_out || itemx2_out < screenx1_out)
+    {
+      do_x = TRUE ;
+
+      if (itemx1_out > screenx2_out)
+        {
+          x_position = itemx1_out ;
+        }
+      else if (itemx2_out < screenx1_out)
+        {
+          x_position = itemx1_out ;
+        }
+
+      // Correct x to be half way up screen.....
+      x_position -= ((screenx2_out - screenx1_out) / 2) ;
+
+    }
+
+  if (itemy1_out > screeny2_out || itemy2_out < screeny1_out)
+    {
+      do_y = TRUE ;
+
+      if (itemy1_out > screeny2_out)
+        {
+          y_position = itemy1_out ;
+        }
+      else if (itemy2_out < screeny1_out)
+        {
+          y_position = itemy1_out ;
+        }
+
+      // Correct y to be half way up screen.....
+      y_position -= ((screeny2_out - screeny1_out) / 2) ;
+
+    }
+
+  /* If we need to scroll then do it. */
+  if (do_x || do_y)
+    {
+      foo_canvas_w2c(window->canvas, x_position, y_position, &curr_x, &curr_y) ;
+
+      foo_canvas_scroll_to(window->canvas, curr_x, curr_y) ;
+
+      // Correct x to scroll to 
+    }
+
+  return ;
+}
+
+
+
+
 
 
 
@@ -1137,7 +1233,8 @@ void my_foo_canvas_item_get_world_bounds(FooCanvasItem *item,
 
 
 // The above function does not return the results we want for our canvas...somehow we have weird
-// coords within our group whereas the actual group position is correct......
+// coords within our group whereas the actual group position is correct......this seems to happen
+// after any bumping which is probably a clue....
 //
 // This function tries to get round this by using the group position as the origin of
 // its position calculation.
