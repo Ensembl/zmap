@@ -56,6 +56,7 @@
 
 
 
+
 /* Instance */
 typedef struct _zmapWindowCanvasItemStruct  zmapWindowCanvasItem, *ZMapWindowCanvasItem ;
 
