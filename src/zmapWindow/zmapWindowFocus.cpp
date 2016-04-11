@@ -559,11 +559,12 @@ void zmapWindowFocusAddItemType(ZMapWindowFocus focus, FooCanvasItem *item,
 }
 
 /* Same remark applies to this routine as to zmapWindowFocusAddItem() */
-void zmapWindowFocusAddItemsType(ZMapWindowFocus focus, GList *glist, FooCanvasItem *hot, ZMapWindowFocusType type)
+void zmapWindowFocusAddItemsType(ZMapWindowFocus focus, GList *glist,
+                                 FooCanvasItem *hot, ZMapFeature hot_feature,
+                                 ZMapWindowFocusType type)
 {
   gboolean first;
   FooCanvasItem *foo;
-  ZMapFeature hotfeature = NULL;
 
   first = glist && glist->data;        /* ie is there one? */
 
@@ -573,14 +574,12 @@ void zmapWindowFocusAddItemsType(ZMapWindowFocus focus, GList *glist, FooCanvasI
 
       id2c = (ID2Canvas) glist->data;
       foo = FOO_CANVAS_ITEM(id2c->item);
-      if(hot == foo)
-              hotfeature = (ZMapFeature) id2c->feature_any;
+
       addUnique(focus, foo, (ZMapFeature)id2c->feature_any, NULL, type) ;
     }
 
-  if (hot && !focus->hot_item && first && type == WINDOW_FOCUS_GROUP_FOCUS)
-    zmapWindowFocusSetHotItem(focus, hot,hotfeature) ;
-
+  if (hot && hot_feature && !focus->hot_item && type == WINDOW_FOCUS_GROUP_FOCUS)
+    zmapWindowFocusSetHotItem(focus, hot, hot_feature) ;
 
   return ;
 }
