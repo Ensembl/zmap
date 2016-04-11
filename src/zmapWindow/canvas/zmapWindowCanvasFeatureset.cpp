@@ -560,6 +560,53 @@ GQuark zMapWindowCanvasFeaturesetGetSetIDAtPos(ZMapWindowFeaturesetItem fi, doub
 }
 
 
+ZMapSkipList zMapWindowCanvasFeaturesetFindFeature(ZMapWindowFeaturesetItem fi, ZMapFeature feature)
+{
+  ZMapSkipList sl ;
+
+  sl = zmap_window_canvas_featureset_find_feature_index(fi, feature) ;
+
+  return sl ;
+}
+
+
+void  zMapWindowCanvasFeaturesetPrintFeatureList(ZMapWindowFeaturesetItem fi)
+{
+  ZMapSkipList sl ;
+
+  sl = fi->display_index ;
+
+
+  while (sl)
+    {
+      ZMapWindowCanvasFeature canvas_feature ;
+      
+      canvas_feature = (ZMapWindowCanvasFeature)(sl->data) ;
+
+      if (canvas_feature->feature)
+        {
+          ZMapFeature feature = canvas_feature->feature ;
+
+          printf("Feature \"%s\"\tx1,x2 = %d, %d",
+                 zMapFeatureName((ZMapFeatureAny)feature), feature->x1, feature->x2) ;
+
+          printf("\tCanvas y1, y2 = %.1f, %.1f", canvas_feature->y1, canvas_feature->y2) ;
+          printf("  bump offset = %.1f", canvas_feature->bump_offset) ;
+
+                 
+          printf("\n") ;
+        }
+
+      if (!(sl->next) && (sl->down))
+        sl = sl->down ;
+
+      sl = sl->next ;
+    }
+
+
+  return ;
+}
+
 
 
 
@@ -1961,8 +2008,8 @@ static ZMapSkipList zmap_window_canvas_featureset_find_feature_coords(FeatureCmp
                                                                       double y1, double y2)
 {
   ZMapSkipList sl = NULL;
-  zmapWindowCanvasFeatureStruct search;
-  double extra = 0.0;
+  zmapWindowCanvasFeatureStruct search = {FEATURE_INVALID} ;
+  double extra = 0.0 ;
 
   zMapReturnValIfFail(fi, NULL) ;
 
@@ -2813,6 +2860,7 @@ gboolean zmapWindowCanvasFeaturesetFreeDisplayLists(ZMapWindowFeaturesetItem fea
     {
       zMapSkipListDestroy(featureset_item_inout->display_index, NULL) ;
       featureset_item_inout->display_index = NULL ;
+      featureset_item_inout->curr_item = NULL ;
 
       if (featureset_item_inout->display)
         {
@@ -2884,6 +2932,8 @@ gboolean zMapWindowFeaturesetItemSetStyle(ZMapWindowFeaturesetItem featureset_it
     {
       zMapSkipListDestroy(featureset_item->display_index, NULL);
       featureset_item->display_index = NULL;
+      featureset_item->curr_item = NULL ;
+
 
       if (featureset_item->display)        /* was re-binned */
         {
@@ -3571,6 +3621,25 @@ int zMapWindowCanvasFeaturesetGetFilterCount(FooCanvasItem *foo)
   return featureset_item->n_filtered ;
 }
 
+ZMapSkipList zMapWindowCanvasFeaturesetGetCurrFeature(ZMapWindowFeaturesetItem fi)
+{
+  ZMapSkipList sl = NULL ;
+
+  sl = fi->curr_item ;
+
+  return sl ;
+}
+
+// should go away if I move things like "got to next' into a function.
+void zMapWindowCanvasFeaturesetSetCurrFeature(ZMapWindowFeaturesetItem fi, ZMapSkipList sl)
+{
+  fi->curr_item = sl ;
+
+  return ;
+}
+
+
+
 
 int zMapWindowCanvasFeaturesetFilter(gpointer gfilter, double value, gboolean highlight_filtered_columns)
 {
@@ -3898,6 +3967,8 @@ int zMapWindowFeaturesetItemRemoveFeature(FooCanvasItem *foo, ZMapFeature featur
       /* quick fix FTM, de-calc which requires a re-calc on display */
       zMapSkipListDestroy(fi->display_index, NULL);
       fi->display_index = NULL;
+      fi->curr_item = NULL ;
+
       /* is still sorted if it was before */
     }
 
@@ -3955,6 +4026,7 @@ void zMapWindowFeaturesetRemoveAllGraphics(ZMapWindowFeaturesetItem featureset_i
     {
       /* zMapSkipListDestroy(featureset_item->display_index, NULL); */
       featureset_item->display_index = NULL;
+      featureset_item->curr_item = NULL ;
     }
 
   featureset_item->n_features = 0 ;
@@ -4033,6 +4105,8 @@ int zMapWindowFeaturesetRemoveGraphics(ZMapWindowFeaturesetItem featureset_item,
       /* quick fix FTM, de-calc which requires a re-calc on display */
       zMapSkipListDestroy(fi->display_index, NULL);
       fi->display_index = NULL;
+      fi->curr_item = NULL ;
+
       /* is still sorted if it was before */
     }
 
@@ -4138,6 +4212,8 @@ int zMapWindowFeaturesetItemRemoveSet(FooCanvasItem *foo, ZMapFeatureSet feature
       /* quick fix FTM, de-calc which requires a re-calc on display */
       zMapSkipListDestroy(fi->display_index, NULL);
       fi->display_index = NULL;
+      fi->curr_item = NULL ;
+
       /* is still sorted if it was before */
     }
 
@@ -4248,6 +4324,7 @@ static void featuresetAddToIndex(ZMapWindowFeaturesetItem featureset_item, ZMapW
         /* quick fix FTM, de-calc which requires a re-calc on display */
         zMapSkipListDestroy(featureset_item->display_index, NULL) ;
         featureset_item->display_index = NULL ;
+        featureset_item->curr_item = NULL ;
       }
     }
   /* must set this independantly as empty columns with no index get flagged as sorted */
@@ -4607,6 +4684,7 @@ static void zmap_window_featureset_item_item_destroy (GtkObject *object)
           zMapSkipListDestroy(featureset_item->display_index, NULL);
           featureset_item->display_index = NULL;
           featureset_item->features_sorted = FALSE;
+          featureset_item->curr_item = NULL ;
         }
       if(featureset_item->display)        /* was re-binned */
         {
