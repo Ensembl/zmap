@@ -258,6 +258,10 @@ G_STMT_START{                                             \
   zMapUtilsDebugPrintf(stderr, "%s: " FORMAT "\n", NULL, __VA_ARGS__)
 #endif /* __GNUC__ */
 
+#define zMapDebugPrintfPlain(FORMAT, ...)  \
+  zMapUtilsDebugPrintf(stderr, FORMAT, __VA_ARGS__)
+
+
 
 
 /* Timer functions, just simplifies printing etc a bit and provides a global timer if required.
