@@ -833,6 +833,13 @@ void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
 }
 
 
+// PLEASE NOTE.....SINCE MALCOLM'S CHANGES THIS FUNCTION IS ONLY NEEDED TO SCROLL FROM COLUMN TO
+// COLUMN AS INDIVIDUAL FEATURES ARE NO LONGER CANVAS FEATURES. THEREFORE THE SCROLLING IN THE
+// Y-AXIS HAS BEEN DISABLED....AND THERE IS IN FACT A GOOD REASON FOR THIS, IT WOULD APPEAR THAT
+// SINCE THE RETIREMENT OF FEATURES AS FULL CANVAS FEATURES THE COORDINATE SYSTEM FOR THE COLUMN
+// GROUPS HAS BECOME COMPLETELY MESSED UP SO THAT THE SIZE OF THE BACKGROUND COLUMN FEATURE NO
+// LONGER BEARS ANY RESEMBLANCE TO THE COORDINATES OF THE FEATURES !!
+//
 /* Scrolls to an item if that item is not visible on the scren.
  *
  * NOTE: scrolling is only done in the axis in which the item is completely
@@ -849,6 +856,11 @@ void zmapWindowScrollToItem(ZMapWindow window, FooCanvasItem *item)
 
   /* Work out which part of the canvas is visible currently. */
   getVisibleCanvas(window, &screenx1_out, &screeny1_out, &screenx2_out, &screeny2_out) ;
+
+
+  x_offset = screenx1_out ;
+  y_offset = screeny1_out ;
+
 
   /* Get the items world coords. */
   newGetWorldBounds(item, &itemx1_out, &itemy1_out, &itemx2_out, &itemy2_out) ;
@@ -886,6 +898,8 @@ void zmapWindowScrollToItem(ZMapWindow window, FooCanvasItem *item)
         }
     }
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   if (itemy1_out > screeny2_out || itemy2_out < screeny1_out)
     {
       do_y = TRUE ;
@@ -899,6 +913,8 @@ void zmapWindowScrollToItem(ZMapWindow window, FooCanvasItem *item)
           y_offset = itemy1_out ;
         }
     }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   /* If we need to scroll then do it. */
   if (do_x || do_y)
