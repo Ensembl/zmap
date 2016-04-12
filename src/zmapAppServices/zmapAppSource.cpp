@@ -290,10 +290,12 @@ static int comboGetIndex(MainFrame main_data, ZMapURLScheme scheme_in)
 
   if (scheme_in == SCHEME_HTTP || 
 #ifdef HAVE_SSL
-      SCHEME_HTTPS || 
+      scheme_in == SCHEME_HTTPS || 
 #endif
-      SCHEME_FTP)
-    scheme = SCHEME_FILE ;
+      scheme_in == SCHEME_FTP)
+    {
+      scheme = SCHEME_FILE ;
+    }
 
   auto map_iter = main_data->combo_indices.find(scheme) ;
 
