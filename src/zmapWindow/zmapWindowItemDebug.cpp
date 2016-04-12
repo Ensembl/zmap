@@ -43,8 +43,8 @@
 
 
 
-static void printGroup(FooCanvasGroup *group, int indent, GString *buf) ;
-static void printItem(FooCanvasItem *item) ;
+static void printCanvasItems(FooCanvasItem *item, int indent, GString *buf) ;
+static void printCanvasItem(FooCanvasItem *item, int ident, GString *buf) ;
 static gboolean get_container_type_as_string(FooCanvasItem *item, const char **str_out) ;
 static gboolean get_item_type_as_string(FooCanvasItem *item, const char **str_out) ;
 static gboolean get_feature_type_as_string(FooCanvasItem *item, const char **str_out) ;
@@ -60,11 +60,13 @@ void zmapWindowPrintCanvas(FooCanvas *canvas)
 
   foo_canvas_get_scroll_region(canvas, &x1, &y1, &x2, &y2);
 
-  zMapDebugPrintf("%s", "\nCanvas stats:\n\n") ;
+  zMapDebugPrintf("%s", "\n\nCanvas stats:\n") ;
 
   zMapDebugPrintf("\nZoom x,y: %f, %f\n", canvas->pixels_per_unit_x, canvas->pixels_per_unit_y) ;
 
   zMapDebugPrintf("\nScroll region bounds: %.f -> %.f,  %.f -> %.f\n", x1, x2, y1, y2) ;
+
+  zMapDebugPrintf("%s", "\nCanvas contents:\n") ;
 
   zmapWindowPrintGroups(canvas) ;
 
@@ -85,7 +87,7 @@ void zmapWindowPrintGroups(FooCanvas *canvas)
   indent = 0 ;
   buf = g_string_sized_new(1000) ;
 
-  printGroup(root, indent, buf) ;
+  printCanvasItems((FooCanvasItem *)root, indent, buf) ;
 
   g_string_free(buf, TRUE) ;
 
@@ -224,72 +226,63 @@ void zmapWindowPrintI2W(FooCanvasItem *item, char *text, double x1_in, double y1
  */
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* Recursive function to print out all the child groups of the supplied group. */
 static void printGroup(FooCanvasGroup *group, int indent, GString *buf)
 {
   int i ;
   GList *glist ;
+  GList *item_list ;
+
 
   buf = g_string_set_size(buf, 0) ;
 
   for (i = 0 ; i < indent ; i++)
-    zMapDebugPrintf("%s", "\t") ;
+    zMapDebugPrintfPlain("%s", "\t") ;
 
 
   /* Print this group. */
   if (ZMAP_IS_CONTAINER_GROUP(group) || ZMAP_IS_CANVAS_ITEM(group))
     {
       zmapWindowItemDebugItemToString(buf, (FooCanvasItem *)group) ;
-      zMapDebugPrintf("%s", buf->str) ;
-    }
-  else if (FOO_IS_CANVAS_GROUP(group))
-    {
-      zMapDebugPrintf("%s ", "FOOCANVAS_GROUP") ;
-    }
-  else if (FOO_IS_CANVAS_ITEM(group))
-    {
-      zMapDebugPrintf("%s ", "FOOCANVAS_ITEM") ;
+      zMapDebugPrintfPlain("%s", buf->str) ;
     }
   else
     {
-      zMapDebugPrintf("%s ", "**UNKNOWN ITEM TYPE**") ;
-    }
-
-  printItem(FOO_CANVAS_ITEM(group)) ;
-
-  if (ZMAP_IS_CONTAINER_GROUP(group))
-    {
-      GList *item_list ;
-
-      if ((item_list = group->item_list))
+      if (FOO_IS_CANVAS_GROUP(group))
         {
-          do
-            {
-              FooCanvasGroup *sub_group = (FooCanvasGroup *)(item_list->data) ;
-
-                  if (FOO_IS_CANVAS_GROUP(sub_group))
-                    printGroup(sub_group, indent + 1, buf) ;
-                  else
-                    printItem(FOO_CANVAS_ITEM(group)) ;
-            }
-          while((item_list = item_list->next)) ;
+          zMapDebugPrintfPlain("%s ", "FOOCANVAS_GROUP") ;
+        }
+      else if (FOO_IS_CANVAS_ITEM(group))
+        {
+          zMapDebugPrintfPlain("%s ", "FOOCANVAS_ITEM") ;
+        }
+      else
+        {
+          zMapDebugPrintfPlain("%s ", "**UNKNOWN ITEM TYPE**") ;
         }
     }
-  else
-    {
-      /* We appear to have groups that have no children...is this empty cols ? */
-      /* Print all the child groups of this group. */
-      if ((glist = g_list_first(group->item_list)))
-        {
-          do
-            {
-              if (FOO_IS_CANVAS_GROUP(glist->data))
-                printGroup(FOO_CANVAS_GROUP(glist->data), indent + 1, buf) ;
-            }
-          while ((glist = g_list_next(glist))) ;
-        }
-    }
+  printItem(FOO_CANVAS_ITEM(group), indent) ;
 
+
+  if ((item_list = group->item_list))
+    {
+      do
+        {
+          FooCanvasGroup *sub_group = (FooCanvasGroup *)(item_list->data) ;
+
+          if (FOO_IS_CANVAS_GROUP(sub_group))
+            {
+              printGroup(sub_group, indent + 1, buf) ;
+            }
+          else
+            {
+              printItem(FOO_CANVAS_ITEM(sub_group), indent) ;
+            }
+        }
+      while((item_list = item_list->next)) ;
+    }
 
   buf = g_string_set_size(buf, 0) ;
 
@@ -297,16 +290,17 @@ static void printGroup(FooCanvasGroup *group, int indent, GString *buf)
 }
 
 
-static void printItem(FooCanvasItem *item)
+static void printItem(FooCanvasItem *item, int indent)
 {
   double x1, y1, x2, y2 ;
   double wx1, wy1, wx2, wy2 ;
   double cx1, cy1, cx2, cy2 ;
+  int i ;
 
-  // Get founds of an item in its _parents_ coordinates (see next step)
+  // Get bounds of an item in its _parents_ coordinates (see next step)
   foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2) ;
 
-  // We have the items coords in parent space so find out there those _parent_ coords are in world
+  // We have the items coords in parent space so find out where those _parent_ coords are in world
   // space.
   wx1 = x1 ; wy1 = y1 ; wx2 = x2 ; wy2 = y2 ;
   foo_canvas_item_i2w(item->parent, &wx1, &wy1) ;
@@ -328,17 +322,132 @@ static void printItem(FooCanvasItem *item)
                       "\n",
                       group->item.parent, group, group->xpos, group->ypos,
                       x1, x2, y1, y2,
-                      cx1, cx2, cy1, cy2,
-                      wx1, wx2, wy1, wy2) ;
+                      wx1, wx2, wy1, wy2,
+                      cx1, cx2, cy1, cy2) ;
     }
   else
     {
       zMapDebugPrintf("FOO_CANVAS_ITEM Parent->Item: %p -> %p    Bounds: %.f -> %.f,  %.f -> %.f    World bounds: %.f -> %.f,  %.f -> %.f\n",
-             item->parent, item, x1, x2, y1, y2, wx1, wx2, wy1, wy2) ;
+                      item->parent, item, x1, x2, y1, y2, wx1, wx2, wy1, wy2) ;
     }
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+/* Recursive function to print out all the child groups of the supplied group. */
+static void printCanvasItems(FooCanvasItem *item, int indent, GString *buf)
+{
+  int i ;
+  GList *glist ;
+  GList *item_list ;
+
+
+  buf = g_string_set_size(buf, 0) ;
+
+  for (i = 0 ; i < indent ; i++)
+    zMapDebugPrintfPlain("%s", "\t") ;
+
+  /* Print this item. */
+  printCanvasItem(item, indent, buf) ;
+
+  if (FOO_IS_CANVAS_GROUP(item))
+    {
+      FooCanvasGroup *group = FOO_CANVAS_GROUP(item) ;
+
+      if ((group->item_list))
+        {
+          GList *item_list = group->item_list ;
+
+          do
+            {
+              FooCanvasItem *sub_item = (FooCanvasItem *)(item_list->data) ;
+
+              printCanvasItems(sub_item, indent + 1, buf) ;
+            }
+          while((item_list = item_list->next)) ;
+        }
+    }
+
+  return ;
+}
+
+
+static void printCanvasItem(FooCanvasItem *item, int indent, GString *buf)
+{
+  double x1, y1, x2, y2 ;
+  double wx1, wy1, wx2, wy2 ;
+  double cx1, cy1, cx2, cy2 ;
+
+  buf = g_string_set_size(buf, 0) ;
+
+  if (ZMAP_IS_CONTAINER_GROUP(item) || ZMAP_IS_CANVAS_ITEM(item))
+    {
+      zmapWindowItemDebugItemToString(buf, item) ;
+      zMapDebugPrintfPlain("%s", buf->str) ;
+    }
+  else
+    {
+      if (FOO_IS_CANVAS_GROUP(item))
+        {
+          zMapDebugPrintfPlain("%s ", "FOOCANVAS_GROUP") ;
+        }
+      else if (FOO_IS_CANVAS_ITEM(item))
+        {
+          zMapDebugPrintfPlain("%s ", "FOOCANVAS_ITEM") ;
+        }
+      else
+        {
+          zMapDebugPrintfPlain("%s ", "**UNKNOWN ITEM TYPE**") ;
+        }
+    }
+
+  buf = g_string_set_size(buf, 0) ;
+
+
+  // Get bounds of an item in its _parents_ coordinates (see next step)
+  foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2) ;
+
+  // We have the items coords in parent space so find out where those _parent_ coords are in world
+  // space.
+  wx1 = x1 ; wy1 = y1 ; wx2 = x2 ; wy2 = y2 ;
+  foo_canvas_item_i2w(item->parent, &wx1, &wy1) ;
+  foo_canvas_item_i2w(item->parent, &wx2, &wy2) ;
+
+  // Now find out where those world coords are in canvas coords
+  cx1 = wx1 ; cy1 = wy1 ; cx2 = wx2 ; cy2 = wy2 ;
+  foo_canvas_w2c_rect_d(item->canvas, &cx1, &cy1, &cx2, &cy2) ;
+
+
+  if (FOO_IS_CANVAS_GROUP(item))
+    {
+      FooCanvasGroup *group = (FooCanvasGroup *)item ;
+
+      zMapDebugPrintfPlain("FOO_CANVAS_GROUP Parent->Group: %p -> %p    Pos: %.f, %.f"
+                           "    Bounds: %.f -> %.f,  %.f -> %.f"
+                           "    World bounds: %.f -> %.f,  %.f -> %.f"
+                           "    Canvas bounds: %.f -> %.f,  %.f -> %.f"
+                           "\n",
+                           group->item.parent, group, group->xpos, group->ypos,
+                           x1, x2, y1, y2,
+                           wx1, wx2, wy1, wy2,
+                           cx1, cx2, cy1, cy2) ;
+    }
+  else
+    {
+      zMapDebugPrintfPlain("FOO_CANVAS_ITEM Parent->Item: %p -> %p    Bounds: %.f -> %.f,  %.f -> %.f    World bounds: %.f -> %.f,  %.f -> %.f\n",
+                           item->parent, item, x1, x2, y1, y2, wx1, wx2, wy1, wy2) ;
+    }
+
+
+  return ;
+}
+
+
+
+
 
 
 
