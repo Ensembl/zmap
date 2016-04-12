@@ -6558,7 +6558,6 @@ static void jumpFeature(ZMapWindow window, guint keyval)
   // cursor through.
   if ((focus_item = zmapWindowFocusGetHotItem(window->focus)))
     {
-      GList *feature_sets ;
       ZMapSkipList cached_sl ;
 
       // Interrogate the current focus_item to retrieve the current hot feature.
@@ -6569,30 +6568,19 @@ static void jumpFeature(ZMapWindow window, guint keyval)
       focus_column = zmapWindowFocusGetHotColumn(window->focus) ;
 
 
-
-      // OK THIS SHOULD BE A LOOP THROUGH THE FEATURE SETS UNTIL WE FIND THE CURR FEATURE.....
-
-      // OK...THIS ACTUALLY LOOKS WRONG....IF THERE ARE MULTIPLE FEATURESETS AND FEATURES THEY ARE
-      // ALL HELD IN ONE FOO FEATURESET AND THERE IS ONLY ONE SKIP LIST WHICH MAKES IT ALL SIMPLER
-
-      // Should we take this list and plough through them all over time.....should check which feature
-      // set the current feature is in.....
-      feature_sets = zmapWindowContainerFeatureSetGetFeatureSets((ZMapWindowContainerFeatureSet)focus_column) ;
-
-      zMap_g_list_quark_print(feature_sets, "Column featuresets:", FALSE) ;
-
-      // Only gets the first....think about what to do here....if there are multiple featuresets in a column.
       featureset_item = zmapWindowContainerGetFeatureSetItem((ZMapWindowContainerFeatureSet)focus_column) ;
 
       //zMapWindowCanvasFeaturesetPrintFeatureList(featureset_item) ;
 
-
+      // N.B. this call finds the _first_ sl for a feature, not necessarily the one the user
+      // clicked on or cursored to.
       sl = zMapWindowCanvasFeaturesetFindFeature(featureset_item, curr_feature) ;
       curr_canvas_feature = (ZMapWindowCanvasFeature)(sl->data) ;
 
 
-      // Get the curr-ptr from the featureset item ? see if it's the same feature as the
-      // highlighted one and if is use the cached one ??
+      // Get the curr-ptr from the featureset item, see if it's the same feature as the
+      // highlighted one and if is use the cached one as that is probably the one the user last
+      // cursorsed to.
       if ((cached_sl = zMapWindowCanvasFeaturesetGetCurrFeature(featureset_item)))
         {
           ZMapWindowCanvasFeature cached_currfeat ;
@@ -6609,8 +6597,6 @@ static void jumpFeature(ZMapWindow window, guint keyval)
             }
 
         }
-
-
 
       // ok, we can unhighlight any features/columns currently highlighted prior to highlighting a
       //   new hot feature.
