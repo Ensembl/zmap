@@ -111,6 +111,11 @@ typedef struct ZMapViewSessionServerStructName
       char *host ;
       int port ;
     } ensembl ;
+
+    struct
+    {
+      char *trackdb_id ;
+    } trackhub ;
   } scheme_data ;
 
 } ZMapViewSessionServerStruct, *ZMapViewSessionServer ;

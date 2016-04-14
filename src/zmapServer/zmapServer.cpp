@@ -62,6 +62,7 @@ gboolean zMapServerGlobalInit(ZMapURL url, void **server_global_data_out)
   zMapReturnValIfFail((server_global_data_out), FALSE) ;
 
   zMapReturnValIfFail((url->scheme == SCHEME_FILE
+                       || url->scheme == SCHEME_TRACKHUB
                        || url->scheme == SCHEME_PIPE 
                        || url->scheme == SCHEME_HTTP 
                        || url->scheme == SCHEME_FTP
@@ -112,6 +113,10 @@ gboolean zMapServerGlobalInit(ZMapURL url, void **server_global_data_out)
       ensemblGetServerFuncs(serverfuncs);
       break;
 #endif
+
+    case SCHEME_TRACKHUB:
+      zMapWarning("%s", "Not implemented yet");
+      break;
 
     default:
       /* We should not get here if zMapReturnValIfFail() check worked. */

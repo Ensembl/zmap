@@ -314,6 +314,103 @@ static int comboGetIndex(MainFrame main_data, ZMapURLScheme scheme_in)
 }
 
 
+static void updatePanelFromFileSource(MainFrame main_data, 
+                                      ZMapConfigSource source,
+                                      ZMapURL zmap_url)
+{
+  char *source_name = main_data->sequence_map->getSourceName(source) ;
+
+  gtk_entry_set_text(GTK_ENTRY(main_data->name_widg), source_name) ;
+  gtk_entry_set_text(GTK_ENTRY(main_data->path_widg), zmap_url->path) ;
+
+  if (source_name)
+    g_free(source_name) ;
+}
+
+static void updatePanelFromTrackhubSource(MainFrame main_data, 
+                                          ZMapConfigSource source,
+                                          ZMapURL zmap_url)
+{
+  char *source_name = main_data->sequence_map->getSourceName(source) ;
+
+  gtk_entry_set_text(GTK_ENTRY(main_data->name_widg), source_name) ;
+}
+
+
+#ifdef USE_ENSEMBL
+static void updatePanelFromEnsemblSource(MainFrame main_data, 
+                                               ZMapConfigSource source,
+                                               ZMapURL zmap_url)
+{
+  char *source_name = main_data->sequence_map->getSourceName(source) ;
+  const char *host = zmap_url->host ;
+  char *port = g_strdup_printf("%d", zmap_url->port) ;
+  const char *user = zmap_url->user ;
+  const char *pass = zmap_url->passwd ;
+  char *dbname = zMapURLGetQueryValue(zmap_url->query, "db_name") ;
+  char *dbprefix = zMapURLGetQueryValue(zmap_url->query, "db_prefix") ;
+  char *featuresets = g_strdup(source->featuresets) ;
+  char *featuresets_ptr = featuresets ;
+  const char *biotypes = source->biotypes ;
+  gboolean load_dna = FALSE ;
+
+  /* load_dna is true if featuresets starts with "all". Extract "all" (which would have been
+   * added in because of the flag) from the featuresets list and set the flag instead.
+   * Also extract the default columns list if it's there because we probably added this
+   * in as well. */
+  const unsigned int len_all = strlen(DEFAULT_COLUMNS_LIST_ALL) ;
+  const unsigned int len_default = strlen(DEFAULT_COLUMNS_LIST) ;
+
+  if (featuresets && 
+      strlen(featuresets) >= len_all && 
+      strncasecmp(featuresets, DEFAULT_COLUMNS_LIST_ALL, len_all) == 0)
+    {
+      load_dna = TRUE ;
+      featuresets = featuresets + len_all ; // skip to the next char after the default cols
+    }
+  else if (featuresets && 
+           strlen(featuresets) >= len_default && 
+           strncasecmp(featuresets, DEFAULT_COLUMNS_LIST, len_default) == 0)
+    {
+      load_dna = TRUE ;
+      featuresets = featuresets + len_default ; // skip to the next char after the default cols
+    }
+
+  if (source_name && main_data->name_widg)
+    gtk_entry_set_text(GTK_ENTRY(main_data->name_widg), source_name) ;
+  if (host && main_data->host_widg)
+    gtk_entry_set_text(GTK_ENTRY(main_data->host_widg), host) ;
+  if (port && main_data->port_widg)
+    gtk_entry_set_text(GTK_ENTRY(main_data->port_widg), port) ;
+  if (user && main_data->user_widg)
+    gtk_entry_set_text(GTK_ENTRY(main_data->user_widg), user) ;
+  if (pass && main_data->pass_widg)
+    gtk_entry_set_text(GTK_ENTRY(main_data->pass_widg), pass) ;
+  if (dbname && main_data->dbname_widg)
+    gtk_entry_set_text(GTK_ENTRY(main_data->dbname_widg), dbname) ;
+  if (dbprefix && main_data->dbprefix_widg)
+    gtk_entry_set_text(GTK_ENTRY(main_data->dbprefix_widg), dbprefix) ;
+  if (featuresets && main_data->featuresets_widg)
+    gtk_entry_set_text(GTK_ENTRY(main_data->featuresets_widg), featuresets) ;
+  if (biotypes && main_data->biotypes_widg)
+    gtk_entry_set_text(GTK_ENTRY(main_data->biotypes_widg), biotypes) ;
+  if (main_data->dna_check)
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(main_data->dna_check), load_dna) ;
+
+  if (source_name)
+    g_free(source_name) ;
+  if (port)
+    g_free(port) ;
+  if (dbname)
+    g_free(dbname) ;
+  if (dbprefix)
+    g_free(dbprefix) ;
+  if (featuresets_ptr)
+    g_free(featuresets_ptr) ;
+}
+#endif
+
+
 /* After creating the panel, you can update it from an existing source (for editing an existing
  * source) using this function */
 static void updatePanelFromSource(MainFrame main_data, ZMapConfigSource source)
@@ -340,95 +437,33 @@ static void updatePanelFromSource(MainFrame main_data, ZMapConfigSource source)
       gtk_combo_box_set_active(main_data->combo, comboGetIndex(main_data, zmap_url->scheme)) ;
     }
 
-#ifdef USE_ENSEMBL
-  if (zmap_url && zmap_url->scheme == SCHEME_ENSEMBL)
+  if (zmap_url)
     {
-      char *source_name = main_data->sequence_map->getSourceName(source) ;
-      const char *host = zmap_url->host ;
-      char *port = g_strdup_printf("%d", zmap_url->port) ;
-      const char *user = zmap_url->user ;
-      const char *pass = zmap_url->passwd ;
-      char *dbname = zMapURLGetQueryValue(zmap_url->query, "db_name") ;
-      char *dbprefix = zMapURLGetQueryValue(zmap_url->query, "db_prefix") ;
-      char *featuresets = g_strdup(source->featuresets) ;
-      char *featuresets_ptr = featuresets ;
-      const char *biotypes = source->biotypes ;
-      gboolean load_dna = FALSE ;
-
-      /* load_dna is true if featuresets starts with "all". Extract "all" (which would have been
-       * added in because of the flag) from the featuresets list and set the flag instead.
-       * Also extract the default columns list if it's there because we probably added this
-       * in as well. */
-      const unsigned int len_all = strlen(DEFAULT_COLUMNS_LIST_ALL) ;
-      const unsigned int len_default = strlen(DEFAULT_COLUMNS_LIST) ;
-
-      if (featuresets && 
-          strlen(featuresets) >= len_all && 
-          strncasecmp(featuresets, DEFAULT_COLUMNS_LIST_ALL, len_all) == 0)
-        {
-          load_dna = TRUE ;
-          featuresets = featuresets + len_all ; // skip to the next char after the default cols
-        }
-      else if (featuresets && 
-               strlen(featuresets) >= len_default && 
-               strncasecmp(featuresets, DEFAULT_COLUMNS_LIST, len_default) == 0)
-        {
-          load_dna = TRUE ;
-          featuresets = featuresets + len_default ; // skip to the next char after the default cols
-        }
-
-      if (source_name && main_data->name_widg)
-        gtk_entry_set_text(GTK_ENTRY(main_data->name_widg), source_name) ;
-      if (host && main_data->host_widg)
-        gtk_entry_set_text(GTK_ENTRY(main_data->host_widg), host) ;
-      if (port && main_data->port_widg)
-        gtk_entry_set_text(GTK_ENTRY(main_data->port_widg), port) ;
-      if (user && main_data->user_widg)
-        gtk_entry_set_text(GTK_ENTRY(main_data->user_widg), user) ;
-      if (pass && main_data->pass_widg)
-        gtk_entry_set_text(GTK_ENTRY(main_data->pass_widg), pass) ;
-      if (dbname && main_data->dbname_widg)
-        gtk_entry_set_text(GTK_ENTRY(main_data->dbname_widg), dbname) ;
-      if (dbprefix && main_data->dbprefix_widg)
-        gtk_entry_set_text(GTK_ENTRY(main_data->dbprefix_widg), dbprefix) ;
-      if (featuresets && main_data->featuresets_widg)
-        gtk_entry_set_text(GTK_ENTRY(main_data->featuresets_widg), featuresets) ;
-      if (biotypes && main_data->biotypes_widg)
-        gtk_entry_set_text(GTK_ENTRY(main_data->biotypes_widg), biotypes) ;
-      if (main_data->dna_check)
-        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(main_data->dna_check), load_dna) ;
-
-      if (source_name)
-        g_free(source_name) ;
-      if (port)
-        g_free(port) ;
-      if (dbname)
-        g_free(dbname) ;
-      if (dbprefix)
-        g_free(dbprefix) ;
-      if (featuresets_ptr)
-        g_free(featuresets_ptr) ;
-    }
-#endif
-
-  if (zmap_url && 
-      (zmap_url->scheme == SCHEME_FILE || 
-       zmap_url->scheme == SCHEME_HTTP || 
+      if (zmap_url->scheme == SCHEME_FILE || 
+          zmap_url->scheme == SCHEME_HTTP || 
 #ifdef HAVE_SSL
-       zmap_url->scheme == SCHEME_HTTPS || 
+          zmap_url->scheme == SCHEME_HTTPS || 
 #endif
-       zmap_url->scheme == SCHEME_FTP || 
-       zmap_url->scheme == SCHEME_PIPE))
-    {
-      char *source_name = main_data->sequence_map->getSourceName(source) ;
-
-      gtk_entry_set_text(GTK_ENTRY(main_data->name_widg), source_name) ;
-      gtk_entry_set_text(GTK_ENTRY(main_data->path_widg), zmap_url->path) ;
-
-      if (source_name)
-        g_free(source_name) ;
+          zmap_url->scheme == SCHEME_FTP || 
+          zmap_url->scheme == SCHEME_PIPE)
+        {
+          updatePanelFromFileSource(main_data, source, zmap_url);
+        }
+      else if (zmap_url->scheme == SCHEME_TRACKHUB)
+        {
+          updatePanelFromTrackhubSource(main_data, source, zmap_url);
+        }
+#ifdef USE_ENSEMBL
+      else if (zmap_url->scheme == SCHEME_ENSEMBL)
+        {
+          updatePanelFromEnsemblSource(main_data, source, zmap_url);
+        }
+#endif
+      else
+        {
+          zMapWarnIfReached();
+        }
     }
-
 }
 
 
@@ -580,6 +615,9 @@ static GtkComboBox *createComboBox(MainFrame main_data)
   gtk_list_store_append(store, &iter);
   gtk_list_store_set(store, &iter, 0, SOURCE_TYPE_TRACKHUB, -1);
   gtk_combo_box_set_active_iter(combo, &iter);
+
+  main_data->combo_indices[SCHEME_TRACKHUB] = combo_index ;
+  ++combo_index ;
 
 #ifdef USE_ENSEMBL
   gtk_list_store_append(store, &iter);
