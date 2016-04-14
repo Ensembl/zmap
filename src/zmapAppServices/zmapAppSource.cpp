@@ -931,7 +931,7 @@ static gboolean applyFile(MainFrame main_frame)
       GError *tmp_error = NULL ;
       
       // Prepend file:///, unless its an http/ftp url
-      std::string url("");
+      string url("");
 
       if (strncasecmp(path, "http://", 7) != 0 &&
           strncasecmp(path, "https://", 8) != 0 &&
@@ -960,46 +960,29 @@ static gboolean applyFile(MainFrame main_frame)
 
 #ifdef USE_ENSEMBL
 
-static void appendUrlValue(std::string &url, const char *prefix, const char *value)
+static string constructUrl(const char *host, const char *port,
+                           const char *user, const char *pass,
+                           const char *dbname, const char *dbprefix)
 {
-  if (prefix)
-    url += prefix ;
+  stringstream url ;
 
-  if (value)
-    url += value ;
-}
-
-
-static std::string constructUrl(const char *host, const char *port,
-                                const char *user, const char *pass,
-                                const char *dbname, const char *dbprefix)
-{
-  std::string url = "ensembl://" ;
-
-  appendUrlValue(url, NULL, user) ;
-  appendUrlValue(url, ":", pass) ;
-  appendUrlValue(url, "@", host) ;
-  appendUrlValue(url, ":", port) ;
+  url << "ensembl://" << user << ":" << pass << "@" << host << ":" << port ;
 
   const char *separator= "?";
-      
+
   if (dbname)
     {
-      url += separator ;
-      url += "db_name=" ;
-      url += dbname ;
+      url << separator << "db_name=" << dbname ;
       separator = "&" ;
     }
 
   if (dbprefix)
     {
-      url += separator ;
-      url += "db_prefix=" ;
-      url += dbprefix ;
+      url << separator << "db_prefix=" << dbprefix ;
       separator = "&" ;
     }
 
-  return url ;
+  return url.str() ;
 }
 
 
@@ -1536,6 +1519,7 @@ static gboolean applyTrackhub(MainFrame main_frame)
   gboolean ok = FALSE ;
 
   const char *source_name = getEntryText(GTK_ENTRY(main_frame->name_widg)) ;
+  const char *trackdb_id = getEntryText(GTK_ENTRY(main_frame->trackdb_widg)) ;
 
   if (!source_name)
     {
@@ -1545,9 +1529,10 @@ static gboolean applyTrackhub(MainFrame main_frame)
     {
       GError *tmp_error = NULL ;
       
-      //std::string url = constructUrl(host, port, user, pass, dbname, dbprefix) ;
+      std::string url = "trackhub://" ;
+      url += trackdb_id ;
 
-      //(main_frame->user_func)(source_name, url, featuresets, biotypes, main_frame->user_data, &tmp_error) ;
+      (main_frame->user_func)(source_name, url, NULL, NULL, main_frame->user_data, &tmp_error) ;
 
       if (tmp_error)
         zMapWarning("Failed to create new source: %s", tmp_error->message) ;
