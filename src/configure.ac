@@ -290,9 +290,11 @@ AM_PROG_CC_C_O
 LT_INIT
 LT_LANG([C++])
 
-
-# Tell make to use the ustar tar format as this allows file paths longer than 99 chars.
-#
+# make options
+# tar-ustar - use the ustar tar format as this allows file paths longer than 99 chars.
+# subdir-objects - compile code that is in a subdirectory of the directory containing the Makefile.am
+#                  (don't set this....there's a bug in autmake 1.nn if you do !)
+#AM_INIT_AUTOMAKE([tar-ustar] [subdir-objects])
 AM_INIT_AUTOMAKE([tar-ustar])
 
 
@@ -665,7 +667,7 @@ fi
 
 if test -z "$HAVE_MYSQL"
 then
-  echo " Warning: MySql is not installed so Ensembl server access is disabled."
+  echo " Warning: MySql is not installed so ensc-core access is disabled."
   echo
 fi
 
