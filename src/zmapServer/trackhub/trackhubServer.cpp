@@ -98,6 +98,8 @@ static gboolean createConnection(void **server_out,
                                  char *version_str, int timeout, pthread_mutex_t *mutex) ;
 static ZMapServerResponseType openConnection(void *server, ZMapServerReqOpen req_open) ;
 static ZMapServerResponseType getInfo(void *server, ZMapServerReqGetServerInfo info) ;
+static ZMapServerResponseType getFeatures(void *server_in, ZMapStyleTree &styles,
+                                          ZMapFeatureContext feature_context) ;
 static ZMapServerResponseType getFeatureSetNames(void *server,
                                                  GList **feature_sets_out,
                                                  GList **biotypes_out,
@@ -110,8 +112,6 @@ static ZMapServerResponseType getStyles(void *server, GHashTable **styles_out) ;
 static ZMapServerResponseType haveModes(void *server, gboolean *have_mode) ;
 static ZMapServerResponseType getSequences(void *server_in, GList *sequences_inout) ;
 static ZMapServerResponseType setContext(void *server, ZMapFeatureContext feature_context) ;
-static ZMapServerResponseType getFeatures(void *server_in, ZMapStyleTree &styles,
-                                          ZMapFeatureContext feature_context_out) ;
 static ZMapServerResponseType getContextSequence(void *server_in,
                                                  char *sequence_name, int start, int end,
                                                  int *dna_length_out, char **dna_sequence_out) ;
@@ -121,52 +121,7 @@ static ZMapServerResponseType getConnectState(void *server_in, ZMapServerConnect
 static ZMapServerResponseType closeConnection(void *server_in) ;
 static ZMapServerResponseType destroyConnection(void *server) ;
 
-static ZMapServerResponseType doGetSequences(TrackhubServer server, GList *sequences_inout) ;
-
 static void setErrMsg(TrackhubServer server, char *new_msg) ;
-
-static void eachAlignment(gpointer key, gpointer data, gpointer user_data) ;
-static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data) ;
-
-static gboolean getAllSimpleFeatures(TrackhubServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
-static gboolean getAllDNAAlignFeatures(TrackhubServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
-static gboolean getAllDNAPepAlignFeatures(TrackhubServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
-static gboolean getAllRepeatFeatures(TrackhubServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
-static gboolean getAllTranscripts(TrackhubServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block, set<GQuark> &transcript_ids) ;
-static gboolean getAllPredictionTranscripts(TrackhubServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
-static gboolean getAllGenes(TrackhubServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block, set<GQuark> &transcript_ids) ;
-
-static const char* featureGetSOTerm(SeqFeature *rsf) ;
-
-static ZMapFeature makeFeature(TrackhubServer server,
-                               SeqFeature *rsf,
-                               const char *feature_name_id,
-                               const char *feature_name,
-                               ZMapStyleMode feature_mode,
-                               const char *source,
-                               const char *gene_source,
-                               const char *biotype,
-                               const int match_start,
-                               const int match_end,
-                               GetFeaturesData get_features_data,
-                               ZMapFeatureBlock feature_block) ;
-
-static ZMapFeature makeFeatureSimple(TrackhubServer server, SimpleFeature *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
-static ZMapFeature makeFeatureBaseAlign(TrackhubServer server, BaseAlignFeature *rsf, ZMapHomolType homol_type, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
-static ZMapFeature makeFeatureRepeat(TrackhubServer server, RepeatFeature *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
-static ZMapFeature makeFeatureTranscript(TrackhubServer server, Transcript *rsf, const char *gene_source, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block, set<GQuark> &transcript_ids) ;
-static ZMapFeature makeFeaturePredictionTranscript(TrackhubServer server, PredictionTranscript *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
-static ZMapFeature makeFeatureGene(TrackhubServer server, Gene *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block, set<GQuark> &transcript_ids) ;
-static void geneAddTranscripts(TrackhubServer server, Gene *rsf, const char *gene_source, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block, set<GQuark> &transcript_ids) ;
-
-static void transcriptAddExons(TrackhubServer server, ZMapFeature feature, Vector *exons) ;
-
-static void addMapping(ZMapFeatureContext feature_context, int req_start, int req_end) ;
-
-static ZMapFeatureSet makeFeatureSet(const char *feature_name_id, GQuark feature_set_id, ZMapStyleMode feature_mode, const char *source, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
-
-static Slice* getSlice(TrackhubServer server, const char *seq_name, long start, long end, int strand) ;
-static char* getSequence(TrackhubServer server, const char *seq_name, long start, long end, int strand) ;
 
 /*
  *             Server interface functions.
@@ -235,7 +190,7 @@ static gboolean createConnection(void **server_out,
   else
     {
       setErrMsg(server, g_strdup("Cannot create connection: no track database ID")) ;
-      ZMAPSERVER_LOG(Message, TRACKHUB_PROTOCOL_STR, server->path, "%s", server->last_err_msg) ;
+      ZMAPSERVER_LOG(Message, TRACKHUB_PROTOCOL_STR, server->trackdb_id, "%s", server->last_err_msg) ;
     }
 
   return result ;
@@ -253,14 +208,14 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
   server->zmap_start = req_open->zmap_start ;
   server->zmap_end = req_open->zmap_end ;
 
-  if (server->registry->ping())
+  if (server->registry.ping())
     {
       result = ZMAP_SERVERRESPONSE_OK ;
     }
   else
     {
       setErrMsg(server, g_strdup("Cannot open connection: failed to contact Track Hub Registry")) ;
-      ZMAPSERVER_LOG(Message, TRACKHUB_PROTOCOL_STR, server->path, "%s", server->last_err_msg) ;
+      ZMAPSERVER_LOG(Message, TRACKHUB_PROTOCOL_STR, server->trackdb_id, "%s", server->last_err_msg) ;
     }
 
   return result ;
@@ -273,10 +228,10 @@ static ZMapServerResponseType getInfo(void *server_in, ZMapServerReqGetServerInf
 
   if (server)
     {
-      double version = server->registry->version() ;
+      string version = server->registry.version() ;
 
-      ZMAPSERVER_LOG(Message, TRACKHUB_PROTOCOL_STR, server->path,
-                     "Track Hub Registry version: %s", version) ;
+      ZMAPSERVER_LOG(Message, TRACKHUB_PROTOCOL_STR, server->trackdb_id,
+                     "Track Hub Registry version: %s", version.c_str()) ;
 
       result = ZMAP_SERVERRESPONSE_OK ;
     }
@@ -351,9 +306,6 @@ static ZMapServerResponseType haveModes(void *server_in, gboolean *have_mode)
 static ZMapServerResponseType getSequences(void *server_in, GList *sequences_inout)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_UNSUPPORTED ;
-  TrackhubServer server = (TrackhubServer)server_in ;
-
-  doGetSequences(server, sequences_inout) ;
 
   return result ;
 }
@@ -372,450 +324,6 @@ static ZMapServerResponseType setContext(void *server_in, ZMapFeatureContext fea
   return result ;
 }
 
-
-/* Get all features on a sequence. */
-static ZMapServerResponseType getFeatures(void *server_in, ZMapStyleTree &styles,
-                                          ZMapFeatureContext feature_context)
-{
-  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
-  TrackhubServer server = (TrackhubServer)server_in ;
-
-  addMapping(feature_context, server->zmap_start, server->zmap_end) ;
-
-  GetFeaturesDataStruct get_features_data ;
-
-  get_features_data.server = server ;
-  get_features_data.feature_set_names = NULL ;
-  get_features_data.source_2_sourcedata = server->source_2_sourcedata ;
-  get_features_data.featureset_2_column = server->featureset_2_column ;
-  get_features_data.feature_styles = &styles ;
-
-  DoAllAlignBlocksStruct all_data ;
-  all_data.server = server ;
-  all_data.each_block_func = eachBlockGetFeatures ;
-  all_data.each_block_data = &get_features_data ;
-
-  /* Fetch all the alignment blocks for all the sequences. */
-  g_hash_table_foreach(feature_context->alignments, eachAlignment, (gpointer)&all_data) ;
-
-  feature_context->src_feature_set_names = get_features_data.feature_set_names ;
-
-  return result ;
-}
-
-
-static gboolean getAllSimpleFeatures(TrackhubServer server,
-                                     GetFeaturesData get_features_data,
-                                     ZMapFeatureBlock feature_block)
-{
-  gboolean result = TRUE ;
-
-  Vector *features = NULL;
-
-  if (server->req_featuresets_only)
-    {
-      /* Get features for each requested featureset */
-      features = Vector_new();
-      GList *item = server->req_featuresets;
-
-      for ( ; item ; item = item->next)
-        {
-          const char *featureset = g_quark_to_string(GPOINTER_TO_INT(item->data));
-          Vector *new_features = Slice_getAllSimpleFeatures(server->slice, (char*)featureset, NULL, NULL);
-          Vector_append(features, new_features);
-          //Vector_free(new_features);
-        }
-    }
-  else
-    {
-      /* No specific featuresets requested, so get everything */
-      features = Slice_getAllSimpleFeatures(server->slice, NULL, NULL, NULL);
-    }
-
-  const int num_element = features ? Vector_getNumElement(features) : 0;
-  int i = 0 ;
-
-  for (i = 0; i < num_element && result; ++i)
-    {
-      SimpleFeature *sf = (SimpleFeature*)Vector_getElementAt(features,i) ;
-      SimpleFeature *rsf = (SimpleFeature*)SeqFeature_transform((SeqFeature*)sf,  (char *)(server->coord_system), NULL ,NULL) ;
-
-      if (rsf)
-        makeFeatureSimple(server, rsf, get_features_data, feature_block) ;
-      else
-        printf("Failed to map feature '%s'\n", SimpleFeature_getDisplayLabel(sf));
-
-      //          Object_decRefCount(rsf);
-      //          free(rsf);
-      //          Object_decRefCount(sf);
-      //          free(sf);
-    }
-
-  return result;
-}
-
-static gboolean getAllDNAAlignFeatures(TrackhubServer server,
-                                       GetFeaturesData get_features_data,
-                                       ZMapFeatureBlock feature_block)
-{
-  gboolean result = TRUE ;
-
-  Vector *features = NULL;
-  
-  if (server->req_featuresets_only)
-    {
-      /* Get features for each requested featureset */
-      features = Vector_new();
-      GList *item = server->req_featuresets;
-      for ( ; item ; item = item->next)
-        {
-          const char *featureset = g_quark_to_string(GPOINTER_TO_INT(item->data));
-          Vector *new_features = Slice_getAllDNAAlignFeatures(server->slice, (char*)featureset, NULL, NULL, NULL);
-          Vector_append(features, new_features);
-          //Vector_free(new_features);
-        }
-    }
-  else
-    {
-      /* No specific featuresets requested, so get everything */
-      features = Slice_getAllDNAAlignFeatures(server->slice, NULL, NULL, NULL, NULL);
-    }
-
-  const int num_element = features ? Vector_getNumElement(features) : 0;
-  int i = 0 ;
-
-  for (i = 0; i < num_element && result; ++i)
-    {
-      DNAAlignFeature *sf = (DNAAlignFeature*)Vector_getElementAt(features,i);
-      DNAAlignFeature *rsf = (DNAAlignFeature*)SeqFeature_transform((SeqFeature*)sf, (char *)(server->coord_system), NULL, NULL);
-
-      if (rsf)
-        makeFeatureBaseAlign(server, (BaseAlignFeature*)rsf, ZMAPHOMOL_N_HOMOL, get_features_data, feature_block) ;
-      else
-        printf("Failed to map feature '%s'\n", BaseAlignFeature_getHitSeqName((BaseAlignFeature*)sf));
-
-      //      Object_decRefCount(rsf);
-      //      free(rsf);
-      //        Object_decRefCount(sf);
-      //        free(sf);
-    }
-
-  return result;
-}
-
-static gboolean getAllDNAPepAlignFeatures(TrackhubServer server,
-                                          GetFeaturesData get_features_data,
-                                          ZMapFeatureBlock feature_block)
-{
-  gboolean result = TRUE ;
-
-  Vector *features = NULL;
-
-  if (server->req_featuresets_only)
-    {
-      /* Get features for each requested featureset */
-      features = Vector_new();
-      GList *item = server->req_featuresets;
-      for ( ; item ; item = item->next)
-        {
-          const char *featureset = g_quark_to_string(GPOINTER_TO_INT(item->data));
-          Vector *new_features = Slice_getAllProteinAlignFeatures(server->slice, (char*)featureset, NULL, NULL, NULL);
-          Vector_append(features, new_features);
-          //Vector_free(new_features);
-        }
-    }
-  else
-    {
-      /* No specific featuresets requested, so get everything */
-      features = Slice_getAllProteinAlignFeatures(server->slice, NULL, NULL, NULL, NULL);
-    }
-
-  const int num_element = features ? Vector_getNumElement(features) : 0;
-  int i = 0 ;
-
-  for (i = 0; i < num_element && result; ++i)
-    {
-      DNAPepAlignFeature *sf = (DNAPepAlignFeature*)Vector_getElementAt(features,i);
-      DNAPepAlignFeature *rsf = (DNAPepAlignFeature*)SeqFeature_transform((SeqFeature*)sf, (char *)(server->coord_system), NULL, NULL);
-
-      if (rsf)
-        makeFeatureBaseAlign(server, (BaseAlignFeature*)rsf, ZMAPHOMOL_X_HOMOL, get_features_data, feature_block) ;
-      else
-        printf("Failed to map feature '%s'\n", BaseAlignFeature_getHitSeqName((BaseAlignFeature*)sf));
-
-      //      Object_decRefCount(rsf);
-      //      free(rsf);
-      //        Object_decRefCount(sf);
-      //        free(sf);
-    }
-
-  return result;
-}
-
-
-static gboolean getAllRepeatFeatures(TrackhubServer server,
-                                     GetFeaturesData get_features_data,
-                                     ZMapFeatureBlock feature_block)
-{
-  gboolean result = TRUE ;
-
-  Vector *features = NULL;
-
-  if (server->req_featuresets_only)
-    {
-      /* Get features for each requested featureset */
-      features = Vector_new();
-      GList *item = server->req_featuresets;
-      for ( ; item ; item = item->next)
-        {
-          const char *featureset = g_quark_to_string(GPOINTER_TO_INT(item->data));
-          Vector *new_features = Slice_getAllRepeatFeatures(server->slice, (char*)featureset, NULL, NULL);
-          Vector_append(features, new_features);
-          //Vector_free(new_features);
-        }
-    }
-  else
-    {
-      /* No specific featuresets requested, so get everything */
-      features = Slice_getAllRepeatFeatures(server->slice, NULL, NULL, NULL);
-    }
-
-  const int num_element = features ? Vector_getNumElement(features) : 0;
-  int i = 0 ;
-
-  for (i = 0; i < num_element && result; ++i)
-    {
-      RepeatFeature *sf = (RepeatFeature*)Vector_getElementAt(features,i);
-      RepeatFeature *rsf = (RepeatFeature*)SeqFeature_transform((SeqFeature*)sf, (char *)(server->coord_system), NULL, NULL);
-
-      if (rsf)
-        makeFeatureRepeat(server, rsf, get_features_data, feature_block) ;
-      else
-        printf("Failed to map feature '%s'\n", RepeatConsensus_getName(RepeatFeature_getConsensus(sf)));
-
-      //      Object_decRefCount(rsf);
-      //      free(rsf);
-      //        Object_decRefCount(sf);
-      //        free(sf);
-    }
-
-  return result;
-}
-
-
-static gboolean getAllTranscripts(TrackhubServer server,
-                                  GetFeaturesData get_features_data,
-                                  ZMapFeatureBlock feature_block,
-                                  set<GQuark> &transcript_ids)
-{
-  gboolean result = TRUE ;
-
-  Vector *features = NULL;
-
-  if (server->req_featuresets_only)
-    {
-      /* Get features for each requested featureset */
-      features = Vector_new();
-      GList *item = server->req_featuresets;
-      for ( ; item ; item = item->next)
-        {
-          const char *featureset = g_quark_to_string(GPOINTER_TO_INT(item->data));
-          Vector *new_features = Slice_getAllTranscripts(server->slice, 1, (char*)featureset, NULL) ;
-          Vector_append(features, new_features);
-          //Vector_free(new_features);
-        }
-    }
-  else
-    {
-      /* No specific featuresets requested, so get everything */
-      features = Slice_getAllTranscripts(server->slice, 1, NULL, NULL) ;
-    }
-
-  const int num_element = features ? Vector_getNumElement(features) : 0;
-  int i = 0 ;
-
-  for (i = 0; i < num_element && result; ++i)
-    {
-      Transcript *sf = (Transcript*)Vector_getElementAt(features,i);
-      Transcript *rsf = (Transcript*)SeqFeature_transform((SeqFeature*)sf, (char *)(server->coord_system), NULL, NULL);
-
-      if (rsf)
-        makeFeatureTranscript(server, rsf, NULL, get_features_data, feature_block, transcript_ids) ;
-      else
-        printf("Failed to map feature '%s'\n", Transcript_getSeqRegionName(sf)) ;
-
-      //      Object_decRefCount(rsf);
-      //      free(rsf);
-      //        Object_decRefCount(sf);
-      //        free(sf);
-    }
-
-  return result;
-}
-
-
-static gboolean getAllPredictionTranscripts(TrackhubServer server,
-                                            GetFeaturesData get_features_data,
-                                            ZMapFeatureBlock feature_block)
-{
-  gboolean result = TRUE ;
-
-  Vector *features = NULL;
-
-  if (server->req_featuresets_only)
-    {
-      /* Get features for each requested featureset */
-      features = Vector_new();
-      GList *item = server->req_featuresets;
-      for ( ; item ; item = item->next)
-        {
-          const char *featureset = g_quark_to_string(GPOINTER_TO_INT(item->data));
-          Vector *new_features = Slice_getAllPredictionTranscripts(server->slice, (char*)featureset, 1, NULL) ;
-          Vector_append(features, new_features);
-          //Vector_free(new_features);
-        }
-    }
-  else
-    {
-      /* No specific featuresets requested, so get everything */
-      features = Slice_getAllPredictionTranscripts(server->slice, NULL, 1, NULL) ;
-    }
-
-  const int num_element = Vector_getNumElement(features) ;
-  int i = 0 ;
-
-  for (i = 0; i < num_element && result; ++i)
-    {
-      PredictionTranscript *sf = (PredictionTranscript*)Vector_getElementAt(features,i);
-      PredictionTranscript *rsf = (PredictionTranscript*)SeqFeature_transform((SeqFeature*)sf, (char *)(server->coord_system), NULL, NULL);
-
-      if (rsf)
-        makeFeaturePredictionTranscript(server, rsf, get_features_data, feature_block) ;
-      else
-        printf("Failed to map feature '%s'\n", Transcript_getSeqRegionName(sf)) ;
-
-      //      Object_decRefCount(rsf);
-      //      free(rsf);
-      //        Object_decRefCount(sf);
-      //        free(sf);
-    }
-
-  return result;
-}
-
-
-static gboolean getAllGenes(TrackhubServer server,
-                            GetFeaturesData get_features_data,
-                            ZMapFeatureBlock feature_block,
-                            set<GQuark> &transcript_ids)
-{
-  gboolean result = TRUE ;
-
-  Vector *features = NULL;
-
-  if (server->req_featuresets_only)
-    {
-      /* Get features for each requested featureset */
-      features = Vector_new();
-      GList *item = server->req_featuresets;
-      for ( ; item ; item = item->next)
-        {
-          const char *featureset = g_quark_to_string(GPOINTER_TO_INT(item->data));
-          Vector *new_features = Slice_getAllGenes(server->slice, (char*)featureset, NULL, 1, NULL, NULL) ;
-          Vector_append(features, new_features);
-          //Vector_free(new_features);
-        }
-    }
-  else
-    {
-      /* No specific featuresets requested, so get everything */
-      features = Slice_getAllGenes(server->slice, NULL, NULL, 1, NULL, NULL) ;
-    }
-
-  const int num_element = features ? Vector_getNumElement(features) : 0;
-  int i = 0 ;
-
-  for (i = 0; i < num_element && result; ++i)
-    {
-      Gene *sf = (Gene*)Vector_getElementAt(features,i);
-      char *cs_name = g_strdup("chromosome");
-      Gene *rsf = (Gene*)SeqFeature_transform((SeqFeature*)sf,cs_name,NULL,NULL);
-      g_free(cs_name);
-      cs_name = NULL;
-
-      if (rsf)
-        makeFeatureGene(server, rsf, get_features_data, feature_block, transcript_ids) ;
-      else
-        printf("Failed to map feature '%s'\n", Gene_getExternalName(sf)) ;
-
-      //      Object_decRefCount(rsf);
-      //      free(rsf);
-      //        Object_decRefCount(sf);
-      //        free(sf);
-    }
-
-  return result;
-}
-
-
-/* A bit of a lash up for now, we need the parent->child mapping for a sequence and since
- * the code in this file so far simply reads a GFF stream for now, we just fake it by setting
- * everything to be the same for child/parent... */
-static void addMapping(ZMapFeatureContext feature_context, int req_start, int req_end)
-{
-  ZMapFeatureBlock feature_block = NULL;    // feature_context->master_align->blocks->data ;
-
-  feature_block = (ZMapFeatureBlock)(zMap_g_hash_table_nth(feature_context->master_align->blocks, 0)) ;
-
-  /* We just override whatever is already there...this may not be the thing to do if there
-   * are several streams.... */
-  feature_context->parent_name = feature_context->sequence_name ;
-
-  // refer to comment in zmapFeature.h 'Sequences and Block Coordinates'
-  // NB at time of writing parent_span not always initialised
-  feature_context->parent_span.x1 = 1;
-  if (feature_context->parent_span.x2 < req_end)
-    feature_context->parent_span.x2 = req_end ;
-
-  // seq range  from parent sequence
-  if (!feature_context->master_align->sequence_span.x2)
-    {
-      feature_context->master_align->sequence_span.x1 = req_start ;
-      feature_context->master_align->sequence_span.x2 = req_end ;
-    }
-
-  // seq coords for our block NOTE must be block coords not features sub-sequence in case of req from mark
-  if (!feature_block->block_to_sequence.block.x2)
-    {
-      feature_block->block_to_sequence.block.x1 = req_start ;
-      feature_block->block_to_sequence.block.x2 = req_end ;
-    }
-
-  // parent sequence coordinates if not pre-specified
-  if (!feature_block->block_to_sequence.parent.x2)
-    {
-      feature_block->block_to_sequence.parent.x1 = req_start ;
-      feature_block->block_to_sequence.parent.x2 = req_end ;
-    }
-
-  return ;
-}
-
-/*
- * we have pre-read the sequence and simple copy/move the data over if it's there
- */
-static ZMapServerResponseType getContextSequence(void *server_in,
-                                                 char *sequence_name, int start, int end,
-                                                 int *dna_length_out, char **dna_sequence_out)
-{
-  TrackhubServer server = (TrackhubServer)server_in ;
-
-  if (server->result == ZMAP_SERVERRESPONSE_OK)
-    {
-    }
-
-  return server->result ;
-}
 
 
 /* Return the last error message. */
@@ -859,51 +367,6 @@ static ZMapServerResponseType closeConnection(void *server_in)
 
 
 
-/* For each sequence makes a request to find the sequence and then set it in
- * the input ZMapSequence
- *
- * Function returns ZMAP_SERVERRESPONSE_OK if sequences were found and retrieved,
- * ZMAP_SERVERRESPONSE_REQFAIL otherwise.
- *
- */
-static ZMapServerResponseType doGetSequences(TrackhubServer server, GList *sequences_inout)
-{
-  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
-  GList *next_seq ;
-
-  /* We need to loop round finding each sequence and then fetching its dna... */
-  next_seq = sequences_inout ;
-  while (next_seq)
-    {
-      ZMapSequence sequence = (ZMapSequence)(next_seq->data) ;
-
-      char *seq_name = g_strdup(g_quark_to_string(sequence->name)) ;
-
-      char *seq = getSequence(server, seq_name, 1, POS_UNDEF, STRAND_UNDEF) ;
-
-      if (seq)
-        {
-          sequence->sequence = seq ;
-
-          result = ZMAP_SERVERRESPONSE_OK ;
-        }
-      else
-        {
-          setErrMsg(server, g_strdup_printf("Failed to fetch %s sequence for object \"%s\".",
-                                            (sequence->type == ZMAPSEQUENCE_DNA ? "nucleotide" : "peptide"),
-                                            seq_name)) ;
-
-          result = ZMAP_SERVERRESPONSE_REQFAIL ;
-        }
-
-      if (seq_name)
-        g_free(seq_name) ;
-
-      next_seq = g_list_next(next_seq) ;
-    }
-
-  return result ;
-}
 
 
 /* It's possible for us to have reported an error and then another error to come along. */
@@ -918,3 +381,33 @@ static void setErrMsg(TrackhubServer server, char *new_msg)
 }
 
 
+/* Get all features on a sequence. */
+static ZMapServerResponseType getFeatures(void *server_in, ZMapStyleTree &styles,
+                                          ZMapFeatureContext feature_context)
+{
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
+  //TrackhubServer server = (TrackhubServer)server_in ;
+
+  return result ;
+
+}
+
+static ZMapServerResponseType getContextSequence(void *server_in,
+                                                 char *sequence_name, int start, int end,
+                                                 int *dna_length_out, char **dna_sequence_out)
+{
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
+  //TrackhubServer server = (TrackhubServer)server_in ;
+
+  return result ;
+
+}
+
+static ZMapServerResponseType destroyConnection(void *server_in)
+{
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
+  //TrackhubServer server = (TrackhubServer)server_in ;
+
+  return result ;
+
+}

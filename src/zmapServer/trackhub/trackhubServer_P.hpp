@@ -29,6 +29,8 @@
 #ifndef TRACKHUB_SERVER_P_H
 #define TRACKHUB_SERVER_P_H
 
+#include <gbtools/gbtools.hpp>
+
 
 typedef struct _TrackhubServerStruct
 {
@@ -53,7 +55,7 @@ typedef struct _TrackhubServerStruct
   GHashTable *source_2_sourcedata ;
   GHashTable *featureset_2_column ;
 
-} TrackServerStruct, *TrackhubServer;
+} TrackhubServerStruct, *TrackhubServer;
 
 
 #endif /* !TRACKHUB_SERVER_P_H */

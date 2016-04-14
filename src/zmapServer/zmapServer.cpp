@@ -115,7 +115,7 @@ gboolean zMapServerGlobalInit(ZMapURL url, void **server_global_data_out)
 #endif
 
     case SCHEME_TRACKHUB:
-      zMapWarning("%s", "Not implemented yet");
+      trackhubGetServerFuncs(serverfuncs);
       break;
 
     default:

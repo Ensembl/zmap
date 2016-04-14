@@ -1,7 +1,7 @@
 
 include $(top_srcdir)/Makefile.common
 
-SUBDIRS = pipe file
+SUBDIRS = pipe file trackhub
 
 if USE_ACECONN
 SUBDIRS += acedb
