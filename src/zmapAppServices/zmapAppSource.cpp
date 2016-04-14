@@ -633,41 +633,15 @@ static GtkComboBox *createComboBox(MainFrame main_data)
   return combo ;
 }
 
-
-static void makeEnsemblWidgets()
-{
-}
-
-
-/* Make the label/entry fields frame. */
-static GtkWidget *makeMainFrame(MainFrame main_data, ZMapFeatureSequenceMap sequence_map)
-{
-  GtkWidget *frame = gtk_frame_new( "New source: " ) ;
-  gtk_container_border_width(GTK_CONTAINER(frame), 5);
-
-  const int rows = 7 ;
-  const int cols = 6 ;
-  GtkTable *table = GTK_TABLE(gtk_table_new(rows, cols, FALSE)) ;
-  gtk_container_add (GTK_CONTAINER (frame), GTK_WIDGET(table)) ;
-
-  int row = 0 ;
-  int col = 0 ;
-
-  main_data->combo = createComboBox(main_data) ;
-  gtk_table_attach(table, gtk_label_new("Source type :"), col, col + 1, row, row + 1, GTK_SHRINK, GTK_SHRINK, xpad, ypad) ;
-  gtk_table_attach(table, GTK_WIDGET(main_data->combo), col + 1, col + 2, row, row + 1, GTK_SHRINK, GTK_SHRINK, xpad, ypad) ;
-  ++row ;
-
-  /* Create the label/entry widgets */
-
-  /* First column */
-  main_data->name_widg = makeEntryWidget("Source name :", NULL, "REQUIRED: Please enter a name for the new source", 
-                                         table, &row, col, col + 2, TRUE, NULL) ;
-  main_data->path_widg = makeEntryWidget("Path/URL :", NULL, "REQUIRED: The file/URL to load features from", 
-                                         table, &row, col, col + 2, TRUE, &main_data->file_widgets) ;
-
 #ifdef USE_ENSEMBL
-
+static void makeEnsemblWidgets(MainFrame main_data, 
+                               ZMapFeatureSequenceMap sequence_map,
+                               GtkTable *table,
+                               const int rows,
+                               const int cols,
+                               int &row,
+                               int &col)
+{
   /* Place this widget on the same row as path_widg as they will be interchangeable */
   --row ;
 
@@ -731,7 +705,40 @@ static GtkWidget *makeMainFrame(MainFrame main_data, ZMapFeatureSequenceMap sequ
   gtk_table_attach(table, main_data->dna_check, col, col + 1, row - 1, row, GTK_SHRINK, GTK_SHRINK, xpad, ypad) ;
   main_data->ensembl_widgets.push_back(main_data->dna_check) ;
   ++row ;
+}
+#endif
 
+
+/* Make the label/entry fields frame. */
+static GtkWidget *makeMainFrame(MainFrame main_data, 
+                                ZMapFeatureSequenceMap sequence_map)
+{
+  GtkWidget *frame = gtk_frame_new( "New source: " ) ;
+  gtk_container_border_width(GTK_CONTAINER(frame), 5);
+
+  const int rows = 7 ;
+  const int cols = 6 ;
+  GtkTable *table = GTK_TABLE(gtk_table_new(rows, cols, FALSE)) ;
+  gtk_container_add (GTK_CONTAINER (frame), GTK_WIDGET(table)) ;
+
+  int row = 0 ;
+  int col = 0 ;
+
+  main_data->combo = createComboBox(main_data) ;
+  gtk_table_attach(table, gtk_label_new("Source type :"), col, col + 1, row, row + 1, GTK_SHRINK, GTK_SHRINK, xpad, ypad) ;
+  gtk_table_attach(table, GTK_WIDGET(main_data->combo), col + 1, col + 2, row, row + 1, GTK_SHRINK, GTK_SHRINK, xpad, ypad) ;
+  ++row ;
+
+  /* Create the label/entry widgets */
+
+  /* First column */
+  main_data->name_widg = makeEntryWidget("Source name :", NULL, "REQUIRED: Please enter a name for the new source", 
+                                         table, &row, col, col + 2, TRUE, NULL) ;
+  main_data->path_widg = makeEntryWidget("Path/URL :", NULL, "REQUIRED: The file/URL to load features from", 
+                                         table, &row, col, col + 2, TRUE, &main_data->file_widgets) ;
+
+#ifdef USE_ENSEMBL
+  makeEnsemblWidgets(main_data, sequence_map, table, rows, cols, row, col) ;
 #endif /* USE_ENSEMBL */
 
 
