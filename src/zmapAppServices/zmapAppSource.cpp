@@ -111,9 +111,10 @@ typedef struct MainFrameStructName
 #endif
 
   list<GtkWidget*> trackhub_widgets;
-  GtkWidget *register_widg; // list of trackdbs in the source
-  GtkWidget *add_widg;      // add a trackdb to the list
-  GtkWidget *remove_widg;   // remove a trackdb from the list
+  GtkWidget *trackdb_widg;
+  GtkWidget *search_widg;
+  GtkWidget *browse_widg;
+  GtkWidget *register_widg;
 
   ZMapFeatureSequenceMap sequence_map ;
   
@@ -146,6 +147,8 @@ static gboolean applyFile(MainFrame main_data) ;
 static void setWidgetsVisibility(list<GtkWidget*> widget_list, const gboolean visible) ;
 static void updatePanelFromSource(MainFrame main_data, ZMapConfigSource source) ;
 static gboolean applyTrackhub(MainFrame main_frame);
+
+static void trackhubSearchCB(GtkWidget *widget, gpointer cb_data);
 
 #ifdef USE_ENSEMBL
 static void dbnameCB(GtkWidget *widget, gpointer cb_data) ;
@@ -188,15 +191,17 @@ GtkWidget *zMapAppCreateSource(ZMapFeatureSequenceMap sequence_map,
 
   gtk_widget_show_all(toplevel) ;
 
-  /* Only show widgets for the relevant file type (ensembl by default if it exists, file
-   * otherwise) */
+  /* Only show widgets for the relevant file type (ensembl by default if it exists, 
+   * trackhub otherwise) */
   if (main_data)
     {
 #ifdef USE_ENSEMBL
       setWidgetsVisibility(main_data->ensembl_widgets, TRUE) ;
       setWidgetsVisibility(main_data->file_widgets, FALSE) ;
+      setWidgetsVisibility(main_data->trackhub_widgets, FALSE) ;
 #else
-      setWidgetsVisibility(main_data->file_widgets, TRUE) ;
+      setWidgetsVisibility(main_data->trackhub_widgets, TRUE) ;
+      setWidgetsVisibility(main_data->file_widgets, FALSE) ;
 #endif
     }
 
@@ -570,8 +575,10 @@ static void sourceTypeChangedCB(GtkComboBox *combo, gpointer data)
       else if (strcmp(value, SOURCE_TYPE_TRACKHUB) == 0)
         {
           setWidgetsVisibility(main_data->trackhub_widgets, TRUE) ;
-          setWidgetsVisibility(main_data->ensembl_widgets, FALSE) ;
           setWidgetsVisibility(main_data->file_widgets, FALSE) ;
+#ifdef USE_ENSEMBL
+          setWidgetsVisibility(main_data->ensembl_widgets, FALSE) ;
+#endif
         }
 #ifdef USE_ENSEMBL
       else if (strcmp(value, SOURCE_TYPE_ENSEMBL) == 0)
@@ -633,6 +640,31 @@ static GtkComboBox *createComboBox(MainFrame main_data)
   return combo ;
 }
 
+
+static GtkWidget* makeButtonWidget(const char *stock,
+                                   const char *tooltip,
+                                   GtkSignalFunc cb_func,
+                                   gpointer cb_data,
+                                   GtkTable *table,
+                                   const int row,
+                                   const int col,
+                                   list<GtkWidget*> &widgets_list)
+{
+  GtkWidget *button = gtk_button_new() ;
+
+  gtk_button_set_image(GTK_BUTTON(button), gtk_image_new_from_stock(stock, GTK_ICON_SIZE_BUTTON));
+  gtk_widget_set_tooltip_text(button, tooltip) ;
+
+  gtk_signal_connect(GTK_OBJECT(button), "clicked", cb_func, cb_data) ;
+
+  gtk_table_attach(table, button, col, col + 1, row, row + 1, GTK_SHRINK, GTK_SHRINK, xpad, ypad) ;
+
+  widgets_list.push_back(button);
+
+  return button;
+}
+
+
 #ifdef USE_ENSEMBL
 static void makeEnsemblWidgets(MainFrame main_data, 
                                ZMapFeatureSequenceMap sequence_map,
@@ -642,19 +674,15 @@ static void makeEnsemblWidgets(MainFrame main_data,
                                int &row,
                                int &col)
 {
-  /* Place this widget on the same row as path_widg as they will be interchangeable */
-  --row ;
-
   main_data->dbname_widg = makeEntryWidget("Database :", NULL, "REQUIRED: The database to load features from", 
                                            table, &row, col, col + 2, TRUE, &main_data->ensembl_widgets) ;
 
   /* Add a button next to the dbname widget to allow the user to search for a db in this host */
-  GtkWidget *dbname_button = gtk_button_new() ;
-  gtk_button_set_image(GTK_BUTTON(dbname_button), gtk_image_new_from_stock(GTK_STOCK_FIND, GTK_ICON_SIZE_BUTTON));
-  gtk_widget_set_tooltip_text(dbname_button, "Look up database for this host") ;
-  gtk_signal_connect(GTK_OBJECT(dbname_button), "clicked", GTK_SIGNAL_FUNC(dbnameCB), main_data) ;
-  gtk_table_attach(table, dbname_button, col + 2, col + 3, row - 1, row, GTK_SHRINK, GTK_SHRINK, xpad, ypad) ;
-  main_data->ensembl_widgets.push_back(dbname_button) ;
+  makeButtonWidget(GTK_STOCK_FIND,
+                   "Look up database for this host", 
+                   GTK_SIGNAL_FUNC(dbnameCB), main_data,
+                   table, row - 1, col + 2,
+                   main_data->ensembl_widgets) ;
 
   main_data->dbprefix_widg = makeEntryWidget("DB prefix :", NULL, "OPTIONAL: If specified, this prefix will be added to source names for features from this database", 
                                              table, &row, col, col + 2, FALSE, &main_data->ensembl_widgets) ;
@@ -709,6 +737,29 @@ static void makeEnsemblWidgets(MainFrame main_data,
 #endif
 
 
+static void makeTrackhubWidgets(MainFrame main_data, 
+                                ZMapFeatureSequenceMap sequence_map,
+                                GtkTable *table,
+                                const int rows,
+                                const int cols,
+                                int &row,
+                                int &col)
+{
+  /* Display the trackDb details */
+  /* For now just display the trackdb id (we'll want to improve this to display more details
+   * about the track) */
+  main_data->trackdb_widg = makeEntryWidget("TrackDb ID :", NULL, "REQUIRED: The track database ID from the Ensembl Track Hub Registry",
+                                            table, &row, col, col + 2, TRUE, &main_data->trackhub_widgets);
+  
+  /* Search button */
+  main_data->search_widg = makeButtonWidget(GTK_STOCK_FIND, "Find track hubs",
+                                            GTK_SIGNAL_FUNC(trackhubSearchCB), main_data,
+                                            table, row, col,
+                                            main_data->trackhub_widgets);
+
+}
+
+
 /* Make the label/entry fields frame. */
 static GtkWidget *makeMainFrame(MainFrame main_data, 
                                 ZMapFeatureSequenceMap sequence_map)
@@ -734,13 +785,20 @@ static GtkWidget *makeMainFrame(MainFrame main_data,
   /* First column */
   main_data->name_widg = makeEntryWidget("Source name :", NULL, "REQUIRED: Please enter a name for the new source", 
                                          table, &row, col, col + 2, TRUE, NULL) ;
+  int path_widg_row = row;
   main_data->path_widg = makeEntryWidget("Path/URL :", NULL, "REQUIRED: The file/URL to load features from", 
                                          table, &row, col, col + 2, TRUE, &main_data->file_widgets) ;
 
 #ifdef USE_ENSEMBL
+  /* Place this widget on the same row as path_widg as they will be interchangeable */
+  row = path_widg_row;
+
   makeEnsemblWidgets(main_data, sequence_map, table, rows, cols, row, col) ;
 #endif /* USE_ENSEMBL */
 
+  /* Place this widget on the same row as path_widg as they will be interchangeable */
+  row = path_widg_row;
+  makeTrackhubWidgets(main_data, sequence_map, table, rows, cols, row, col) ;
 
   return frame ;
 }
@@ -1499,3 +1557,12 @@ static gboolean applyTrackhub(MainFrame main_frame)
 
   return ok ;
 }
+
+
+static void trackhubSearchCB(GtkWidget *widget, gpointer cb_data)
+{
+  MainFrame main_data = (MainFrame)cb_data ;
+  zMapReturnIfFail(main_data && main_data->search_widg) ;
+  
+}
+
