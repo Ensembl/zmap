@@ -71,6 +71,8 @@ using namespace std ;
 #define DEFAULT_COLUMNS_LIST_ALL "all ; dna ; 3 frame ; 3 frame translation ; show translation ; "
 #endif
 
+#define SOURCE_TYPE_TRACKHUB "Track hub"
+
 
 /* Generic definitions of columns for displaying a list of e.g. databases. For now just include a
  * single column to display the name */
@@ -108,6 +110,11 @@ typedef struct MainFrameStructName
   GtkWidget *dna_check ;
 #endif
 
+  list<GtkWidget*> trackhub_widgets;
+  GtkWidget *register_widg; // list of trackdbs in the source
+  GtkWidget *add_widg;      // add a trackdb to the list
+  GtkWidget *remove_widg;   // remove a trackdb from the list
+
   ZMapFeatureSequenceMap sequence_map ;
   
   ZMapAppCreateSourceCB user_func ;
@@ -138,6 +145,7 @@ static GtkWidget *makeMainFrame(MainFrame main_data, ZMapFeatureSequenceMap sequ
 static gboolean applyFile(MainFrame main_data) ;
 static void setWidgetsVisibility(list<GtkWidget*> widget_list, const gboolean visible) ;
 static void updatePanelFromSource(MainFrame main_data, ZMapConfigSource source) ;
+static gboolean applyTrackhub(MainFrame main_frame);
 
 #ifdef USE_ENSEMBL
 static void dbnameCB(GtkWidget *widget, gpointer cb_data) ;
@@ -519,14 +527,22 @@ static void sourceTypeChangedCB(GtkComboBox *combo, gpointer data)
       if (strcmp(value, SOURCE_TYPE_FILE) == 0)
         {
           setWidgetsVisibility(main_data->file_widgets, TRUE) ;
+          setWidgetsVisibility(main_data->trackhub_widgets, FALSE) ;
 #ifdef USE_ENSEMBL
           setWidgetsVisibility(main_data->ensembl_widgets, FALSE) ;
 #endif /* USE_ENSEMBL */
+        }
+      else if (strcmp(value, SOURCE_TYPE_TRACKHUB) == 0)
+        {
+          setWidgetsVisibility(main_data->trackhub_widgets, TRUE) ;
+          setWidgetsVisibility(main_data->ensembl_widgets, FALSE) ;
+          setWidgetsVisibility(main_data->file_widgets, FALSE) ;
         }
 #ifdef USE_ENSEMBL
       else if (strcmp(value, SOURCE_TYPE_ENSEMBL) == 0)
         {
           setWidgetsVisibility(main_data->ensembl_widgets, TRUE) ;
+          setWidgetsVisibility(main_data->trackhub_widgets, FALSE) ;
           setWidgetsVisibility(main_data->file_widgets, FALSE) ;
         }
 #endif /* USE_ENSEMBL */
@@ -553,12 +569,17 @@ static GtkComboBox *createComboBox(MainFrame main_data)
   unsigned int combo_index = 0 ;
 
   GtkTreeIter iter;
+
   gtk_list_store_append(store, &iter);
   gtk_list_store_set(store, &iter, NAME_COLUMN, SOURCE_TYPE_FILE, -1);
   gtk_combo_box_set_active_iter(combo, &iter);
 
   main_data->combo_indices[SCHEME_FILE] = combo_index ;
   ++combo_index ;
+
+  gtk_list_store_append(store, &iter);
+  gtk_list_store_set(store, &iter, 0, SOURCE_TYPE_TRACKHUB, -1);
+  gtk_combo_box_set_active_iter(combo, &iter);
 
 #ifdef USE_ENSEMBL
   gtk_list_store_append(store, &iter);
@@ -572,6 +593,11 @@ static GtkComboBox *createComboBox(MainFrame main_data)
   g_signal_connect(G_OBJECT(combo), "changed", G_CALLBACK(sourceTypeChangedCB), main_data);
 
   return combo ;
+}
+
+
+static void makeEnsemblWidgets()
+{
 }
 
 
@@ -745,6 +771,10 @@ static void applyCB(GtkWidget *widget, gpointer cb_data)
       if (strcmp(source_type, SOURCE_TYPE_FILE) == 0)
         {
           ok = applyFile(main_frame) ;
+        }
+      else if (strcmp(source_type, SOURCE_TYPE_TRACKHUB) == 0)
+        {
+          ok = applyTrackhub(main_frame) ;
         }
 #ifdef USE_ENSEMBL
       else if (strcmp(source_type, SOURCE_TYPE_ENSEMBL) == 0)
@@ -1396,3 +1426,31 @@ static void biotypesCB(GtkWidget *widget, gpointer cb_data)
 
 
 #endif /* USE_ENSEMBL */
+
+
+static gboolean applyTrackhub(MainFrame main_frame)
+{
+  gboolean ok = FALSE ;
+
+  const char *source_name = getEntryText(GTK_ENTRY(main_frame->name_widg)) ;
+
+  if (!source_name)
+    {
+      zMapWarning("%s", "Please enter a source name") ;
+    }
+  else
+    {
+      GError *tmp_error = NULL ;
+      
+      //std::string url = constructUrl(host, port, user, pass, dbname, dbprefix) ;
+
+      //(main_frame->user_func)(source_name, url, featuresets, biotypes, main_frame->user_data, &tmp_error) ;
+
+      if (tmp_error)
+        zMapWarning("Failed to create new source: %s", tmp_error->message) ;
+
+      ok = TRUE ;
+    }
+
+  return ok ;
+}
