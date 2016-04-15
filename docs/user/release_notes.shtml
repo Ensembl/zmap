@@ -6,6 +6,15 @@
 <body>
 <h2>ZMap - Release Notes</h2>
 
+<h4>Version 2.8.0</h4>
+<ul>
+  <li>     Fix a bug calling blixem on bam columns - RT 521742
+  <li>   otter error: Otter-99-09 saving column order not working completely (rt517878)
+  <li> Selecting single exons to add to a temporary feature (rt519398)
+<li> Clicking on composite BAM reads should show accessions. (rt520882)
+<li> Zmap map is not loading transcript anymore (rt 524700)
+</ul>
+
 <h4>Version 2.7.1</h4>
 <ul>
   <li>RT '524700' Fix a regression introduced in 2.6.0 where some transcripts are not loading from ensembl.
