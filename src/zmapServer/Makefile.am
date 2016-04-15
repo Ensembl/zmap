@@ -1,7 +1,7 @@
 
 include $(top_srcdir)/Makefile.common
 
-SUBDIRS = pipe file trackhub
+SUBDIRS = pipe file
 
 if USE_ACECONN
 SUBDIRS += acedb
@@ -32,7 +32,6 @@ libZMapServers_la_SOURCES =
 libZMapServers_la_LIBADD  = \
 pipe/libPipeServer.la   \
 file/libFileServer.la   \
-trackhub/libTrackhubServer.la \
 $(NULL)
 
 if USE_ACECONN

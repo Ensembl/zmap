@@ -114,10 +114,6 @@ gboolean zMapServerGlobalInit(ZMapURL url, void **server_global_data_out)
       break;
 #endif
 
-    case SCHEME_TRACKHUB:
-      trackhubGetServerFuncs(serverfuncs);
-      break;
-
     default:
       /* We should not get here if zMapReturnValIfFail() check worked. */
       zMapWarnIfReached() ;

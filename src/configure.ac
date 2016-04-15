@@ -558,7 +558,6 @@ zmapServer/acedb/Makefile
 zmapServer/pipe/Makefile
 zmapServer/file/Makefile
 zmapServer/ensembl/Makefile
-zmapServer/trackhub/Makefile
 zmapThreads/Makefile
 zmapUtils/Makefile
 zmapUtils/tests/Makefile
