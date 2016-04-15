@@ -36,14 +36,17 @@
 
 #include <ZMap/zmap.hpp>
 
-#include <map>
 #include <string>
+#include <list>
+#include <map>
 
 #include <string.h>
 #include <sys/types.h>
 #include <signal.h>                                            /* kill() */
 #include <glib.h>
 #include <gtk/gtk.h>
+
+#include <gbtools/gbtools.hpp>
 
 #include <ZMap/zmapUtils.hpp>
 #include <ZMap/zmapUtilsDebug.hpp>
@@ -59,8 +62,7 @@
 #include <zmapView_P.hpp>
 
 
-
-#include <zmapView_P.hpp>
+using namespace std ;
 
 
 /* Define thread debug messages, used in checkStateConnections() mostly. */
@@ -1986,6 +1988,62 @@ void zmapViewResetWindows(ZMapView zmap_view, gboolean revcomp)
 }
 
 
+/* Utility called by zMapViewSetUpServerConnection to do any scheme-specific set up for the given
+ * server. This updates the terminate flag and the servers list - for trackhub servers this
+ * returns a list of servers for each track in the trackDb. For other server types it just puts
+ * the current server in the list. */
+static void setUpServerConnectionByScheme(ZMapView zmap_view,
+                                          ZMapConfigSource current_server,
+                                          bool &terminate,
+                                          list<ZMapConfigSource> &servers)
+{
+  ZMapURL zmap_url = url_parse(current_server->url, NULL);
+  terminate = FALSE ;
+
+  if (zmap_url)
+    {
+      if (zmap_url->scheme == SCHEME_PIPE)
+        {
+          terminate = TRUE ;
+        }
+      else if (zmap_url->scheme == SCHEME_TRACKHUB)
+        {
+          const char *trackdb_id = NULL ;
+
+          if (g_str_has_prefix(current_server->url, "trackhub://"))
+            trackdb_id = current_server->url + 11 ;
+
+          if (trackdb_id)
+            {
+              gbtools::trackhub::Registry registry ;
+              map<string, string> track_urls = registry.getTrackUrls(trackdb_id) ;
+
+              for (auto iter = track_urls.begin(); iter != track_urls.end(); ++iter)
+                {
+                  const string &name = iter->first ;
+                  const string &url = iter->second ;
+                  
+                  GError *g_error = NULL ;
+                  ZMapConfigSource track_server = 
+                    zmap_view->view_sequence->createSource(name.c_str(),
+                                                           url, 
+                                                           current_server->featuresets, 
+                                                           current_server->biotypes, 
+                                                           &g_error) ;
+
+                  if (track_server && !g_error)
+                    servers.push_back(track_server) ;
+                  else
+                    zMapLogWarning("Error setting up server for track %s: %s", name.c_str(), url.c_str()) ;
+                }
+            }
+          else
+            {
+              servers.push_back(current_server) ;
+            }
+        }
+    }
+}
 
 /* Set up a connection to a single named server. Does nothing if the server is delayed.
  * Throws if there is a problem */
@@ -1993,7 +2051,7 @@ void zMapViewSetUpServerConnection(ZMapView zmap_view, ZMapConfigSource current_
 {
   zMapReturnIfFail(zmap_view && current_server) ;
 
-  gboolean terminate = TRUE;
+  bool terminate = true;
 
   if (!current_server->delayed)   // skip if delayed (we'll only request data when asked to)
     {
@@ -2028,11 +2086,18 @@ void zMapViewSetUpServerConnection(ZMapView zmap_view, ZMapConfigSource current_
               req_biotypes = zMapConfigString2QuarkGList(current_server->biotypes,FALSE) ;
             }
 
-          terminate = g_str_has_prefix(current_server->url,"pipe://");
+           /* Do any scheme-specific setup. This may return a list of child servers which we
+            * should process instead of the original server (otherwise the servers list will just
+            * be populated with the original server). */
+          list<ZMapConfigSource> servers ;
+          setUpServerConnectionByScheme(zmap_view, current_server, terminate, servers) ;
 
-          zmapViewLoadFeatures(zmap_view, NULL, req_featuresets, req_biotypes, current_server,
-                               zmap_view->view_sequence->start, zmap_view->view_sequence->end,
-                               SOURCE_GROUP_START,TRUE, terminate) ;
+          for (auto &iter : servers)
+            {
+              zmapViewLoadFeatures(zmap_view, NULL, req_featuresets, req_biotypes, iter,
+                                   zmap_view->view_sequence->start, zmap_view->view_sequence->end,
+                                   SOURCE_GROUP_START,TRUE, terminate) ;
+            }
         }
     }
 }
