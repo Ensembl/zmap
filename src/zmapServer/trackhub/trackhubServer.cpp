@@ -175,7 +175,7 @@ static gboolean createConnection(void **server_out,
   TrackhubServer server ;
 
   /* Always return a server struct as it contains error message stuff. */
-  server = (TrackhubServer)g_new0(TrackhubServerStruct, 1) ;
+  server = new TrackhubServerStruct ;
   *server_out = (void *)server ;
 
   server->config_file = g_strdup(config_file) ;
@@ -406,7 +406,9 @@ static ZMapServerResponseType getContextSequence(void *server_in,
 static ZMapServerResponseType destroyConnection(void *server_in)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
-  //TrackhubServer server = (TrackhubServer)server_in ;
+  TrackhubServer server = (TrackhubServer)server_in ;
+
+  delete server ;
 
   return result ;
 

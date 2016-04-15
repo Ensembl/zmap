@@ -32,6 +32,7 @@ libZMapServers_la_SOURCES =
 libZMapServers_la_LIBADD  = \
 pipe/libPipeServer.la   \
 file/libFileServer.la   \
+trackhub/libTrackhubServer.la \
 $(NULL)
 
 if USE_ACECONN
