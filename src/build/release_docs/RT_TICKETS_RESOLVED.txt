@@ -1,73 +1,13 @@
 
-Request Tracker Tickets Resolved from 18/02/2016 to 23/03/2016
+Request Tracker Tickets Resolved from 16/03/2016 to 15/04/2016
 
-ticket/495081
-id: ticket/495081
+ticket/517878
+id: ticket/517878
 Queue: zmap
-Subject: Displaying introns in bam alignments
-Requestors: gb10@sanger.ac.uk
-Owner: edgrif
-Resolved: Wed Mar 02 13:15:22 2016
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/514386
-id: ticket/514386
-Queue: zmap
-Subject: Zmap crash pfetching
-Requestors: jgrg@sanger.ac.uk
-Owner: edgrif
-Resolved: Wed Mar 02 13:14:19 2016
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/515503
-id: ticket/515503
-Queue: zmap
-Subject: Ensembl_RNAseq_ENCODE_canonical_introns columns not showing in Zmap
-Requestors: erb@sanger.ac.uk
-Owner: sm23
-Resolved: Fri Feb 19 10:35:19 2016
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/516368
-id: ticket/516368
-Queue: zmap
-Subject: Feature request: edit source
-Requestors: thibaut@ebi.ac.uk
+Subject: otter error: Otter-99-09 saving column order not working completely
+Requestors: mms@sanger.ac.uk
 Owner: gb10
-Resolved: Fri Feb 19 10:50:36 2016
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/516658
-id: ticket/516658
-Queue: zmap
-Subject: annoreleasebuild -e <email_address> didn't work
-Requestors: jgrg@sanger.ac.uk
-Owner: edgrif
-Resolved: Wed Mar 02 13:13:08 2016
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/516846
-id: ticket/516846
-Queue: zmap
-Subject: pfetch still used by dotter launcher in otter
-Requestors: jgrg@sanger.ac.uk, mpk@sanger.ac.uk
-Owner: jgrg
-Resolved: Mon Feb 29 12:26:44 2016
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/519209
-id: ticket/519209
-Queue: zmap
-Subject: BAM files display errors
-Requestors: cas@sanger.ac.uk
-Owner: edgrif
-Resolved: Tue Mar 15 14:30:12 2016
+Resolved: Mon Apr 04 10:44:09 2016
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
@@ -88,6 +28,16 @@ Subject: Clicking on composite BAM reads should show accessions.
 Requestors: cas@sanger.ac.uk
 Owner: gb10
 Resolved: Wed Mar 16 08:23:53 2016
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
+ticket/524700
+id: ticket/524700
+Queue: zmap
+Subject: Zmap map is not loading transcript anymore
+Requestors: thibaut@ebi.ac.uk
+Owner: gb10
+Resolved: Fri Apr 15 10:47:49 2016
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
