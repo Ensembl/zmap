@@ -475,7 +475,7 @@ void zmapViewSessionFreeServer(ZMapViewSessionServer session_data) ;
 
 ZMapViewConnection zmapViewRequestServer(ZMapView view, ZMapViewConnection view_conn,
 					 ZMapFeatureBlock block_orig, GList *req_featuresets, GList *req_biotypes,
-					 gpointer server, /* ZMapConfigSource */
+					 ZMapConfigSource server,
 					 int req_start, int req__end,
 					 gboolean dna_requested, gboolean terminate, gboolean show_warning) ;
 

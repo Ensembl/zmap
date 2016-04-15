@@ -1351,7 +1351,7 @@ void zMapViewShowLoadStatus(ZMapView view)
 /* Hate this but Malcolm seems to have punctured the encapsulation in quite a few places.... */
 gboolean zMapViewRequestServer(ZMapView view,
                                ZMapFeatureBlock block_orig, GList *req_featuresets, GList *req_biotypes,
-                               gpointer _server, /* ZMapConfigSource */
+                               ZMapConfigSource server,
                                int req_start, int req_end,
                                gboolean dna_requested, gboolean terminate, gboolean show_warning)
 {
@@ -1360,7 +1360,7 @@ gboolean zMapViewRequestServer(ZMapView view,
 
   if ((view_conn = zmapViewRequestServer(view, NULL,
                                          block_orig, req_featuresets, req_biotypes,
-                                         _server, /* ZMapConfigSource */
+                                         server,
                                          req_start, req_end,
                                          dna_requested, terminate, show_warning)))
     result = TRUE ;
@@ -1430,7 +1430,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig,
           dna_requested = TRUE ;
         }
 
-      view_conn = zmapViewRequestServer(view, NULL, block_orig, req_sources, req_biotypes, (gpointer) server,
+      view_conn = zmapViewRequestServer(view, NULL, block_orig, req_sources, req_biotypes, server,
                                         req_start, req_end, dna_requested, terminate, !view->thread_fail_silent);
       if(view_conn)
         requested = TRUE;
@@ -1597,7 +1597,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig,
 
 
               view_conn = zmapViewRequestServer(view, view_conn, block_orig, req_featuresets, req_biotypes,
-                                                (gpointer)server, req_start, req_end,
+                                                server, req_start, req_end,
                                                 dna_requested,
                                                 (!existing && terminate), !view->thread_fail_silent) ;
 
@@ -1859,17 +1859,13 @@ void zmapViewEraseFeatures(ZMapView view, ZMapFeatureContext context, GList **fe
  */
 ZMapViewConnection zmapViewRequestServer(ZMapView view, ZMapViewConnection view_conn,
                                          ZMapFeatureBlock block_orig, GList *req_featuresets, GList *req_biotypes,
-                                         gpointer _server, /* ZMapConfigSource */
+                                         ZMapConfigSource server,
                                          int req_start, int req_end,
                                          gboolean dna_requested, gboolean terminate, gboolean show_warning)
 {
   ZMapFeatureContext context ;
   ZMapFeatureBlock block ;
   gboolean is_pipe ;
-
-  /* UM....this looks like you haven't arranged the code properly...something for investigation.... */
-  /* things you have to do to get round scope and headers... */
-  ZMapConfigSource server = (ZMapConfigSource) _server ;
 
 
   /* Copy the original context from the target block upwards setting feature set names

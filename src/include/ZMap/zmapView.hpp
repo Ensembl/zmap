@@ -219,7 +219,7 @@ void zMapViewSetFlag(ZMapView view, ZMapFlag flag, const gboolean value) ;
 gboolean zMapViewGetFlag(ZMapView view, ZMapFlag flag) ;
 
 gboolean zMapViewRequestServer(ZMapView view, ZMapFeatureBlock block_orig, GList *req_featuresets, GList *req_biotypes,
-			       gpointer server, /* ZMapConfigSource */
+			       ZMapConfigSource server,
 			       int req_start, int req_end,
 			       gboolean dna_requested, gboolean terminate, gboolean show_warning);
 

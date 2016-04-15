@@ -1351,7 +1351,7 @@ static void importFileCB(gpointer cb_data)
         {
           GList *req_featuresets = NULL ;
           
-          if (zMapViewRequestServer(view, NULL, req_featuresets, NULL, (gpointer)server, req_start, req_end, FALSE, TRUE, TRUE))
+          if (zMapViewRequestServer(view, NULL, req_featuresets, NULL, server, req_start, req_end, FALSE, TRUE, TRUE))
             zMapViewShowLoadStatus(view);
           else
             zMapWarning("Request to server failed for %s",file_txt);
