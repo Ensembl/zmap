@@ -2037,10 +2037,10 @@ static void setUpServerConnectionByScheme(ZMapView zmap_view,
                     zMapLogWarning("Error setting up server for track %s: %s", name.c_str(), url.c_str()) ;
                 }
             }
-          else
-            {
-              servers.push_back(current_server) ;
-            }
+        }
+      else
+        {
+          servers.push_back(current_server) ;
         }
     }
 }
