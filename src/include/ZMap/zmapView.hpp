@@ -218,11 +218,6 @@ ZMapFeatureSequenceMap zMapViewGetSequenceMap(ZMapView zmap_view);
 void zMapViewSetFlag(ZMapView view, ZMapFlag flag, const gboolean value) ;
 gboolean zMapViewGetFlag(ZMapView view, ZMapFlag flag) ;
 
-gboolean zMapViewRequestServer(ZMapView view, ZMapFeatureBlock block_orig, GList *req_featuresets, GList *req_biotypes,
-			       ZMapConfigSource server,
-			       int req_start, int req_end,
-			       gboolean dna_requested, gboolean terminate, gboolean show_warning);
-
 void zMapViewShowLoadStatus(ZMapView view);
 
 void zmapViewFeatureDump(ZMapViewWindow view_window, char *file) ;
@@ -266,6 +261,8 @@ gboolean zMapViewExportConfig(ZMapView view, const ZMapViewExportType export_typ
 gboolean zMapViewCheckIfUnsaved(ZMapView zmap_view) ;
 
 void zMapViewSetUpServerConnection(ZMapView zmap_view, ZMapConfigSource current_server, GError **error) ;
+void zMapViewSetUpServerConnection(ZMapView zmap_view, ZMapConfigSource current_server, const int req_start, 
+                                   const int req_end, const bool thread_fail_silent, GError **error) ;
 
 void zMapViewAddSource(ZMapView view, const std::string &source_name, ZMapConfigSource source, GError **error) ;
 

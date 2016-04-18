@@ -359,6 +359,12 @@ static void viewSetUpStyles(ZMapView zmap_view, char *stylesfile) ;
 static void viewSetUpPredefinedColumns(ZMapView zmap_view, ZMapFeatureSequenceMap sequence_map) ;
 static gboolean viewSetUpServerConnections(ZMapView zmap_view, GList *settings_list, GError **error) ;
 
+static ZMapViewConnection zmapViewRequestServer(ZMapView view, ZMapViewConnection view_conn,
+                                                ZMapFeatureBlock block_orig, GList *req_featuresets, GList *req_biotypes,
+                                                ZMapConfigSource server,
+                                                int req_start, int req__end,
+                                                gboolean dna_requested, gboolean terminate, gboolean show_warning) ;
+
 
 /*
  *                 Globals
@@ -1350,27 +1356,6 @@ void zMapViewShowLoadStatus(ZMapView view)
 }
 
 
-/* Hate this but Malcolm seems to have punctured the encapsulation in quite a few places.... */
-gboolean zMapViewRequestServer(ZMapView view,
-                               ZMapFeatureBlock block_orig, GList *req_featuresets, GList *req_biotypes,
-                               ZMapConfigSource server,
-                               int req_start, int req_end,
-                               gboolean dna_requested, gboolean terminate, gboolean show_warning)
-{
-  gboolean result = FALSE ;
-  ZMapViewConnection view_conn ;
-
-  if ((view_conn = zmapViewRequestServer(view, NULL,
-                                         block_orig, req_featuresets, req_biotypes,
-                                         server,
-                                         req_start, req_end,
-                                         dna_requested, terminate, show_warning)))
-    result = TRUE ;
-
-  return result ;
-}
-
-
 
 /*
  *                      Package external routines
@@ -1393,6 +1378,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig,
                           GList *req_sources, GList *req_biotypes,
                           ZMapConfigSource server,
                           int features_start, int features_end,
+                          const bool thread_fail_silent,
                           gboolean group_flag, gboolean make_new_connection, gboolean terminate)
 {
   GList * sources = NULL;
@@ -1433,7 +1419,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig,
         }
 
       view_conn = zmapViewRequestServer(view, NULL, block_orig, req_sources, req_biotypes, server,
-                                        req_start, req_end, dna_requested, terminate, !view->thread_fail_silent);
+                                        req_start, req_end, dna_requested, terminate, !thread_fail_silent);
       if(view_conn)
         requested = TRUE;
     }
@@ -1601,7 +1587,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig,
               view_conn = zmapViewRequestServer(view, view_conn, block_orig, req_featuresets, req_biotypes,
                                                 server, req_start, req_end,
                                                 dna_requested,
-                                                (!existing && terminate), !view->thread_fail_silent) ;
+                                                (!existing && terminate), !thread_fail_silent) ;
 
               if(view_conn)
                 requested = TRUE;
@@ -1859,11 +1845,11 @@ void zmapViewEraseFeatures(ZMapView view, ZMapFeatureContext context, GList **fe
  * called from zmapViewConnect() to handle autoconfigured file servers,
  * which cannot be delayed as there's no way to fit these into the columns dialog as it currrently exists
  */
-ZMapViewConnection zmapViewRequestServer(ZMapView view, ZMapViewConnection view_conn,
-                                         ZMapFeatureBlock block_orig, GList *req_featuresets, GList *req_biotypes,
-                                         ZMapConfigSource server,
-                                         int req_start, int req_end,
-                                         gboolean dna_requested, gboolean terminate, gboolean show_warning)
+static ZMapViewConnection zmapViewRequestServer(ZMapView view, ZMapViewConnection view_conn,
+                                                ZMapFeatureBlock block_orig, GList *req_featuresets, GList *req_biotypes,
+                                                ZMapConfigSource server,
+                                                int req_start, int req_end,
+                                                gboolean dna_requested, gboolean terminate, gboolean show_warning)
 {
   ZMapFeatureContext context ;
   ZMapFeatureBlock block ;
@@ -1995,7 +1981,8 @@ void zmapViewResetWindows(ZMapView zmap_view, gboolean revcomp)
 static void setUpServerConnectionByScheme(ZMapView zmap_view,
                                           ZMapConfigSource current_server,
                                           bool &terminate,
-                                          list<ZMapConfigSource> &servers)
+                                          list<ZMapConfigSource> &servers,
+                                          GError **error)
 {
   ZMapURL zmap_url = url_parse(current_server->url, NULL);
   terminate = FALSE ;
@@ -2043,11 +2030,22 @@ static void setUpServerConnectionByScheme(ZMapView zmap_view,
           servers.push_back(current_server) ;
         }
     }
+  else
+    {
+      g_set_error(error, ZMAP_VIEW_ERROR, ZMAPVIEW_ERROR_CONNECT,
+                  "Error parsing server URL: %s", current_server->url) ;
+    }
 }
 
-/* Set up a connection to a single named server. Does nothing if the server is delayed.
- * Throws if there is a problem */
-void zMapViewSetUpServerConnection(ZMapView zmap_view, ZMapConfigSource current_server, GError **error)
+
+/* Set up a connection to a single named server and load features for the given region.
+ * Does nothing if the server is delayed. Sets the error if there is a problem. */
+void zMapViewSetUpServerConnection(ZMapView zmap_view, 
+                                   ZMapConfigSource current_server, 
+                                   const int req_start,
+                                   const int req_end,
+                                   const bool thread_fail_silent,
+                                   GError **error)
 {
   zMapReturnIfFail(zmap_view && current_server) ;
 
@@ -2090,16 +2088,34 @@ void zMapViewSetUpServerConnection(ZMapView zmap_view, ZMapConfigSource current_
             * should process instead of the original server (otherwise the servers list will just
             * be populated with the original server). */
           list<ZMapConfigSource> servers ;
-          setUpServerConnectionByScheme(zmap_view, current_server, terminate, servers) ;
+          setUpServerConnectionByScheme(zmap_view, current_server, terminate, servers, error) ;
 
+          /* Load the features for the server */
           for (auto &iter : servers)
             {
               zmapViewLoadFeatures(zmap_view, NULL, req_featuresets, req_biotypes, iter,
-                                   zmap_view->view_sequence->start, zmap_view->view_sequence->end,
+                                   req_start, req_end, thread_fail_silent,
                                    SOURCE_GROUP_START,TRUE, terminate) ;
             }
         }
     }
+}
+
+
+/* Set up a connection to a single named server and load features for the whole region.
+ * in the view. Does nothing if the server is delayed. Sets the error if there is a problem. */
+void zMapViewSetUpServerConnection(ZMapView zmap_view, 
+                                   ZMapConfigSource current_server, 
+                                   GError **error)
+{
+  zMapReturnIfFail(zmap_view) ;
+
+  zMapViewSetUpServerConnection(zmap_view, 
+                                current_server, 
+                                zmap_view->view_sequence->start,
+                                zmap_view->view_sequence->end,
+                                zmap_view->thread_fail_silent,
+                                error) ;
 }
 
 
@@ -6005,7 +6021,7 @@ static void commandCB(ZMapWindow window, void *caller_data, void *window_data)
           }
 
         zmapViewLoadFeatures(view, get_data->block, get_data->feature_set_ids, NULL, NULL,
-                             req_start, req_end,
+                             req_start, req_end, view->thread_fail_silent,
                              SOURCE_GROUP_DELAYED, TRUE, FALSE) ;        /* don't terminate, need to keep alive for blixem */
 
         break ;
