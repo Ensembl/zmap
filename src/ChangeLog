@@ -1,3 +1,9 @@
+2016-04-18  zmap  <zmap@sanger.ac.uk>
+ ZMap version 2.7.1-50-gea5a1c7 - Update RT and git commit reports
+ src/ChangeLog                                  | 12 ++++++++++++
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt |  2 +-
+ 2 files changed, 13 insertions(+), 1 deletion(-)
+
 2016-04-15  Steve Miller  <sm23@sanger.ac.uk>
  release notes editing
  docs/user/release_notes.shtml | 9 +++++++++
