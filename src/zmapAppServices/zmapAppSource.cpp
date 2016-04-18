@@ -337,8 +337,15 @@ static void updatePanelFromTrackhubSource(MainFrame main_data,
                                           ZMapURL zmap_url)
 {
   char *source_name = main_data->sequence_map->getSourceName(source) ;
+  const char *trackdb_id = "" ;
+
+  if (zmap_url)
+    trackdb_id = zmap_url->file ;
 
   gtk_entry_set_text(GTK_ENTRY(main_data->name_widg), source_name) ;
+  gtk_entry_set_text(GTK_ENTRY(main_data->trackdb_widg), trackdb_id) ;
+
+  g_free(source_name) ;
 }
 
 
