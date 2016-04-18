@@ -1529,10 +1529,10 @@ static gboolean applyTrackhub(MainFrame main_frame)
     {
       GError *tmp_error = NULL ;
       
-      std::string url = "trackhub://" ;
-      url += trackdb_id ;
+      std::stringstream url ;
+      url << "trackhub:///" << trackdb_id ;
 
-      (main_frame->user_func)(source_name, url, NULL, NULL, main_frame->user_data, &tmp_error) ;
+      (main_frame->user_func)(source_name, url.str(), NULL, NULL, main_frame->user_data, &tmp_error) ;
 
       if (tmp_error)
         zMapWarning("Failed to create new source: %s", tmp_error->message) ;

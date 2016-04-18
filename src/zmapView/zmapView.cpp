@@ -1995,10 +1995,7 @@ static void setUpServerConnectionByScheme(ZMapView zmap_view,
         }
       else if (zmap_url->scheme == SCHEME_TRACKHUB)
         {
-          const char *trackdb_id = NULL ;
-
-          if (g_str_has_prefix(current_server->url, "trackhub://"))
-            trackdb_id = current_server->url + 11 ;
+          const char *trackdb_id = zmap_url->file ;
 
           if (trackdb_id)
             {
@@ -2023,6 +2020,11 @@ static void setUpServerConnectionByScheme(ZMapView zmap_view,
                   else
                     zMapLogWarning("Error setting up server for track %s: %s", name.c_str(), url.c_str()) ;
                 }
+            }
+          else
+            {
+              g_set_error(error, ZMAP_VIEW_ERROR, ZMAPVIEW_ERROR_CONNECT,
+                          "Error getting trackDb from URL: %s", current_server->url) ;
             }
         }
       else
