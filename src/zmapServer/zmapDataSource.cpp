@@ -136,10 +136,10 @@ ZMapDataSource zMapDataSourceCreate(const char * const file_name, GError **error
           file->type = ZMapDataSourceType::BED ;
           
           char *file_name_copy = g_strdup(file_name) ; // to avoid casting away const
-          file->bed_features = bedLoadAll(file_name_copy) ;
+          file->bed_features_ = bedLoadAll(file_name_copy) ;
           g_free(file_name_copy) ;
 
-          if (file->bed_features)
+          if (file->bed_features_)
             data_source = (ZMapDataSource) file ;
         }
     }
@@ -234,30 +234,61 @@ ZMapDataSource zMapDataSourceCreateFromGIO(GIOChannel * const io_channel)
 /*
  * Checks that the data source is open.
  */
-gboolean zMapDataSourceIsOpen(ZMapDataSource const source)
+bool zMapDataSourceIsOpen(ZMapDataSource const source)
 {
-  gboolean result = FALSE ;
-  if (source && source->type == ZMapDataSourceType::GIO)
-    {
-      GIOChannel *io_channel = ((ZMapDataSourceGIO) source)->io_channel ;
-      if (io_channel)
-        {
-          result = TRUE ;
-        }
-    }
-#ifdef USE_HTSLIB
-  else if (source && source->type == ZMapDataSourceType::HTS)
-    {
-      htsFile *hts_file = ((ZMapDataSourceHTSFile) source)->hts_file ;
-      if (hts_file)
-        {
-          result = TRUE ;
-        }
-    }
-#endif
+  gboolean result = false ;
+
+  if (source)
+    result = source->isOpen() ;
 
   return result ;
 }
+
+bool ZMapDataSourceGIOStruct::isOpen()
+{
+  bool result = false ;
+
+  if (io_channel)
+    result = true ;
+
+  return result ;
+}
+
+bool ZMapDataSourceBEDStruct::isOpen()
+{
+  bool result = false ;
+  
+  if (bed_features_)
+    result = true ;
+
+  return result ;
+}
+
+bool ZMapDataSourceBIGBEDStruct::isOpen()
+{
+  bool result = false ;
+
+  return result ;
+}
+
+bool ZMapDataSourceBIGWIGStruct::isOpen()
+{
+  bool result = false ;
+
+  return result ;
+}
+
+#ifdef USE_HTSLIB
+bool ZMapDataSourceHTSFileStruct::isOpen()
+{
+  bool result = false ;
+
+  if (hts_file)
+    result = TRUE ;
+  
+  return result ;
+}
+#endif
 
 
 /*

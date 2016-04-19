@@ -58,6 +58,8 @@ struct bed ;
 class ZMapDataSourceStruct
 {
 public:
+  virtual bool isOpen() = 0 ;
+
   ZMapDataSourceType type ;
 } ;
 
@@ -68,23 +70,30 @@ public:
 class ZMapDataSourceGIOStruct : public ZMapDataSourceStruct
 {
 public:
+  bool isOpen() ;
+
   GIOChannel *io_channel ;
 } ;
 
 class ZMapDataSourceBEDStruct : public ZMapDataSourceStruct
 {
 public:
-  struct bed* bed_features ;
+  bool isOpen() ;
+
+  //private:
+  struct bed* bed_features_ ;
 } ;
 
 class ZMapDataSourceBIGBEDStruct : public ZMapDataSourceStruct
 {
 public:
+  bool isOpen() ;
 } ;
 
 class ZMapDataSourceBIGWIGStruct : public ZMapDataSourceStruct
 {
 public:
+  bool isOpen() ;
 } ;
 
 typedef ZMapDataSourceGIOStruct *ZMapDataSourceGIO ;
@@ -98,6 +107,8 @@ typedef ZMapDataSourceBIGWIGStruct *ZMapDataSourceBIGWIG ;
 class ZMapDataSourceHTSFileStruct : public ZMapDataSourceStruct
 {
 public:
+  bool isOpen() ;
+
   htsFile *hts_file ;
   /* bam header and record object */
   bam_hdr_t *hts_hdr ;
