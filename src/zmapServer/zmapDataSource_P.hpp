@@ -60,6 +60,7 @@ class ZMapDataSourceStruct
 public:
   virtual ~ZMapDataSourceStruct() {} ;
   virtual bool isOpen() = 0 ;
+  virtual bool readLine(GString * const pStr) = 0 ;
 
   ZMapDataSourceType type ;
 } ;
@@ -73,6 +74,7 @@ class ZMapDataSourceGIOStruct : public ZMapDataSourceStruct
 public:
   ~ZMapDataSourceGIOStruct() ;
   bool isOpen() ;
+  bool readLine(GString * const pStr) ;
 
   GIOChannel *io_channel ;
 } ;
@@ -82,9 +84,11 @@ class ZMapDataSourceBEDStruct : public ZMapDataSourceStruct
 public:
   ~ZMapDataSourceBEDStruct() ;
   bool isOpen() ;
+  bool readLine(GString * const pStr) ;
 
   //private:
   struct bed* bed_features_ ;
+  struct bed* cur_feature_ ;
 } ;
 
 class ZMapDataSourceBIGBEDStruct : public ZMapDataSourceStruct
@@ -92,6 +96,7 @@ class ZMapDataSourceBIGBEDStruct : public ZMapDataSourceStruct
 public:
   ~ZMapDataSourceBIGBEDStruct() ;
   bool isOpen() ;
+  bool readLine(GString * const pStr) ;
 } ;
 
 class ZMapDataSourceBIGWIGStruct : public ZMapDataSourceStruct
@@ -99,6 +104,7 @@ class ZMapDataSourceBIGWIGStruct : public ZMapDataSourceStruct
 public:
   ~ZMapDataSourceBIGWIGStruct() ;
   bool isOpen() ;
+  bool readLine(GString * const pStr) ;
 } ;
 
 typedef ZMapDataSourceGIOStruct *ZMapDataSourceGIO ;
@@ -114,6 +120,7 @@ class ZMapDataSourceHTSFileStruct : public ZMapDataSourceStruct
 public:
   ~ZMapDataSourceHTSFileStruct() ;
   bool isOpen() ;
+  bool readLine(GString * const pStr) ;
 
   htsFile *hts_file ;
   /* bam header and record object */

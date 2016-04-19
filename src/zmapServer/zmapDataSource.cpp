@@ -59,12 +59,6 @@ extern "C" {
 using namespace std ;
 
 
-static gboolean read_line_gio(GIOChannel * const gio_channel,  GString * const str ) ;
-
-#ifdef USE_HTSLIB
-static gboolean read_line_hts(ZMapDataSourceHTSFile const hts_file, GString * const str ) ;
-#endif
-
 /*
  * The SO terms that contain the string "read" are as follows:
  *
@@ -93,7 +87,9 @@ static gboolean read_line_hts(ZMapDataSourceHTSFile const hts_file, GString * co
  *
  */
 static const char * const ZMAP_BAM_SO_TERM  = "read" ;
+static const char * const ZMAP_BED_SO_TERM  = "read" ;
 static const char * const ZMAP_BAM_SOURCE   = "zmap_bam2gff_conversion" ;
+static const char * const ZMAP_BED_SOURCE   = "zmap_bed2gff_conversion" ;
 #define ZMAP_CIGARSTRING_MAXLENGTH 2048
 
 /*
@@ -140,7 +136,9 @@ ZMapDataSource zMapDataSourceCreate(const char * const file_name, GError **error
           g_free(file_name_copy) ;
 
           if (file->bed_features_)
-            data_source = (ZMapDataSource) file ;
+            {
+              data_source = (ZMapDataSource) file ;
+            }
         }
     }
   else if (!error && source_type == ZMapDataSourceType::BIGBED)
@@ -376,19 +374,162 @@ ZMapDataSourceType zMapDataSourceGetType(ZMapDataSource data_source )
  * "<string_data>\n" -> "<string_data>"
  * (It is still a NULL terminated c-string though.)
  */
-static gboolean read_line_gio(GIOChannel * const pChannel,  GString * const str )
+bool ZMapDataSourceGIOStruct::readLine(GString * const str)
 {
-  gboolean result = FALSE ;
+  bool result = false ;
   GError *pErr = NULL ;
   gsize pos = 0 ;
   GIOStatus cIOStatus = G_IO_STATUS_NORMAL;
 
-  cIOStatus = g_io_channel_read_line_string(pChannel, str, &pos, &pErr) ;
+  cIOStatus = g_io_channel_read_line_string(io_channel, str, &pos, &pErr) ;
   if (cIOStatus == G_IO_STATUS_NORMAL && !pErr )
     {
-      result = TRUE ;
+      result = true ;
       str->str[pos] = '\0';
     }
+
+  return result ;
+}
+
+
+static void createGFFLine(GString *pStr, 
+                          const char *sequence,
+                          const char *source,
+                          const char *so_type,
+                          const int iStart,
+                          const int iEnd,
+                          const double dScore,
+                          const char cStrand,
+                          const char *pName,
+                          const bool haveTarget = false,
+                          const int iTargetStart = 0,
+                          const int iTargetEnd = 0
+                          )
+{
+  static const gssize string_start = 0 ;
+  static const char *sFormatName = "Name=%s;",
+    *sFormatTarget = "Target=%s;";
+  gboolean bHasTargetStrand = FALSE,
+    bHasNameAttribute = FALSE,
+    bHasTargetAttribute = FALSE ;
+  char *sGFFLine = NULL ;
+  char cPhase = '.',
+    cTargetStrand = '.' ;
+  GString *pStringTarget = NULL,
+    *pStringAttributes = NULL ;
+
+  /*
+   * Erase current buffer contents
+   */
+  g_string_erase(pStr, string_start, -1) ;
+
+
+  /*
+   * "Target" (and "Name") attribute
+   */
+  pStringTarget = g_string_new(NULL) ;
+
+  if (haveTarget && pName && strlen(pName))
+    {
+      bHasTargetAttribute = TRUE ;
+      g_string_append_printf(pStringTarget, "%s %i %i", pName, iTargetStart, iTargetEnd ) ;
+      bHasTargetStrand = TRUE ;
+      cTargetStrand = '+' ;
+
+      if (bHasTargetStrand)
+        g_string_append_printf(pStringTarget, " %c", cTargetStrand) ;
+    }
+
+  /*
+   * Construct attributes string.
+   */
+  pStringAttributes = g_string_new(NULL) ;
+  if (pName && strlen(pName))
+    {
+      bHasNameAttribute = TRUE ;
+      g_string_append_printf(pStringAttributes,
+                             sFormatName, pName ) ;
+    }
+  if (bHasTargetAttribute)
+    {
+      g_string_append_printf(pStringAttributes,
+                             sFormatTarget, pStringTarget->str ) ;
+    }
+
+  /*
+   * Construct GFF line.
+   */
+  sGFFLine = g_strdup_printf("%s\t%s\t%s\t%i\t%i\t%f\t%c\t%c\t%s",
+                             sequence,
+                             source,
+                             so_type,
+                             iStart, iEnd,
+                             dScore,
+                             cStrand,
+                             cPhase,
+                             pStringAttributes->str) ;
+  g_string_insert(pStr, string_start, sGFFLine ) ;
+
+  /*
+   * Clean up on finish
+   */
+  if (sGFFLine)
+    g_free(sGFFLine) ;
+  if (pStringTarget)
+    g_string_free(pStringTarget, TRUE) ;
+  if (pStringAttributes)
+    g_string_free(pStringAttributes, TRUE) ;
+}
+
+
+/*
+ * Read a record from a BED file and turn it into GFFv3.
+ */
+bool ZMapDataSourceBEDStruct::readLine(GString * const str)
+{
+  bool result = false ;
+
+  zMapReturnValIfFail(bed_features_, result) ;
+
+  // Get the next feature in the list (or the first one if we haven't started yet)
+  if (cur_feature_)
+    cur_feature_ = cur_feature_->next ;
+  else
+    cur_feature_ = bed_features_ ;
+
+  // Create a gff line for this feature
+  createGFFLine(str,
+                cur_feature_->chrom,
+                ZMAP_BED_SOURCE,
+                ZMAP_BED_SO_TERM,
+                cur_feature_->chromStart,
+                cur_feature_->chromEnd,
+                cur_feature_->score,
+                cur_feature_->strand[0],
+                cur_feature_->name,
+                false,
+                0,
+                0) ;
+  
+  return result ;
+}
+
+/*
+ * Read a record from a BIGBED file and turn it into GFFv3.
+ */
+bool ZMapDataSourceBIGBEDStruct::readLine(GString * const str)
+{
+  bool result = false ;
+
+  return result ;
+}
+
+/*
+ * Read a record from a BIGWIG file and turn it into GFFv3.
+ */
+bool ZMapDataSourceBIGWIGStruct::readLine(GString * const str)
+{
+  bool result = false ;
 
   return result ;
 }
@@ -397,7 +538,7 @@ static gboolean read_line_gio(GIOChannel * const pChannel,  GString * const str 
 /*
  * Read a record from a HTS file and turn it into GFFv3.
  */
-static gboolean read_line_hts(ZMapDataSourceHTSFile const hts_file, GString * const pStr )
+bool ZMapDataSourceHTSFileStruct::readLine(GString * const pStr )
 {
   static const gssize string_start = 0 ;
   static const char *sFormatName = "Name=%s;",
@@ -427,7 +568,7 @@ static gboolean read_line_hts(ZMapDataSourceHTSFile const hts_file, GString * co
   /*
    * Initial error check.
    */
-  zMapReturnValIfFail(hts_file && hts_file->hts_file && hts_file->hts_hdr && hts_file->hts_rec, result ) ;
+  zMapReturnValIfFail(hts_file && hts_hdr && hts_rec, result ) ;
 
   /*
    * Erase current buffer contents
@@ -437,24 +578,24 @@ static gboolean read_line_hts(ZMapDataSourceHTSFile const hts_file, GString * co
   /*
    * Read line from HTS file and convert to GFF.
    */
-  if ( sam_read1(hts_file->hts_file, hts_file->hts_hdr, hts_file->hts_rec) >= 0 )
+  if ( sam_read1(hts_file, hts_hdr, hts_rec) >= 0 )
     {
       /*
        * start, end, score and strand
        */
-      iStart = hts_file->hts_rec->core.pos+1;
-      iEnd   = iStart+hts_file->hts_rec->core.l_qseq-1;
-      dScore = (double) hts_file->hts_rec->core.qual ;
+      iStart = hts_rec->core.pos+1;
+      iEnd   = iStart + hts_rec->core.l_qseq-1;
+      dScore = (double) hts_rec->core.qual ;
       cStrand = '+' ;
 
       /*
        * "cigar_bam" attribute
        */
-      nCigar = hts_file->hts_rec->core.n_cigar ;
+      nCigar = hts_rec->core.n_cigar ;
       if (nCigar)
         {
           bHasCigarAttribute = TRUE ;
-          pCigar = bam_get_cigar(hts_file->hts_rec) ;
+          pCigar = bam_get_cigar(hts_rec) ;
           pStringCigar = g_string_new(NULL) ;
           for (iCigar=0; iCigar<nCigar; ++iCigar)
               g_string_append_printf(pStringCigar, "%i%c", bam_cigar_oplen(pCigar[iCigar]), bam_cigar_opchr(pCigar[iCigar])) ;
@@ -465,12 +606,12 @@ static gboolean read_line_hts(ZMapDataSourceHTSFile const hts_file, GString * co
        */
       pStringTarget = g_string_new(NULL) ;
       iTargetStart = 1 ;
-      iTargetEnd = hts_file->hts_rec->core.l_qseq ;
-      if (strlen(bam_get_qname(hts_file->hts_rec)))
+      iTargetEnd = hts_rec->core.l_qseq ;
+      if (strlen(bam_get_qname(hts_rec)))
         {
           bHasTargetAttribute = TRUE ;
           bHasNameAttribute = TRUE ;
-          g_string_append_printf(pStringTarget, "%s %i %i", bam_get_qname(hts_file->hts_rec), iTargetStart, iTargetEnd ) ;
+          g_string_append_printf(pStringTarget, "%s %i %i", bam_get_qname(hts_rec), iTargetStart, iTargetEnd ) ;
           bHasTargetStrand = TRUE ;
           cTargetStrand = '+' ;
           if (bHasTargetStrand)
@@ -484,7 +625,7 @@ static gboolean read_line_hts(ZMapDataSourceHTSFile const hts_file, GString * co
       if (bHasNameAttribute)
         {
           g_string_append_printf(pStringAttributes,
-                                 sFormatName, bam_get_qname(hts_file->hts_rec) ) ;
+                                 sFormatName, bam_get_qname(hts_rec) ) ;
         }
       if (bHasTargetAttribute)
         {
@@ -501,9 +642,9 @@ static gboolean read_line_hts(ZMapDataSourceHTSFile const hts_file, GString * co
        * Construct GFF line.
        */
       sGFFLine = g_strdup_printf("%s\t%s\t%s\t%i\t%i\t%f\t%c\t%c\t%s",
-                                 hts_file->sequence,
-                                 hts_file->source,
-                                 hts_file->so_type,
+                                 sequence,
+                                 source,
+                                 so_type,
                                  iStart, iEnd,
                                  dScore,
                                  cStrand,
@@ -541,7 +682,7 @@ static gboolean read_line_hts(ZMapDataSourceHTSFile const hts_file, GString * co
  *                   "<fields>...<fields>\n"
  *     so we also have to remove the terminating newline.
  *
- * (b) HTSFile has to read a HTS record and then convert
+ * (b) Other types have to read a record and then convert
  *     that to GFF.
  *
  */
@@ -549,18 +690,8 @@ gboolean zMapDataSourceReadLine (ZMapDataSource const data_source , GString * co
 {
   gboolean result = FALSE ;
   zMapReturnValIfFail(data_source && (data_source->type != ZMapDataSourceType::UNK) && pStr, result ) ;
-  if (data_source->type == ZMapDataSourceType::GIO)
-    {
-      ZMapDataSourceGIO file = (ZMapDataSourceGIO) data_source ;
-      result = read_line_gio(file->io_channel, pStr ) ;
-    }
-#ifdef USE_HTSLIB
-  else if (data_source->type == ZMapDataSourceType::HTS)
-    {
-      ZMapDataSourceHTSFile file = (ZMapDataSourceHTSFile) data_source ;
-      result = read_line_hts(file, pStr ) ;
-    }
-#endif
+  
+  result = data_source->readLine(pStr) ;
 
   return result ;
 }
