@@ -45,6 +45,17 @@
 #include <ZMap/zmapServerProtocol.hpp>
 #include <zmapDataSource_P.hpp>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include <blatSrc/basicBed.h>
+
+#ifdef __cplusplus
+}
+#endif
+
+
 using namespace std ;
 
 
@@ -123,7 +134,13 @@ ZMapDataSource zMapDataSourceCreate(const char * const file_name, GError **error
       if (file != NULL)
         {
           file->type = ZMapDataSourceType::BED ;
-          data_source = (ZMapDataSource) file ;
+          
+          char *file_name_copy = g_strdup(file_name) ; // to avoid casting away const
+          file->bed_features = bedLoadAll(file_name_copy) ;
+          g_free(file_name_copy) ;
+
+          if (file->bed_features)
+            data_source = (ZMapDataSource) file ;
         }
     }
   else if (!error && source_type == ZMapDataSourceType::BIGBED)
@@ -196,7 +213,7 @@ ZMapDataSource zMapDataSourceCreateFromGIO(GIOChannel * const io_channel)
   zMapReturnValIfFail(io_channel, data_source) ;
 
   ZMapDataSourceGIO file = NULL ;
-  file = (ZMapDataSourceGIO) g_new0(ZMapDataSourceGIOStruct, 1) ;
+  file = new ZMapDataSourceGIOStruct ;
   if (file != NULL)
     {
       file->type = ZMapDataSourceType::GIO ;

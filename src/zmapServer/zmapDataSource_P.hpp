@@ -49,6 +49,9 @@
 #endif
 
 
+struct bed ;
+
+
 /*
  * General source type
  */
@@ -71,6 +74,7 @@ public:
 class ZMapDataSourceBEDStruct : public ZMapDataSourceStruct
 {
 public:
+  struct bed* bed_features ;
 } ;
 
 class ZMapDataSourceBIGBEDStruct : public ZMapDataSourceStruct
