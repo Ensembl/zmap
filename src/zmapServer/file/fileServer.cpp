@@ -103,6 +103,9 @@ static ZMapServerResponseType destroyConnection(void *server) ;
  */
 static ZMapServerResponseType fileGetHeader(FileServer server);
 static ZMapServerResponseType fileGetHeader_GIO(FileServer server) ;
+static ZMapServerResponseType fileGetHeader_BED(FileServer server) ;
+static ZMapServerResponseType fileGetHeader_BIGBED(FileServer server) ;
+static ZMapServerResponseType fileGetHeader_BIGWIG(FileServer server) ;
 #ifdef USE_HTSLIB
 static ZMapServerResponseType fileGetHeader_HTS(FileServer server) ;
 #endif
@@ -896,6 +899,47 @@ static ZMapServerResponseType fileGetHeader_GIO(FileServer server)
 }
 
 
+/* Header for a BED/BIGBED/BIGWIG file. The server calling code expects the server->buffer_line
+ * to contain a non-zero length string in order for it to decide that the source
+ * contains some data. In order to satisfy that, we have to give it a fake header
+ * line, as shown below.
+ */
+static ZMapServerResponseType fileGetHeader_BED(FileServer server)
+{
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
+  zMapReturnValIfFail(server->data_source->type == ZMapDataSourceType::BED, result) ;
+
+  g_string_insert(server->buffer_line, 0, "##source-version ZMap-BED-to-GFF-conversion") ;
+
+  result = ZMAP_SERVERRESPONSE_OK ;
+  return result ;
+  
+}
+
+static ZMapServerResponseType fileGetHeader_BIGBED(FileServer server)
+{
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
+  zMapReturnValIfFail(server->data_source->type == ZMapDataSourceType::BIGBED, result) ;
+
+  g_string_insert(server->buffer_line, 0, "##source-version ZMap-BIGBED-to-GFF-conversion") ;
+
+  result = ZMAP_SERVERRESPONSE_OK ;
+  return result ;
+  
+}
+
+static ZMapServerResponseType fileGetHeader_BIGWIG(FileServer server)
+{
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
+  zMapReturnValIfFail(server->data_source->type == ZMapDataSourceType::BIGWIG, result) ;
+
+  g_string_insert(server->buffer_line, 0, "##source-version ZMap-BIGWIG-to-GFF-conversion") ;
+
+  result = ZMAP_SERVERRESPONSE_OK ;
+  return result ;
+  
+}
+
 #ifdef USE_HTSLIB
 /*
  * Header for a HTS file. The server calling code expects the server->buffer_line
@@ -956,6 +1000,18 @@ static ZMapServerResponseType fileGetHeader(FileServer server)
   if (data_source_type == ZMapDataSourceType::GIO)
     {
       result = fileGetHeader_GIO(server) ;
+    }
+  else if (data_source_type == ZMapDataSourceType::BED)
+    {
+      result = fileGetHeader_BED(server) ;
+    }
+  else if (data_source_type == ZMapDataSourceType::BIGBED)
+    {
+      result = fileGetHeader_BIGBED(server) ;
+    }
+  else if (data_source_type == ZMapDataSourceType::BIGWIG)
+    {
+      result = fileGetHeader_BIGWIG(server) ;
     }
 #ifdef USE_HTSLIB
   else if (data_source_type ==   ZMapDataSourceType::HTS)
