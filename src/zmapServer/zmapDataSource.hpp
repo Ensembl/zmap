@@ -58,7 +58,7 @@ enum class ZMapDataSourceType {GIO, HTS, BED, BIGBED, BIGWIG, UNK} ;
 ZMapDataSource zMapDataSourceCreate(const char * const file_name, GError **error_out = NULL) ;
 ZMapDataSource zMapDataSourceCreateFromGIO(GIOChannel * const io_channel) ;
 bool zMapDataSourceIsOpen(ZMapDataSource const source) ;
-gboolean zMapDataSourceDestroy( ZMapDataSource *source) ;
+bool zMapDataSourceDestroy( ZMapDataSource *source) ;
 ZMapDataSourceType zMapDataSourceGetType(ZMapDataSource source ) ;
 gboolean zMapDataSourceReadHTSHeader(ZMapDataSource source, const char *sequence) ;
 gboolean zMapDataSourceReadLine (ZMapDataSource const data_pipe , GString * const str) ;

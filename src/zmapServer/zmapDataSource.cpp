@@ -294,66 +294,71 @@ bool ZMapDataSourceHTSFileStruct::isOpen()
 /*
  * Destroy the file object.
  */
-gboolean zMapDataSourceDestroy( ZMapDataSource *p_data_source )
+bool zMapDataSourceDestroy( ZMapDataSource *p_data_source )
 {
-  gboolean result = FALSE ;
-  zMapReturnValIfFail(p_data_source && *p_data_source , result ) ;
-  ZMapDataSource data_source = *p_data_source ;
+  bool result = false ;
 
-  if (data_source->type == ZMapDataSourceType::GIO)
+  if (p_data_source && *p_data_source)
     {
-      GIOStatus gio_status = G_IO_STATUS_NORMAL ;
-      GError *err = NULL ;
-      ZMapDataSourceGIO file = (ZMapDataSourceGIO) data_source ;
-      gio_status = g_io_channel_shutdown( file->io_channel , FALSE, &err) ;
-      if (gio_status != G_IO_STATUS_ERROR && gio_status != G_IO_STATUS_AGAIN)
-        {
-          g_io_channel_unref( file->io_channel ) ;
-          file->io_channel = NULL ;
-          result = TRUE ;
-          g_free(file) ;
-        }
-      else
-        {
-          zMapLogCritical("Could not close GIOChannel in zMapDataSourceDestroy(), %s", "") ;
-        }
-    }
-#ifdef USE_HTSLIB
-  else if (data_source->type == ZMapDataSourceType::HTS)
-    {
-      ZMapDataSourceHTSFile file = (ZMapDataSourceHTSFile) data_source ;
-      if (file)
-        {
-          if (file->hts_file)
-            hts_close(file->hts_file) ;
-          if (file->hts_rec)
-            bam_destroy1(file->hts_rec) ;
-          if (file->hts_hdr)
-            bam_hdr_destroy(file->hts_hdr) ;
-          if (file->sequence)
-            g_free(file->sequence) ;
-          if (file->source)
-            g_free(file->source) ;
-          if (file->so_type)
-            g_free(file->so_type) ;
-          g_free(file) ;
-          result = TRUE ;
-        }
-    }
-#endif
-
-  /*
-   * If we suceeded in closing the stored
-   * concrete file type then make sure that the
-   * caller's pointer is set to NULL.
-   */
-  if (result)
-    {
+      delete *p_data_source ;
       *p_data_source = NULL ;
+      result = true ;
     }
 
   return result ;
 }
+
+ZMapDataSourceGIOStruct::~ZMapDataSourceGIOStruct()
+{
+  GIOStatus gio_status = G_IO_STATUS_NORMAL ;
+  GError *err = NULL ;
+
+  gio_status = g_io_channel_shutdown( io_channel , FALSE, &err) ;
+  
+  if (gio_status != G_IO_STATUS_ERROR && gio_status != G_IO_STATUS_AGAIN)
+    {
+      g_io_channel_unref( io_channel ) ;
+      io_channel = NULL ;
+    }
+  else
+    {
+      zMapLogCritical("Could not close GIOChannel in zMapDataSourceDestroy(), %s", "") ;
+    }
+}
+
+ZMapDataSourceBEDStruct::~ZMapDataSourceBEDStruct()
+{
+  if (bed_features_)
+    bedFreeList(&bed_features_) ;
+}
+
+ZMapDataSourceBIGBEDStruct::~ZMapDataSourceBIGBEDStruct()
+{
+}
+
+ZMapDataSourceBIGWIGStruct::~ZMapDataSourceBIGWIGStruct()
+{
+}
+
+
+#ifdef USE_HTSLIB
+ZMapDataSourceHTSFileStruct::~ZMapDataSourceHTSFileStruct()
+{
+  if (hts_file)
+    hts_close(hts_file) ;
+  if (hts_rec)
+    bam_destroy1(hts_rec) ;
+  if (hts_hdr)
+    bam_hdr_destroy(hts_hdr) ;
+  if (sequence)
+    g_free(sequence) ;
+  if (source)
+    g_free(source) ;
+  if (so_type)
+    g_free(so_type) ;
+}
+#endif
+
 
 /*
  * Return the type of the object
