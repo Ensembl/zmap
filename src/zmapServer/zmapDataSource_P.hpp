@@ -49,50 +49,65 @@
 #endif
 
 
+/*
+ * General source type
+ */
+class ZMapDataSourceStruct
+{
+public:
+  ZMapDataSourceType type ;
+} ;
 
 /*
  *  Full declarations of concrete types to represent the GIO channel and
  *  HTS file data sources.
  */
-typedef struct ZMapDataSourceGIOStruct_
-  {
-    ZMapDataSourceType type ;
-    GIOChannel *io_channel ;
-  } ZMapDataSourceGIOStruct , *ZMapDataSourceGIO  ;
+class ZMapDataSourceGIOStruct : public ZMapDataSourceStruct
+{
+public:
+  GIOChannel *io_channel ;
+} ;
 
-typedef struct ZMapDataSourceBEDStruct_
-  {
-    ZMapDataSourceType type ;
-  } ZMapDataSourceBEDStruct , *ZMapDataSourceBED  ;
+class ZMapDataSourceBEDStruct : public ZMapDataSourceStruct
+{
+public:
+} ;
 
-typedef struct ZMapDataSourceBIGBEDStruct_
-  {
-    ZMapDataSourceType type ;
-  } ZMapDataSourceBIGBEDStruct , *ZMapDataSourceBIGBED  ;
+class ZMapDataSourceBIGBEDStruct : public ZMapDataSourceStruct
+{
+public:
+} ;
 
-typedef struct ZMapDataSourceBIGWIGStruct_
-  {
-    ZMapDataSourceType type ;
-  } ZMapDataSourceBIGWIGStruct , *ZMapDataSourceBIGWIG  ;
+class ZMapDataSourceBIGWIGStruct : public ZMapDataSourceStruct
+{
+public:
+} ;
+
+typedef ZMapDataSourceGIOStruct *ZMapDataSourceGIO ;
+typedef ZMapDataSourceBEDStruct *ZMapDataSourceBED ;
+typedef ZMapDataSourceBIGBEDStruct *ZMapDataSourceBIGBED ;
+typedef ZMapDataSourceBIGWIGStruct *ZMapDataSourceBIGWIG ;
 
 
 #ifdef USE_HTSLIB
 
-typedef struct ZMapDataSourceHTSFileStruct_
-  {
-    ZMapDataSourceType type ;
-    htsFile *hts_file ;
-    /* bam header and record object */
-    bam_hdr_t *hts_hdr ;
-    bam1_t *hts_rec ;
+class ZMapDataSourceHTSFileStruct : public ZMapDataSourceStruct
+{
+public:
+  htsFile *hts_file ;
+  /* bam header and record object */
+  bam_hdr_t *hts_hdr ;
+  bam1_t *hts_rec ;
 
-    /*
-     * Data that we need to store
-     */
-    char * sequence,
-         * source,
-         * so_type ;
-  } ZMapDataSourceHTSFileStruct , *ZMapDataSourceHTSFile;
+  /*
+   * Data that we need to store
+   */
+  char * sequence,
+    * source,
+    * so_type ;
+} ;
+
+typedef ZMapDataSourceHTSFileStruct *ZMapDataSourceHTSFile ;
 
 #endif
 

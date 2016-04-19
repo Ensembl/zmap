@@ -552,6 +552,11 @@ gboolean zMapDataSourceGetGFFVersion(ZMapDataSource const data_source, int * con
       result = TRUE ;
     }
 #endif
+  else
+    {
+      *p_out_val = ZMAPGFF_VERSION_3 ;
+      result = TRUE ;
+    }
 
   return result ;
 }

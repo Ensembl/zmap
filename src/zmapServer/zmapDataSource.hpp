@@ -35,18 +35,14 @@
 /*
  * Forward declaration of general source type.
  */
-typedef struct ZMapDataSourceStruct_ *ZMapDataSource ;
+class ZMapDataSourceStruct ;
+typedef ZMapDataSourceStruct *ZMapDataSource ;
 
 /*
  * Enumeration to represent different source types.
  */
 enum class ZMapDataSourceType {GIO, HTS, BED, BIGBED, BIGWIG, UNK} ;
 
-
-typedef struct ZMapDataSourceStruct_
-  {
-    ZMapDataSourceType type ;
-  } ZMapDataSourceStruct ;
 
 
 
