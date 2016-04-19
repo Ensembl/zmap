@@ -60,6 +60,21 @@ typedef struct ZMapDataSourceGIOStruct_
     GIOChannel *io_channel ;
   } ZMapDataSourceGIOStruct , *ZMapDataSourceGIO  ;
 
+typedef struct ZMapDataSourceBEDStruct_
+  {
+    ZMapDataSourceType type ;
+  } ZMapDataSourceBEDStruct , *ZMapDataSourceBED  ;
+
+typedef struct ZMapDataSourceBIGBEDStruct_
+  {
+    ZMapDataSourceType type ;
+  } ZMapDataSourceBIGBEDStruct , *ZMapDataSourceBIGBED  ;
+
+typedef struct ZMapDataSourceBIGWIGStruct_
+  {
+    ZMapDataSourceType type ;
+  } ZMapDataSourceBIGWIGStruct , *ZMapDataSourceBIGWIG  ;
+
 
 #ifdef USE_HTSLIB
 

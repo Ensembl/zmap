@@ -40,7 +40,7 @@ typedef struct ZMapDataSourceStruct_ *ZMapDataSource ;
 /*
  * Enumeration to represent different source types.
  */
-enum class ZMapDataSourceType {GIO, HTS, UNK} ;
+enum class ZMapDataSourceType {GIO, HTS, BED, BIGBED, BIGWIG, UNK} ;
 
 
 typedef struct ZMapDataSourceStruct_
@@ -54,7 +54,7 @@ typedef struct ZMapDataSourceStruct_
 /*
  * The rationale for this is that previously we were reading GFF data
  * only, always through a GIOChannel. Thus the abstraction of ZMapDataSource,
- * which has two types
+ * which has several types
  *
  *            ZMapDataSourceGIO       GIOChannel, synchronous OR asynchronous
  *            ZMapDataSourceHTS       HTS file, synchronous only

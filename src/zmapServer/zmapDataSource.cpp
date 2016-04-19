@@ -116,6 +116,36 @@ ZMapDataSource zMapDataSourceCreate(const char * const file_name, GError **error
             }
         }
     }
+  else if (!error && source_type == ZMapDataSourceType::BED)
+    {
+      ZMapDataSourceBED file = NULL ;
+      file = (ZMapDataSourceBED) g_new0(ZMapDataSourceBEDStruct, 1) ;
+      if (file != NULL)
+        {
+          file->type = ZMapDataSourceType::BED ;
+          data_source = (ZMapDataSource) file ;
+        }
+    }
+  else if (!error && source_type == ZMapDataSourceType::BIGBED)
+    {
+      ZMapDataSourceBIGBED file = NULL ;
+      file = (ZMapDataSourceBIGBED) g_new0(ZMapDataSourceBIGBEDStruct, 1) ;
+      if (file != NULL)
+        {
+          file->type = ZMapDataSourceType::BIGBED ;
+          data_source = (ZMapDataSource) file ;
+        }
+    }
+  else if (!error && source_type == ZMapDataSourceType::BIGWIG)
+    {
+      ZMapDataSourceBIGWIG file = NULL ;
+      file = (ZMapDataSourceBIGWIG) g_new0(ZMapDataSourceBIGWIGStruct, 1) ;
+      if (file != NULL)
+        {
+          file->type = ZMapDataSourceType::BIGWIG ;
+          data_source = (ZMapDataSource) file ;
+        }
+    }
 #ifdef USE_HTSLIB
   else if (!error && source_type == ZMapDataSourceType::HTS)
     {
@@ -531,6 +561,9 @@ gboolean zMapDataSourceGetGFFVersion(ZMapDataSource const data_source, int * con
  * (ignored) for the extension to determine type:
  *
  *       *.gff                            ZMapDataSourceType::GIO
+ *       *.bed                            ZMapDataSourceType::BED
+ *       *.[bb,bigBed]                    ZMapDataSourceType::BIGBED
+ *       *.[bw,bigWig]                    ZMapDataSourceType::BIGWIG
  *       *.[sam,bam,cram]                 ZMapDataSourceType::HTS
  *       *.<everything_else>              ZMapDataSourceType::UNK
  */
@@ -538,11 +571,16 @@ ZMapDataSourceType zMapDataSourceTypeFromFilename(const char * const file_name, 
 {
   static const map<string, ZMapDataSourceType> file_extensions = 
     {
-       {"gff",  ZMapDataSourceType::GIO}
+      {"gff",     ZMapDataSourceType::GIO}
+      ,{"bed",    ZMapDataSourceType::BED}
+      ,{"bb",     ZMapDataSourceType::BIGBED}
+      ,{"bigBed", ZMapDataSourceType::BIGBED}
+      ,{"bw",     ZMapDataSourceType::BIGWIG}
+      ,{"bigWig", ZMapDataSourceType::BIGWIG}
 #ifdef USE_HTSLIB
-      ,{"sam",  ZMapDataSourceType::HTS}
-      ,{"bam",  ZMapDataSourceType::HTS}
-      ,{"cram", ZMapDataSourceType::HTS}
+      ,{"sam",    ZMapDataSourceType::HTS}
+      ,{"bam",    ZMapDataSourceType::HTS}
+      ,{"cram",   ZMapDataSourceType::HTS}
 #endif
     };
 
