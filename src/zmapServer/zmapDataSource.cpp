@@ -51,6 +51,7 @@ extern "C" {
 
 #include <blatSrc/basicBed.h>
 #include <blatSrc/bigBed.h>
+#include <blatSrc/bigWig.h>
 
 #ifdef __cplusplus
 }
@@ -231,25 +232,30 @@ ZMapDataSourceBEDStruct::ZMapDataSourceBEDStruct(const GQuark source_name,
 ZMapDataSourceBIGBEDStruct::ZMapDataSourceBIGBEDStruct(const GQuark source_name, 
                                                        const char *file_name,
                                                        const char *open_mode,
-                                                       const char *sequence)
-  : ZMapDataSourceStruct(source_name, sequence)
+                                                       const char *sequence,
+                                                       const int start,
+                                                       const int end)
+  : ZMapDataSourceStruct(source_name, sequence),
+    start_(start),
+    end_(end)
 {
   type = ZMapDataSourceType::BIGBED ;
 
-  char *file_name_copy = g_strdup(file_name) ; // to avoid casting away const
-
   // Open the file
+  char *file_name_copy = g_strdup(file_name) ; // to avoid casting away const
   bbi_file_ = bigBedFileOpen(file_name_copy);
-
-  // Clean up
   g_free(file_name_copy) ;
 }
 
 ZMapDataSourceBIGWIGStruct::ZMapDataSourceBIGWIGStruct(const GQuark source_name, 
                                                        const char *file_name,
                                                        const char *open_mode,
-                                                       const char *sequence)
-  : ZMapDataSourceStruct(source_name, sequence)
+                                                       const char *sequence,
+                                                       const int start,
+                                                       const int end)
+  : ZMapDataSourceStruct(source_name, sequence),
+    start_(start),
+    end_(end)
 {
   type = ZMapDataSourceType::BIGWIG ;
   g_set_error(&error_, g_quark_from_string("ZMap"), 99, "Failed to open file: bigWig not implemented yet") ;
@@ -597,6 +603,45 @@ bool ZMapDataSourceBIGBEDStruct::readLine(GString * const str)
 {
   bool result = false ;
 
+  // Get the next feature in the list (or the first one if we haven't started yet)
+  if (cur_interval_)
+    {
+      cur_interval_ = cur_interval_->next ;
+    }
+  else
+    {
+      // First line. Initialise the query. 
+      lm_ = lmInit(0); // Memory pool to hold returned list
+      list_ = bigBedIntervalQuery(bbi_file_, sequence_, start_, end_, 0, lm_);
+
+      cur_interval_ = list_ ;
+    }
+
+  if (cur_interval_)
+    {
+      // Create a gff line for this feature
+//      createGFFLine(str,
+//                    cur_interval_->chrom,
+//                    g_quark_to_string(source_name_),
+//                    ZMAP_BED_SO_TERM,
+//                    cur_interval_->start,
+//                    cur_interval_->end,
+//                    cur_interval_->score,
+//                    cur_interval_->strand[0],
+//                    cur_interval_->name,
+//                    true,
+//                    1,
+//                    cur_interval_->end - cur_interval_->start + 1) ;
+
+      result = true ;
+    }
+  else
+    {
+      // Got to the end of the list, so clean up the lm (typically do this 
+      // after each query)
+      lmCleanup(&lm_);
+    }
+
   return result ;
 }
 
@@ -757,6 +802,8 @@ bool ZMapDataSourceHTSFileStruct::readLine(GString * const pStr )
 ZMapDataSource zMapDataSourceCreate(const GQuark source_name, 
                                     const char * const file_name, 
                                     const char *sequence,
+                                    const int start,
+                                    const int end,
                                     GError **error_out)
 {
   static const char * open_mode = "r" ;
@@ -778,10 +825,10 @@ ZMapDataSource zMapDataSourceCreate(const GQuark source_name,
           data_source = new ZMapDataSourceBEDStruct(source_name, file_name, open_mode, sequence) ;
           break ;
         case ZMapDataSourceType::BIGBED:
-          data_source = new ZMapDataSourceBIGBEDStruct(source_name, file_name, open_mode, sequence) ;
+          data_source = new ZMapDataSourceBIGBEDStruct(source_name, file_name, open_mode, sequence, start, end) ;
           break ;
         case ZMapDataSourceType::BIGWIG:
-          data_source = new ZMapDataSourceBIGWIGStruct(source_name, file_name, open_mode, sequence) ;
+          data_source = new ZMapDataSourceBIGWIGStruct(source_name, file_name, open_mode, sequence, start, end) ;
           break ;
 #ifdef USE_HTSLIB
         case ZMapDataSourceType::HTS:

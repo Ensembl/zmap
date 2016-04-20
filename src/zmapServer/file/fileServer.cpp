@@ -333,6 +333,8 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
   server->data_source = zMapDataSourceCreate(server->source_name, 
                                              server->path, 
                                              (server->sequence_map ? server->sequence_map->sequence : NULL), 
+                                             server->zmap_start,
+                                             server->zmap_end,
                                              &error) ;
 
   if (server->data_source != NULL )

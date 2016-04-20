@@ -112,7 +112,8 @@ public:
 class ZMapDataSourceBIGBEDStruct : public ZMapDataSourceStruct
 {
 public:
-  ZMapDataSourceBIGBEDStruct(const GQuark source_name, const char *file_name, const char *open_mode, const char *sequence) ;
+  ZMapDataSourceBIGBEDStruct(const GQuark source_name, const char *file_name, const char *open_mode, 
+                             const char *sequence, const int start, const int end) ;
   ~ZMapDataSourceBIGBEDStruct() ;
 
   bool isOpen() ;
@@ -120,18 +121,32 @@ public:
   bool readLine(GString * const pStr) ;
 
 private:
+  int start_ ; // sequence region start
+  int end_ ;   // sequence region end
   struct bbiFile *bbi_file_ ;
+  struct lm *lm_; // Memory pool to hold returned list from bbi file
+  struct bigBedInterval *list_ ;
+  struct bigBedInterval *cur_interval_ ; // current item from list_
 } ;
 
 class ZMapDataSourceBIGWIGStruct : public ZMapDataSourceStruct
 {
 public:
-  ZMapDataSourceBIGWIGStruct(const GQuark source_name, const char *file_name, const char *open_mode, const char *sequence) ;
+  ZMapDataSourceBIGWIGStruct(const GQuark source_name, const char *file_name, const char *open_mode, 
+                             const char *sequence, const int start, const int end) ;
   ~ZMapDataSourceBIGWIGStruct() ;
 
   bool isOpen() ;
   bool checkHeader() ;
   bool readLine(GString * const pStr) ;
+
+private:
+  int start_ ; // sequence region start
+  int end_ ;   // sequence region end
+  struct bbiFile *bbi_file_ ;
+  struct lm *lm_; // Memory pool to hold returned list from bbi file
+  struct bigBedInterval *list_ ;
+  struct bigBedInterval *cur_interval_ ; // current item from list_
 } ;
 
 
