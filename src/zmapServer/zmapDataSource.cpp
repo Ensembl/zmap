@@ -449,6 +449,86 @@ bool ZMapDataSourceGIOStruct::gffVersion(int * const p_out_val)
 }
 
 
+bool ZMapDataSourceGIOStruct::checkHeader()
+{
+  // Shouldn't be called - this is currently handled in getFileHeader_GIO instead
+  zMapWarnIfReached() ;
+  return false ;
+}
+
+bool ZMapDataSourceBEDStruct::checkHeader()
+{
+  // We can't easily check in advance what sequences are in the file so just allow it and filter
+  // when we come to parse the individual lines.
+  return true ;
+}
+
+/* Read the header info from the bigBed file and return true if it contains the required sequence
+ * name */
+bool ZMapDataSourceBIGBEDStruct::checkHeader()
+{
+  bool result = false ;
+  zMapReturnValIfFail(isOpen(), result) ;
+
+  // Get the list of sequences in the file and check whether our required sequence exists
+  struct bbiChromInfo *chromList = bbiChromList(bbi_file_);
+
+  for (bbiChromInfo *chrom = chromList; chrom != NULL; chrom = chrom->next)
+    {
+      if (strcmp(chrom->name, sequence_) == 0)
+        {
+          result = true ;
+          break ;
+        }
+    }
+
+  return result ;
+}
+
+/* Read the header info from the bigBed file and return true if it contains the required sequence
+ * name */
+bool ZMapDataSourceBIGWIGStruct::checkHeader()
+{
+  bool result = false ;
+  zMapReturnValIfFail(isOpen(), result) ;
+
+  return result ;
+}
+
+
+
+#ifdef USE_HTSLIB
+/* Read the HTS file header and look for the sequence name data.
+ * This assumes that we have already opened the file and called
+ * hts_hdr = sam_hdr_read() ;
+ * Returns TRUE if reference sequence name found in BAM file header.
+ */
+bool ZMapDataSourceHTSFileStruct::checkHeader()
+{
+  bool result = false ;
+  zMapReturnValIfFail(isOpen(), result) ;
+
+  // Read the HTS header and look a @SQ:<name> tag that matches the sequence
+  // we are looking for.
+  if (hts_hdr && hts_hdr->n_targets >= 1)
+    {
+      int i ;
+
+      for (i = 0 ; i < hts_hdr->n_targets ; i++)
+        {
+          if (g_ascii_strcasecmp(sequence_, hts_hdr->target_name[i]) == 0)
+            {
+              result = true ;
+              break ;
+            }
+        }
+    }
+
+  return result ;
+}
+#endif
+
+
 /*
  * Read a line from the GIO channel and remove the terminating
  * newline if present. That is,
@@ -895,82 +975,3 @@ ZMapDataSourceType zMapDataSourceTypeFromFilename(const char * const file_name, 
   return type ;
 }
 
-
-bool ZMapDataSourceGIOStruct::checkHeader()
-{
-  // Shouldn't be called - this is currently handled in getFileHeader_GIO instead
-  zMapWarnIfReached() ;
-  return false ;
-}
-
-bool ZMapDataSourceBEDStruct::checkHeader()
-{
-  // We can't easily check in advance what sequences are in the file so just allow it and filter
-  // when we come to parse the individual lines.
-  return true ;
-}
-
-/* Read the header info from the bigBed file and return true if it contains the required sequence
- * name */
-bool ZMapDataSourceBIGBEDStruct::checkHeader()
-{
-  bool result = false ;
-  zMapReturnValIfFail(isOpen(), result) ;
-
-  // Get the list of sequences in the file and check whether our required sequence exists
-  struct bbiChromInfo *chromList = bbiChromList(bbi_file_);
-
-  for (bbiChromInfo *chrom = chromList; chrom != NULL; chrom = chrom->next)
-    {
-      if (strcmp(chrom->name, sequence_) == 0)
-        {
-          result = true ;
-          break ;
-        }
-    }
-
-  return result ;
-}
-
-/* Read the header info from the bigBed file and return true if it contains the required sequence
- * name */
-bool ZMapDataSourceBIGWIGStruct::checkHeader()
-{
-  bool result = false ;
-  zMapReturnValIfFail(isOpen(), result) ;
-
-  return result ;
-}
-
-
-
-#ifdef USE_HTSLIB
-/* Read the HTS file header and look for the sequence name data.
- * This assumes that we have already opened the file and called
- * hts_hdr = sam_hdr_read() ;
- * Returns TRUE if reference sequence name found in BAM file header.
- */
-bool ZMapDataSourceHTSFileStruct::checkHeader()
-{
-  bool result = false ;
-  zMapReturnValIfFail(isOpen(), result) ;
-
-  // Read the HTS header and look a @SQ:<name> tag that matches the sequence
-  // we are looking for.
-  if (hts_hdr && hts_hdr->n_targets >= 1)
-    {
-      int i ;
-
-      for (i = 0 ; i < hts_hdr->n_targets ; i++)
-        {
-          if (g_ascii_strcasecmp(sequence_, hts_hdr->target_name[i]) == 0)
-            {
-              result = true ;
-              break ;
-            }
-        }
-    }
-
-  return result ;
-}
-#endif
