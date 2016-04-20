@@ -103,12 +103,6 @@ static ZMapServerResponseType destroyConnection(void *server) ;
  */
 static ZMapServerResponseType fileGetHeader(FileServer server);
 static ZMapServerResponseType fileGetHeader_GIO(FileServer server) ;
-static ZMapServerResponseType fileGetHeader_BED(FileServer server) ;
-static ZMapServerResponseType fileGetHeader_BIGBED(FileServer server) ;
-static ZMapServerResponseType fileGetHeader_BIGWIG(FileServer server) ;
-#ifdef USE_HTSLIB
-static ZMapServerResponseType fileGetHeader_HTS(FileServer server) ;
-#endif
 static ZMapServerResponseType fileGetSequence(FileServer server);
 
 static void getConfiguration(FileServer server) ;
@@ -336,7 +330,11 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
   /*
    * Create data source object (file or GIOChannel)
    */
-  server->data_source = zMapDataSourceCreate(server->source_name, server->path, &error) ;
+  server->data_source = zMapDataSourceCreate(server->source_name, 
+                                             server->path, 
+                                             (server->sequence_map ? server->sequence_map->sequence : NULL), 
+                                             &error) ;
+
   if (server->data_source != NULL )
     status = TRUE ;
 
@@ -901,86 +899,6 @@ static ZMapServerResponseType fileGetHeader_GIO(FileServer server)
 }
 
 
-/* Header for a BED/BIGBED/BIGWIG file. The server calling code expects the server->buffer_line
- * to contain a non-zero length string in order for it to decide that the source
- * contains some data. In order to satisfy that, we have to give it a fake header
- * line, as shown below.
- */
-static ZMapServerResponseType fileGetHeader_BED(FileServer server)
-{
-  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
-  zMapReturnValIfFail(server->data_source->type == ZMapDataSourceType::BED, result) ;
-
-  g_string_insert(server->buffer_line, 0, "##source-version ZMap-BED-to-GFF-conversion") ;
-
-  result = ZMAP_SERVERRESPONSE_OK ;
-  return result ;
-  
-}
-
-static ZMapServerResponseType fileGetHeader_BIGBED(FileServer server)
-{
-  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
-  zMapReturnValIfFail(server->data_source->type == ZMapDataSourceType::BIGBED, result) ;
-
-  g_string_insert(server->buffer_line, 0, "##source-version ZMap-BIGBED-to-GFF-conversion") ;
-
-  result = ZMAP_SERVERRESPONSE_OK ;
-  return result ;
-  
-}
-
-static ZMapServerResponseType fileGetHeader_BIGWIG(FileServer server)
-{
-  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
-  zMapReturnValIfFail(server->data_source->type == ZMapDataSourceType::BIGWIG, result) ;
-
-  g_string_insert(server->buffer_line, 0, "##source-version ZMap-BIGWIG-to-GFF-conversion") ;
-
-  result = ZMAP_SERVERRESPONSE_OK ;
-  return result ;
-  
-}
-
-#ifdef USE_HTSLIB
-/*
- * Header for a HTS file. The server calling code expects the server->buffer_line
- * to contain a non-zero length string in order for it to decide that the source
- * contains some data. In order to satisfy that, we have to give it a fake header
- * line, as shown below.
- */
-static ZMapServerResponseType fileGetHeader_HTS(FileServer server)
-{
-  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
-  zMapReturnValIfFail(server->data_source->type == ZMapDataSourceType::HTS, result) ;
-
-  /*
-   * Attempt to read HTS header and then...
-   */
-  if (zMapDataSourceReadHTSHeader(server->data_source, server->sequence_map->sequence))
-    {
-      if (((ZMapDataSourceHTSFile) server->data_source)->sequence)
-        {
-          /*
-           *  (i) Put in a fake header line to make it look to ZMap like something
-           *      has really been read from a GFF stream.
-           * (ii) Then what? Possibly check that the sequence is the same as what's
-           *      held by the server, and maybe set up a flag somewhere to require
-           *      remapping if it is not?
-           */
-          g_string_erase(server->buffer_line, 0, -1) ;
-          g_string_insert(server->buffer_line, 0, "##source-version ZMap-HTS-to-GFF-conversion") ;
-          result = ZMAP_SERVERRESPONSE_OK ;
-        }
-
-    }
-
-  return result ;
-}
-#endif
-
-
-
 /*
  * read the header data and exit when we get DNA or features or anything else.
  */
@@ -1003,24 +921,19 @@ static ZMapServerResponseType fileGetHeader(FileServer server)
     {
       result = fileGetHeader_GIO(server) ;
     }
-  else if (data_source_type == ZMapDataSourceType::BED)
+  else if (server->data_source && server->data_source->checkHeader())
     {
-      result = fileGetHeader_BED(server) ;
+      /*
+       *  (i) Put in a fake header line to make it look to ZMap like something
+       *      has really been read from a GFF stream.
+       * (ii) Then what? Possibly check that the sequence is the same as what's
+       *      held by the server, and maybe set up a flag somewhere to require
+       *      remapping if it is not?
+       */
+      g_string_erase(server->buffer_line, 0, -1) ;
+      g_string_insert(server->buffer_line, 0, "##source-version ZMap-GFF-conversion") ;
+      result = ZMAP_SERVERRESPONSE_OK ;
     }
-  else if (data_source_type == ZMapDataSourceType::BIGBED)
-    {
-      result = fileGetHeader_BIGBED(server) ;
-    }
-  else if (data_source_type == ZMapDataSourceType::BIGWIG)
-    {
-      result = fileGetHeader_BIGWIG(server) ;
-    }
-#ifdef USE_HTSLIB
-  else if (data_source_type ==   ZMapDataSourceType::HTS)
-    {
-      result = fileGetHeader_HTS(server) ;
-    }
-#endif
 
   return result ;
 }

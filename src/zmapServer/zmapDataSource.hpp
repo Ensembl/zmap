@@ -55,7 +55,7 @@ enum class ZMapDataSourceType {GIO, HTS, BED, BIGBED, BIGWIG, UNK} ;
  *            ZMapDataSourceGIO       GIOChannel, synchronous OR asynchronous
  *            ZMapDataSourceHTS       HTS file, synchronous only
  */
-ZMapDataSource zMapDataSourceCreate(const GQuark source_name, const char * const file_name, GError **error_out = NULL) ;
+ZMapDataSource zMapDataSourceCreate(const GQuark source_name, const char * const file_name, const char *sequence, GError **error_out = NULL) ;
 bool zMapDataSourceIsOpen(ZMapDataSource const source) ;
 bool zMapDataSourceDestroy( ZMapDataSource *source) ;
 ZMapDataSourceType zMapDataSourceGetType(ZMapDataSource source ) ;
