@@ -59,6 +59,9 @@ extern "C" {
 using namespace std ;
 
 
+namespace // unnamed namespace
+{
+
 /*
  * The SO terms that contain the string "read" are as follows:
  *
@@ -92,296 +95,6 @@ static const char * const ZMAP_BAM_SOURCE   = "zmap_bam2gff_conversion" ;
 static const char * const ZMAP_BED_SOURCE   = "zmap_bed2gff_conversion" ;
 #define ZMAP_CIGARSTRING_MAXLENGTH 2048
 
-/*
- * Create a ZMapDataSource object
- */
-ZMapDataSource zMapDataSourceCreate(const char * const file_name, GError **error_out)
-{
-  static const char * open_mode = "r" ;
-  ZMapDataSource data_source = NULL ;
-  ZMapDataSourceType source_type = ZMapDataSourceType::UNK ;
-  GError *error = NULL ;
-  zMapReturnValIfFail(file_name && *file_name, data_source ) ;
-
-  source_type = zMapDataSourceTypeFromFilename(file_name, &error) ;
-
-  if (!error && source_type == ZMapDataSourceType::GIO)
-    {
-      ZMapDataSourceGIO file = NULL ;
-      file = new ZMapDataSourceGIOStruct ;
-      if (file != NULL)
-        {
-          file->type = ZMapDataSourceType::GIO ;
-          file->io_channel = g_io_channel_new_file(file_name, open_mode, &error) ;
-
-          if (file->io_channel != NULL && !error)
-            data_source = (ZMapDataSource) file ;
-          else
-            delete file ;
-        }
-    }
-  else if (!error && source_type == ZMapDataSourceType::BED)
-    {
-      ZMapDataSourceBED file = NULL ;
-      file = new ZMapDataSourceBEDStruct ;
-      if (file != NULL)
-        {
-          file->type = ZMapDataSourceType::BED ;
-          
-          char *file_name_copy = g_strdup(file_name) ; // to avoid casting away const
-          file->bed_features_ = bedLoadAll(file_name_copy) ;
-          file->cur_feature_ = NULL ;
-          g_free(file_name_copy) ;
-
-          if (file->bed_features_)
-            data_source = (ZMapDataSource) file ;
-        }
-    }
-  else if (!error && source_type == ZMapDataSourceType::BIGBED)
-    {
-      ZMapDataSourceBIGBED file = NULL ;
-      file = new ZMapDataSourceBIGBEDStruct ;
-
-      if (file != NULL)
-        {
-          file->type = ZMapDataSourceType::BIGBED ;
-          data_source = (ZMapDataSource) file ;
-        }
-    }
-  else if (!error && source_type == ZMapDataSourceType::BIGWIG)
-    {
-      ZMapDataSourceBIGWIG file = NULL ;
-      file = new ZMapDataSourceBIGWIGStruct ;
-      if (file != NULL)
-        {
-          file->type = ZMapDataSourceType::BIGWIG ;
-          data_source = (ZMapDataSource) file ;
-        }
-    }
-#ifdef USE_HTSLIB
-  else if (!error && source_type == ZMapDataSourceType::HTS)
-    {
-      ZMapDataSourceHTSFile file = NULL ;
-      file = new ZMapDataSourceHTSFileStruct ;
-      if (file != NULL)
-        {
-          file->type = ZMapDataSourceType::HTS ;
-          file->hts_file = hts_open(file_name, open_mode);
-
-          if (file->hts_file)
-            file->hts_hdr = sam_hdr_read(file->hts_file) ;
-
-          file->hts_rec = bam_init1() ;
-          if (file->hts_file && file->hts_hdr && file->hts_rec)
-            {
-              file->sequence = NULL ;
-              file->source = g_strdup(ZMAP_BAM_SOURCE) ;
-              file->so_type = g_strdup(ZMAP_BAM_SO_TERM) ;
-              data_source = (ZMapDataSource) file ;
-            }
-          else
-            {
-              delete file ;
-              g_set_error(&error, g_quark_from_string("ZMap"), 99, "Failed to open file '%s'", file_name) ;
-            }
-        }
-    }
-#endif
-
-  if (error)
-    g_propagate_error(error_out, error) ;
-
-  return data_source ;
-}
-
-
-ZMapDataSource zMapDataSourceCreateFromGIO(GIOChannel * const io_channel)
-{
-  ZMapDataSource data_source = NULL ;
-  zMapReturnValIfFail(io_channel, data_source) ;
-
-  ZMapDataSourceGIO file = NULL ;
-  file = new ZMapDataSourceGIOStruct ;
-  if (file != NULL)
-    {
-      file->type = ZMapDataSourceType::GIO ;
-      file->io_channel = io_channel ;
-      if (file->io_channel != NULL)
-        {
-          data_source = (ZMapDataSource) file ;
-        }
-      else
-        {
-          delete file ;
-        }
-    }
-
-  return data_source ;
-}
-
-/*
- * Checks that the data source is open.
- */
-bool zMapDataSourceIsOpen(ZMapDataSource const source)
-{
-  gboolean result = false ;
-
-  if (source)
-    result = source->isOpen() ;
-
-  return result ;
-}
-
-bool ZMapDataSourceGIOStruct::isOpen()
-{
-  bool result = false ;
-
-  if (io_channel)
-    result = true ;
-
-  return result ;
-}
-
-bool ZMapDataSourceBEDStruct::isOpen()
-{
-  bool result = false ;
-  
-  if (bed_features_)
-    result = true ;
-
-  return result ;
-}
-
-bool ZMapDataSourceBIGBEDStruct::isOpen()
-{
-  bool result = false ;
-
-  return result ;
-}
-
-bool ZMapDataSourceBIGWIGStruct::isOpen()
-{
-  bool result = false ;
-
-  return result ;
-}
-
-#ifdef USE_HTSLIB
-bool ZMapDataSourceHTSFileStruct::isOpen()
-{
-  bool result = false ;
-
-  if (hts_file)
-    result = TRUE ;
-  
-  return result ;
-}
-#endif
-
-
-/*
- * Destroy the file object.
- */
-bool zMapDataSourceDestroy( ZMapDataSource *p_data_source )
-{
-  bool result = false ;
-
-  if (p_data_source && *p_data_source)
-    {
-      delete *p_data_source ;
-      *p_data_source = NULL ;
-      result = true ;
-    }
-
-  return result ;
-}
-
-ZMapDataSourceGIOStruct::~ZMapDataSourceGIOStruct()
-{
-  GIOStatus gio_status = G_IO_STATUS_NORMAL ;
-  GError *err = NULL ;
-
-  gio_status = g_io_channel_shutdown( io_channel , FALSE, &err) ;
-  
-  if (gio_status != G_IO_STATUS_ERROR && gio_status != G_IO_STATUS_AGAIN)
-    {
-      g_io_channel_unref( io_channel ) ;
-      io_channel = NULL ;
-    }
-  else
-    {
-      zMapLogCritical("Could not close GIOChannel in zMapDataSourceDestroy(), %s", "") ;
-    }
-}
-
-ZMapDataSourceBEDStruct::~ZMapDataSourceBEDStruct()
-{
-  if (bed_features_)
-    bedFreeList(&bed_features_) ;
-}
-
-ZMapDataSourceBIGBEDStruct::~ZMapDataSourceBIGBEDStruct()
-{
-}
-
-ZMapDataSourceBIGWIGStruct::~ZMapDataSourceBIGWIGStruct()
-{
-}
-
-
-#ifdef USE_HTSLIB
-ZMapDataSourceHTSFileStruct::~ZMapDataSourceHTSFileStruct()
-{
-  if (hts_file)
-    hts_close(hts_file) ;
-  if (hts_rec)
-    bam_destroy1(hts_rec) ;
-  if (hts_hdr)
-    bam_hdr_destroy(hts_hdr) ;
-  if (sequence)
-    g_free(sequence) ;
-  if (source)
-    g_free(source) ;
-  if (so_type)
-    g_free(so_type) ;
-}
-#endif
-
-
-/*
- * Return the type of the object
- */
-ZMapDataSourceType zMapDataSourceGetType(ZMapDataSource data_source )
-{
-  zMapReturnValIfFail(data_source, ZMapDataSourceType::UNK ) ;
-  return data_source->type ;
-}
-
-
-/*
- * Read a line from the GIO channel and remove the terminating
- * newline if present. That is,
- * "<string_data>\n" -> "<string_data>"
- * (It is still a NULL terminated c-string though.)
- */
-bool ZMapDataSourceGIOStruct::readLine(GString * const str)
-{
-  bool result = false ;
-  GError *pErr = NULL ;
-  gsize pos = 0 ;
-  GIOStatus cIOStatus = G_IO_STATUS_NORMAL;
-
-  cIOStatus = g_io_channel_read_line_string(io_channel, str, &pos, &pErr) ;
-  if (cIOStatus == G_IO_STATUS_NORMAL && !pErr )
-    {
-      result = true ;
-      str->str[pos] = '\0';
-    }
-
-  return result ;
-}
-
-
 static void createGFFLine(GString *pStr, 
                           const char *sequence,
                           const char *source,
@@ -393,8 +106,7 @@ static void createGFFLine(GString *pStr,
                           const char *pName,
                           const bool haveTarget = false,
                           const int iTargetStart = 0,
-                          const int iTargetEnd = 0
-                          )
+                          const int iTargetEnd = 0)
 {
   static const gssize string_start = 0 ;
   static const char *sFormatName = "Name=%s;",
@@ -472,6 +184,217 @@ static void createGFFLine(GString *pStr,
 }
 
 
+} // unnamed namespace
+
+
+/*
+ * Constructors
+ */
+
+ZMapDataSourceGIOStruct::ZMapDataSourceGIOStruct(const char *file_name,
+                                                 const char *open_mode)
+  : ZMapDataSourceStruct()
+{
+  type = ZMapDataSourceType::GIO ;
+  io_channel = g_io_channel_new_file(file_name, open_mode, &error_) ;
+}
+
+ZMapDataSourceBEDStruct::ZMapDataSourceBEDStruct(const char *file_name,
+                                                 const char *open_mode)
+  : ZMapDataSourceStruct(),
+    cur_feature_(NULL)
+{
+  type = ZMapDataSourceType::BED ;
+          
+  char *file_name_copy = g_strdup(file_name) ; // to avoid casting away const
+  bed_features_ = bedLoadAll(file_name_copy) ;
+  g_free(file_name_copy) ;
+}
+
+ZMapDataSourceBIGBEDStruct::ZMapDataSourceBIGBEDStruct(const char *file_name,
+                                                       const char *open_mode)
+  : ZMapDataSourceStruct()
+{
+  type = ZMapDataSourceType::BIGBED ;
+  g_set_error(&error_, g_quark_from_string("ZMap"), 99, "Failed to open file '%s': bigBed not implemented yet", file_name) ;
+}
+
+ZMapDataSourceBIGWIGStruct::ZMapDataSourceBIGWIGStruct(const char *file_name,
+                                                       const char *open_mode)
+  : ZMapDataSourceStruct()
+{
+  type = ZMapDataSourceType::BIGWIG ;
+  g_set_error(&error_, g_quark_from_string("ZMap"), 99, "Failed to open file '%s': bigWig not implemented yet", file_name) ;
+}
+
+#ifdef USE_HTSLIB
+ZMapDataSourceHTSFileStruct::ZMapDataSourceHTSFileStruct(const char *file_name, 
+                                                         const char *open_mode)
+  : ZMapDataSourceStruct(),
+    hts_file(NULL),
+    hts_hdr(NULL),
+    hts_rec(NULL),
+    sequence(NULL),
+    source(NULL),
+    so_type(NULL)
+{
+  type = ZMapDataSourceType::HTS ;
+
+  hts_file = hts_open(file_name, open_mode);
+
+  if (hts_file)
+    hts_hdr = sam_hdr_read(hts_file) ;
+
+  hts_rec = bam_init1() ;
+  if (hts_file && hts_hdr && hts_rec)
+    {
+      sequence = NULL ;
+      source = g_strdup(ZMAP_BAM_SOURCE) ;
+      so_type = g_strdup(ZMAP_BAM_SO_TERM) ;
+    }
+  else
+    {
+      g_set_error(&error_, g_quark_from_string("ZMap"), 99, "Failed to open file '%s'", file_name) ;
+    }
+}
+#endif
+
+/*
+ * Destructors
+ */
+
+ZMapDataSourceGIOStruct::~ZMapDataSourceGIOStruct()
+{
+  GIOStatus gio_status = G_IO_STATUS_NORMAL ;
+  GError *err = NULL ;
+
+  gio_status = g_io_channel_shutdown( io_channel , FALSE, &err) ;
+  
+  if (gio_status != G_IO_STATUS_ERROR && gio_status != G_IO_STATUS_AGAIN)
+    {
+      g_io_channel_unref( io_channel ) ;
+      io_channel = NULL ;
+    }
+  else
+    {
+      zMapLogCritical("Could not close GIOChannel in zMapDataSourceDestroy(), %s", "") ;
+    }
+}
+
+ZMapDataSourceBEDStruct::~ZMapDataSourceBEDStruct()
+{
+  if (bed_features_)
+    bedFreeList(&bed_features_) ;
+}
+
+ZMapDataSourceBIGBEDStruct::~ZMapDataSourceBIGBEDStruct()
+{
+}
+
+ZMapDataSourceBIGWIGStruct::~ZMapDataSourceBIGWIGStruct()
+{
+}
+
+
+#ifdef USE_HTSLIB
+ZMapDataSourceHTSFileStruct::~ZMapDataSourceHTSFileStruct()
+{
+  if (hts_file)
+    hts_close(hts_file) ;
+  if (hts_rec)
+    bam_destroy1(hts_rec) ;
+  if (hts_hdr)
+    bam_hdr_destroy(hts_hdr) ;
+  if (sequence)
+    g_free(sequence) ;
+  if (source)
+    g_free(source) ;
+  if (so_type)
+    g_free(so_type) ;
+}
+#endif
+
+
+/*
+ * Class member access/query functions
+ */
+
+GError* ZMapDataSourceStruct::error()
+{
+  return error_ ;
+}
+
+bool ZMapDataSourceGIOStruct::isOpen()
+{
+  bool result = false ;
+
+  if (io_channel)
+    result = true ;
+
+  return result ;
+}
+
+bool ZMapDataSourceBEDStruct::isOpen()
+{
+  bool result = false ;
+  
+  if (bed_features_)
+    result = true ;
+
+  return result ;
+}
+
+bool ZMapDataSourceBIGBEDStruct::isOpen()
+{
+  bool result = false ;
+
+  return result ;
+}
+
+bool ZMapDataSourceBIGWIGStruct::isOpen()
+{
+  bool result = false ;
+
+  return result ;
+}
+
+#ifdef USE_HTSLIB
+bool ZMapDataSourceHTSFileStruct::isOpen()
+{
+  bool result = false ;
+
+  if (hts_file)
+    result = true ;
+  
+  return result ;
+}
+#endif
+
+
+/*
+ * Read a line from the GIO channel and remove the terminating
+ * newline if present. That is,
+ * "<string_data>\n" -> "<string_data>"
+ * (It is still a NULL terminated c-string though.)
+ */
+bool ZMapDataSourceGIOStruct::readLine(GString * const str)
+{
+  bool result = false ;
+  GError *pErr = NULL ;
+  gsize pos = 0 ;
+  GIOStatus cIOStatus = G_IO_STATUS_NORMAL;
+
+  cIOStatus = g_io_channel_read_line_string(io_channel, str, &pos, &pErr) ;
+  if (cIOStatus == G_IO_STATUS_NORMAL && !pErr )
+    {
+      result = true ;
+      str->str[pos] = '\0';
+    }
+
+  return result ;
+}
+
+
 /*
  * Read a record from a BED file and turn it into GFFv3.
  */
@@ -487,25 +410,20 @@ bool ZMapDataSourceBEDStruct::readLine(GString * const str)
   else
     cur_feature_ = bed_features_ ;
 
-  if (cur_feature_)
-    {
-      // Create a gff line for this feature
-      createGFFLine(str,
-                    cur_feature_->chrom,
-                    ZMAP_BED_SOURCE,
-                    ZMAP_BED_SO_TERM,
-                    cur_feature_->chromStart,
-                    cur_feature_->chromEnd,
-                    cur_feature_->score,
-                    cur_feature_->strand[0],
-                    cur_feature_->name,
-                    false,
-                    0,
-                    0) ;
-
-      result = true ;
-    }
-
+  // Create a gff line for this feature
+  createGFFLine(str,
+                cur_feature_->chrom,
+                ZMAP_BED_SOURCE,
+                ZMAP_BED_SO_TERM,
+                cur_feature_->chromStart,
+                cur_feature_->chromEnd,
+                cur_feature_->score,
+                cur_feature_->strand[0],
+                cur_feature_->name,
+                false,
+                0,
+                0) ;
+  
   return result ;
 }
 
@@ -668,6 +586,98 @@ bool ZMapDataSourceHTSFileStruct::readLine(GString * const pStr )
   return result ;
 }
 #endif
+
+
+/*
+ * Create a ZMapDataSource object
+ */
+ZMapDataSource zMapDataSourceCreate(const char * const file_name, GError **error_out)
+{
+  static const char * open_mode = "r" ;
+  ZMapDataSource data_source = NULL ;
+  ZMapDataSourceType source_type = ZMapDataSourceType::UNK ;
+  GError *error = NULL ;
+  zMapReturnValIfFail(file_name && *file_name, data_source ) ;
+
+  source_type = zMapDataSourceTypeFromFilename(file_name, &error) ;
+
+  if (!error && source_type == ZMapDataSourceType::GIO)
+    {
+      data_source = new ZMapDataSourceGIOStruct(file_name, open_mode) ;
+    }
+  else if (!error && source_type == ZMapDataSourceType::BED)
+    {
+      data_source = new ZMapDataSourceBEDStruct(file_name, open_mode) ;
+    }
+  else if (!error && source_type == ZMapDataSourceType::BIGBED)
+    {
+      data_source = new ZMapDataSourceBIGBEDStruct(file_name, open_mode) ;
+    }
+  else if (!error && source_type == ZMapDataSourceType::BIGWIG)
+    {
+      data_source = new ZMapDataSourceBIGWIGStruct(file_name, open_mode) ;
+    }
+#ifdef USE_HTSLIB
+  else if (!error && source_type == ZMapDataSourceType::HTS)
+    {
+      data_source = new ZMapDataSourceHTSFileStruct(file_name, open_mode) ;
+    }
+#endif
+
+  if (!data_source->isOpen())
+    {
+      delete data_source ;
+      data_source = NULL ;
+    }
+
+  if (data_source->error())
+    g_propagate_error(error_out, error) ;
+
+  return data_source ;
+}
+
+
+/*
+ * Destroy the file object.
+ */
+bool zMapDataSourceDestroy( ZMapDataSource *p_data_source )
+{
+  bool result = false ;
+
+  if (p_data_source && *p_data_source)
+    {
+      delete *p_data_source ;
+      *p_data_source = NULL ;
+      result = true ;
+    }
+
+  return result ;
+}
+
+
+/*
+ * Checks that the data source is open.
+ */
+bool zMapDataSourceIsOpen(ZMapDataSource const source)
+{
+  gboolean result = false ;
+
+  if (source)
+    result = source->isOpen() ;
+
+  return result ;
+}
+
+
+/*
+ * Return the type of the object
+ */
+ZMapDataSourceType zMapDataSourceGetType(ZMapDataSource data_source )
+{
+  zMapReturnValIfFail(data_source, ZMapDataSourceType::UNK ) ;
+  return data_source->type ;
+}
+
 
 
 /*

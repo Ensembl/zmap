@@ -58,11 +58,16 @@ struct bed ;
 class ZMapDataSourceStruct
 {
 public:
+  ZMapDataSourceStruct() : type(ZMapDataSourceType::UNK), error_(NULL) {} ;
   virtual ~ZMapDataSourceStruct() {} ;
   virtual bool isOpen() = 0 ;
   virtual bool readLine(GString * const pStr) = 0 ;
+  GError* error() ;
 
   ZMapDataSourceType type ;
+
+protected:
+  GError *error_ ;
 } ;
 
 /*
@@ -72,6 +77,7 @@ public:
 class ZMapDataSourceGIOStruct : public ZMapDataSourceStruct
 {
 public:
+  ZMapDataSourceGIOStruct(const char *file_name, const char *open_mode) ;
   ~ZMapDataSourceGIOStruct() ;
   bool isOpen() ;
   bool readLine(GString * const pStr) ;
@@ -82,6 +88,7 @@ public:
 class ZMapDataSourceBEDStruct : public ZMapDataSourceStruct
 {
 public:
+  ZMapDataSourceBEDStruct(const char *file_name, const char *open_mode) ;
   ~ZMapDataSourceBEDStruct() ;
   bool isOpen() ;
   bool readLine(GString * const pStr) ;
@@ -94,6 +101,7 @@ public:
 class ZMapDataSourceBIGBEDStruct : public ZMapDataSourceStruct
 {
 public:
+  ZMapDataSourceBIGBEDStruct(const char *file_name, const char *open_mode) ;
   ~ZMapDataSourceBIGBEDStruct() ;
   bool isOpen() ;
   bool readLine(GString * const pStr) ;
@@ -102,15 +110,11 @@ public:
 class ZMapDataSourceBIGWIGStruct : public ZMapDataSourceStruct
 {
 public:
+  ZMapDataSourceBIGWIGStruct(const char *file_name, const char *open_mode) ;
   ~ZMapDataSourceBIGWIGStruct() ;
   bool isOpen() ;
   bool readLine(GString * const pStr) ;
 } ;
-
-typedef ZMapDataSourceGIOStruct *ZMapDataSourceGIO ;
-typedef ZMapDataSourceBEDStruct *ZMapDataSourceBED ;
-typedef ZMapDataSourceBIGBEDStruct *ZMapDataSourceBIGBED ;
-typedef ZMapDataSourceBIGWIGStruct *ZMapDataSourceBIGWIG ;
 
 
 #ifdef USE_HTSLIB
@@ -118,6 +122,7 @@ typedef ZMapDataSourceBIGWIGStruct *ZMapDataSourceBIGWIG ;
 class ZMapDataSourceHTSFileStruct : public ZMapDataSourceStruct
 {
 public:
+  ZMapDataSourceHTSFileStruct(const char *file_name, const char *open_mode) ;
   ~ZMapDataSourceHTSFileStruct() ;
   bool isOpen() ;
   bool readLine(GString * const pStr) ;
@@ -135,10 +140,16 @@ public:
     * so_type ;
 } ;
 
-typedef ZMapDataSourceHTSFileStruct *ZMapDataSourceHTSFile ;
-
 #endif
 
+
+typedef ZMapDataSourceGIOStruct *ZMapDataSourceGIO ;
+typedef ZMapDataSourceBEDStruct *ZMapDataSourceBED ;
+typedef ZMapDataSourceBIGBEDStruct *ZMapDataSourceBIGBED ;
+typedef ZMapDataSourceBIGWIGStruct *ZMapDataSourceBIGWIG ;
+#ifdef USE_HTSLIB
+typedef ZMapDataSourceHTSFileStruct *ZMapDataSourceHTSFile ;
+#endif
 
 
 /*
