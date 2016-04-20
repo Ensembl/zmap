@@ -260,7 +260,10 @@ ZMapDataSourceBIGWIGStruct::ZMapDataSourceBIGWIGStruct(const GQuark source_name,
                                                        const int end)
   : ZMapDataSourceStruct(source_name, sequence),
     start_(start),
-    end_(end)
+    end_(end),
+    lm_(NULL),
+    list_(NULL),
+    cur_interval_(NULL)
 {
   type = ZMapDataSourceType::BIGWIG ;
 
@@ -409,6 +412,9 @@ bool ZMapDataSourceBIGBEDStruct::isOpen()
 bool ZMapDataSourceBIGWIGStruct::isOpen()
 {
   bool result = false ;
+
+  if (bbi_file_)
+    result = true ;
 
   return result ;
 }
@@ -687,7 +693,7 @@ bool ZMapDataSourceBIGWIGStruct::readLine(GString * const str)
     {
       // First line. Initialise the query. 
       lm_ = lmInit(0); // Memory pool to hold returned list
-      list_ = bigBedIntervalQuery(bbi_file_, sequence_, start_, end_, 0, lm_);
+      list_ = bigWigIntervalQuery(bbi_file_, sequence_, start_, end_, lm_);
 
       cur_interval_ = list_ ;
     }
@@ -698,7 +704,7 @@ bool ZMapDataSourceBIGWIGStruct::readLine(GString * const str)
       createGFFLine(str,
                     sequence_,
                     g_quark_to_string(source_name_),
-                    ZMAP_BIGBED_SO_TERM,
+                    ZMAP_BIGWIG_SO_TERM,
                     cur_interval_->start,
                     cur_interval_->end,
                     cur_interval_->val,
