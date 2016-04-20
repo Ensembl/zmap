@@ -273,27 +273,24 @@ for i in "${!install[@]}"
         if [ -e "./${dir[$i]}/autogen.sh" ] ; then
 
           cur_dir=`pwd`
-    	cd $BASE_DIR/gbtools
-    	./autogen.sh
-  	cd $cur_dir
+          cd ./${dir[$i]}
+          ./autogen.sh
+          cd $cur_dir
 	
-      fi ;;
+        fi
+        ;;
 
-#      # We must have htslib (currently) or we fail.
-#      $htslib_key )
-#      if [[ ! -f "${dir[$i]}/${test_file[$i]}" ]] ; then
-#
-#          zmap_message_exit "Aborting.....htslib is not available so ZMap cannot be built."
-#
-#      fi ;;
+      # zeromq has the -Werror compiler option on by default which means the build
+      # will fail if we turn on all warnings for the compilation so we turn them off.
+      $zeromq_key )
 
-  #    # We must have zeromq (currently) or we fail.
-  #    $zeromq_key )
-  #    if [[ ! -f "${dir[$i]}/${test_file[$i]}" ]] ; then
-  #
-  #        zmap_message_exit "Aborting.....zeromq is not available so ZMap cannot be built."
-  #
-  #    fi ;;
+        cur_dir=`pwd`
+        cd ./${dir[$i]}
+        mv configure.in configure.in.copy || zmap_message_exit "Could not mv configure.in to configure.in.copy"
+        cat configure.in.copy | sed 's/libzmq_werror="yes"/libzmq_werror="no"/' > configure.in ||  zmap_message_exit "Could not change libzmq_werror setting in configure.in"
+        cd $cur_dir
+
+        ;;
 
     esac
 
