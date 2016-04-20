@@ -410,19 +410,24 @@ bool ZMapDataSourceBEDStruct::readLine(GString * const str)
   else
     cur_feature_ = bed_features_ ;
 
-  // Create a gff line for this feature
-  createGFFLine(str,
-                cur_feature_->chrom,
-                ZMAP_BED_SOURCE,
-                ZMAP_BED_SO_TERM,
-                cur_feature_->chromStart,
-                cur_feature_->chromEnd,
-                cur_feature_->score,
-                cur_feature_->strand[0],
-                cur_feature_->name,
-                false,
-                0,
-                0) ;
+  if (cur_feature_)
+    {
+      // Create a gff line for this feature
+      createGFFLine(str,
+                    cur_feature_->chrom,
+                    ZMAP_BED_SOURCE,
+                    ZMAP_BED_SO_TERM,
+                    cur_feature_->chromStart,
+                    cur_feature_->chromEnd,
+                    cur_feature_->score,
+                    cur_feature_->strand[0],
+                    cur_feature_->name,
+                    false,
+                    0,
+                    0) ;
+
+      result = true ;
+    }
   
   return result ;
 }
