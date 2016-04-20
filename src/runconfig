@@ -178,8 +178,16 @@ zmap_message_out "Running in $INITIAL_DIR on $(hostname) under $(uname)"
 
 
 
+
 # Is this ever used.....I don't think so....
-INSTALL_DIR=$1
+if [ -n "$1" ] ; then
+  INSTALL_DIR="--prefix=$1"
+
+  zmap_message_out "Install dir has been set to: $INSTALL_DIR"
+fi
+
+
+
 
 
 
