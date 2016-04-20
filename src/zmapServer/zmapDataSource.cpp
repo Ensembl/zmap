@@ -224,7 +224,7 @@ ZMapDataSourceBIGBEDStruct::ZMapDataSourceBIGBEDStruct(const GQuark source_name,
   : ZMapDataSourceStruct(source_name)
 {
   type = ZMapDataSourceType::BIGBED ;
-  g_set_error(&error_, g_quark_from_string("ZMap"), 99, "Failed to open file '%s': bigBed not implemented yet", file_name) ;
+  g_set_error(&error_, g_quark_from_string("ZMap"), 99, "Failed to open file: bigBed not implemented yet") ;
 }
 
 ZMapDataSourceBIGWIGStruct::ZMapDataSourceBIGWIGStruct(const GQuark source_name, 
@@ -233,7 +233,7 @@ ZMapDataSourceBIGWIGStruct::ZMapDataSourceBIGWIGStruct(const GQuark source_name,
   : ZMapDataSourceStruct(source_name)
 {
   type = ZMapDataSourceType::BIGWIG ;
-  g_set_error(&error_, g_quark_from_string("ZMap"), 99, "Failed to open file '%s': bigWig not implemented yet", file_name) ;
+  g_set_error(&error_, g_quark_from_string("ZMap"), 99, "Failed to open file: bigWig not implemented yet") ;
 }
 
 #ifdef USE_HTSLIB
@@ -657,36 +657,48 @@ ZMapDataSource zMapDataSourceCreate(const GQuark source_name,
 
   source_type = zMapDataSourceTypeFromFilename(file_name, &error) ;
 
-  if (!error && source_type == ZMapDataSourceType::GIO)
+  if (!error)
     {
-      data_source = new ZMapDataSourceGIOStruct(source_name, file_name, open_mode) ;
-    }
-  else if (!error && source_type == ZMapDataSourceType::BED)
-    {
-      data_source = new ZMapDataSourceBEDStruct(source_name, file_name, open_mode) ;
-    }
-  else if (!error && source_type == ZMapDataSourceType::BIGBED)
-    {
-      data_source = new ZMapDataSourceBIGBEDStruct(source_name, file_name, open_mode) ;
-    }
-  else if (!error && source_type == ZMapDataSourceType::BIGWIG)
-    {
-      data_source = new ZMapDataSourceBIGWIGStruct(source_name, file_name, open_mode) ;
-    }
+      switch (source_type)
+        {
+        case ZMapDataSourceType::GIO:
+          data_source = new ZMapDataSourceGIOStruct(source_name, file_name, open_mode) ;
+          break ;
+        case ZMapDataSourceType::BED:
+          data_source = new ZMapDataSourceBEDStruct(source_name, file_name, open_mode) ;
+          break ;
+        case ZMapDataSourceType::BIGBED:
+          data_source = new ZMapDataSourceBIGBEDStruct(source_name, file_name, open_mode) ;
+          break ;
+        case ZMapDataSourceType::BIGWIG:
+          data_source = new ZMapDataSourceBIGWIGStruct(source_name, file_name, open_mode) ;
+          break ;
 #ifdef USE_HTSLIB
-  else if (!error && source_type == ZMapDataSourceType::HTS)
-    {
-      data_source = new ZMapDataSourceHTSFileStruct(source_name, file_name, open_mode) ;
-    }
+        case ZMapDataSourceType::HTS:
+          data_source = new ZMapDataSourceHTSFileStruct(source_name, file_name, open_mode) ;
+          break ;
+        default:
+          zMapWarnIfReached() ;
+          g_set_error(&error, g_quark_from_string("ZMap"), 99,
+                      "Unexpected data source type for file '%s'", file_name) ;
+          break ;
+        }
 #endif
-
-  if (!data_source->isOpen())
-    {
-      delete data_source ;
-      data_source = NULL ;
     }
 
-  if (data_source->error())
+  if (data_source)
+    {
+      if (data_source->error() && !error)
+        g_propagate_error(&error, data_source->error()) ;
+
+      if (!data_source->isOpen())
+        {
+          delete data_source ;
+          data_source = NULL ;
+        }
+    }
+
+  if (error)
     g_propagate_error(error_out, error) ;
 
   return data_source ;
