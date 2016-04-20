@@ -377,6 +377,49 @@ bool ZMapDataSourceHTSFileStruct::isOpen()
 #endif
 
 
+
+/*
+ * Get the GFF version. We must always return ZMAPGFF_VERSION_3 for any type 
+ * where we are converting the input data to GFF later on.
+ */
+bool ZMapDataSourceStruct::gffVersion(int * const p_out_val)
+{
+  *p_out_val = ZMAPGFF_VERSION_3 ;
+  return true ;
+}
+
+bool ZMapDataSourceGIOStruct::gffVersion(int * const p_out_val)
+{
+  int out_val = ZMAPGFF_VERSION_UNKNOWN ;
+  gboolean result = FALSE ;
+  zMapReturnValIfFail(p_out_val, result) ;
+
+  GString *pString = g_string_new(NULL) ;
+  GIOStatus cIOStatus = G_IO_STATUS_NORMAL ;
+  GError *pError = NULL ;
+
+  result = zMapGFFGetVersionFromGIO(io_channel, pString,
+                                    &out_val, &cIOStatus, &pError) ;
+
+  *p_out_val = out_val ;
+
+  if ( !result || (cIOStatus != G_IO_STATUS_NORMAL)  || pError ||
+       ((out_val != ZMAPGFF_VERSION_2) && (out_val != ZMAPGFF_VERSION_3)) )
+    {
+      zMapLogCritical("Could not obtain GFF version from GIOChannel in zMapDataSourceGetGFFVersion(), %s", "") ;
+      /* This is set to make sure that the calling program notices the error. */
+      result = FALSE ;
+    }
+
+  g_string_free(pString, TRUE) ;
+
+  if (pError)
+    g_error_free(pError) ;
+
+  return result ;
+}
+
+
 /*
  * Read a line from the GIO channel and remove the terminating
  * newline if present. That is,
@@ -714,51 +757,17 @@ gboolean zMapDataSourceReadLine (ZMapDataSource const data_source , GString * co
   return result ;
 }
 
+
+
 /*
  * Get GFF version from the data source.
  */
 gboolean zMapDataSourceGetGFFVersion(ZMapDataSource const data_source, int * const p_out_val)
 {
-  int out_val = ZMAPGFF_VERSION_UNKNOWN ;
   gboolean result = FALSE ;
-  zMapReturnValIfFail(data_source && (data_source->type != ZMapDataSourceType::UNK) && p_out_val, result ) ;
 
-  /*
-   * We treat two cases. The HTS case must always return ZMAPGFF_VERSION_3
-   * since we are converting HTS record data to GFF later on as it is read.
-   */
-  if (data_source->type == ZMapDataSourceType::GIO)
-    {
-      ZMapDataSourceGIO file = (ZMapDataSourceGIO) data_source ;
-      GString *pString = g_string_new(NULL) ;
-      GIOStatus cIOStatus = G_IO_STATUS_NORMAL ;
-      GError *pError = NULL ;
-      result = zMapGFFGetVersionFromGIO(file->io_channel, pString,
-                                        &out_val, &cIOStatus, &pError) ;
-      *p_out_val = out_val ;
-      if ( !result || (cIOStatus != G_IO_STATUS_NORMAL)  || pError ||
-            ((out_val != ZMAPGFF_VERSION_2) && (out_val != ZMAPGFF_VERSION_3)) )
-        {
-          zMapLogCritical("Could not obtain GFF version from GIOChannel in zMapDataSourceGetGFFVersion(), %s", "") ;
-          /* This is set to make sure that the calling program notices the error. */
-          result = FALSE ;
-        }
-      g_string_free(pString, TRUE) ;
-      if (pError)
-        g_error_free(pError) ;
-    }
-#ifdef USE_HTSLIB
-  else if (data_source->type == ZMapDataSourceType::HTS)
-    {
-      *p_out_val = ZMAPGFF_VERSION_3 ;
-      result = TRUE ;
-    }
-#endif
-  else
-    {
-      *p_out_val = ZMAPGFF_VERSION_3 ;
-      result = TRUE ;
-    }
+  if (data_source)
+    result = data_source->gffVersion(p_out_val) ;
 
   return result ;
 }

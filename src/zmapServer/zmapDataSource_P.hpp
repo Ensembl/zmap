@@ -60,8 +60,11 @@ class ZMapDataSourceStruct
 public:
   ZMapDataSourceStruct(const GQuark source_name) ;
   virtual ~ZMapDataSourceStruct() {} ;
+
   virtual bool isOpen() = 0 ;
   virtual bool readLine(GString * const pStr) = 0 ;
+  virtual bool gffVersion(int * const p_out_val) ;
+
   GError* error() ;
 
   ZMapDataSourceType type ;
@@ -80,8 +83,10 @@ class ZMapDataSourceGIOStruct : public ZMapDataSourceStruct
 public:
   ZMapDataSourceGIOStruct(const GQuark source_name, const char *file_name, const char *open_mode) ;
   ~ZMapDataSourceGIOStruct() ;
+
   bool isOpen() ;
   bool readLine(GString * const pStr) ;
+  bool gffVersion(int * const p_out_val) ;
 
   GIOChannel *io_channel ;
 } ;
