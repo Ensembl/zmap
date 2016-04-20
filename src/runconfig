@@ -12,11 +12,11 @@
 # PLEASE READ THIS BEFORE ALTERING THIS SCRIPT.....
 #
 # This script is called by our automatic build system (in <zmap>/scripts) so you should
-# NOT start adding command line flags and args or you will mess up the build !!!!
+# NOT start adding command line flags and args without checking how this script is called
+# from the scripts in zmap_build that use it !!!!
 #
 #
 
-INSTALL_DIR=$1
 
 
 SCRIPT_NAME=$(basename $0)
@@ -28,7 +28,69 @@ else
    BASE_DIR=$SCRIPT_DIR
 fi
 
-clean_dirs=''
+
+#
+# compile/linker stuff.....
+#
+
+std_flag='-std=c++0x'
+
+debug_flag='-g'
+
+warning_flag='-Wall'
+
+Warning_flags="-pedantic \
+-Wall -Wextra -Wcast-align -Wcast-qual -Wctor-dtor-privacy \
+-Wdisabled-optimization -Wformat=2 -Winit-self -Wlogical-op \
+-Wmissing-declarations -Wmissing-include-dirs -Wnoexcept \
+-Wold-style-cast -Woverloaded-virtual -Wredundant-decls \
+-Wshadow -Wsign-conversion -Wsign-promo -Wstrict-null-sentinel \
+-Wstrict-overflow=5 -Wswitch-default -Wundef -Wno-unused"
+
+optmisation_flags='-O'
+
+
+# C++ opts
+
+develop_opts="$std_flag $debug_flag $warning_flag"
+
+warning_opts=$develop_opts
+
+Warning_opts="$std_flag $debug_flag $Warning_flags"
+
+release_opts="$std_flag $optmisation_flags $warning_flag"
+
+
+# C opts (for foocanvas)
+
+develop_c_opts="$debug_flag $warning_flag"
+
+warning_c_opts=$develop_c_opts
+
+release_c_opts="$optmisation_flags $warning_flag"
+
+
+# ld opts
+
+default_ld_opts="$debug_flag $warning_flag"
+release_ld_opts="$warning_flag"
+
+
+# default c++ build is minimal warnings but with debug symbols.
+default_compiler='g++'
+default_compile_opts=$develop_opts
+
+# foocanvas is c so need these too...
+default_c_compiler='gcc'
+default_c_compile_opts=$develop_c_opts
+
+# default ld opts
+default_ld_opts=$default_ld_opts
+
+
+super_warnings='no'
+
+
 
 # Load our common script functions for messaging etc.
 #
@@ -36,21 +98,113 @@ clean_dirs=''
 set -o history
 
 
+
 zmap_message_out "Start of script."
 
-zmap_message_out "Running in $INITIAL_DIR on $(hostname) under $(uname)"
+zmap_message_out "     CXX_args env set to: $CXX_args"
+zmap_message_out "CXXFLAGS_args env set to: $CXXFLAGS_args"
+zmap_message_out " LDFLAGS_args env set to: $LDFLAGS_args"
+zmap_message_out "      CC_args env set to: $CC_args"
+zmap_message_out "  CFLAGS_args env set to: $CFLAGS_args"
+
+
+# default the compiler as it has to be set to something.....
+if [ "x$CXX_args" == "x" ]; then
+    CXX_args=$default_compiler
+fi
+
+
+if [ "x$CXXFLAGS_args" == "x" ]; then
+    CXXFLAGS_args=$default_compile_opts
+fi
+
+
+if [ "x$LDFLAGS_args" == "x" ]; then
+    LDFLAGS_args=$default_ld_opts
+fi
+
+
+# C compiler stuff for foocanvas.
+#
+if [ "x$CC_args" == "x" ]; then
+    CC_args=$default_c_compiler
+fi
+
+
+if [ "x$CFLAGS_args" == "x" ]; then
+    CFLAGS_args=$default_c_compile_opts
+fi
+
+
+
+
+
+
+
+
+zmap_message_out "     CXX_args defaulted to: $CXX_args"
+zmap_message_out "CXXFLAGS_args defaulted to: $CXXFLAGS_args"
+zmap_message_out " LDFLAGS_args defaulted to: $LDFLAGS_args"
+zmap_message_out "      CC_args env set to: $CC_args"
+zmap_message_out "  CFLAGS_args env set to: $CFLAGS_args"
+
+
+
+# Parse command line opts...
+#
+while getopts ":drwW" opt ; do
+    case $opt in
+        d  ) CXXFLAGS_args=$develop_opts
+             LDFLAGS_args=$default_ld_opts
+             CFLAGS_args=$develop_c_opts ;;
+        r  ) CXXFLAGS_args=$release_opts
+             LDFLAGS_args=$release_ld_opts
+             CFLAGS_args=$release_c_opts ;;
+        w  ) CXXFLAGS_args=$warning_opts
+             LDFLAGS_args=$default_ld_opts
+             CFLAGS_args=$warning_c_opts ;;
+        W  ) CXXFLAGS_args=$Warning_opts
+             LDFLAGS_args=$default_ld_opts
+             CFLAGS_args=$warning_c_opts
+             super_warnings='yes' ;;
+    esac
+done
+
+shift $(($OPTIND - 1))
 
 zmap_message_out "cmd line options = '$*'"
 
+zmap_message_out "Running in $INITIAL_DIR on $(hostname) under $(uname)"
 
+
+
+# Is this ever used.....I don't think so....
+INSTALL_DIR=$1
+
+
+
+zmap_message_out "     CXX_args after cmdline set to: $CXX_args"
+zmap_message_out "CXXFLAGS_args after cmdline set to: $CXXFLAGS_args"
+zmap_message_out " LDFLAGS_args after cmdline set to: $LDFLAGS_args"
+zmap_message_out "      CC_args env set to: $CC_args"
+zmap_message_out "  CFLAGS_args env set to: $CFLAGS_args"
+
+
+
+
+
+
+
+
+#
+# Let's see how much we can clean all this up.......
+#
 
 opsys=`uname`
 
 case $opsys in
 
   Linux )
-
-#    CC_args=g++
 
     case `uname -m` in
 
@@ -59,25 +213,15 @@ case $opsys in
 	    # We need to find freetype2.pc in here. No idea why.
 	    PKG_CONFIG_PATH="/usr/lib/pkgconfig:$PKG_CONFIG_PATH:/usr/share/pkgconfig"
 
-
+            # DO WE NEED THIS ANY MORE....NOT SURE.....
 	    zmap_register_prefix_in_env $GTK_PREFIX
 	    zmap_register_prefix_as_rpath $GTK_PREFIX
+
 
 	    if [ "x$USE_GPROF" == "x$ZMAP_TRUE" ]; then
                 CFLAGS_args="-pg $CFLAGS"
 		LDFLAGS_args="-pg $LDFLAGS"
 	    fi
-
-            # the intel compiler.
-            #CC_args=gcc
-
-	    # Compile with PIC so that X11::XRemote compiles...
-	    CFLAGS_args="$CFLAGS_args"
-
-	    # Now add LDFLAGS to args so they get through to configure.
-	    LDFLAGS_args="$LDFLAGS $LDFLAGS_args"
-
-	    CXXFLAGS=''
 
 	    ;; # end x86_64
 
@@ -121,6 +265,9 @@ case $opsys in
 
 	    ;; # end *
     esac
+
+    # experiment.....
+
     ;; # end Linux
 
  Darwin )
@@ -154,12 +301,34 @@ case $opsys in
 esac
 
 
-export CXXFLAGS
+#export CXXFLAGS
 
 
+zmap_message_out "     CXX_args final set to: $CXX_args"
+zmap_message_out "CXXFLAGS_args final set to: $CXXFLAGS_args"
+zmap_message_out " LDFLAGS_args final set to: $LDFLAGS_args"
+zmap_message_out "      CC_args env set to: $CC_args"
+zmap_message_out "  CFLAGS_args env set to: $CFLAGS_args"
+
+
+
+CXX_param="CXX=$CXX_args"
+CXXFLAGS_param="CXXFLAGS=$CXXFLAGS_args"
+LDFLAGS_param="LDFLAGS=$LDFLAGS_args"
 CC_param="CC=$CC_args"
 CFLAGS_param="CFLAGS=$CFLAGS_args"
-LDFLAGS_param="LDFLAGS=$LDFLAGS_args"
+
+
+
+echo $CXX_param
+echo $CXXFLAGS_param
+echo $LDFLAGS_param
+echo $CC_param
+echo $CFLAGS_param
+
+
+
+
 
 # Export any settings we need to be passed on.
 export PKG_CONFIG_PATH
@@ -171,10 +340,10 @@ zmap_message_out "Running configure as:  " \
     $INSTALL_DIR \
     $COMMON_CONFIGURE_ARGS \
     $SPECIFIC_CONFIGURE_ARGS \
-    $CC_param $CFLAGS_param $LDFLAGS_param "$@"
+    $CC_param $CFLAGS_param $CXX_param $CXXFLAGS_param $LDFLAGS_param "$@"
+
 
 zmap_message_out "=========================================================================="
-
 
 
 # run the configure.......watch out for the quoting, sometimes we want the variable to
@@ -184,7 +353,7 @@ $BASE_DIR/configure \
 $INSTALL_DIR \
 $COMMON_CONFIGURE_ARGS \
 $SPECIFIC_CONFIGURE_ARGS \
-"$CC_param" "$CFLAGS_param" "$LDFLAGS_param" "$@" || zmap_message_exit "configure script failed."
+"$CC_param" "$CFLAGS_param" "$CXX_param" "$CXXFLAGS_param" "$LDFLAGS_param" "$@" || zmap_message_exit "configure script failed."
 
 
 
