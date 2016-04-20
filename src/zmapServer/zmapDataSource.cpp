@@ -108,43 +108,40 @@ ZMapDataSource zMapDataSourceCreate(const char * const file_name, GError **error
   if (!error && source_type == ZMapDataSourceType::GIO)
     {
       ZMapDataSourceGIO file = NULL ;
-      file = (ZMapDataSourceGIO) g_new0(ZMapDataSourceGIOStruct, 1) ;
+      file = new ZMapDataSourceGIOStruct ;
       if (file != NULL)
         {
           file->type = ZMapDataSourceType::GIO ;
           file->io_channel = g_io_channel_new_file(file_name, open_mode, &error) ;
+
           if (file->io_channel != NULL && !error)
-            {
-              data_source = (ZMapDataSource) file ;
-            }
+            data_source = (ZMapDataSource) file ;
           else
-            {
-              g_free(file) ;
-            }
+            delete file ;
         }
     }
   else if (!error && source_type == ZMapDataSourceType::BED)
     {
       ZMapDataSourceBED file = NULL ;
-      file = (ZMapDataSourceBED) g_new0(ZMapDataSourceBEDStruct, 1) ;
+      file = new ZMapDataSourceBEDStruct ;
       if (file != NULL)
         {
           file->type = ZMapDataSourceType::BED ;
           
           char *file_name_copy = g_strdup(file_name) ; // to avoid casting away const
           file->bed_features_ = bedLoadAll(file_name_copy) ;
+          file->cur_feature_ = NULL ;
           g_free(file_name_copy) ;
 
           if (file->bed_features_)
-            {
-              data_source = (ZMapDataSource) file ;
-            }
+            data_source = (ZMapDataSource) file ;
         }
     }
   else if (!error && source_type == ZMapDataSourceType::BIGBED)
     {
       ZMapDataSourceBIGBED file = NULL ;
-      file = (ZMapDataSourceBIGBED) g_new0(ZMapDataSourceBIGBEDStruct, 1) ;
+      file = new ZMapDataSourceBIGBEDStruct ;
+
       if (file != NULL)
         {
           file->type = ZMapDataSourceType::BIGBED ;
@@ -154,7 +151,7 @@ ZMapDataSource zMapDataSourceCreate(const char * const file_name, GError **error
   else if (!error && source_type == ZMapDataSourceType::BIGWIG)
     {
       ZMapDataSourceBIGWIG file = NULL ;
-      file = (ZMapDataSourceBIGWIG) g_new0(ZMapDataSourceBIGWIGStruct, 1) ;
+      file = new ZMapDataSourceBIGWIGStruct ;
       if (file != NULL)
         {
           file->type = ZMapDataSourceType::BIGWIG ;
@@ -165,7 +162,7 @@ ZMapDataSource zMapDataSourceCreate(const char * const file_name, GError **error
   else if (!error && source_type == ZMapDataSourceType::HTS)
     {
       ZMapDataSourceHTSFile file = NULL ;
-      file = (ZMapDataSourceHTSFile) g_new0(ZMapDataSourceHTSFileStruct, 1) ;
+      file = new ZMapDataSourceHTSFileStruct ;
       if (file != NULL)
         {
           file->type = ZMapDataSourceType::HTS ;
@@ -184,14 +181,7 @@ ZMapDataSource zMapDataSourceCreate(const char * const file_name, GError **error
             }
           else
             {
-              if (file->hts_file)
-                hts_close(file->hts_file) ;
-              if (file->hts_hdr)
-                bam_hdr_destroy(file->hts_hdr) ;
-              if (file->hts_rec)
-                bam_destroy1(file->hts_rec) ;
-              g_free(file) ;
-
+              delete file ;
               g_set_error(&error, g_quark_from_string("ZMap"), 99, "Failed to open file '%s'", file_name) ;
             }
         }
@@ -222,7 +212,7 @@ ZMapDataSource zMapDataSourceCreateFromGIO(GIOChannel * const io_channel)
         }
       else
         {
-          g_free(file) ;
+          delete file ;
         }
     }
 
@@ -497,20 +487,25 @@ bool ZMapDataSourceBEDStruct::readLine(GString * const str)
   else
     cur_feature_ = bed_features_ ;
 
-  // Create a gff line for this feature
-  createGFFLine(str,
-                cur_feature_->chrom,
-                ZMAP_BED_SOURCE,
-                ZMAP_BED_SO_TERM,
-                cur_feature_->chromStart,
-                cur_feature_->chromEnd,
-                cur_feature_->score,
-                cur_feature_->strand[0],
-                cur_feature_->name,
-                false,
-                0,
-                0) ;
-  
+  if (cur_feature_)
+    {
+      // Create a gff line for this feature
+      createGFFLine(str,
+                    cur_feature_->chrom,
+                    ZMAP_BED_SOURCE,
+                    ZMAP_BED_SO_TERM,
+                    cur_feature_->chromStart,
+                    cur_feature_->chromEnd,
+                    cur_feature_->score,
+                    cur_feature_->strand[0],
+                    cur_feature_->name,
+                    false,
+                    0,
+                    0) ;
+
+      result = true ;
+    }
+
   return result ;
 }
 
@@ -676,7 +671,7 @@ bool ZMapDataSourceHTSFileStruct::readLine(GString * const pStr )
 
 
 /*
- * Read one line and return as string.
+ * Read one line and return as string. Returns true if a line was read (false if no more input)
  *
  * (a) GIO reads a line of GFF which is of the form
  *                   "<fields>...<fields>\n"
