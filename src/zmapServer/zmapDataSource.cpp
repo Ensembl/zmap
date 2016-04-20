@@ -93,6 +93,8 @@ namespace // unnamed namespace
  */
 static const char * const ZMAP_BAM_SO_TERM  = "read" ;
 static const char * const ZMAP_BED_SO_TERM  = "read" ;
+static const char * const ZMAP_BIGBED_SO_TERM  = "sequence_feature" ;
+static const char * const ZMAP_BIGWIG_SO_TERM  = "score" ;
 #define ZMAP_CIGARSTRING_MAXLENGTH 2048
 
 static void createGFFLine(GString *pStr, 
@@ -237,7 +239,10 @@ ZMapDataSourceBIGBEDStruct::ZMapDataSourceBIGBEDStruct(const GQuark source_name,
                                                        const int end)
   : ZMapDataSourceStruct(source_name, sequence),
     start_(start),
-    end_(end)
+    end_(end),
+    lm_(NULL),
+    list_(NULL),
+    cur_interval_(NULL)
 {
   type = ZMapDataSourceType::BIGBED ;
 
@@ -258,7 +263,11 @@ ZMapDataSourceBIGWIGStruct::ZMapDataSourceBIGWIGStruct(const GQuark source_name,
     end_(end)
 {
   type = ZMapDataSourceType::BIGWIG ;
-  g_set_error(&error_, g_quark_from_string("ZMap"), 99, "Failed to open file: bigWig not implemented yet") ;
+
+  // Open the file
+  char *file_name_copy = g_strdup(file_name) ; // to avoid casting away const
+  bbi_file_ = bigWigFileOpen(file_name_copy);
+  g_free(file_name_copy) ;
 }
 
 #ifdef USE_HTSLIB
@@ -333,6 +342,11 @@ ZMapDataSourceBIGBEDStruct::~ZMapDataSourceBIGBEDStruct()
 
 ZMapDataSourceBIGWIGStruct::~ZMapDataSourceBIGWIGStruct()
 {
+  if (bbi_file_)
+    {
+      bigWigFileClose(&bbi_file_) ;
+      bbi_file_ = NULL ;
+    }
 }
 
 
@@ -498,6 +512,18 @@ bool ZMapDataSourceBIGWIGStruct::checkHeader()
   bool result = false ;
   zMapReturnValIfFail(isOpen(), result) ;
 
+  // Get the list of sequences in the file and check whether our required sequence exists
+  struct bbiChromInfo *chromList = bbiChromList(bbi_file_);
+
+  for (bbiChromInfo *chrom = chromList; chrom != NULL; chrom = chrom->next)
+    {
+      if (strcmp(chrom->name, sequence_) == 0)
+        {
+          result = true ;
+          break ;
+        }
+    }
+
   return result ;
 }
 
@@ -620,18 +646,18 @@ bool ZMapDataSourceBIGBEDStruct::readLine(GString * const str)
   if (cur_interval_)
     {
       // Create a gff line for this feature
-//      createGFFLine(str,
-//                    cur_interval_->chrom,
-//                    g_quark_to_string(source_name_),
-//                    ZMAP_BED_SO_TERM,
-//                    cur_interval_->start,
-//                    cur_interval_->end,
-//                    cur_interval_->score,
-//                    cur_interval_->strand[0],
-//                    cur_interval_->name,
-//                    true,
-//                    1,
-//                    cur_interval_->end - cur_interval_->start + 1) ;
+      createGFFLine(str,
+                    sequence_,
+                    g_quark_to_string(source_name_),
+                    ZMAP_BIGBED_SO_TERM,
+                    cur_interval_->start,
+                    cur_interval_->end,
+                    0.0,
+                    '.',
+                    cur_interval_->rest,
+                    false,
+                    0,
+                    0) ;
 
       result = true ;
     }
@@ -651,6 +677,45 @@ bool ZMapDataSourceBIGBEDStruct::readLine(GString * const str)
 bool ZMapDataSourceBIGWIGStruct::readLine(GString * const str)
 {
   bool result = false ;
+
+  // Get the next feature in the list (or the first one if we haven't started yet)
+  if (cur_interval_)
+    {
+      cur_interval_ = cur_interval_->next ;
+    }
+  else
+    {
+      // First line. Initialise the query. 
+      lm_ = lmInit(0); // Memory pool to hold returned list
+      list_ = bigBedIntervalQuery(bbi_file_, sequence_, start_, end_, 0, lm_);
+
+      cur_interval_ = list_ ;
+    }
+
+  if (cur_interval_)
+    {
+      // Create a gff line for this feature
+      createGFFLine(str,
+                    sequence_,
+                    g_quark_to_string(source_name_),
+                    ZMAP_BIGBED_SO_TERM,
+                    cur_interval_->start,
+                    cur_interval_->end,
+                    cur_interval_->val,
+                    '.',
+                    NULL,
+                    false,
+                    0,
+                    0) ;
+
+      result = true ;
+    }
+  else
+    {
+      // Got to the end of the list, so clean up the lm (typically do this 
+      // after each query)
+      lmCleanup(&lm_);
+    }
 
   return result ;
 }

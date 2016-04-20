@@ -145,8 +145,8 @@ private:
   int end_ ;   // sequence region end
   struct bbiFile *bbi_file_ ;
   struct lm *lm_; // Memory pool to hold returned list from bbi file
-  struct bigBedInterval *list_ ;
-  struct bigBedInterval *cur_interval_ ; // current item from list_
+  struct bbiInterval *list_ ;
+  struct bbiInterval *cur_interval_ ; // current item from list_
 } ;
 
 
