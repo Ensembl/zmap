@@ -422,9 +422,9 @@ bool ZMapDataSourceBEDStruct::readLine(GString * const str)
                     cur_feature_->score,
                     cur_feature_->strand[0],
                     cur_feature_->name,
-                    false,
-                    0,
-                    0) ;
+                    true,
+                    1,
+                    cur_feature_->chromEnd - cur_feature_->chromStart + 1) ;
 
       result = true ;
     }
