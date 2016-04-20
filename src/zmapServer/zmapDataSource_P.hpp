@@ -111,6 +111,9 @@ public:
   ~ZMapDataSourceBIGBEDStruct() ;
   bool isOpen() ;
   bool readLine(GString * const pStr) ;
+
+private:
+  struct bbiFile *bbi_file_ ;
 } ;
 
 class ZMapDataSourceBIGWIGStruct : public ZMapDataSourceStruct

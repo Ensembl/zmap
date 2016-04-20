@@ -50,6 +50,7 @@ extern "C" {
 #endif
 
 #include <blatSrc/basicBed.h>
+#include <blatSrc/bigBed.h>
 
 #ifdef __cplusplus
 }
@@ -214,7 +215,11 @@ ZMapDataSourceBEDStruct::ZMapDataSourceBEDStruct(const GQuark source_name,
   type = ZMapDataSourceType::BED ;
           
   char *file_name_copy = g_strdup(file_name) ; // to avoid casting away const
+
+  // Open the file
   bed_features_ = bedLoadAll(file_name_copy) ;
+
+  // Clean up
   g_free(file_name_copy) ;
 }
 
@@ -224,7 +229,14 @@ ZMapDataSourceBIGBEDStruct::ZMapDataSourceBIGBEDStruct(const GQuark source_name,
   : ZMapDataSourceStruct(source_name)
 {
   type = ZMapDataSourceType::BIGBED ;
-  g_set_error(&error_, g_quark_from_string("ZMap"), 99, "Failed to open file: bigBed not implemented yet") ;
+
+  char *file_name_copy = g_strdup(file_name) ; // to avoid casting away const
+
+  // Open the file
+  bbi_file_ = bigBedFileOpen(file_name_copy);
+
+  // Clean up
+  g_free(file_name_copy) ;
 }
 
 ZMapDataSourceBIGWIGStruct::ZMapDataSourceBIGWIGStruct(const GQuark source_name, 
@@ -292,11 +304,19 @@ ZMapDataSourceGIOStruct::~ZMapDataSourceGIOStruct()
 ZMapDataSourceBEDStruct::~ZMapDataSourceBEDStruct()
 {
   if (bed_features_)
-    bedFreeList(&bed_features_) ;
+    {
+      bedFreeList(&bed_features_) ;
+      bed_features_ = NULL ;
+    }
 }
 
 ZMapDataSourceBIGBEDStruct::~ZMapDataSourceBIGBEDStruct()
 {
+  if (bbi_file_)
+    {
+      bigBedFileClose(&bbi_file_) ;
+      bbi_file_ = NULL ;
+    }
 }
 
 ZMapDataSourceBIGWIGStruct::~ZMapDataSourceBIGWIGStruct()
@@ -353,6 +373,9 @@ bool ZMapDataSourceBEDStruct::isOpen()
 bool ZMapDataSourceBIGBEDStruct::isOpen()
 {
   bool result = false ;
+
+  if (bbi_file_)
+    result = true ;
 
   return result ;
 }
