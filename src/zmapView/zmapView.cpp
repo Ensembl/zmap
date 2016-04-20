@@ -244,17 +244,17 @@ static void freeDataRequest(ZMapServerReqAny req_any) ;
 static gboolean processGetSeqRequests(ZMapViewConnection view_con, ZMapServerReqAny req_any) ;
 
 static ZMapViewConnection createViewConnection(ZMapView zmap_view,
-                                           ZMapViewConnection view_con,
-                                           ZMapFeatureContext context,
-                                           char *url, char *format,
-                                           int timeout, char *version,
-                                           gboolean req_styles,
-                                           char *styles_file,
-                                           GList *req_featuresets,
-                                           GList *req_biotypes,
-                                           gboolean dna_requested,
-                                           gint start,gint end,
-                                           gboolean terminate);
+                                               ZMapViewConnection view_con,
+                                               ZMapFeatureContext context,
+                                               GQuark source_name, char *url, char *format,
+                                               int timeout, char *version,
+                                               gboolean req_styles,
+                                               char *styles_file,
+                                               GList *req_featuresets,
+                                               GList *req_biotypes,
+                                               gboolean dna_requested,
+                                               gint start,gint end,
+                                               gboolean terminate);
 static void destroyViewConnection(ZMapView view, ZMapViewConnection view_conn) ;
 static void killGUI(ZMapView zmap_view) ;
 static void killConnections(ZMapView zmap_view) ;
@@ -1890,7 +1890,7 @@ static ZMapViewConnection zmapViewRequestServer(ZMapView view, ZMapViewConnectio
   is_pipe = g_str_has_prefix(server->url,"pipe://");
 
   if ((view_conn = createViewConnection(view, view_conn,
-                                        context, server->url,
+                                        context, server->name_, server->url,
                                         (char *)server->format,
                                         server->timeout,
                                         (char *)server->version,
@@ -4895,7 +4895,7 @@ THE COMMENTS ETC ETC....HORRIBLE, HORRIBLE, HORRIBLE......
 static ZMapViewConnection createViewConnection(ZMapView zmap_view,
                                                ZMapViewConnection view_con,
                                                ZMapFeatureContext context,
-                                               char *server_url, char *format,
+                                               GQuark source_name, char *server_url, char *format,
                                                int timeout, char *version,
                                                gboolean req_styles,
                                                char *styles_file,
@@ -5028,6 +5028,7 @@ static ZMapViewConnection createViewConnection(ZMapView zmap_view,
       if (!existing)
         {
           req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_CREATE,
+                                            source_name,
                                             zmap_view->view_sequence->config_file,
                                             urlObj, format, timeout, version) ;
           zmapViewStepListAddServerReq(view_con->step_list, view_con, ZMAP_SERVERREQ_CREATE, req_any, on_fail) ;

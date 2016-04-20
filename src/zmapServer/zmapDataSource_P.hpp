@@ -58,7 +58,7 @@ struct bed ;
 class ZMapDataSourceStruct
 {
 public:
-  ZMapDataSourceStruct() : type(ZMapDataSourceType::UNK), error_(NULL) {} ;
+  ZMapDataSourceStruct(const GQuark source_name) ;
   virtual ~ZMapDataSourceStruct() {} ;
   virtual bool isOpen() = 0 ;
   virtual bool readLine(GString * const pStr) = 0 ;
@@ -67,6 +67,7 @@ public:
   ZMapDataSourceType type ;
 
 protected:
+  GQuark source_name_ ;
   GError *error_ ;
 } ;
 
@@ -77,7 +78,7 @@ protected:
 class ZMapDataSourceGIOStruct : public ZMapDataSourceStruct
 {
 public:
-  ZMapDataSourceGIOStruct(const char *file_name, const char *open_mode) ;
+  ZMapDataSourceGIOStruct(const GQuark source_name, const char *file_name, const char *open_mode) ;
   ~ZMapDataSourceGIOStruct() ;
   bool isOpen() ;
   bool readLine(GString * const pStr) ;
@@ -88,7 +89,7 @@ public:
 class ZMapDataSourceBEDStruct : public ZMapDataSourceStruct
 {
 public:
-  ZMapDataSourceBEDStruct(const char *file_name, const char *open_mode) ;
+  ZMapDataSourceBEDStruct(const GQuark source_name, const char *file_name, const char *open_mode) ;
   ~ZMapDataSourceBEDStruct() ;
   bool isOpen() ;
   bool readLine(GString * const pStr) ;
@@ -101,7 +102,7 @@ public:
 class ZMapDataSourceBIGBEDStruct : public ZMapDataSourceStruct
 {
 public:
-  ZMapDataSourceBIGBEDStruct(const char *file_name, const char *open_mode) ;
+  ZMapDataSourceBIGBEDStruct(const GQuark source_name, const char *file_name, const char *open_mode) ;
   ~ZMapDataSourceBIGBEDStruct() ;
   bool isOpen() ;
   bool readLine(GString * const pStr) ;
@@ -110,7 +111,7 @@ public:
 class ZMapDataSourceBIGWIGStruct : public ZMapDataSourceStruct
 {
 public:
-  ZMapDataSourceBIGWIGStruct(const char *file_name, const char *open_mode) ;
+  ZMapDataSourceBIGWIGStruct(const GQuark source_name, const char *file_name, const char *open_mode) ;
   ~ZMapDataSourceBIGWIGStruct() ;
   bool isOpen() ;
   bool readLine(GString * const pStr) ;
@@ -122,7 +123,7 @@ public:
 class ZMapDataSourceHTSFileStruct : public ZMapDataSourceStruct
 {
 public:
-  ZMapDataSourceHTSFileStruct(const char *file_name, const char *open_mode) ;
+  ZMapDataSourceHTSFileStruct(const GQuark source_name, const char *file_name, const char *open_mode) ;
   ~ZMapDataSourceHTSFileStruct() ;
   bool isOpen() ;
   bool readLine(GString * const pStr) ;
@@ -136,7 +137,6 @@ public:
    * Data that we need to store
    */
   char * sequence,
-    * source,
     * so_type ;
 } ;
 

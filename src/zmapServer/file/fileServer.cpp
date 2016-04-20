@@ -63,7 +63,7 @@ static const char *PROTOCOL_NAME = "FileServer" ;
  */
 static gboolean globalInit(void) ;
 static gboolean createConnection(void **server_out,
-                                 char *config_file, ZMapURL url, char *format,
+                                 GQuark source_name, char *config_file, ZMapURL url, char *format,
                                  char *version_str, int timeout,
                                  pthread_mutex_t *mutex) ;
 static ZMapServerResponseType openConnection(void *server, ZMapServerReqOpen req_open) ;
@@ -186,6 +186,7 @@ static gboolean isRemoteFileScheme(const ZMapURLScheme scheme)
 
 
 static gboolean createConnection(void **server_out,
+                                 GQuark source_name,
                                  char *config_file,
                                  ZMapURL url,
                                  char *format,
@@ -199,6 +200,7 @@ static gboolean createConnection(void **server_out,
   server = (FileServer) g_new0(FileServerStruct, 1) ;
   zMapReturnValIfFail(server, result) ;
 
+  server->source_name = source_name ;
   server->config_file = NULL ;
   server->url = NULL ;
   server->scheme = SCHEME_INVALID ;
@@ -334,7 +336,7 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
   /*
    * Create data source object (file or GIOChannel)
    */
-  server->data_source = zMapDataSourceCreate(server->path, &error) ;
+  server->data_source = zMapDataSourceCreate(server->source_name, server->path, &error) ;
   if (server->data_source != NULL )
     status = TRUE ;
 
