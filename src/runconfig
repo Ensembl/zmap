@@ -343,13 +343,21 @@ export PKG_CONFIG_PATH
 
 zmap_message_out "PKG_CONFIG_PATH is set to: $PKG_CONFIG_PATH"
 
+
+# install dir has been apearing twice !!!!
+
+#zmap_message_out "Running configure as:  " \
+#    $BASE_DIR/configure \
+#    $INSTALL_DIR \
+#    $COMMON_CONFIGURE_ARGS \
+#    $SPECIFIC_CONFIGURE_ARGS \
+#    $CC_param $CFLAGS_param $CXX_param $CXXFLAGS_param $LDFLAGS_param "$@"
+
 zmap_message_out "Running configure as:  " \
     $BASE_DIR/configure \
-    $INSTALL_DIR \
     $COMMON_CONFIGURE_ARGS \
     $SPECIFIC_CONFIGURE_ARGS \
-    $CC_param $CFLAGS_param $CXX_param $CXXFLAGS_param $LDFLAGS_param "$@"
-
+    $CC_param $CFLAGS_param $CXX_param $CXXFLAGS_param $LDFLAGS_param $INSTALL_DIR
 
 zmap_message_out "=========================================================================="
 
@@ -357,12 +365,16 @@ zmap_message_out "==============================================================
 # run the configure.......watch out for the quoting, sometimes we want the variable to
 # be interpreted as a single cmdline arg, sometimes as multiple ones.
 
+#$BASE_DIR/configure \
+#$INSTALL_DIR \
+#$COMMON_CONFIGURE_ARGS \
+#$SPECIFIC_CONFIGURE_ARGS \
+#"$CC_param" "$CFLAGS_param" "$CXX_param" "$CXXFLAGS_param" "$LDFLAGS_param" "$@" || zmap_message_exit "configure script failed."
+
 $BASE_DIR/configure \
-$INSTALL_DIR \
 $COMMON_CONFIGURE_ARGS \
 $SPECIFIC_CONFIGURE_ARGS \
-"$CC_param" "$CFLAGS_param" "$CXX_param" "$CXXFLAGS_param" "$LDFLAGS_param" "$@" || zmap_message_exit "configure script failed."
-
+"$CC_param" "$CFLAGS_param" "$CXX_param" "$CXXFLAGS_param" "$LDFLAGS_param" "$INSTALL_DIR" || zmap_message_exit "configure script failed."
 
 
 exit 0
