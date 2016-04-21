@@ -108,45 +108,46 @@ zmap_message_out "      CC_args env set to: $CC_args"
 zmap_message_out "  CFLAGS_args env set to: $CFLAGS_args"
 
 
-# default the compiler as it has to be set to something.....
-if [ "x$CXX_args" == "x" ]; then
+# Our master build system (see build_config.sh in zmap build scripts)
+# sets build variables appropriate for the master builds, we don't
+# want to overwrite these so we only set a default value if a particular
+# variable isn't defined (i.e. if it's defined but empty we still don't
+# overwrite it).
+#
+
+if [ -z ${CXX_args+x} ] ; then
     CXX_args=$default_compiler
 fi
 
 
-if [ "x$CXXFLAGS_args" == "x" ]; then
+if [ -z ${CXXFLAGS_args+x} ] ; then
     CXXFLAGS_args=$default_compile_opts
 fi
 
 
-if [ "x$LDFLAGS_args" == "x" ]; then
+if [ -z ${LDFLAGS_args+x} ] ; then
     LDFLAGS_args=$default_ld_opts
 fi
 
 
 # C compiler stuff for foocanvas.
 #
-if [ "x$CC_args" == "x" ]; then
+if [ -z ${CC_args+x} ] ; then
     CC_args=$default_c_compiler
 fi
 
 
-if [ "x$CFLAGS_args" == "x" ]; then
+if [ -z ${CFLAGS_args+x} ] ; then
     CFLAGS_args=$default_c_compile_opts
 fi
-
-
-
-
-
 
 
 
 zmap_message_out "     CXX_args defaulted to: $CXX_args"
 zmap_message_out "CXXFLAGS_args defaulted to: $CXXFLAGS_args"
 zmap_message_out " LDFLAGS_args defaulted to: $LDFLAGS_args"
-zmap_message_out "      CC_args env set to: $CC_args"
-zmap_message_out "  CFLAGS_args env set to: $CFLAGS_args"
+zmap_message_out "      CC_args defaulted to: $CC_args"
+zmap_message_out "  CFLAGS_args defaulted to: $CFLAGS_args"
 
 
 
@@ -187,20 +188,11 @@ if [ -n "$1" ] ; then
 fi
 
 
-
-
-
-
-zmap_message_out "     CXX_args after cmdline set to: $CXX_args"
-zmap_message_out "CXXFLAGS_args after cmdline set to: $CXXFLAGS_args"
-zmap_message_out " LDFLAGS_args after cmdline set to: $LDFLAGS_args"
-zmap_message_out "      CC_args env set to: $CC_args"
-zmap_message_out "  CFLAGS_args env set to: $CFLAGS_args"
-
-
-
-
-
+zmap_message_out "     CXX_args after cmdline opts set to: $CXX_args"
+zmap_message_out "CXXFLAGS_args after cmdline opts set to: $CXXFLAGS_args"
+zmap_message_out " LDFLAGS_args after cmdline opts set to: $LDFLAGS_args"
+zmap_message_out "      CC_args after cmdline opts set to: $CC_args"
+zmap_message_out "  CFLAGS_args after cmdline opts set to: $CFLAGS_args"
 
 
 
@@ -225,12 +217,6 @@ case $opsys in
 	    zmap_register_prefix_in_env $GTK_PREFIX
 	    zmap_register_prefix_as_rpath $GTK_PREFIX
 
-
-	    if [ "x$USE_GPROF" == "x$ZMAP_TRUE" ]; then
-                CFLAGS_args="-pg $CFLAGS"
-		LDFLAGS_args="-pg $LDFLAGS"
-	    fi
-
 	    ;; # end x86_64
 
 	* )
@@ -247,23 +233,9 @@ case $opsys in
                 LDFLAGS="-L/usr/toolworks/memoryscape.3.2.3-0/linux-x86/lib -ltvheap -Wl,-rpath=/usr/toolworks/memoryscape.3.2.3-0/linux-x86/lib"
 	    fi
 
-	    # Add electric fence memory debugging lib.
-	    if [ "x$ELECTRIC_MEM" == "x$ZMAP_TRUE" ]; then
-                LDFLAGS_args="$HOME/downloads/electric-fence-2.1.13/libefence.a $LDFLAGS"
-            fi
-
-
-	    if [ "x$USE_GPROF" == "x$ZMAP_TRUE" ]; then
-                CFLAGS_args="-pg $CFLAGS"
-                LDFLAGS_args="-pg $LDFLAGS"
-	    fi
-
             # Stuff rdynamic in.....
             #CFLAGS_args="-rdynamic $CFLAGS"
             #LDFLAGS_args="-rdynamic $LDFLAGS"
-
-
-	    CXXFLAGS=''
 
 
 	    # Now add LDFLAGS to args so they get through to configure.
@@ -274,7 +246,12 @@ case $opsys in
 	    ;; # end *
     esac
 
-    # experiment.....
+
+    if [ "x$USE_GPROF" == "x$ZMAP_TRUE" ]; then
+       CFLAGS_args="$CFLAGS_args -pg $CFLAGS"
+       LDFLAGS_args="$LDFLAGS_args -pg $LDFLAGS"
+    fi
+
 
     ;; # end Linux
 
@@ -294,9 +271,7 @@ case $opsys in
 
     CFLAGS_args="-Wall -I$GTK_PREFIX/include -Wno-deprecated-declarations"
 
-
     LDFLAGS_args="$LDFLAGS $LDFLAGS_args"
- 
 
     ;;
 
@@ -309,17 +284,15 @@ case $opsys in
 esac
 
 
-#export CXXFLAGS
-
-
-zmap_message_out "     CXX_args final set to: $CXX_args"
-zmap_message_out "CXXFLAGS_args final set to: $CXXFLAGS_args"
-zmap_message_out " LDFLAGS_args final set to: $LDFLAGS_args"
-zmap_message_out "      CC_args env set to: $CC_args"
-zmap_message_out "  CFLAGS_args env set to: $CFLAGS_args"
+zmap_message_out "     CXX_args final value: $CXX_args"
+zmap_message_out "CXXFLAGS_args final value: $CXXFLAGS_args"
+zmap_message_out " LDFLAGS_args final value: $LDFLAGS_args"
+zmap_message_out "      CC_args final value: $CC_args"
+zmap_message_out "  CFLAGS_args final value: $CFLAGS_args"
 
 
 
+# Set up XXXX=YYYYY required by ./configure script.
 CXX_param="CXX=$CXX_args"
 CXXFLAGS_param="CXXFLAGS=$CXXFLAGS_args"
 LDFLAGS_param="LDFLAGS=$LDFLAGS_args"
@@ -327,31 +300,11 @@ CC_param="CC=$CC_args"
 CFLAGS_param="CFLAGS=$CFLAGS_args"
 
 
-
-echo $CXX_param
-echo $CXXFLAGS_param
-echo $LDFLAGS_param
-echo $CC_param
-echo $CFLAGS_param
-
-
-
-
-
 # Export any settings we need to be passed on.
 export PKG_CONFIG_PATH
 
 zmap_message_out "PKG_CONFIG_PATH is set to: $PKG_CONFIG_PATH"
 
-
-# install dir has been apearing twice !!!!
-
-#zmap_message_out "Running configure as:  " \
-#    $BASE_DIR/configure \
-#    $INSTALL_DIR \
-#    $COMMON_CONFIGURE_ARGS \
-#    $SPECIFIC_CONFIGURE_ARGS \
-#    $CC_param $CFLAGS_param $CXX_param $CXXFLAGS_param $LDFLAGS_param "$@"
 
 zmap_message_out "Running configure as:  " \
     $BASE_DIR/configure \
@@ -362,15 +315,9 @@ zmap_message_out "Running configure as:  " \
 zmap_message_out "=========================================================================="
 
 
-# run the configure.......watch out for the quoting, sometimes we want the variable to
-# be interpreted as a single cmdline arg, sometimes as multiple ones.
-
-#$BASE_DIR/configure \
-#$INSTALL_DIR \
-#$COMMON_CONFIGURE_ARGS \
-#$SPECIFIC_CONFIGURE_ARGS \
-#"$CC_param" "$CFLAGS_param" "$CXX_param" "$CXXFLAGS_param" "$LDFLAGS_param" "$@" || zmap_message_exit "configure script failed."
-
+# run the configure.......watch out for the quoting which ensures that any embedded
+# blanks in CXX_param etc are not lost.
+#
 $BASE_DIR/configure \
 $COMMON_CONFIGURE_ARGS \
 $SPECIFIC_CONFIGURE_ARGS \
