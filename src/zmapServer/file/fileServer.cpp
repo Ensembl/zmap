@@ -907,6 +907,8 @@ static ZMapServerResponseType fileGetHeader_GIO(FileServer server)
 static ZMapServerResponseType fileGetHeader(FileServer server)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
+  zMapReturnValIfFail(server && server->data_source, result) ;
+
   ZMapDataSourceType data_source_type = ZMapDataSourceType::UNK ;
 
   /*
@@ -923,7 +925,7 @@ static ZMapServerResponseType fileGetHeader(FileServer server)
     {
       result = fileGetHeader_GIO(server) ;
     }
-  else if (server->data_source && server->data_source->checkHeader())
+  else if (server->data_source->checkHeader())
     {
       /*
        *  (i) Put in a fake header line to make it look to ZMap like something
@@ -935,6 +937,10 @@ static ZMapServerResponseType fileGetHeader(FileServer server)
       g_string_erase(server->buffer_line, 0, -1) ;
       g_string_insert(server->buffer_line, 0, "##source-version ZMap-GFF-conversion") ;
       result = ZMAP_SERVERRESPONSE_OK ;
+    }
+  else if (server->data_source->error())
+    {
+      setErrMsg(server, server->data_source->error()->message) ;
     }
 
   return result ;

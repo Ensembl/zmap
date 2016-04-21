@@ -39,12 +39,11 @@
 #ifdef USE_HTSLIB
 
 /*
- * HTS header. Temporary location.
+ * HTS header
  */
-/* #include "/nfs/users/nfs_s/sm23/Work/htslib-develop/htslib/hts.h"
-#include "/nfs/users/nfs_s/sm23/Work/htslib-develop/htslib/sam.h" */
 #include <htslib/hts.h>
 #include <htslib/sam.h>
+#include <htslib/vcf.h>
 
 #endif
 
@@ -172,6 +171,29 @@ public:
   char *so_type ;
 } ;
 
+class ZMapDataSourceBCFStruct : public ZMapDataSourceStruct
+{
+public:
+  ZMapDataSourceBCFStruct(const GQuark source_name, const char *file_name, const char *open_mode, const char *sequence) ;
+  ~ZMapDataSourceBCFStruct() ;
+  bool isOpen() ;
+  bool checkHeader() ;
+  bool readLine(GString * const pStr) ;
+
+  htsFile *hts_file ;
+  /* bam header and record object */
+  bcf_hdr_t *hts_hdr ;
+  bcf1_t *hts_rec ;
+
+  /*
+   * Data that we need to store
+   */
+  char *so_type ;
+
+private:
+  int rid_ ; // stores the ref sequence id value used by bcf parser for our required sequence_
+} ;
+
 #endif
 
 
@@ -181,6 +203,7 @@ typedef ZMapDataSourceBIGBEDStruct *ZMapDataSourceBIGBED ;
 typedef ZMapDataSourceBIGWIGStruct *ZMapDataSourceBIGWIG ;
 #ifdef USE_HTSLIB
 typedef ZMapDataSourceHTSStruct *ZMapDataSourceHTS ;
+typedef ZMapDataSourceBCFStruct *ZMapDataSourceBCF ;
 #endif
 
 

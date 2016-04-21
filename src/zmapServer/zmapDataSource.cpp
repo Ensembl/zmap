@@ -24,8 +24,7 @@
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
  *
- * Description: Code for concrete data sources. At the moment, two options
- * only, the GIO channel or HTS file.
+ * Description: Code for concrete data sources.
  *
  * Exported functions:
  *-------------------------------------------------------------------
@@ -93,6 +92,7 @@ namespace // unnamed namespace
  */
 static const char * const ZMAP_BAM_SO_TERM  = "read" ;
 static const char * const ZMAP_BED_SO_TERM  = "read" ;
+static const char * const ZMAP_BCF_SO_TERM  = "snv" ;
 static const char * const ZMAP_BIGBED_SO_TERM  = "sequence_feature" ;
 static const char * const ZMAP_BIGWIG_SO_TERM  = "score" ;
 #define ZMAP_CIGARSTRING_MAXLENGTH 2048
@@ -301,6 +301,35 @@ ZMapDataSourceHTSStruct::ZMapDataSourceHTSStruct(const GQuark source_name,
       g_set_error(&error_, g_quark_from_string("ZMap"), 99, "Failed to open file '%s'", file_name) ;
     }
 }
+
+ZMapDataSourceBCFStruct::ZMapDataSourceBCFStruct(const GQuark source_name, 
+                                                 const char *file_name, 
+                                                 const char *open_mode,
+                                                 const char *sequence)
+  : ZMapDataSourceStruct(source_name, sequence),
+    hts_file(NULL),
+    hts_hdr(NULL),
+    hts_rec(NULL),
+    so_type(NULL),
+    rid_(0)
+{
+  type = ZMapDataSourceType::BCF ;
+
+  hts_file = hts_open(file_name, open_mode);
+
+  if (hts_file)
+    hts_hdr = bcf_hdr_read(hts_file) ;
+
+  hts_rec = bcf_init1() ;
+  if (hts_file && hts_hdr && hts_rec)
+    {
+      so_type = g_strdup(ZMAP_BCF_SO_TERM) ;
+    }
+  else
+    {
+      g_set_error(&error_, g_quark_from_string("ZMap"), 99, "Failed to open file '%s'", file_name) ;
+    }
+}
 #endif
 
 /*
@@ -367,6 +396,20 @@ ZMapDataSourceHTSStruct::~ZMapDataSourceHTSStruct()
   if (so_type)
     g_free(so_type) ;
 }
+
+ZMapDataSourceBCFStruct::~ZMapDataSourceBCFStruct()
+{
+  if (hts_file)
+    hts_close(hts_file) ;
+  if (hts_rec)
+    bcf_destroy1(hts_rec) ;
+  if (hts_hdr)
+    bcf_hdr_destroy(hts_hdr) ;
+  if (sequence_)
+    g_free(sequence_) ;
+  if (so_type)
+    g_free(so_type) ;
+}
 #endif
 
 
@@ -421,6 +464,16 @@ bool ZMapDataSourceBIGWIGStruct::isOpen()
 
 #ifdef USE_HTSLIB
 bool ZMapDataSourceHTSStruct::isOpen()
+{
+  bool result = false ;
+
+  if (hts_file)
+    result = true ;
+  
+  return result ;
+}
+
+bool ZMapDataSourceBCFStruct::isOpen()
 {
   bool result = false ;
 
@@ -508,6 +561,13 @@ bool ZMapDataSourceBIGBEDStruct::checkHeader()
         }
     }
 
+  if (!result)
+    {
+      g_set_error(&error_, g_quark_from_string("ZMap"), 99,
+                  "File header does not contain sequence '%s'", 
+                  sequence_) ;
+    }
+
   return result ;
 }
 
@@ -528,6 +588,13 @@ bool ZMapDataSourceBIGWIGStruct::checkHeader()
           result = true ;
           break ;
         }
+    }
+
+  if (!result)
+    {
+      g_set_error(&error_, g_quark_from_string("ZMap"), 99,
+                  "File header does not contain sequence '%s'", 
+                  sequence_) ;
     }
 
   return result ;
@@ -560,6 +627,44 @@ bool ZMapDataSourceHTSStruct::checkHeader()
               break ;
             }
         }
+    }
+
+  if (!result)
+    {
+      g_set_error(&error_, g_quark_from_string("ZMap"), 99,
+                  "File header does not contain sequence '%s'", 
+                  sequence_) ;
+    }
+
+  return result ;
+}
+
+bool ZMapDataSourceBCFStruct::checkHeader()
+{
+  bool result = false ;
+  zMapReturnValIfFail(isOpen(), result) ;
+
+  // Loop through all sequence names in the file and check for the one we want
+  int nseqs = 0 ;
+  const char **seqnames = bcf_hdr_seqnames(hts_hdr, &nseqs) ;
+
+  for (int i = 0; i < nseqs; ++i)
+    {
+      if (strcmp(seqnames[i], sequence_) == 0)
+        {
+          // Found it. Remember its 0-based index. This is the rid that gets recorded
+          // in the bcf parser.
+          rid_ = i ;
+          result = true ;
+          break ;
+        }
+    }
+
+  if (!result)
+    {
+      g_set_error(&error_, g_quark_from_string("ZMap"), 99,
+                  "File header does not contain sequence '%s'", 
+                  sequence_) ;
     }
 
   return result ;
@@ -864,6 +969,107 @@ bool ZMapDataSourceHTSStruct::readLine(GString * const pStr )
 
   return result ;
 }
+
+bool ZMapDataSourceBCFStruct::readLine(GString * const pStr )
+{
+  bool result = false ;
+
+  static const gssize string_start = 0 ;
+  int iStart = 0,
+    iEnd = 0 ;
+
+  /*
+   * Initial error check.
+   */
+  zMapReturnValIfFail(hts_file && hts_hdr && hts_rec, result ) ;
+
+  /*
+   * Erase current buffer contents
+   */
+  g_string_erase(pStr, string_start, -1) ;
+
+  /*
+   * Read line from HTS file and convert to GFF.
+   */
+  if ( bcf_read1(hts_file, hts_hdr, hts_rec) >= 0 )
+    {
+      bcf_unpack(hts_rec, BCF_UN_ALL) ;
+
+      /* Get the ref sequence id and check it's the one we're looking for */
+      if (hts_rec->rid == rid_)
+        {
+          iStart = hts_rec->pos + 1 ;
+          iEnd   = iStart + hts_rec->rlen - 1 ;
+
+          const char *name = hts_rec->d.id ;
+          if (name && *name == '.')
+            name = NULL ;
+
+          /* Construct the ensembl_vartiation string for the attributes */
+          string var_str ;
+          bool first = true ;
+          bool deletion = false ;
+          bool insertion = false ;
+          bool snv = true ;
+
+          for (int i = 0; i < hts_rec->d.m_allele; ++i)
+            {
+              // Use '/' separators between the alleles
+              if (!first)
+                var_str += "/" ;
+
+              // If it's a deletion (a dot), replace it with a dash
+              const char *val = hts_rec->d.allele[i] ;
+
+              if (val && *val == '.')
+                {
+                  val = "-" ;
+
+                  if (first)
+                    insertion = true ;
+                  else 
+                    deletion = true ;
+                }
+              else if (strlen(val) > 1)
+                {
+                  snv = false ;
+                }
+
+              var_str += val ;
+              
+              first = false ;
+            }
+
+          const char *so_term = "SNV" ;
+          if (insertion)
+            so_term = "insertion" ;
+          else if (deletion)
+            so_term = "deletion" ;
+          else if (!snv)
+            so_term = "substitution" ;
+
+          createGFFLine(pStr, 
+                        sequence_,
+                        g_quark_to_string(source_name_),
+                        so_term,
+                        iStart,
+                        iEnd,
+                        0.0, 
+                        '.', 
+                        name, 
+                        false, 
+                        0, 
+                        0) ;
+
+          g_string_append_printf(pStr, "ensembl_variation=%s;", var_str.c_str()) ;
+
+          result = true ;
+        }
+    }
+
+  return result ;
+}
+
 #endif
 
 
@@ -904,6 +1110,9 @@ ZMapDataSource zMapDataSourceCreate(const GQuark source_name,
 #ifdef USE_HTSLIB
         case ZMapDataSourceType::HTS:
           data_source = new ZMapDataSourceHTSStruct(source_name, file_name, open_mode, sequence) ;
+          break ;
+        case ZMapDataSourceType::BCF:
+          data_source = new ZMapDataSourceBCFStruct(source_name, file_name, open_mode, sequence) ;
           break ;
 #endif
         default:
@@ -1020,7 +1229,8 @@ gboolean zMapDataSourceGetGFFVersion(ZMapDataSource const data_source, int * con
  *       *.bed                            ZMapDataSourceType::BED
  *       *.[bb,bigBed]                    ZMapDataSourceType::BIGBED
  *       *.[bw,bigWig]                    ZMapDataSourceType::BIGWIG
- *       *.[sam,bam,cram,vcf,tabix]       ZMapDataSourceType::HTS
+ *       *.[sam,bam,cram]                 ZMapDataSourceType::HTS
+ *       *.[bcf,vcf]                      ZMapDataSourceType::BCF
  *       *.<everything_else>              ZMapDataSourceType::UNK
  */
 ZMapDataSourceType zMapDataSourceTypeFromFilename(const char * const file_name, GError **error_out)
@@ -1037,8 +1247,8 @@ ZMapDataSourceType zMapDataSourceTypeFromFilename(const char * const file_name, 
       ,{"sam",    ZMapDataSourceType::HTS}
       ,{"bam",    ZMapDataSourceType::HTS}
       ,{"cram",   ZMapDataSourceType::HTS}
-      ,{"vcf",    ZMapDataSourceType::HTS}
-      ,{"tabix",  ZMapDataSourceType::HTS}
+      ,{"vcf",    ZMapDataSourceType::BCF}
+      ,{"bcf",    ZMapDataSourceType::BCF}
 #endif
     };
 
