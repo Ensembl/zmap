@@ -184,26 +184,6 @@ typedef ZMapDataSourceHTSStruct *ZMapDataSourceHTS ;
 #endif
 
 
-/*
- * This is for temporary data that need to be stored while
- * records are being read from a file. At the moment this is used
- * only for HTS data sources, since we need a struct allocated to
- * read records into.
- */
-typedef struct ZMapDataSourceTempStorageStruct_
-  {
-    ZMapDataSourceType type ;
-  } ZMapDataSourceTempStorageStruct, *ZMapDataSourceTempStorage ;
-
-typedef struct ZMapDataSourceTempStorageStructGIO_
-  {
-    ZMapDataSourceType type ;
-  } ZMapDataSourceTempStorageStructGIO, *ZMapDataSourceTempStorageGIO ;
-
-typedef struct ZMapDataSourceTempStorageStructHTS_
-  {
-    ZMapDataSourceType type ;
-  } ZMapDataSourceTempStorageStructHTS, *ZMapDataSourceTempStorageHTS ;
 
 
 #endif
