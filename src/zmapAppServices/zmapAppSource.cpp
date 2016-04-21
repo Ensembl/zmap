@@ -39,6 +39,7 @@
 #endif 
 
 #include <list>
+#include <sstream>
 #include <string.h>
 
 #include <gbtools/gbtools.hpp>
@@ -93,11 +94,20 @@ typedef struct MainFrameStructName
   GtkComboBox *combo ;
   map<ZMapURLScheme, unsigned int> combo_indices ; /* keep track of which scheme is at which idx */
 
-  list<GtkWidget*> file_widgets ;
+  ZMapFeatureSequenceMap sequence_map ;
+  
+  ZMapAppCreateSourceCB user_func ;
+  gpointer user_data ;
+
+  // General
   GtkWidget *name_widg ;
+
+  // File
+  list<GtkWidget*> file_widgets ;
   GtkWidget *path_widg ;
 
 #ifdef USE_ENSEMBL
+  // Ensembl
   list<GtkWidget*> ensembl_widgets ;
   GtkWidget *host_widg ;
   GtkWidget *port_widg ;
@@ -110,16 +120,13 @@ typedef struct MainFrameStructName
   GtkWidget *dna_check ;
 #endif
 
+  // Trackhub
+  gbtools::trackhub::Registry registry;
   list<GtkWidget*> trackhub_widgets;
   GtkWidget *trackdb_widg;
   GtkWidget *search_widg;
   GtkWidget *browse_widg;
   GtkWidget *register_widg;
-
-  ZMapFeatureSequenceMap sequence_map ;
-  
-  ZMapAppCreateSourceCB user_func ;
-  gpointer user_data ;
 
 } MainFrameStruct, *MainFrame ;
 
@@ -649,6 +656,7 @@ static GtkComboBox *createComboBox(MainFrame main_data)
 
 
 static GtkWidget* makeButtonWidget(const char *stock,
+                                   const bool icon_only,
                                    const char *tooltip,
                                    GtkSignalFunc cb_func,
                                    gpointer cb_data,
@@ -657,9 +665,18 @@ static GtkWidget* makeButtonWidget(const char *stock,
                                    const int col,
                                    list<GtkWidget*> &widgets_list)
 {
-  GtkWidget *button = gtk_button_new() ;
+  GtkWidget *button = NULL ;
 
-  gtk_button_set_image(GTK_BUTTON(button), gtk_image_new_from_stock(stock, GTK_ICON_SIZE_BUTTON));
+  if (icon_only)
+    {
+      button = gtk_button_new() ;
+      gtk_button_set_image(GTK_BUTTON(button), gtk_image_new_from_stock(stock, GTK_ICON_SIZE_BUTTON));
+    }
+  else
+    {
+      button = gtk_button_new_from_stock(stock) ;
+    }
+
   gtk_widget_set_tooltip_text(button, tooltip) ;
 
   gtk_signal_connect(GTK_OBJECT(button), "clicked", cb_func, cb_data) ;
@@ -686,6 +703,7 @@ static void makeEnsemblWidgets(MainFrame main_data,
 
   /* Add a button next to the dbname widget to allow the user to search for a db in this host */
   makeButtonWidget(GTK_STOCK_FIND,
+                   true,
                    "Look up database for this host", 
                    GTK_SIGNAL_FUNC(dbnameCB), main_data,
                    table, row - 1, col + 2,
@@ -759,7 +777,7 @@ static void makeTrackhubWidgets(MainFrame main_data,
                                             table, &row, col, col + 2, TRUE, &main_data->trackhub_widgets);
   
   /* Search button */
-  main_data->search_widg = makeButtonWidget(GTK_STOCK_FIND, "Find track hubs",
+  main_data->search_widg = makeButtonWidget(GTK_STOCK_FIND, false, "Find track hubs",
                                             GTK_SIGNAL_FUNC(trackhubSearchCB), main_data,
                                             table, row, col,
                                             main_data->trackhub_widgets);
@@ -1551,10 +1569,57 @@ static gboolean applyTrackhub(MainFrame main_frame)
 }
 
 
+/* Show a dialog where the user can search for trackhubs */
 static void trackhubSearchCB(GtkWidget *widget, gpointer cb_data)
 {
   MainFrame main_data = (MainFrame)cb_data ;
   zMapReturnIfFail(main_data && main_data->search_widg) ;
-  
+
+  GtkWidget *dialog = gtk_dialog_new_with_buttons("Search for Track Hubs",
+                                                  NULL,
+                                                  (GtkDialogFlags)(GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT),
+                                                  GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+                                                  GTK_STOCK_OK, GTK_RESPONSE_OK,
+                                                  NULL);
+
+  gtk_dialog_set_default_response(GTK_DIALOG(dialog), GTK_RESPONSE_OK) ;
+
+  GtkBox *content = GTK_BOX(GTK_DIALOG(dialog)->vbox) ;
+
+  GtkBox *hbox = GTK_BOX(gtk_hbox_new(FALSE, 0)) ;
+  gtk_box_pack_start(content, GTK_WIDGET(hbox), FALSE, FALSE, 0) ;
+
+  gtk_box_pack_start(hbox, gtk_label_new("Search text: "), FALSE, FALSE, 0) ;
+  GtkEntry *search_entry = GTK_ENTRY(gtk_entry_new()) ;
+  gtk_box_pack_start(hbox, GTK_WIDGET(search_entry), FALSE, FALSE, 0) ;
+
+  /* Run the dialog */
+  gtk_widget_show_all(dialog) ;
+  gint response = gtk_dialog_run(GTK_DIALOG(dialog)) ;
+
+  if (response == GTK_RESPONSE_OK)
+    {
+      const char *search_text = gtk_entry_get_text(search_entry) ;
+      auto results = main_data->registry.search(search_text) ;
+      list<string> items;
+
+      for (const auto &trackdb : results)
+        {
+          stringstream str;
+          str << trackdb.name() << "   "
+              << trackdb.assembly() << "   "
+              << trackdb.species() ;
+
+          items.push_back(str.str()) ;
+        }
+
+      gboolean ok = runListDialog(main_data, 
+                                  &items, 
+                                  GTK_ENTRY(main_data->trackdb_widg), 
+                                  "Select track hub",
+                                  false) ;
+    }
+
+  gtk_widget_destroy(dialog) ;
 }
 

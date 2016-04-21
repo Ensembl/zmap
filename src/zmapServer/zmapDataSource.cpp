@@ -32,6 +32,7 @@
 #include <ZMap/zmap.hpp>
 
 #include <map>
+#include <sstream>
 #include <stdlib.h>
 #include <string.h>
 #include <glib.h>
@@ -551,6 +552,7 @@ bool ZMapDataSourceBIGBEDStruct::checkHeader()
 
   // Get the list of sequences in the file and check whether our required sequence exists
   struct bbiChromInfo *chromList = bbiChromList(bbi_file_);
+  stringstream available_seqs;
 
   for (bbiChromInfo *chrom = chromList; chrom != NULL; chrom = chrom->next)
     {
@@ -559,13 +561,15 @@ bool ZMapDataSourceBIGBEDStruct::checkHeader()
           result = true ;
           break ;
         }
+
+      available_seqs << chrom->name << ", " ;
     }
 
   if (!result)
     {
       g_set_error(&error_, g_quark_from_string("ZMap"), 99,
-                  "File header does not contain sequence '%s'", 
-                  sequence_) ;
+                  "File header does not contain sequence '%s'. Available sequences in this file are: %s\n", 
+                  sequence_, available_seqs.str().c_str()) ;
     }
 
   return result ;
@@ -580,6 +584,7 @@ bool ZMapDataSourceBIGWIGStruct::checkHeader()
 
   // Get the list of sequences in the file and check whether our required sequence exists
   struct bbiChromInfo *chromList = bbiChromList(bbi_file_);
+  stringstream available_seqs;
 
   for (bbiChromInfo *chrom = chromList; chrom != NULL; chrom = chrom->next)
     {
@@ -588,13 +593,15 @@ bool ZMapDataSourceBIGWIGStruct::checkHeader()
           result = true ;
           break ;
         }
+
+      available_seqs << chrom->name << ", " ;
     }
 
   if (!result)
     {
       g_set_error(&error_, g_quark_from_string("ZMap"), 99,
-                  "File header does not contain sequence '%s'", 
-                  sequence_) ;
+                  "File header does not contain sequence '%s'. Available sequences in this file are: %s\n", 
+                  sequence_, available_seqs.str().c_str()) ;
     }
 
   return result ;
@@ -615,6 +622,8 @@ bool ZMapDataSourceHTSStruct::checkHeader()
 
   // Read the HTS header and look a @SQ:<name> tag that matches the sequence
   // we are looking for.
+  stringstream available_seqs;
+
   if (hts_hdr && hts_hdr->n_targets >= 1)
     {
       int i ;
@@ -626,14 +635,16 @@ bool ZMapDataSourceHTSStruct::checkHeader()
               result = true ;
               break ;
             }
+          
+          available_seqs << hts_hdr->target_name[i] << ", " ;
         }
     }
 
   if (!result)
     {
       g_set_error(&error_, g_quark_from_string("ZMap"), 99,
-                  "File header does not contain sequence '%s'", 
-                  sequence_) ;
+                  "File header does not contain sequence '%s'. Available sequences in this file are: %s\n", 
+                  sequence_, available_seqs.str().c_str()) ;
     }
 
   return result ;
@@ -647,6 +658,7 @@ bool ZMapDataSourceBCFStruct::checkHeader()
   // Loop through all sequence names in the file and check for the one we want
   int nseqs = 0 ;
   const char **seqnames = bcf_hdr_seqnames(hts_hdr, &nseqs) ;
+  stringstream available_seqs;
 
   for (int i = 0; i < nseqs; ++i)
     {
@@ -658,13 +670,15 @@ bool ZMapDataSourceBCFStruct::checkHeader()
           result = true ;
           break ;
         }
+
+      available_seqs << seqnames[i] << ", " ;
     }
 
   if (!result)
     {
       g_set_error(&error_, g_quark_from_string("ZMap"), 99,
-                  "File header does not contain sequence '%s'", 
-                  sequence_) ;
+                  "File header does not contain sequence '%s'. Available sequences in this file are: %s\n", 
+                  sequence_, available_seqs.str().c_str()) ;
     }
 
   return result ;
