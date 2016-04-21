@@ -152,11 +152,11 @@ private:
 
 #ifdef USE_HTSLIB
 
-class ZMapDataSourceHTSFileStruct : public ZMapDataSourceStruct
+class ZMapDataSourceHTSStruct : public ZMapDataSourceStruct
 {
 public:
-  ZMapDataSourceHTSFileStruct(const GQuark source_name, const char *file_name, const char *open_mode, const char *sequence) ;
-  ~ZMapDataSourceHTSFileStruct() ;
+  ZMapDataSourceHTSStruct(const GQuark source_name, const char *file_name, const char *open_mode, const char *sequence) ;
+  ~ZMapDataSourceHTSStruct() ;
   bool isOpen() ;
   bool checkHeader() ;
   bool readLine(GString * const pStr) ;
@@ -180,7 +180,7 @@ typedef ZMapDataSourceBEDStruct *ZMapDataSourceBED ;
 typedef ZMapDataSourceBIGBEDStruct *ZMapDataSourceBIGBED ;
 typedef ZMapDataSourceBIGWIGStruct *ZMapDataSourceBIGWIG ;
 #ifdef USE_HTSLIB
-typedef ZMapDataSourceHTSFileStruct *ZMapDataSourceHTSFile ;
+typedef ZMapDataSourceHTSStruct *ZMapDataSourceHTS ;
 #endif
 
 

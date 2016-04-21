@@ -274,7 +274,7 @@ ZMapDataSourceBIGWIGStruct::ZMapDataSourceBIGWIGStruct(const GQuark source_name,
 }
 
 #ifdef USE_HTSLIB
-ZMapDataSourceHTSFileStruct::ZMapDataSourceHTSFileStruct(const GQuark source_name, 
+ZMapDataSourceHTSStruct::ZMapDataSourceHTSStruct(const GQuark source_name, 
                                                          const char *file_name, 
                                                          const char *open_mode,
                                                          const char *sequence)
@@ -354,7 +354,7 @@ ZMapDataSourceBIGWIGStruct::~ZMapDataSourceBIGWIGStruct()
 
 
 #ifdef USE_HTSLIB
-ZMapDataSourceHTSFileStruct::~ZMapDataSourceHTSFileStruct()
+ZMapDataSourceHTSStruct::~ZMapDataSourceHTSStruct()
 {
   if (hts_file)
     hts_close(hts_file) ;
@@ -420,7 +420,7 @@ bool ZMapDataSourceBIGWIGStruct::isOpen()
 }
 
 #ifdef USE_HTSLIB
-bool ZMapDataSourceHTSFileStruct::isOpen()
+bool ZMapDataSourceHTSStruct::isOpen()
 {
   bool result = false ;
 
@@ -541,7 +541,7 @@ bool ZMapDataSourceBIGWIGStruct::checkHeader()
  * hts_hdr = sam_hdr_read() ;
  * Returns TRUE if reference sequence name found in BAM file header.
  */
-bool ZMapDataSourceHTSFileStruct::checkHeader()
+bool ZMapDataSourceHTSStruct::checkHeader()
 {
   bool result = false ;
   zMapReturnValIfFail(isOpen(), result) ;
@@ -730,7 +730,7 @@ bool ZMapDataSourceBIGWIGStruct::readLine(GString * const str)
 /*
  * Read a record from a HTS file and turn it into GFFv3.
  */
-bool ZMapDataSourceHTSFileStruct::readLine(GString * const pStr )
+bool ZMapDataSourceHTSStruct::readLine(GString * const pStr )
 {
   static const gssize string_start = 0 ;
   static const char *sFormatName = "Name=%s;",
@@ -903,7 +903,7 @@ ZMapDataSource zMapDataSourceCreate(const GQuark source_name,
           break ;
 #ifdef USE_HTSLIB
         case ZMapDataSourceType::HTS:
-          data_source = new ZMapDataSourceHTSFileStruct(source_name, file_name, open_mode, sequence) ;
+          data_source = new ZMapDataSourceHTSStruct(source_name, file_name, open_mode, sequence) ;
           break ;
 #endif
         default:
@@ -1020,7 +1020,7 @@ gboolean zMapDataSourceGetGFFVersion(ZMapDataSource const data_source, int * con
  *       *.bed                            ZMapDataSourceType::BED
  *       *.[bb,bigBed]                    ZMapDataSourceType::BIGBED
  *       *.[bw,bigWig]                    ZMapDataSourceType::BIGWIG
- *       *.[sam,bam,cram]                 ZMapDataSourceType::HTS
+ *       *.[sam,bam,cram,vcf,tabix]       ZMapDataSourceType::HTS
  *       *.<everything_else>              ZMapDataSourceType::UNK
  */
 ZMapDataSourceType zMapDataSourceTypeFromFilename(const char * const file_name, GError **error_out)
@@ -1037,6 +1037,8 @@ ZMapDataSourceType zMapDataSourceTypeFromFilename(const char * const file_name, 
       ,{"sam",    ZMapDataSourceType::HTS}
       ,{"bam",    ZMapDataSourceType::HTS}
       ,{"cram",   ZMapDataSourceType::HTS}
+      ,{"vcf",    ZMapDataSourceType::HTS}
+      ,{"tabix",  ZMapDataSourceType::HTS}
 #endif
     };
 
