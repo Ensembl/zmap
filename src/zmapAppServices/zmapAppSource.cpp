@@ -77,12 +77,10 @@ using namespace std ;
 
 /* Generic definitions of columns for displaying a list of e.g. databases. For now just include a
  * single column to display the name */
-typedef enum
-  {
-    NAME_COLUMN,       /* shows the value name */
+enum class GenericListColumn {NAME,  /*MUST BE LAST:*/N_COLS} ;
 
-    N_COLUMNS
-  } DialogColumns ;
+/* Columns for displaying a list of trackhub tracks */
+enum class TrackListColumn {NAME, ID, SPECIES, ASSEMBLY, TRACKS,  /*MUST BE LAST:*/N_COLS} ;
 
 
 
@@ -562,7 +560,7 @@ static char* comboGetValue(GtkComboBox *combo)
     {
       GtkTreeModel *model = gtk_combo_box_get_model(GTK_COMBO_BOX(combo));
       
-      gtk_tree_model_get(model, &iter, NAME_COLUMN, &result, -1);
+      gtk_tree_model_get(model, &iter, GenericListColumn::NAME, &result, -1);
     }
 
   return result ;
@@ -627,7 +625,7 @@ static GtkComboBox *createComboBox(MainFrame main_data)
   GtkTreeIter iter;
 
   gtk_list_store_append(store, &iter);
-  gtk_list_store_set(store, &iter, NAME_COLUMN, SOURCE_TYPE_FILE, -1);
+  gtk_list_store_set(store, &iter, GenericListColumn::NAME, SOURCE_TYPE_FILE, -1);
   gtk_combo_box_set_active_iter(combo, &iter);
 
   main_data->combo_indices[SCHEME_FILE] = combo_index ;
@@ -642,7 +640,7 @@ static GtkComboBox *createComboBox(MainFrame main_data)
 
 #ifdef USE_ENSEMBL
   gtk_list_store_append(store, &iter);
-  gtk_list_store_set(store, &iter, NAME_COLUMN, SOURCE_TYPE_ENSEMBL, -1);
+  gtk_list_store_set(store, &iter, GenericListColumn::NAME, SOURCE_TYPE_ENSEMBL, -1);
   gtk_combo_box_set_active_iter(combo, &iter);
 
   main_data->combo_indices[SCHEME_ENSEMBL] = combo_index ;
@@ -1177,7 +1175,7 @@ gboolean search_equal_func_cb(GtkTreeModel *model,
   char *column_name = NULL ;
 
   gtk_tree_model_get(model, iter,
-                     NAME_COLUMN, &column_name,
+                     GenericListColumn::NAME, &column_name,
                      -1) ;
 
   if (column_name && 
@@ -1207,7 +1205,7 @@ static gboolean tree_model_filter_visible_cb(GtkTreeModel *model, GtkTreeIter *i
   char *column_name = NULL ;
 
   gtk_tree_model_get(model, iter,
-                     NAME_COLUMN, &column_name,
+                     GenericListColumn::NAME, &column_name,
                      -1) ;
 
   if (!text || *text == 0)
@@ -1228,11 +1226,96 @@ static gboolean tree_model_filter_visible_cb(GtkTreeModel *model, GtkTreeIter *i
 }
 
 
-static GtkTreeView* createListWidget(MainFrame main_data, list<string> *val_list, 
-                                     SearchListData search_data, const gboolean allow_multiple)
+/* Utility to create a text column in a tree view */
+template<typename ColType>
+static void createTreeViewTextColumn(GtkTreeView *tree_view, 
+                                     const char *title, 
+                                     const ColType col_id)
+{
+  GtkCellRenderer *renderer = gtk_cell_renderer_text_new() ;
+
+  GtkTreeViewColumn *column = gtk_tree_view_column_new_with_attributes(title, 
+                                                                       renderer, 
+                                                                       "text", 
+                                                                       (int)col_id, 
+                                                                       NULL);
+
+  gtk_tree_view_column_set_resizable(column, TRUE) ;
+  gtk_tree_view_append_column(tree_view, column);
+
+}
+
+
+/* Create a tree view widget to show name values in the given list */
+static GtkTreeView* createListWidget(MainFrame main_data, 
+                                     const list<string> *val_list,
+                                     SearchListData search_data, 
+                                     const gboolean allow_multiple)
 {
   /* Create the data store */
-  GtkListStore *store = gtk_list_store_new(N_COLUMNS, G_TYPE_STRING) ;
+  GtkListStore *store = gtk_list_store_new((int)GenericListColumn::N_COLS, G_TYPE_STRING) ;
+
+  /* Create a filtered version of the data store */
+  GtkTreeModel *filtered = gtk_tree_model_filter_new(GTK_TREE_MODEL(store), NULL) ;
+  search_data->tree_model = filtered ;
+
+  gtk_tree_model_filter_set_visible_func(GTK_TREE_MODEL_FILTER(filtered), 
+                                         tree_model_filter_visible_cb, 
+                                         search_data->filter_entry,
+                                         NULL);
+
+  /* Loop through all of the names */
+  for (list<string>::const_iterator val_iter = val_list->begin(); val_iter != val_list->end(); ++val_iter)
+    {
+      /* Create a new row in the list store and set the name */
+      GtkTreeIter store_iter ;
+      gtk_list_store_append(store, &store_iter);
+      gtk_list_store_set(store, &store_iter, GenericListColumn::NAME, val_iter->c_str(), -1);
+    }
+
+  /* Create the tree widget */
+  GtkTreeView *tree_view = GTK_TREE_VIEW(gtk_tree_view_new_with_model(GTK_TREE_MODEL(filtered))) ;
+
+  /* Set various properties on the tree widget */
+  gtk_tree_view_set_enable_search(tree_view, FALSE);
+  gtk_tree_view_set_search_column(tree_view, (int)GenericListColumn::NAME);
+  gtk_tree_view_set_search_entry(tree_view, search_data->search_entry) ;
+  gtk_tree_view_set_search_equal_func(tree_view, search_equal_func_cb, NULL, NULL) ;
+
+  GtkTreeSelection *tree_selection = gtk_tree_view_get_selection(tree_view) ;
+  gtk_tree_selection_set_mode(tree_selection, allow_multiple ? GTK_SELECTION_MULTIPLE : GTK_SELECTION_SINGLE);
+
+  /* Create the columns */
+  createTreeViewTextColumn(tree_view, "Name", GenericListColumn::NAME);
+  GtkCellRenderer *renderer = gtk_cell_renderer_text_new();
+  GtkTreeViewColumn *column = gtk_tree_view_column_new_with_attributes("Name", 
+                                                                       renderer, 
+                                                                       "text", 
+                                                                       GenericListColumn::NAME, 
+                                                                       NULL);
+
+  gtk_tree_view_column_set_resizable(column, TRUE) ;
+  gtk_tree_view_append_column(tree_view, column);
+
+  return tree_view ;
+}
+
+
+/* Create a tree view widget to show trackdb values in the given list */
+static GtkTreeView* createListWidget(MainFrame main_data, 
+                                     const list<gbtools::trackhub::TrackDb> *trackdb_list, 
+                                     SearchListData search_data, 
+                                     const gboolean allow_multiple)
+{
+  /* Create the data store */
+  int num_cols = (int)(TrackListColumn::N_COLS) ;
+
+  GtkListStore *store = gtk_list_store_new(num_cols, 
+                                           G_TYPE_STRING,
+                                           G_TYPE_STRING,
+                                           G_TYPE_STRING,
+                                           G_TYPE_STRING,
+                                           G_TYPE_STRING) ;
 
   /* Create a filtered version of the data store */
   GtkTreeModel *filtered = gtk_tree_model_filter_new(GTK_TREE_MODEL(store), NULL) ;
@@ -1244,12 +1327,23 @@ static GtkTreeView* createListWidget(MainFrame main_data, list<string> *val_list
                                          NULL);
 
   /* Loop through all of the database names */
-  for (list<string>::const_iterator val_iter = val_list->begin(); val_iter != val_list->end(); ++val_iter)
+  for (const auto &trackdb : *trackdb_list)
     {
-      /* Create a new row in the list store and set the name */
+      /* Create a new row in the list store and set the column values */
       GtkTreeIter store_iter ;
       gtk_list_store_append(store, &store_iter);
-      gtk_list_store_set(store, &store_iter, NAME_COLUMN, val_iter->c_str(), -1);
+
+      /* We'll show the number of tracks as num-with-data/total */
+      stringstream num_tracks;
+      num_tracks << trackdb.num_with_data() << "/" << trackdb.num_tracks();
+
+      gtk_list_store_set(store, &store_iter, 
+                         TrackListColumn::NAME, trackdb.name().c_str(), 
+                         TrackListColumn::ID, trackdb.id().c_str(), 
+                         TrackListColumn::SPECIES, trackdb.species().c_str(), 
+                         TrackListColumn::ASSEMBLY, trackdb.assembly().c_str(), 
+                         TrackListColumn::TRACKS, num_tracks.str().c_str(), 
+                         -1);
     }
 
   /* Create the tree widget */
@@ -1257,7 +1351,7 @@ static GtkTreeView* createListWidget(MainFrame main_data, list<string> *val_list
 
   /* Set various properties on the tree widget */
   gtk_tree_view_set_enable_search(tree_view, FALSE);
-  gtk_tree_view_set_search_column(tree_view, NAME_COLUMN);
+  gtk_tree_view_set_search_column(tree_view, (int)TrackListColumn::NAME);
   gtk_tree_view_set_search_entry(tree_view, search_data->search_entry) ;
   gtk_tree_view_set_search_equal_func(tree_view, search_equal_func_cb, NULL, NULL) ;
 
@@ -1265,22 +1359,22 @@ static GtkTreeView* createListWidget(MainFrame main_data, list<string> *val_list
   gtk_tree_selection_set_mode(tree_selection, allow_multiple ? GTK_SELECTION_MULTIPLE : GTK_SELECTION_SINGLE);
 
   /* Create the columns */
-  GtkCellRenderer *renderer = gtk_cell_renderer_text_new();
-  GtkTreeViewColumn *column = gtk_tree_view_column_new_with_attributes("Database name", 
-                                                                       renderer, 
-                                                                       "text", 
-                                                                       NAME_COLUMN, 
-                                                                       NULL);
-
-  gtk_tree_view_column_set_resizable(column, TRUE) ;
-  gtk_tree_view_append_column(tree_view, column);
+  createTreeViewTextColumn(tree_view, "Name", TrackListColumn::NAME) ;
+  createTreeViewTextColumn(tree_view, "ID", TrackListColumn::ID) ;
+  createTreeViewTextColumn(tree_view, "Species", TrackListColumn::SPECIES) ;
+  createTreeViewTextColumn(tree_view, "Assembly", TrackListColumn::ASSEMBLY) ;
+  createTreeViewTextColumn(tree_view, "Tracks", TrackListColumn::TRACKS) ;
 
   return tree_view ;
 }
 
 
-/* Update the given entry with selected values from the given tree */
-static gboolean setEntryFromSelection(GtkEntry *entry, GtkTreeView *tree_view)
+/* Update the given entry with the selected value(s) from the given tree. Uses the given column
+ * in the tree for the result */
+template<typename ColType>
+static gboolean setEntryFromSelection(GtkTreeView *tree_view,
+                                      GtkEntry *entry, 
+                                      ColType col_id)
 {
   gboolean ok = FALSE ;
 
@@ -1302,7 +1396,7 @@ static gboolean setEntryFromSelection(GtkEntry *entry, GtkTreeView *tree_view)
 
           char *value_str = NULL ;
 
-          gtk_tree_model_get(model, &iter, NAME_COLUMN, &value_str, -1) ;
+          gtk_tree_model_get(model, &iter, col_id, &value_str, -1) ;
 
           if (value_str)
             {
@@ -1363,10 +1457,14 @@ static void clear_button_cb(GtkButton *button, gpointer user_data)
 
 /* Create and run a dialog to show the given list of values in a gtk tree view and to set the
  * given entry widget with the result when the user selects a row and hits ok. If the user
- * selects multiple values then it sets a semi-colon-separated list in the entry widget. */
+ * selects multiple values then it sets a semi-colon-separated list in the entry widget.
+ * This function can take lists of different types of values and will call an overload of
+ * createListWidget for the relevant type. */
+template<typename ListType, typename ColType>
 static gboolean runListDialog(MainFrame main_data, 
-                              list<string> *values_list, 
-                              GtkEntry *entry_widg,
+                              list<ListType> *values_list, 
+                              ColType result_col,
+                              GtkEntry *result_widg,
                               const char *title,
                               const char allow_multiple)
 {
@@ -1427,7 +1525,7 @@ static gboolean runListDialog(MainFrame main_data,
 
   if (response == GTK_RESPONSE_OK)
     {
-      if (setEntryFromSelection(entry_widg, list_widget))
+      if (setEntryFromSelection(list_widget, result_widg, result_col))
         {
           gtk_widget_destroy(dialog) ;
           ok = TRUE ;
@@ -1456,7 +1554,9 @@ static void dbnameCB(GtkWidget *widget, gpointer cb_data)
 
   if (db_list)
     {
-      runListDialog(main_data, db_list, GTK_ENTRY(main_data->dbname_widg), "Select database", FALSE) ;
+      runListDialog(main_data, db_list, GenericListColumn::NAME, 
+                    GTK_ENTRY(main_data->dbname_widg), "Select database", FALSE) ;
+
       delete db_list ;
     }
   else
@@ -1485,7 +1585,8 @@ static void featuresetsCB(GtkWidget *widget, gpointer cb_data)
 
       if (featuresets_list)
         {
-          runListDialog(main_data, featuresets_list, GTK_ENTRY(main_data->featuresets_widg), "Select featureset(s)", TRUE) ;
+          runListDialog(main_data, featuresets_list, GenericListColumn::NAME,
+                        GTK_ENTRY(main_data->featuresets_widg), "Select featureset(s)", TRUE) ;
           delete featuresets_list ;
         }
       else
@@ -1519,7 +1620,8 @@ static void biotypesCB(GtkWidget *widget, gpointer cb_data)
 
       if (biotypes_list)
         {
-          runListDialog(main_data, biotypes_list, GTK_ENTRY(main_data->biotypes_widg), "Select biotype(s)", TRUE) ;
+          runListDialog(main_data, biotypes_list, GenericListColumn::NAME,
+                        GTK_ENTRY(main_data->biotypes_widg), "Select biotype(s)", TRUE) ;
           delete biotypes_list ;
         }
       else
@@ -1600,21 +1702,11 @@ static void trackhubSearchCB(GtkWidget *widget, gpointer cb_data)
   if (response == GTK_RESPONSE_OK)
     {
       const char *search_text = gtk_entry_get_text(search_entry) ;
-      auto results = main_data->registry.search(search_text) ;
-      list<string> items;
-
-      for (const auto &trackdb : results)
-        {
-          stringstream str;
-          str << trackdb.name() << "   "
-              << trackdb.assembly() << "   "
-              << trackdb.species() ;
-
-          items.push_back(str.str()) ;
-        }
+      list<gbtools::trackhub::TrackDb> results = main_data->registry.search(search_text) ;
 
       gboolean ok = runListDialog(main_data, 
-                                  &items, 
+                                  &results, 
+                                  TrackListColumn::ID,
                                   GTK_ENTRY(main_data->trackdb_widg), 
                                   "Select track hub",
                                   false) ;
