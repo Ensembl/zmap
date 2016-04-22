@@ -74,6 +74,9 @@ using namespace std ;
 
 #define SOURCE_TYPE_TRACKHUB "Track hub"
 
+#define LOGIN_LABEL "Log in"
+#define LOGOUT_LABEL "Log out"
+
 
 /* Generic definitions of columns for displaying a list of e.g. databases. For now just include a
  * single column to display the name */
@@ -120,6 +123,7 @@ typedef struct MainFrameStructName
 
   // Trackhub
   gbtools::trackhub::Registry registry;
+  list<gbtools::trackhub::TrackDb> user_trackdbs;
   list<GtkWidget*> trackhub_widgets;
   GtkWidget *trackdb_widg;
   GtkWidget *search_widg;
@@ -154,6 +158,8 @@ static void updatePanelFromSource(MainFrame main_data, ZMapConfigSource source) 
 static gboolean applyTrackhub(MainFrame main_frame);
 
 static void trackhubSearchCB(GtkWidget *widget, gpointer cb_data);
+static void trackhubBrowseCB(GtkWidget *widget, gpointer cb_data);
+static void trackhubRegisterCB(GtkWidget *widget, gpointer cb_data);
 
 #ifdef USE_ENSEMBL
 static void dbnameCB(GtkWidget *widget, gpointer cb_data) ;
@@ -654,6 +660,7 @@ static GtkComboBox *createComboBox(MainFrame main_data)
 
 
 static GtkWidget* makeButtonWidget(const char *stock,
+                                   const char *label,
                                    const bool icon_only,
                                    const char *tooltip,
                                    GtkSignalFunc cb_func,
@@ -665,14 +672,18 @@ static GtkWidget* makeButtonWidget(const char *stock,
 {
   GtkWidget *button = NULL ;
 
-  if (icon_only)
+  if (stock && icon_only)
     {
       button = gtk_button_new() ;
       gtk_button_set_image(GTK_BUTTON(button), gtk_image_new_from_stock(stock, GTK_ICON_SIZE_BUTTON));
     }
-  else
+  else if (stock)
     {
       button = gtk_button_new_from_stock(stock) ;
+    }
+  else
+    {
+      button = gtk_button_new_with_label(label) ;
     }
 
   gtk_widget_set_tooltip_text(button, tooltip) ;
@@ -700,7 +711,7 @@ static void makeEnsemblWidgets(MainFrame main_data,
                                            table, &row, col, col + 2, TRUE, &main_data->ensembl_widgets) ;
 
   /* Add a button next to the dbname widget to allow the user to search for a db in this host */
-  makeButtonWidget(GTK_STOCK_FIND,
+  makeButtonWidget(GTK_STOCK_FIND, NULL,
                    true,
                    "Look up database for this host", 
                    GTK_SIGNAL_FUNC(dbnameCB), main_data,
@@ -775,11 +786,25 @@ static void makeTrackhubWidgets(MainFrame main_data,
                                             table, &row, col, col + 2, TRUE, &main_data->trackhub_widgets);
   
   /* Search button */
-  main_data->search_widg = makeButtonWidget(GTK_STOCK_FIND, false, "Find track hubs",
+  main_data->search_widg = makeButtonWidget(NULL, "Search", false, "Search for track hubs",
                                             GTK_SIGNAL_FUNC(trackhubSearchCB), main_data,
                                             table, row, col,
                                             main_data->trackhub_widgets);
+  ++col;
 
+  /* Browse button */
+  main_data->browse_widg = makeButtonWidget(NULL, "Browse", false, "Browse registered track hubs",
+                                            GTK_SIGNAL_FUNC(trackhubBrowseCB), main_data,
+                                            table, row, col,
+                                            main_data->trackhub_widgets);
+  ++col;
+
+  /* Register button */
+  main_data->register_widg = makeButtonWidget(NULL, "Register", false, "Register a new track hub",
+                                              GTK_SIGNAL_FUNC(trackhubRegisterCB), main_data,
+                                              table, row, col,
+                                              main_data->trackhub_widgets);
+  ++col;
 }
 
 
@@ -1307,6 +1332,57 @@ static void createTreeViewTextColumn(GtkTreeView *tree_view,
 }
 
 
+static void listStorePopulate(GtkListStore *store,
+                              const list<string> *vals_list)
+{
+  /* Loop through all of the names */
+  for (const auto &name : *vals_list)
+    {
+      /* Create a new row in the list store and set the column values */
+      GtkTreeIter store_iter ;
+      gtk_list_store_append(store, &store_iter);
+
+      gtk_list_store_set(store, &store_iter, 
+                         GenericListColumn::NAME, name.c_str(), 
+                         -1);
+    }
+}
+
+static void listStorePopulate(GtkListStore *store,
+                            const list<gbtools::trackhub::TrackDb> *trackdb_list)
+{
+  /* Loop through all of the trackdbs */
+  for (const auto &trackdb : *trackdb_list)
+    {
+      /* Create a new row in the list store and set the column values */
+      GtkTreeIter store_iter ;
+      gtk_list_store_append(store, &store_iter);
+
+      /* We'll show the number of tracks as num-with-data/total */
+      stringstream num_tracks;
+      num_tracks << trackdb.num_with_data() << "/" << trackdb.num_tracks();
+
+      gtk_list_store_set(store, &store_iter, 
+                         TrackListColumn::NAME, trackdb.name().c_str(), 
+                         TrackListColumn::ID, trackdb.id().c_str(), 
+                         TrackListColumn::SPECIES, trackdb.species().c_str(), 
+                         TrackListColumn::ASSEMBLY, trackdb.assembly().c_str(), 
+                         TrackListColumn::TRACKS, num_tracks.str().c_str(), 
+                         -1);
+    }
+}
+
+
+template<typename ListType>
+static void treeViewRefresh(GtkTreeView *tree_view, 
+                            const ListType *val_list)
+{
+  GtkListStore *store = GTK_LIST_STORE(gtk_tree_view_get_model(tree_view)) ;
+  gtk_list_store_clear(store) ;
+  listStorePopulate(store, val_list) ;
+}
+
+
 /* Create a tree view widget to show name values in the given list */
 static GtkTreeView* createListWidget(MainFrame main_data, 
                                      const list<string> *val_list,
@@ -1325,14 +1401,7 @@ static GtkTreeView* createListWidget(MainFrame main_data,
                                          search_data->filter_entry,
                                          NULL);
 
-  /* Loop through all of the names */
-  for (list<string>::const_iterator val_iter = val_list->begin(); val_iter != val_list->end(); ++val_iter)
-    {
-      /* Create a new row in the list store and set the name */
-      GtkTreeIter store_iter ;
-      gtk_list_store_append(store, &store_iter);
-      gtk_list_store_set(store, &store_iter, GenericListColumn::NAME, val_iter->c_str(), -1);
-    }
+  listStorePopulate(store, val_list) ;
 
   /* Create the tree widget */
   GtkTreeView *tree_view = GTK_TREE_VIEW(gtk_tree_view_new_with_model(GTK_TREE_MODEL(filtered))) ;
@@ -1387,25 +1456,7 @@ static GtkTreeView* createListWidget(MainFrame main_data,
                                          search_data->filter_entry,
                                          NULL);
 
-  /* Loop through all of the database names */
-  for (const auto &trackdb : *trackdb_list)
-    {
-      /* Create a new row in the list store and set the column values */
-      GtkTreeIter store_iter ;
-      gtk_list_store_append(store, &store_iter);
-
-      /* We'll show the number of tracks as num-with-data/total */
-      stringstream num_tracks;
-      num_tracks << trackdb.num_with_data() << "/" << trackdb.num_tracks();
-
-      gtk_list_store_set(store, &store_iter, 
-                         TrackListColumn::NAME, trackdb.name().c_str(), 
-                         TrackListColumn::ID, trackdb.id().c_str(), 
-                         TrackListColumn::SPECIES, trackdb.species().c_str(), 
-                         TrackListColumn::ASSEMBLY, trackdb.assembly().c_str(), 
-                         TrackListColumn::TRACKS, num_tracks.str().c_str(), 
-                         -1);
-    }
+  listStorePopulate(store, trackdb_list) ;
 
   /* Create the tree widget */
   GtkTreeView *tree_view = GTK_TREE_VIEW(gtk_tree_view_new_with_model(GTK_TREE_MODEL(filtered))) ;
@@ -1520,14 +1571,16 @@ static void clear_button_cb(GtkButton *button, gpointer user_data)
  * given entry widget with the result when the user selects a row and hits ok. If the user
  * selects multiple values then it sets a semi-colon-separated list in the entry widget.
  * This function can take lists of different types of values and will call an overload of
- * createListWidget for the relevant type. */
+ * createListWidget for the relevant type. 
+ * top_panel is an optional extra panel to display at the top of the dialog */
 template<typename ListType, typename ColType>
 static gboolean runListDialog(MainFrame main_data, 
                               list<ListType> *values_list, 
                               ColType result_col,
                               GtkEntry *result_widg,
                               const char *title,
-                              const char allow_multiple)
+                              const char allow_multiple,
+                              GtkWidget *top_panel = NULL)
 {
   gboolean ok = FALSE ;
   zMapReturnValIfFail(main_data && values_list, ok) ;
@@ -1535,11 +1588,10 @@ static gboolean runListDialog(MainFrame main_data,
   GtkWidget *dialog = gtk_dialog_new_with_buttons(title,
                                                   NULL,
                                                   (GtkDialogFlags)(GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT),
+                                                  GTK_STOCK_REFRESH, GTK_RESPONSE_APPLY,
                                                   GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
                                                   GTK_STOCK_OK, GTK_RESPONSE_OK,
                                                   NULL);
-
-
 
   gtk_dialog_set_default_response(GTK_DIALOG(dialog), GTK_RESPONSE_OK) ;
   int height = 0 ;
@@ -1548,6 +1600,10 @@ static gboolean runListDialog(MainFrame main_data,
     gtk_window_set_default_size(GTK_WINDOW(dialog), -1, height * 0.5) ;
 
   GtkBox *content = GTK_BOX(GTK_DIALOG(dialog)->vbox) ;
+
+  /* Add caller-specified top panel, if any */
+  if (top_panel)
+    gtk_box_pack_start(content, top_panel, FALSE, FALSE, 0) ;
 
   /* Search/filter toolbar */
   GtkWidget *hbox = gtk_hbox_new(FALSE, 0) ;
@@ -1591,6 +1647,10 @@ static gboolean runListDialog(MainFrame main_data,
           gtk_widget_destroy(dialog) ;
           ok = TRUE ;
         }
+    }
+  else if (response == GTK_RESPONSE_APPLY)
+    {
+      treeViewRefresh(list_widget, values_list) ;
     }
   else
     {
@@ -1765,14 +1825,115 @@ static void trackhubSearchCB(GtkWidget *widget, gpointer cb_data)
       const char *search_text = gtk_entry_get_text(search_entry) ;
       list<gbtools::trackhub::TrackDb> results = main_data->registry.search(search_text) ;
 
-      gboolean ok = runListDialog(main_data, 
-                                  &results, 
-                                  TrackListColumn::ID,
-                                  GTK_ENTRY(main_data->trackdb_widg), 
-                                  "Select track hub",
-                                  false) ;
+      runListDialog(main_data, 
+                    &results, 
+                    TrackListColumn::ID,
+                    GTK_ENTRY(main_data->trackdb_widg), 
+                    "Select track hub",
+                    false) ;
     }
 
   gtk_widget_destroy(dialog) ;
+}
+
+
+static void loginButtonClickedCB(GtkWidget *button, gpointer user_data)
+{
+  MainFrame main_data = (MainFrame)user_data ;
+  const char* label = gtk_button_get_label(GTK_BUTTON(button)) ;
+
+  if (strcmp(label, LOGIN_LABEL) == 0)
+    {
+      // Ask for username and password
+      GtkWidget *dialog = gtk_dialog_new_with_buttons("Please log in",
+                                                      NULL,
+                                                      (GtkDialogFlags)(GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT),
+                                                      GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+                                                      GTK_STOCK_OK, GTK_RESPONSE_OK,
+                                                      NULL);
+
+      gtk_dialog_set_default_response(GTK_DIALOG(dialog), GTK_RESPONSE_OK) ;
+      GtkBox *content = GTK_BOX(GTK_DIALOG(dialog)->vbox) ;
+  
+      gtk_box_pack_start(content, gtk_label_new("User name: "), FALSE, FALSE, 0) ;
+      GtkEntry *user_entry = GTK_ENTRY(gtk_entry_new()) ;
+      gtk_box_pack_start(content, GTK_WIDGET(user_entry), FALSE, FALSE, 0) ;
+
+      gtk_box_pack_start(content, gtk_label_new("Password: "), FALSE, FALSE, 0) ;
+      GtkEntry *pass_entry = GTK_ENTRY(gtk_entry_new()) ;
+      gtk_entry_set_visibility(GTK_ENTRY(pass_entry), FALSE) ; // password mode
+      gtk_box_pack_start(content, GTK_WIDGET(pass_entry), FALSE, FALSE, 0) ;
+
+      gtk_widget_show_all(dialog) ;
+      gint response = gtk_dialog_run(GTK_DIALOG(dialog)) ;
+      
+      if (response == GTK_RESPONSE_OK)
+        {
+          const char *user = gtk_entry_get_text(GTK_ENTRY(user_entry)) ;
+          const char *pass = gtk_entry_get_text(GTK_ENTRY(pass_entry)) ;
+
+          // Attempt to log in to the registry.
+          if (main_data->registry.login(user, pass))
+            {
+              // Update the list of trackdbs
+              main_data->user_trackdbs = main_data->registry.retrieveHub() ;
+              
+              // Change the button label to "logout" 
+              gtk_button_set_label(GTK_BUTTON(button), LOGOUT_LABEL) ;
+            }
+          else
+            {
+              zMapWarning("%s", "Error logging in") ;
+            }
+        }
+
+      gtk_widget_destroy(dialog) ;
+    }
+  else
+    {
+      // Log out. If successful, change the button label back to "login"
+      if (main_data->registry.logout())
+        {
+          main_data->user_trackdbs.clear() ;
+          gtk_button_set_label(GTK_BUTTON(button), LOGIN_LABEL) ;
+        }
+      else
+        {
+          zMapWarning("%s", "Error logging out") ;
+        }
+    }
+}
+
+
+/* Show a dialog where the user can browse trackhubs that they have previously registered */
+static void trackhubBrowseCB(GtkWidget *widget, gpointer cb_data)
+{
+  MainFrame main_data = (MainFrame)cb_data ;
+  zMapReturnIfFail(main_data && main_data->browse_widg) ;
+
+
+  // Create a button where the user can log in / log out
+  GtkWidget *login_btn = gtk_button_new_with_label(LOGIN_LABEL) ;
+
+  if (main_data->registry.loggedIn())
+    gtk_button_set_label(GTK_BUTTON(login_btn), LOGOUT_LABEL) ;
+
+  g_signal_connect(G_OBJECT(login_btn), "clicked", G_CALLBACK(loginButtonClickedCB), main_data) ;
+
+  // Run a dialog that will show search results in a list
+  runListDialog(main_data, 
+                &main_data->user_trackdbs, 
+                TrackListColumn::ID,
+                GTK_ENTRY(main_data->trackdb_widg), 
+                "Select track hub",
+                false,
+                login_btn) ;
+
+}
+
+
+/* Show a dialog where the user can register a trackhubs */
+static void trackhubRegisterCB(GtkWidget *widget, gpointer cb_data)
+{
 }
 
