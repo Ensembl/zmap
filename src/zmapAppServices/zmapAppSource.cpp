@@ -1935,5 +1935,66 @@ static void trackhubBrowseCB(GtkWidget *widget, gpointer cb_data)
 /* Show a dialog where the user can register a trackhubs */
 static void trackhubRegisterCB(GtkWidget *widget, gpointer cb_data)
 {
+  MainFrame main_data = (MainFrame)cb_data ;
+  zMapReturnIfFail(main_data && main_data->search_widg) ;
+
+  GtkWidget *dialog = gtk_dialog_new_with_buttons("Register a Track Hub",
+                                                  NULL,
+                                                  (GtkDialogFlags)(GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT),
+                                                  GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+                                                  GTK_STOCK_OK, GTK_RESPONSE_OK,
+                                                  NULL);
+
+  gtk_dialog_set_default_response(GTK_DIALOG(dialog), GTK_RESPONSE_OK) ;
+
+  GtkBox *content = GTK_BOX(GTK_DIALOG(dialog)->vbox) ;
+
+  GtkBox *vbox = GTK_BOX(gtk_vbox_new(FALSE, 0)) ;
+  gtk_box_pack_start(content, GTK_WIDGET(vbox), FALSE, FALSE, 0) ;
+
+  gtk_box_pack_start(vbox, gtk_label_new("URL: "), FALSE, FALSE, 0) ;
+  GtkEntry *url_entry = GTK_ENTRY(gtk_entry_new()) ;
+  gtk_box_pack_start(vbox, GTK_WIDGET(url_entry), FALSE, FALSE, 0) ;
+
+  gtk_box_pack_start(vbox, gtk_label_new("Assemblies: "), FALSE, FALSE, 0) ;
+  GtkEntry *assemblies_entry = GTK_ENTRY(gtk_entry_new()) ;
+  gtk_box_pack_start(vbox, GTK_WIDGET(assemblies_entry), FALSE, FALSE, 0) ;
+  gtk_widget_set_tooltip_text(GTK_WIDGET(assemblies_entry), 
+                              "Semi-colon separated list of key=value pairs, e.g. araTha1=GCA_000001735.1") ;
+
+  gtk_box_pack_start(vbox, gtk_label_new("Type: "), FALSE, FALSE, 0) ;
+  GtkEntry *type_entry = GTK_ENTRY(gtk_entry_new()) ;
+  gtk_box_pack_start(vbox, GTK_WIDGET(type_entry), FALSE, FALSE, 0) ;
+  gtk_widget_set_tooltip_text(GTK_WIDGET(type_entry), "genomics/epigenomics/transcriptomics/proteomics") ;
+
+  GtkWidget *public_btn = gtk_check_button_new_with_label("Public") ;
+  gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(public_btn), FALSE) ;
+  gtk_box_pack_start(vbox, GTK_WIDGET(public_btn), FALSE, FALSE, 0) ;
+
+  gtk_widget_show_all(dialog) ;
+
+  gint response = gtk_dialog_run(GTK_DIALOG(dialog)) ;
+
+  if (response == GTK_RESPONSE_OK)
+    {
+      const char *url = gtk_entry_get_text(url_entry) ;
+      const char *assemblies = gtk_entry_get_text(assemblies_entry) ;
+      const char *type = gtk_entry_get_text(type_entry) ;
+      bool is_public = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(public_btn)) ;
+
+      if (url && assemblies)
+        {
+          //main_data.registry.registerHub(url, assemblies, type, is_public) ;
+          gtk_widget_destroy(dialog) ;  
+        }
+      else
+        {
+          zMapWarning("%s", "Please enter the URL and list of assemblies") ;
+        }
+    }
+  else
+    {
+      gtk_widget_destroy(dialog) ;  
+    }
 }
 
