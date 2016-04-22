@@ -1974,6 +1974,69 @@ void zmapViewResetWindows(ZMapView zmap_view, gboolean revcomp)
 }
 
 
+/* Create a server for a given trackhub track and add it to the given list of servers */
+static void trackhubTrackCreateServer(const gbtools::trackhub::Track &track, 
+                                      ZMapView zmap_view,
+                                      const char *featuresets,
+                                      const char *biotypes,
+                                      list<ZMapConfigSource> &servers_inout)
+{
+  // Create the server for this track. Some Tracks may be parents which
+  // don't have a url themselves so ignore them. 
+  if (!track.url().empty())
+    {
+      string track_name = track.name() ;
+
+      // If the track doesn't have a name, create one from the file name in the url
+      if (track_name.empty())
+        {
+          ZMapURL zmap_url = url_parse(track.url().c_str(), NULL) ;
+
+          if (zmap_url && zmap_url->file)
+            track_name = string(zmap_url->file) ;
+        }
+
+      if (!track_name.empty())
+        {
+          GError *g_error = NULL ;
+
+          ZMapConfigSource track_server = 
+            zmap_view->view_sequence->createSource(track.name().c_str(),
+                                                   track.url().c_str(), 
+                                                   featuresets, 
+                                                   biotypes, 
+                                                   &g_error) ;
+
+          if (track_server && !g_error)
+            {
+              // Success: add it to the list
+              servers_inout.push_back(track_server) ;
+            }
+          else if (g_error)
+            {
+              zMapLogWarning("Error setting up server for track %s: %s\n%s", 
+                             track_name.c_str(), track.url().c_str(), g_error->message) ;
+              g_error_free(g_error) ;
+            }
+          else
+            {
+              zMapLogWarning("Error setting up server for track %s: %s", track_name.c_str(), track.url().c_str()) ;
+            }
+        }
+      else
+        {
+          zMapLogWarning("Error setting up server; track has no name: %s", track.url().c_str()) ;
+        }
+    }
+
+  // Recurse through any children
+  for (auto &child_track : track.children())
+    {
+      trackhubTrackCreateServer(child_track, zmap_view, featuresets, biotypes, servers_inout) ;
+    }
+}
+
+
 /* Utility called by zMapViewSetUpServerConnection to do any scheme-specific set up for the given
  * server. This updates the terminate flag and the servers list - for trackhub servers this
  * returns a list of servers for each track in the trackDb. For other server types it just puts
@@ -1981,7 +2044,7 @@ void zmapViewResetWindows(ZMapView zmap_view, gboolean revcomp)
 static void setUpServerConnectionByScheme(ZMapView zmap_view,
                                           ZMapConfigSource current_server,
                                           bool &terminate,
-                                          list<ZMapConfigSource> &servers,
+                                          list<ZMapConfigSource> &servers_inout,
                                           GError **error)
 {
   ZMapURL zmap_url = url_parse(current_server->url, NULL);
@@ -2000,25 +2063,16 @@ static void setUpServerConnectionByScheme(ZMapView zmap_view,
           if (trackdb_id)
             {
               gbtools::trackhub::Registry registry ;
-              map<string, string> track_urls = registry.getTrackUrls(trackdb_id) ;
+              gbtools::trackhub::TrackDb trackdb = registry.searchTrackDb(trackdb_id) ;
 
-              for (auto iter = track_urls.begin(); iter != track_urls.end(); ++iter)
+              // Create a source for each individual track in this trackdb
+              for (auto &track : trackdb.tracks())
                 {
-                  const string &name = iter->first ;
-                  const string &url = iter->second ;
-                  
-                  GError *g_error = NULL ;
-                  ZMapConfigSource track_server = 
-                    zmap_view->view_sequence->createSource(name.c_str(),
-                                                           url, 
-                                                           current_server->featuresets, 
-                                                           current_server->biotypes, 
-                                                           &g_error) ;
-
-                  if (track_server && !g_error)
-                    servers.push_back(track_server) ;
-                  else
-                    zMapLogWarning("Error setting up server for track %s: %s", name.c_str(), url.c_str()) ;
+                  trackhubTrackCreateServer(track, 
+                                            zmap_view, 
+                                            current_server->featuresets,
+                                            current_server->biotypes,
+                                            servers_inout) ;
                 }
             }
           else
@@ -2029,7 +2083,7 @@ static void setUpServerConnectionByScheme(ZMapView zmap_view,
         }
       else
         {
-          servers.push_back(current_server) ;
+          servers_inout.push_back(current_server) ;
         }
     }
   else
