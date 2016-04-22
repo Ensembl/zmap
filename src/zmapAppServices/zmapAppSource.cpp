@@ -1162,29 +1162,28 @@ static char* my_strcasestr(const char *haystack, const char *needle)
 }
 
 
-/* Callback used to determine if a search term matches a row in the tree. Returns false if it
- * matches, true otherwise. */
-gboolean search_equal_func_cb(GtkTreeModel *model,
-                              gint column,
-                              const gchar *key,
-                              GtkTreeIter *iter,
-                              gpointer user_data)
+/* Return true if the given search term matches the value in the given tree row. */
+template<typename ColType>
+gboolean treeRowContainsText(GtkTreeModel *model,
+                             const gchar *search_term,
+                             GtkTreeIter *iter,
+                             const ColType col_id)
 {
-  gboolean result = TRUE ;
+  gboolean result = FALSE ;
 
   char *column_name = NULL ;
 
   gtk_tree_model_get(model, iter,
-                     GenericListColumn::NAME, &column_name,
+                     col_id, &column_name,
                      -1) ;
 
   if (column_name && 
-      key && 
+      search_term && 
       strlen(column_name) > 0 && 
-      strlen(key) > 0 &&
-      my_strcasestr(column_name, key) != NULL)
+      strlen(search_term) > 0 &&
+      my_strcasestr(column_name, search_term) != NULL)
     {
-      result = FALSE ;
+      result = TRUE ;
     }
 
   g_free(column_name) ;
@@ -1192,35 +1191,90 @@ gboolean search_equal_func_cb(GtkTreeModel *model,
   return result ;
 }
 
+/* Callback used to determine if a search term matches a row in the tree. Returns false if it
+ * matches, true otherwise. */
+gboolean generic_search_equal_func_cb(GtkTreeModel *model,
+                                      gint column,
+                                      const gchar *key,
+                                      GtkTreeIter *iter,
+                                      gpointer user_data)
+{
+  return !treeRowContainsText(model, key, iter, GenericListColumn::NAME) ;
+}
+
+gboolean track_search_equal_func_cb(GtkTreeModel *model,
+                                    gint column,
+                                    const gchar *key,
+                                    GtkTreeIter *iter,
+                                    gpointer user_data)
+{
+  return 
+    !treeRowContainsText(model, key, iter, TrackListColumn::NAME) &&
+    !treeRowContainsText(model, key, iter, TrackListColumn::SPECIES) &&
+    !treeRowContainsText(model, key, iter, TrackListColumn::ASSEMBLY) ;
+}
+
 
 /* Callback used to determine if a given row in the filtered tree model is visible */
-static gboolean tree_model_filter_visible_cb(GtkTreeModel *model, GtkTreeIter *iter, gpointer user_data)
+static gboolean generic_list_filter_visible_cb(GtkTreeModel *model, 
+                                               GtkTreeIter *iter, 
+                                               gpointer user_data)
 {
   gboolean result = FALSE ;
 
   GtkEntry *search_entry = GTK_ENTRY(user_data) ;
   zMapReturnValIfFail(search_entry, result) ;
 
-  const char *text = gtk_entry_get_text(search_entry) ;
+  const char *search_term = gtk_entry_get_text(search_entry) ;
   char *column_name = NULL ;
 
   gtk_tree_model_get(model, iter,
                      GenericListColumn::NAME, &column_name,
                      -1) ;
 
-  if (!text || *text == 0)
+  if (!search_term || *search_term == 0)
     {
       /* If text isn't specified, show everything */
       result = TRUE ;
     }
-  else if (column_name && 
-           *column_name != 0 && 
-           my_strcasestr(column_name, text) != NULL)
+  else
     {
-      result = TRUE ;
+      result = treeRowContainsText(model, search_term, iter, GenericListColumn::NAME) ;
     }
 
-  g_free(column_name) ;
+  return result ;
+}
+
+
+/* Callback used to determine if a given row in the filtered tree model is visible */
+static gboolean track_list_filter_visible_cb(GtkTreeModel *model, 
+                                             GtkTreeIter *iter, 
+                                             gpointer user_data)
+{
+  gboolean result = FALSE ;
+
+  GtkEntry *search_entry = GTK_ENTRY(user_data) ;
+  zMapReturnValIfFail(search_entry, result) ;
+
+  const char *search_term = gtk_entry_get_text(search_entry) ;
+  char *column_name = NULL ;
+
+  gtk_tree_model_get(model, iter,
+                     GenericListColumn::NAME, &column_name,
+                     -1) ;
+
+  if (!search_term || *search_term == 0)
+    {
+      /* If text isn't specified, show everything */
+      result = TRUE ;
+    }
+  else
+    {
+      result = 
+        treeRowContainsText(model, search_term, iter, TrackListColumn::NAME) ||
+        treeRowContainsText(model, search_term, iter, TrackListColumn::SPECIES) ||
+        treeRowContainsText(model, search_term, iter, TrackListColumn::ASSEMBLY) ;
+    }
 
   return result ;
 }
@@ -1260,7 +1314,7 @@ static GtkTreeView* createListWidget(MainFrame main_data,
   search_data->tree_model = filtered ;
 
   gtk_tree_model_filter_set_visible_func(GTK_TREE_MODEL_FILTER(filtered), 
-                                         tree_model_filter_visible_cb, 
+                                         generic_list_filter_visible_cb, 
                                          search_data->filter_entry,
                                          NULL);
 
@@ -1280,7 +1334,7 @@ static GtkTreeView* createListWidget(MainFrame main_data,
   gtk_tree_view_set_enable_search(tree_view, FALSE);
   gtk_tree_view_set_search_column(tree_view, (int)GenericListColumn::NAME);
   gtk_tree_view_set_search_entry(tree_view, search_data->search_entry) ;
-  gtk_tree_view_set_search_equal_func(tree_view, search_equal_func_cb, NULL, NULL) ;
+  gtk_tree_view_set_search_equal_func(tree_view, generic_search_equal_func_cb, NULL, NULL) ;
 
   GtkTreeSelection *tree_selection = gtk_tree_view_get_selection(tree_view) ;
   gtk_tree_selection_set_mode(tree_selection, allow_multiple ? GTK_SELECTION_MULTIPLE : GTK_SELECTION_SINGLE);
@@ -1322,7 +1376,7 @@ static GtkTreeView* createListWidget(MainFrame main_data,
   search_data->tree_model = filtered ;
 
   gtk_tree_model_filter_set_visible_func(GTK_TREE_MODEL_FILTER(filtered), 
-                                         tree_model_filter_visible_cb, 
+                                         track_list_filter_visible_cb, 
                                          search_data->filter_entry,
                                          NULL);
 
@@ -1353,7 +1407,7 @@ static GtkTreeView* createListWidget(MainFrame main_data,
   gtk_tree_view_set_enable_search(tree_view, FALSE);
   gtk_tree_view_set_search_column(tree_view, (int)TrackListColumn::NAME);
   gtk_tree_view_set_search_entry(tree_view, search_data->search_entry) ;
-  gtk_tree_view_set_search_equal_func(tree_view, search_equal_func_cb, NULL, NULL) ;
+  gtk_tree_view_set_search_equal_func(tree_view, track_search_equal_func_cb, NULL, NULL) ;
 
   GtkTreeSelection *tree_selection = gtk_tree_view_get_selection(tree_view) ;
   gtk_tree_selection_set_mode(tree_selection, allow_multiple ? GTK_SELECTION_MULTIPLE : GTK_SELECTION_SINGLE);
