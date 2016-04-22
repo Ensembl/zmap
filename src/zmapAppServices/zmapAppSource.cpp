@@ -1284,7 +1284,8 @@ static gboolean track_list_filter_visible_cb(GtkTreeModel *model,
 template<typename ColType>
 static void createTreeViewTextColumn(GtkTreeView *tree_view, 
                                      const char *title, 
-                                     const ColType col_id)
+                                     const ColType col_id,
+                                     const bool hide = false)
 {
   GtkCellRenderer *renderer = gtk_cell_renderer_text_new() ;
 
@@ -1295,6 +1296,12 @@ static void createTreeViewTextColumn(GtkTreeView *tree_view,
                                                                        NULL);
 
   gtk_tree_view_column_set_resizable(column, TRUE) ;
+  gtk_tree_view_column_set_clickable(column, TRUE) ;
+  gtk_tree_view_column_set_reorderable(column, TRUE) ;
+
+  if (hide)
+    gtk_tree_view_column_set_reorderable(column, FALSE) ;
+
   gtk_tree_view_append_column(tree_view, column);
 
 }
@@ -1414,7 +1421,7 @@ static GtkTreeView* createListWidget(MainFrame main_data,
 
   /* Create the columns */
   createTreeViewTextColumn(tree_view, "Name", TrackListColumn::NAME) ;
-  createTreeViewTextColumn(tree_view, "ID", TrackListColumn::ID) ;
+  createTreeViewTextColumn(tree_view, "ID", TrackListColumn::ID, true) ;
   createTreeViewTextColumn(tree_view, "Species", TrackListColumn::SPECIES) ;
   createTreeViewTextColumn(tree_view, "Assembly", TrackListColumn::ASSEMBLY) ;
   createTreeViewTextColumn(tree_view, "Tracks", TrackListColumn::TRACKS) ;
