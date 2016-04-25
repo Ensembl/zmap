@@ -42,6 +42,7 @@
 #include <ZMap/zmapConfigIni.hpp>
 #include <ZMap/zmapConfigStrings.hpp>
 #include <ZMap/zmapGFF.hpp>
+#include <ZMap/zmapGFFStringUtils.hpp>
 #include <ZMap/zmapServerProtocol.hpp>
 #include <zmapDataSource_P.hpp>
 
@@ -92,24 +93,28 @@ namespace // unnamed namespace
  *
  */
 static const char * const ZMAP_BAM_SO_TERM  = "read" ;
-static const char * const ZMAP_BED_SO_TERM  = "read" ;
 static const char * const ZMAP_BCF_SO_TERM  = "snv" ;
+static const char * const ZMAP_BED_SO_TERM  = "sequence_feature" ;
 static const char * const ZMAP_BIGBED_SO_TERM  = "sequence_feature" ;
 static const char * const ZMAP_BIGWIG_SO_TERM  = "score" ;
 #define ZMAP_CIGARSTRING_MAXLENGTH 2048
 
-static void createGFFLine(GString *pStr, 
-                          const char *sequence,
-                          const char *source,
-                          const char *so_type,
-                          const int iStart,
-                          const int iEnd,
-                          const double dScore,
-                          const char cStrand,
-                          const char *pName,
-                          const bool haveTarget = false,
-                          const int iTargetStart = 0,
-                          const int iTargetEnd = 0)
+
+
+
+
+void createGFFLine(GString *pStr, 
+                   const char *sequence,
+                   const char *source,
+                   const char *so_type,
+                   const int iStart,
+                   const int iEnd,
+                   const double dScore,
+                   const char cStrand,
+                   const char *pName_in,
+                   const bool haveTarget = false,
+                   const int iTargetStart = 0,
+                   const int iTargetEnd = 0)
 {
   static const gssize string_start = 0 ;
   static const char *sFormatName = "Name=%s;",
@@ -122,12 +127,18 @@ static void createGFFLine(GString *pStr,
     cTargetStrand = '.' ;
   GString *pStringTarget = NULL,
     *pStringAttributes = NULL ;
+  char *pName = NULL ;
 
   /*
    * Erase current buffer contents
    */
   g_string_erase(pStr, string_start, -1) ;
 
+
+  /* 
+   * Escape the name string
+   */
+  pName = zMapGFFEscape(pName_in) ;
 
   /*
    * "Target" (and "Name") attribute
@@ -184,7 +195,34 @@ static void createGFFLine(GString *pStr,
     g_string_free(pStringTarget, TRUE) ;
   if (pStringAttributes)
     g_string_free(pStringAttributes, TRUE) ;
+  if (pName)
+    g_free(pName) ;
 }
+
+
+/* Create a GFF line from a BED struct */
+void createGFFLineFromBed(GString *str, 
+                          struct bed* bed_feature,
+                          const GQuark source_name,
+                          const char *so_term)
+{
+  zMapReturnIfFail(bed_feature) ;
+
+  createGFFLine(str,
+                bed_feature->chrom,
+                g_quark_to_string(source_name),
+                so_term,
+                bed_feature->chromStart + 1, // chromStart is 0-based
+                bed_feature->chromEnd,       // chromEnd is one past the last coord
+                bed_feature->score,
+                bed_feature->strand[0],
+                bed_feature->name,
+                true,
+                1,
+                bed_feature->chromEnd - bed_feature->chromStart + 1) ;
+
+}
+
 
 
 } // unnamed namespace
@@ -728,19 +766,7 @@ bool ZMapDataSourceBEDStruct::readLine(GString * const str)
   if (cur_feature_)
     {
       // Create a gff line for this feature
-      createGFFLine(str,
-                    cur_feature_->chrom,
-                    g_quark_to_string(source_name_),
-                    ZMAP_BED_SO_TERM,
-                    cur_feature_->chromStart,
-                    cur_feature_->chromEnd,
-                    cur_feature_->score,
-                    cur_feature_->strand[0],
-                    cur_feature_->name,
-                    true,
-                    1,
-                    cur_feature_->chromEnd - cur_feature_->chromStart + 1) ;
-
+      createGFFLineFromBed(str, cur_feature_, source_name_, ZMAP_BED_SO_TERM) ;
       result = true ;
     }
   
@@ -770,20 +796,18 @@ bool ZMapDataSourceBIGBEDStruct::readLine(GString * const str)
 
   if (cur_interval_)
     {
-      // Create a gff line for this feature
-      createGFFLine(str,
-                    sequence_,
-                    g_quark_to_string(source_name_),
-                    ZMAP_BIGBED_SO_TERM,
-                    cur_interval_->start,
-                    cur_interval_->end,
-                    0.0,
-                    '.',
-                    cur_interval_->rest,
-                    false,
-                    0,
-                    0) ;
+      // Extract the bed contents out of the "rest" of the line
+      char *line = g_strdup_printf("%s\t%d\t%d\t%s", 
+                                   sequence_, cur_interval_->start, cur_interval_->end, cur_interval_->rest) ;
+      char *row[bedKnownFields];
+      int num_fields = chopByWhite(line, row, ArraySize(row)) ;
+      struct bed *bed_feature = bedLoadN(row, num_fields) ;
 
+      // Create a gff line for this feature
+      createGFFLineFromBed(str, bed_feature, source_name_, ZMAP_BIGBED_SO_TERM) ;
+
+      g_free(line) ;
+      bedFree(&bed_feature) ;
       result = true ;
     }
   else
