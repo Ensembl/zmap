@@ -53,6 +53,7 @@ extern "C" {
 #include <blatSrc/basicBed.h>
 #include <blatSrc/bigBed.h>
 #include <blatSrc/bigWig.h>
+#include <blatSrc/errCatch.h>
 
 #ifdef __cplusplus
 }
@@ -98,8 +99,6 @@ static const char * const ZMAP_BED_SO_TERM  = "sequence_feature" ;
 static const char * const ZMAP_BIGBED_SO_TERM  = "sequence_feature" ;
 static const char * const ZMAP_BIGWIG_SO_TERM  = "score" ;
 #define ZMAP_CIGARSTRING_MAXLENGTH 2048
-
-
 
 
 
@@ -259,15 +258,23 @@ ZMapDataSourceBEDStruct::ZMapDataSourceBEDStruct(const GQuark source_name,
   : ZMapDataSourceStruct(source_name, sequence),
     cur_feature_(NULL)
 {
+  zMapReturnIfFail(file_name) ;
   type = ZMapDataSourceType::BED ;
-          
-  char *file_name_copy = g_strdup(file_name) ; // to avoid casting away const
 
-  // Open the file
-  bed_features_ = bedLoadAll(file_name_copy) ;
+  // Set up error handler so that the library doesn't abort
+  err_catch_ = errCatchNew() ;
 
-  // Clean up
-  g_free(file_name_copy) ;
+  if (errCatchStart(err_catch_))
+    {
+      // Open the file
+      char *file_name_copy = g_strdup(file_name) ; // to avoid casting away const
+      bed_features_ = bedLoadAll(file_name_copy) ;
+      g_free(file_name_copy) ;
+    }
+
+  errCatchEnd(err_catch_);
+  if (err_catch_->gotError)
+    zMapLogWarning("Error opening file '%s': %s", file_name, err_catch_->message->string);
 }
 
 ZMapDataSourceBIGBEDStruct::ZMapDataSourceBIGBEDStruct(const GQuark source_name, 
@@ -283,12 +290,23 @@ ZMapDataSourceBIGBEDStruct::ZMapDataSourceBIGBEDStruct(const GQuark source_name,
     list_(NULL),
     cur_interval_(NULL)
 {
+  zMapReturnIfFail(file_name) ;
   type = ZMapDataSourceType::BIGBED ;
 
+  // Set up error handler so that the library doesn't abort
+  err_catch_ = errCatchNew() ;
+
   // Open the file
-  char *file_name_copy = g_strdup(file_name) ; // to avoid casting away const
-  bbi_file_ = bigBedFileOpen(file_name_copy);
-  g_free(file_name_copy) ;
+  if (errCatchStart(err_catch_))
+    {
+      char *file_name_copy = g_strdup(file_name) ; // to avoid casting away const
+      bbi_file_ = bigBedFileOpen(file_name_copy);
+      g_free(file_name_copy) ;
+    }
+
+  errCatchEnd(err_catch_);
+  if (err_catch_->gotError)
+    zMapLogWarning("Error opening file '%s': %s", file_name, err_catch_->message->string);
 }
 
 ZMapDataSourceBIGWIGStruct::ZMapDataSourceBIGWIGStruct(const GQuark source_name, 
@@ -306,10 +324,20 @@ ZMapDataSourceBIGWIGStruct::ZMapDataSourceBIGWIGStruct(const GQuark source_name,
 {
   type = ZMapDataSourceType::BIGWIG ;
 
-  // Open the file
-  char *file_name_copy = g_strdup(file_name) ; // to avoid casting away const
-  bbi_file_ = bigWigFileOpen(file_name_copy);
-  g_free(file_name_copy) ;
+  // Set up error handler so that the library doesn't abort
+  err_catch_ = errCatchNew() ;
+
+  if (errCatchStart(err_catch_))
+    {
+      // Open the file
+      char *file_name_copy = g_strdup(file_name) ; // to avoid casting away const
+      bbi_file_ = bigWigFileOpen(file_name_copy);
+      g_free(file_name_copy) ;
+    }
+
+  errCatchEnd(err_catch_);
+  if (err_catch_->gotError)
+    zMapLogWarning("Error opening file '%s': %s", file_name, err_catch_->message->string);
 }
 
 #ifdef USE_HTSLIB
@@ -375,6 +403,12 @@ ZMapDataSourceBCFStruct::ZMapDataSourceBCFStruct(const GQuark source_name,
  * Destructors
  */
 
+ZMapDataSourceStruct::~ZMapDataSourceStruct()
+{
+  if (sequence_)
+    g_free(sequence_) ;
+}
+
 ZMapDataSourceGIOStruct::~ZMapDataSourceGIOStruct()
 {
   GIOStatus gio_status = G_IO_STATUS_NORMAL ;
@@ -400,6 +434,9 @@ ZMapDataSourceBEDStruct::~ZMapDataSourceBEDStruct()
       bedFreeList(&bed_features_) ;
       bed_features_ = NULL ;
     }
+
+  if (err_catch_)
+    errCatchFree(&err_catch_); 
 }
 
 ZMapDataSourceBIGBEDStruct::~ZMapDataSourceBIGBEDStruct()
@@ -409,6 +446,9 @@ ZMapDataSourceBIGBEDStruct::~ZMapDataSourceBIGBEDStruct()
       bigBedFileClose(&bbi_file_) ;
       bbi_file_ = NULL ;
     }
+
+  if (err_catch_)
+    errCatchFree(&err_catch_); 
 }
 
 ZMapDataSourceBIGWIGStruct::~ZMapDataSourceBIGWIGStruct()
@@ -418,6 +458,9 @@ ZMapDataSourceBIGWIGStruct::~ZMapDataSourceBIGWIGStruct()
       bigWigFileClose(&bbi_file_) ;
       bbi_file_ = NULL ;
     }
+
+  if (err_catch_)
+    errCatchFree(&err_catch_); 
 }
 
 
@@ -430,8 +473,6 @@ ZMapDataSourceHTSStruct::~ZMapDataSourceHTSStruct()
     bam_destroy1(hts_rec) ;
   if (hts_hdr)
     bam_hdr_destroy(hts_hdr) ;
-  if (sequence_)
-    g_free(sequence_) ;
   if (so_type)
     g_free(so_type) ;
 }
@@ -444,8 +485,6 @@ ZMapDataSourceBCFStruct::~ZMapDataSourceBCFStruct()
     bcf_destroy1(hts_rec) ;
   if (hts_hdr)
     bcf_hdr_destroy(hts_hdr) ;
-  if (sequence_)
-    g_free(sequence_) ;
   if (so_type)
     g_free(so_type) ;
 }
@@ -588,27 +627,35 @@ bool ZMapDataSourceBIGBEDStruct::checkHeader()
   bool result = false ;
   zMapReturnValIfFail(isOpen(), result) ;
 
-  // Get the list of sequences in the file and check whether our required sequence exists
-  struct bbiChromInfo *chromList = bbiChromList(bbi_file_);
-  stringstream available_seqs;
-
-  for (bbiChromInfo *chrom = chromList; chrom != NULL; chrom = chrom->next)
+  if (errCatchStart(err_catch_))
     {
-      if (strcmp(chrom->name, sequence_) == 0)
+      // Get the list of sequences in the file and check whether our required sequence exists
+      struct bbiChromInfo *chromList = bbiChromList(bbi_file_);
+      stringstream available_seqs;
+
+      for (bbiChromInfo *chrom = chromList; chrom != NULL; chrom = chrom->next)
         {
-          result = true ;
-          break ;
+          if (strcmp(chrom->name, sequence_) == 0)
+            {
+              result = true ;
+              break ;
+            }
+
+          available_seqs << chrom->name << ", " ;
         }
 
-      available_seqs << chrom->name << ", " ;
+      if (!result)
+        {
+          g_set_error(&error_, g_quark_from_string("ZMap"), 99,
+                      "File header does not contain sequence '%s'. Available sequences in this file are: %s\n", 
+                      sequence_, available_seqs.str().c_str()) ;
+        }
     }
 
-  if (!result)
-    {
-      g_set_error(&error_, g_quark_from_string("ZMap"), 99,
-                  "File header does not contain sequence '%s'. Available sequences in this file are: %s\n", 
-                  sequence_, available_seqs.str().c_str()) ;
-    }
+  errCatchEnd(err_catch_);
+  if (err_catch_->gotError)
+    g_set_error(&error_, g_quark_from_string("ZMap"), 99,
+                "Error checking file header: %s", err_catch_->message->string);
 
   return result ;
 }
@@ -620,28 +667,35 @@ bool ZMapDataSourceBIGWIGStruct::checkHeader()
   bool result = false ;
   zMapReturnValIfFail(isOpen(), result) ;
 
-  // Get the list of sequences in the file and check whether our required sequence exists
-  struct bbiChromInfo *chromList = bbiChromList(bbi_file_);
-  stringstream available_seqs;
-
-  for (bbiChromInfo *chrom = chromList; chrom != NULL; chrom = chrom->next)
+  if (errCatchStart(err_catch_))
     {
-      if (strcmp(chrom->name, sequence_) == 0)
+      // Get the list of sequences in the file and check whether our required sequence exists
+      struct bbiChromInfo *chromList = bbiChromList(bbi_file_);
+      stringstream available_seqs;
+
+      for (bbiChromInfo *chrom = chromList; chrom != NULL; chrom = chrom->next)
         {
-          result = true ;
-          break ;
+          if (strcmp(chrom->name, sequence_) == 0)
+            {
+              result = true ;
+              break ;
+            }
+
+          available_seqs << chrom->name << ", " ;
         }
 
-      available_seqs << chrom->name << ", " ;
+      if (!result)
+        {
+          g_set_error(&error_, g_quark_from_string("ZMap"), 99,
+                      "File header does not contain sequence '%s'. Available sequences in this file are: %s\n", 
+                      sequence_, available_seqs.str().c_str()) ;
+        }
     }
 
-  if (!result)
-    {
-      g_set_error(&error_, g_quark_from_string("ZMap"), 99,
-                  "File header does not contain sequence '%s'. Available sequences in this file are: %s\n", 
-                  sequence_, available_seqs.str().c_str()) ;
-    }
-
+  errCatchEnd(err_catch_);
+  if (err_catch_->gotError)
+    g_set_error(&error_, g_quark_from_string("ZMap"), 99,
+                "Error checking file header: %s", err_catch_->message->string);
   return result ;
 }
 
@@ -787,36 +841,59 @@ bool ZMapDataSourceBIGBEDStruct::readLine(GString * const str)
     }
   else
     {
-      // First line. Initialise the query. 
-      lm_ = lmInit(0); // Memory pool to hold returned list
-      list_ = bigBedIntervalQuery(bbi_file_, sequence_, start_, end_, 0, lm_);
+      if (errCatchStart(err_catch_))
+        {
+          // First line. Initialise the query. 
+          lm_ = lmInit(0); // Memory pool to hold returned list
+          list_ = bigBedIntervalQuery(bbi_file_, sequence_, start_, end_, 0, lm_);
 
-      cur_interval_ = list_ ;
+          cur_interval_ = list_ ;
+        }
+
+      errCatchEnd(err_catch_);
+      if (err_catch_->gotError)
+        zMapLogWarning("Error initialising bigBed parser for '%s:%d-%d': %s",
+                       sequence_, start_, end_, err_catch_->message->string);
     }
 
   if (cur_interval_)
     {
-      // Extract the bed contents out of the "rest" of the line
-      char *line = g_strdup_printf("%s\t%d\t%d\t%s", 
-                                   sequence_, cur_interval_->start, cur_interval_->end, cur_interval_->rest) ;
-      char *row[bedKnownFields];
-      int num_fields = chopByWhite(line, row, ArraySize(row)) ;
-      struct bed *bed_feature = bedLoadN(row, num_fields) ;
+      if (errCatchStart(err_catch_))
+        {
+          // Extract the bed contents out of the "rest" of the line
+          char *line = g_strdup_printf("%s\t%d\t%d\t%s", 
+                                       sequence_, cur_interval_->start, cur_interval_->end, cur_interval_->rest) ;
+          char *row[bedKnownFields];
+          int num_fields = chopByWhite(line, row, ArraySize(row)) ;
+          struct bed *bed_feature = bedLoadN(row, num_fields) ;
 
-      // Create a gff line for this feature
-      createGFFLineFromBed(str, bed_feature, source_name_, ZMAP_BIGBED_SO_TERM) ;
+          // Create a gff line for this feature
+          createGFFLineFromBed(str, bed_feature, source_name_, ZMAP_BIGBED_SO_TERM) ;
+        
+          // Clean up
+          g_free(line) ;
+          bedFree(&bed_feature) ;
+          result = true ;
+        }
 
-      g_free(line) ;
-      bedFree(&bed_feature) ;
-      result = true ;
+      errCatchEnd(err_catch_);
+      if (err_catch_->gotError)
+        zMapLogWarning("Error processing line '%s': %s", cur_interval_->rest, err_catch_->message->string);
     }
   else
     {
-      // Got to the end of the list, so clean up the lm (typically do this 
-      // after each query)
-      lmCleanup(&lm_);
-    }
+      if (errCatchStart(err_catch_))
+        {
+          // Got to the end of the list, so clean up the lm (typically do this 
+          // after each query)
+          lmCleanup(&lm_);
+        }
 
+      errCatchEnd(err_catch_);
+      if (err_catch_->gotError)
+        zMapLogWarning("Error cleaning up bigBed parser: %s", err_catch_->message->string);
+    }
+          
   return result ;
 }
 
@@ -834,11 +911,19 @@ bool ZMapDataSourceBIGWIGStruct::readLine(GString * const str)
     }
   else
     {
-      // First line. Initialise the query. 
-      lm_ = lmInit(0); // Memory pool to hold returned list
-      list_ = bigWigIntervalQuery(bbi_file_, sequence_, start_, end_, lm_);
+      if (errCatchStart(err_catch_))
+        {
+          // First line. Initialise the query. 
+          lm_ = lmInit(0); // Memory pool to hold returned list
+          list_ = bigWigIntervalQuery(bbi_file_, sequence_, start_, end_, lm_);
 
-      cur_interval_ = list_ ;
+          cur_interval_ = list_ ;
+        }
+
+      errCatchEnd(err_catch_);
+      if (err_catch_->gotError)
+        zMapLogWarning("Error initialising bigWig parser for '%s:%d-%d': %s", 
+                       sequence_, start_, end_, err_catch_->message->string);
     }
 
   if (cur_interval_)
@@ -861,9 +946,16 @@ bool ZMapDataSourceBIGWIGStruct::readLine(GString * const str)
     }
   else
     {
-      // Got to the end of the list, so clean up the lm (typically do this 
-      // after each query)
-      lmCleanup(&lm_);
+      if (errCatchStart(err_catch_))
+        {
+          // Got to the end of the list, so clean up the lm (typically do this 
+          // after each query)
+          lmCleanup(&lm_);
+        }
+
+      errCatchEnd(err_catch_);
+      if (err_catch_->gotError)
+        zMapLogWarning("Error cleaning up bigWig parser: %s", err_catch_->message->string);
     }
 
   return result ;

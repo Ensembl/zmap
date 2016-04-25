@@ -49,6 +49,7 @@
 
 
 struct bed ;
+struct errCatch ;
 
 
 /*
@@ -58,7 +59,7 @@ class ZMapDataSourceStruct
 {
 public:
   ZMapDataSourceStruct(const GQuark source_name, const char *sequence) ;
-  virtual ~ZMapDataSourceStruct() {} ;
+  virtual ~ZMapDataSourceStruct() ;
 
   virtual bool isOpen() = 0 ;
   virtual bool checkHeader() = 0 ;
@@ -103,7 +104,8 @@ public:
   bool checkHeader() ;
   bool readLine(GString * const pStr) ;
 
-  //private:
+private:
+  struct errCatch *err_catch_ ;
   struct bed* bed_features_ ;
   struct bed* cur_feature_ ;
 } ;
@@ -120,6 +122,7 @@ public:
   bool readLine(GString * const pStr) ;
 
 private:
+  struct errCatch *err_catch_ ;
   int start_ ; // sequence region start
   int end_ ;   // sequence region end
   struct bbiFile *bbi_file_ ;
@@ -140,6 +143,7 @@ public:
   bool readLine(GString * const pStr) ;
 
 private:
+  struct errCatch *err_catch_ ;
   int start_ ; // sequence region start
   int end_ ;   // sequence region end
   struct bbiFile *bbi_file_ ;
