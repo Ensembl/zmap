@@ -124,7 +124,10 @@ typedef struct MainFrameStructName
   // Trackhub
   gbtools::trackhub::Registry registry;
   list<GtkWidget*> trackhub_widgets;
-  GtkWidget *trackdb_widg;
+  GtkWidget *trackdb_id_widg;
+  GtkWidget *trackdb_name_widg;
+  GtkWidget *trackdb_species_widg;
+  GtkWidget *trackdb_assembly_widg;
   GtkWidget *search_widg;
   GtkWidget *browse_widg;
   GtkWidget *register_widg;
@@ -363,6 +366,8 @@ static void updatePanelFromTrackhubSource(MainFrame main_data,
                                           ZMapConfigSource source,
                                           ZMapURL zmap_url)
 {
+  zMapReturnIfFail(main_data) ;
+
   char *source_name = main_data->sequence_map->getSourceName(source) ;
   const char *trackdb_id = "" ;
 
@@ -370,7 +375,7 @@ static void updatePanelFromTrackhubSource(MainFrame main_data,
     trackdb_id = zmap_url->file ;
 
   gtk_entry_set_text(GTK_ENTRY(main_data->name_widg), source_name) ;
-  gtk_entry_set_text(GTK_ENTRY(main_data->trackdb_widg), trackdb_id) ;
+  gtk_entry_set_text(GTK_ENTRY(main_data->trackdb_id_widg), trackdb_id) ;
 
   g_free(source_name) ;
 }
@@ -791,6 +796,31 @@ static void makeEnsemblWidgets(MainFrame main_data,
 #endif
 
 
+/* This is called after the trackdb_id has changed. It looks up the trackdb_id
+ * in the registry and populates the other details from the results, or clears the detail boxes
+ * if the trackdb_id is not found in the registry. */
+static void onTrackDbIdChanged(GtkEditable *editable, gpointer user_data)
+{
+  MainFrame main_data = (MainFrame)user_data ;
+  zMapReturnIfFail(main_data && 
+                   main_data->trackdb_id_widg &&
+                   main_data->trackdb_name_widg &&
+                   main_data->trackdb_species_widg &&
+                   main_data->trackdb_assembly_widg) ;
+
+  const char *trackdb_id = gtk_entry_get_text(GTK_ENTRY(main_data->trackdb_id_widg)) ;
+
+  // Find the trackdb in the registry, if it exists, and update the trackdb details. (These will
+  // be empty strings in the TrackDb class if not found so will clear the boxes.)
+  gbtools::trackhub::TrackDb trackdb = main_data->registry.searchTrackDb(trackdb_id) ;
+      
+  gtk_entry_set_text(GTK_ENTRY(main_data->trackdb_name_widg), trackdb.name().c_str()) ;
+  gtk_entry_set_text(GTK_ENTRY(main_data->trackdb_species_widg), trackdb.species().c_str()) ;
+  gtk_entry_set_text(GTK_ENTRY(main_data->trackdb_assembly_widg), trackdb.assembly().c_str()) ;
+ 
+}
+
+
 static void makeTrackhubWidgets(MainFrame main_data, 
                                 ZMapFeatureSequenceMap sequence_map,
                                 GtkTable *table,
@@ -800,11 +830,23 @@ static void makeTrackhubWidgets(MainFrame main_data,
                                 int &col)
 {
   /* Display the trackDb details */
-  /* For now just display the trackdb id (we'll want to improve this to display more details
-   * about the track) */
-  main_data->trackdb_widg = makeEntryWidget("TrackDb ID :", NULL, "REQUIRED: The track database ID from the Ensembl Track Hub Registry",
-                                            table, &row, col, col + 2, TRUE, &main_data->trackhub_widgets);
+  main_data->trackdb_id_widg = makeEntryWidget("ID :", NULL, "REQUIRED: The track database ID from the Ensembl Track Hub Registry.\nClick on the Search button to look up a track hub.",
+                                               table, &row, col, col + 2, TRUE, &main_data->trackhub_widgets);
+  main_data->trackdb_name_widg = makeEntryWidget("Name :", NULL, "The track database name",
+                                                 table, &row, col, col + 2, FALSE, &main_data->trackhub_widgets);
+  main_data->trackdb_species_widg = makeEntryWidget("Species :", NULL, "The species this hub belongs to",
+                                                    table, &row, col, col + 2, FALSE, &main_data->trackhub_widgets);
+  main_data->trackdb_assembly_widg = makeEntryWidget("Assembly :", NULL, "The assembly this hub belongs to",
+                                                     table, &row, col, col + 2, FALSE, &main_data->trackhub_widgets);
+
+  /* Connect a signal to update the other details after the trackdb_id has changed */
+  g_signal_connect(main_data->trackdb_id_widg, "changed", G_CALLBACK(onTrackDbIdChanged), main_data) ;
   
+  /* Grey out the details boxes because they should not be edited directly */
+  gtk_widget_set_sensitive(main_data->trackdb_name_widg, FALSE) ;
+  gtk_widget_set_sensitive(main_data->trackdb_species_widg, FALSE) ;
+  gtk_widget_set_sensitive(main_data->trackdb_assembly_widg, FALSE) ;
+
   /* Search button */
   main_data->search_widg = makeButtonWidget(NULL, "Search", false, "Search for track hubs",
                                             GTK_SIGNAL_FUNC(trackhubSearchCB), main_data,
@@ -1810,7 +1852,7 @@ static gboolean applyTrackhub(MainFrame main_frame)
   gboolean ok = FALSE ;
 
   const char *source_name = getEntryText(GTK_ENTRY(main_frame->name_widg)) ;
-  const char *trackdb_id = getEntryText(GTK_ENTRY(main_frame->trackdb_widg)) ;
+  const char *trackdb_id = getEntryText(GTK_ENTRY(main_frame->trackdb_id_widg)) ;
 
   if (!source_name)
     {
@@ -1886,7 +1928,7 @@ static void trackhubSearchCB(GtkWidget *widget, gpointer cb_data)
       runListDialog(main_data, 
                     results, 
                     TrackListColumn::ID,
-                    GTK_ENTRY(main_data->trackdb_widg), 
+                    GTK_ENTRY(main_data->trackdb_id_widg), 
                     "Select track hub",
                     false) ;
     }
@@ -2033,7 +2075,7 @@ static void trackhubBrowseCB(GtkWidget *widget, gpointer cb_data)
 
   if (response == GTK_RESPONSE_OK)
     {
-      if (setEntryFromSelection(list_widget, GTK_ENTRY(main_data->trackdb_widg), TrackListColumn::ID))
+      if (setEntryFromSelection(list_widget, GTK_ENTRY(main_data->trackdb_id_widg), TrackListColumn::ID))
         {
           ok = true ;
         }
