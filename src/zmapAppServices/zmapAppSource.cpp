@@ -1895,6 +1895,65 @@ static void trackhubSearchCB(GtkWidget *widget, gpointer cb_data)
 }
 
 
+/* Run a dialog that asks for the user credentials and logs in to the trackhub registry. Returns
+ * true if logged in successfully */
+static bool runLoginDialog(MainFrame main_data)
+{
+  bool result = false ;
+
+  // Create a dialog to ask for username and password
+  GtkWidget *dialog = gtk_dialog_new_with_buttons("Please log in",
+                                                  NULL,
+                                                  (GtkDialogFlags)(GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT),
+                                                  GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+                                                  GTK_STOCK_OK, GTK_RESPONSE_OK,
+                                                  NULL);
+
+  gtk_dialog_set_default_response(GTK_DIALOG(dialog), GTK_RESPONSE_OK) ;
+  GtkBox *content = GTK_BOX(GTK_DIALOG(dialog)->vbox) ;
+
+  GtkTable *table = GTK_TABLE(gtk_table_new(4, 4, FALSE)) ;
+  gtk_box_pack_start(content, GTK_WIDGET(table), FALSE, FALSE, 0) ;
+
+  int row = 0 ;
+  int col = 0 ;
+
+  GtkWidget *label = gtk_label_new("Please log in to the Track Hub Registry.\n\nTo register for an account, visit:\nhttp://trackhubregistry.org/") ;
+  gtk_table_attach(table, label, col, col + 2, row, row + 1, GTK_SHRINK, GTK_SHRINK, xpad, ypad) ;
+  ++row ;
+
+  GtkWidget *user_entry = makeEntryWidget("User name: ", "", 
+                                          "MANDATORY: Enter your user name",
+                                          table, &row, col, col + 2, true, NULL, true) ;
+  GtkWidget *pass_entry = makeEntryWidget("Password: ", "", 
+                                          "MANDATORY: Enter your password",
+                                          table, &row, col, col + 2, true, NULL, true) ;
+
+  gtk_entry_set_visibility(GTK_ENTRY(pass_entry), FALSE) ; // password mode
+
+  // Run the dialog
+  gtk_widget_show_all(dialog) ;
+  gint response = gtk_dialog_run(GTK_DIALOG(dialog)) ;
+      
+  if (response == GTK_RESPONSE_OK)
+    {
+      const char *user = gtk_entry_get_text(GTK_ENTRY(user_entry)) ;
+      const char *pass = gtk_entry_get_text(GTK_ENTRY(pass_entry)) ;
+
+      // Attempt to log in to the registry.
+      if (main_data->registry.login(user, pass))
+        result = true ;
+      else
+        zMapWarning("%s", "Error logging in") ;
+    }
+
+  gtk_widget_destroy(dialog) ;
+
+  return result ;
+}
+
+
+/* Callback called when the user hits the login/logout button */
 static void loginButtonClickedCB(GtkWidget *button, gpointer user_data)
 {
   LoginCBData *login_data = (LoginCBData*)user_data ;
@@ -1905,51 +1964,15 @@ static void loginButtonClickedCB(GtkWidget *button, gpointer user_data)
 
   if (strcmp(label, LOGIN_LABEL) == 0)
     {
-      // Ask for username and password
-      GtkWidget *dialog = gtk_dialog_new_with_buttons("Please log in",
-                                                      NULL,
-                                                      (GtkDialogFlags)(GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT),
-                                                      GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-                                                      GTK_STOCK_OK, GTK_RESPONSE_OK,
-                                                      NULL);
-
-      gtk_dialog_set_default_response(GTK_DIALOG(dialog), GTK_RESPONSE_OK) ;
-      GtkBox *content = GTK_BOX(GTK_DIALOG(dialog)->vbox) ;
-  
-      gtk_box_pack_start(content, gtk_label_new("User name: "), FALSE, FALSE, 0) ;
-      GtkEntry *user_entry = GTK_ENTRY(gtk_entry_new()) ;
-      gtk_box_pack_start(content, GTK_WIDGET(user_entry), FALSE, FALSE, 0) ;
-
-      gtk_box_pack_start(content, gtk_label_new("Password: "), FALSE, FALSE, 0) ;
-      GtkEntry *pass_entry = GTK_ENTRY(gtk_entry_new()) ;
-      gtk_entry_set_visibility(GTK_ENTRY(pass_entry), FALSE) ; // password mode
-      gtk_box_pack_start(content, GTK_WIDGET(pass_entry), FALSE, FALSE, 0) ;
-
-      gtk_widget_show_all(dialog) ;
-      gint response = gtk_dialog_run(GTK_DIALOG(dialog)) ;
-      
-      if (response == GTK_RESPONSE_OK)
+      if (runLoginDialog(main_data))
         {
-          const char *user = gtk_entry_get_text(GTK_ENTRY(user_entry)) ;
-          const char *pass = gtk_entry_get_text(GTK_ENTRY(pass_entry)) ;
-
-          // Attempt to log in to the registry.
-          if (main_data->registry.login(user, pass))
-            {
-              // Update the list of trackdbs
-              login_data->trackdbs_list_ = main_data->registry.retrieveHub() ;
-              treeViewRefresh(login_data->list_widget_, login_data->trackdbs_list_) ;
+          // Update the list of trackdbs
+          login_data->trackdbs_list_ = main_data->registry.retrieveHub() ;
+          treeViewRefresh(login_data->list_widget_, login_data->trackdbs_list_) ;
               
-              // Change the button label to "logout" 
-              gtk_button_set_label(GTK_BUTTON(button), LOGOUT_LABEL) ;
-            }
-          else
-            {
-              zMapWarning("%s", "Error logging in") ;
-            }
+          // Change the button label to "logout" 
+          gtk_button_set_label(GTK_BUTTON(button), LOGOUT_LABEL) ;
         }
-
-      gtk_widget_destroy(dialog) ;
     }
   else
     {
@@ -2026,80 +2049,82 @@ static void trackhubRegisterCB(GtkWidget *widget, gpointer cb_data)
   MainFrame main_data = (MainFrame)cb_data ;
   zMapReturnIfFail(main_data && main_data->search_widg) ;
 
-  GtkWidget *dialog = gtk_dialog_new_with_buttons("Register a Track Hub",
-                                                  NULL,
-                                                  (GtkDialogFlags)(GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT),
-                                                  GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-                                                  GTK_STOCK_OK, GTK_RESPONSE_OK,
-                                                  NULL);
+  // Log in first, if not already logged in
+  if (main_data->registry.loggedIn() || runLoginDialog(main_data))
+    {
+      GtkWidget *dialog = gtk_dialog_new_with_buttons("Register a Track Hub",
+                                                      NULL,
+                                                      (GtkDialogFlags)(GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT),
+                                                      GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+                                                      GTK_STOCK_OK, GTK_RESPONSE_OK,
+                                                      NULL);
 
-  gtk_dialog_set_default_response(GTK_DIALOG(dialog), GTK_RESPONSE_OK) ;
+      gtk_dialog_set_default_response(GTK_DIALOG(dialog), GTK_RESPONSE_OK) ;
 
-  GtkBox *content = GTK_BOX(GTK_DIALOG(dialog)->vbox) ;
+      GtkBox *content = GTK_BOX(GTK_DIALOG(dialog)->vbox) ;
 
-  GtkTable *table = GTK_TABLE(gtk_table_new(4, 4, FALSE)) ;
-  gtk_box_pack_start(content, GTK_WIDGET(table), FALSE, FALSE, 0) ;
+      GtkTable *table = GTK_TABLE(gtk_table_new(4, 4, FALSE)) ;
+      gtk_box_pack_start(content, GTK_WIDGET(table), FALSE, FALSE, 0) ;
 
-  int row = 0 ;
-  int col = 0 ;
+      int row = 0 ;
+      int col = 0 ;
 
-  GtkWidget *url_entry = makeEntryWidget("URL: ", "", 
-                                         "MANDATORY: Enter the URL of the hub",
-                                         table, &row, col, col + 2, true, NULL, true) ;
-  GtkWidget *assemblies_entry = makeEntryWidget("Assemblies: ", "", 
-                                                "OPTIONAL: If your hub genome subdirectory names are not valid UCSC DB names,\nthen you must provide a map from these names to their\ncorresponding INSDC accessions here as a semi-colon\nseparated list of key=value pairs, e.g. araTha1=GCA_000001735.1 ; ricCom1=GCA_000151685.2",
-                                                table, &row, col, col + 2, false, NULL, true) ;
-  GtkWidget *type_entry = makeEntryWidget("Type: ", "", 
-                                          "OPTIONAL: Enter the type (one of genomics/epigenomics/transcriptomics/proteomics)",
-                                          table, &row, col, col + 2, false, NULL, true) ;
+      GtkWidget *url_entry = makeEntryWidget("URL: ", "", 
+                                             "MANDATORY: Enter the URL of the hub",
+                                             table, &row, col, col + 2, true, NULL, true) ;
+      GtkWidget *assemblies_entry = makeEntryWidget("Assemblies: ", "", 
+                                                    "OPTIONAL: If your hub genome subdirectory names are not valid UCSC DB names,\nthen you must provide a map from these names to their\ncorresponding INSDC accessions here as a semi-colon\nseparated list of key=value pairs, e.g. araTha1=GCA_000001735.1 ; ricCom1=GCA_000151685.2",
+                                                    table, &row, col, col + 2, false, NULL, true) ;
+      GtkWidget *type_entry = makeEntryWidget("Type: ", "", 
+                                              "OPTIONAL: Enter the type (one of genomics/epigenomics/transcriptomics/proteomics)",
+                                              table, &row, col, col + 2, false, NULL, true) ;
 
-  GtkWidget *public_btn = gtk_check_button_new_with_label("Public") ;
-  gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(public_btn), FALSE) ;
-  gtk_widget_set_tooltip_text(public_btn, "Tick this box if the track hub should be visible to other users in Track Hub Registry search results") ;
-  gtk_table_attach(table, public_btn, col, col + 1, row, row + 1, GTK_SHRINK, GTK_SHRINK, xpad, ypad) ;
-  ++row ;
+      GtkWidget *public_btn = gtk_check_button_new_with_label("Public") ;
+      gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(public_btn), FALSE) ;
+      gtk_widget_set_tooltip_text(public_btn, "Tick this box if the track hub should be visible to other users in Track Hub Registry search results") ;
+      gtk_table_attach(table, public_btn, col, col + 1, row, row + 1, GTK_SHRINK, GTK_SHRINK, xpad, ypad) ;
+      ++row ;
   
-  gtk_widget_show_all(dialog) ;
+      gtk_widget_show_all(dialog) ;
 
-  gint response = gtk_dialog_run(GTK_DIALOG(dialog)) ;
+      gint response = gtk_dialog_run(GTK_DIALOG(dialog)) ;
 
-  if (response == GTK_RESPONSE_OK)
-    {
-      const char *url = gtk_entry_get_text(GTK_ENTRY(url_entry)) ;
-      const char *assemblies = gtk_entry_get_text(GTK_ENTRY(assemblies_entry)) ;
-      const char *type = gtk_entry_get_text(GTK_ENTRY(type_entry)) ;
-      bool is_public = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(public_btn)) ;
-
-      if (url && assemblies)
+      if (response == GTK_RESPONSE_OK)
         {
-          map<string, string> assemblies_map ;
+          const char *url = gtk_entry_get_text(GTK_ENTRY(url_entry)) ;
+          const char *assemblies = gtk_entry_get_text(GTK_ENTRY(assemblies_entry)) ;
+          const char *type = gtk_entry_get_text(GTK_ENTRY(type_entry)) ;
+          bool is_public = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(public_btn)) ;
 
-          if (assemblies)
+          if (url && assemblies)
             {
-              // Split key-value pairs into map
-              char **tokens = g_strsplit(assemblies, ";", -1) ;
-              for (char *token = *tokens; token; ++token)
+              map<string, string> assemblies_map ;
+
+              if (assemblies)
                 {
-                  char **key_val = g_strsplit(token, "=", -1) ;
+                  // Split key-value pairs into map
+                  char **tokens = g_strsplit(assemblies, ";", -1) ;
+                  for (char *token = *tokens; token; ++token)
+                    {
+                      char **key_val = g_strsplit(token, "=", -1) ;
 
-                  // We should have 2 and only 2 entries in the key_val list
-                  if (key_val && key_val[0] && key_val[1] && !key_val[2])
-                    assemblies_map[key_val[0]] = key_val[1] ;
-                  else
-                    zMapWarning("%s", "Invalid key=value pair in assembly list") ;
+                      // We should have 2 and only 2 entries in the key_val list
+                      if (key_val && key_val[0] && key_val[1] && !key_val[2])
+                        assemblies_map[key_val[0]] = key_val[1] ;
+                      else
+                        zMapWarning("%s", "Invalid key=value pair in assembly list") ;
+                    }
                 }
-            }
 
-          main_data->registry.registerHub(url, assemblies_map, type, is_public) ;
-          gtk_widget_destroy(dialog) ;  
+              // Register the hub
+              main_data->registry.registerHub(url, assemblies_map, type, is_public) ;
+            }
+          else
+            {
+              zMapWarning("%s", "Please enter the URL and list of assemblies") ;
+            }
         }
-      else
-        {
-          zMapWarning("%s", "Please enter the URL and list of assemblies") ;
-        }
-    }
-  else
-    {
+
       gtk_widget_destroy(dialog) ;  
     }
 }
