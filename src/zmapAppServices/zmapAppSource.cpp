@@ -1381,9 +1381,26 @@ template<typename ListType>
 static void treeViewRefresh(GtkTreeView *tree_view, 
                             const ListType *val_list)
 {
-  GtkListStore *store = GTK_LIST_STORE(gtk_tree_view_get_model(tree_view)) ;
-  gtk_list_store_clear(store) ;
-  listStorePopulate(store, val_list) ;
+  GtkListStore *store = NULL ;
+  GtkTreeModel *model = gtk_tree_view_get_model(tree_view) ;
+  GtkTreeModel *real_model = model ;
+
+  // Check if it's a filtered model and if so get the real (unfiltered) model
+  if (GTK_IS_TREE_MODEL_FILTER(model))
+    real_model = gtk_tree_model_filter_get_model(GTK_TREE_MODEL_FILTER(model)) ;
+
+  if (real_model && GTK_IS_LIST_STORE(real_model))
+    {
+      store = GTK_LIST_STORE(real_model) ;
+
+      gtk_list_store_clear(store) ;
+      listStorePopulate(store, val_list) ;
+    }
+  else
+    {
+      zMapWarning("%s", "Program error: cannot refresh list: expected list store") ;
+      zMapWarnIfReached() ;
+    }
 }
 
 
@@ -1569,7 +1586,6 @@ static void clear_button_cb(GtkButton *button, gpointer user_data)
   if (filter)
     gtk_tree_model_filter_refilter(filter) ;
 }
-
 
 /* Create and run a dialog to show the given list of values in a gtk tree view and to set the
  * given entry widget with the result when the user selects a row and hits ok. If the user
