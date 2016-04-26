@@ -1393,9 +1393,9 @@ static void listStorePopulate(GtkListStore *store,
 }
 
 
-template<typename ListType>
+template<typename ValueType>
 static void treeViewRefresh(GtkTreeView *tree_view, 
-                            const list<ListType> &val_list)
+                            const list<ValueType> &val_list)
 {
   GtkListStore *store = NULL ;
   GtkTreeModel *model = gtk_tree_view_get_model(tree_view) ;
@@ -1604,9 +1604,9 @@ static void clear_button_cb(GtkButton *button, gpointer user_data)
 }
 
 
-template<typename ListType>
+template<typename ValueType>
 static GtkWidget* createListDialog(MainFrame main_data, 
-                                   const list<ListType> &values_list, 
+                                   const list<ValueType> &values_list, 
                                    const char *title,
                                    const char allow_multiple,
                                    GtkTreeView **list_widget_out)
@@ -1674,9 +1674,9 @@ static GtkWidget* createListDialog(MainFrame main_data,
  * selects multiple values then it sets a semi-colon-separated list in the entry widget.
  * This function can take lists of different types of values and will call an overload of
  * createListWidget for the relevant type. */
-template<typename ListType, typename ColType>
+template<typename ValueType, typename ColType>
 static gboolean runListDialog(MainFrame main_data, 
-                              const list<ListType> &values_list, 
+                              const list<ValueType> &values_list, 
                               ColType result_col,
                               GtkEntry *result_widg,
                               const char *title,
