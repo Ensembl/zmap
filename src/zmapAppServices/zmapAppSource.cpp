@@ -136,7 +136,7 @@ class LoginCBData
 {
 public:
   LoginCBData(MainFrame main_data, 
-              list<gbtools::trackhub::TrackDb> trackdbs_list, 
+              list<gbtools::trackhub::TrackDb> &trackdbs_list, 
               GtkTreeView *list_widget) 
     : main_data_(main_data),
       trackdbs_list_(trackdbs_list),
@@ -144,7 +144,7 @@ public:
   {} ;
 
   MainFrame main_data_ ;
-  list<gbtools::trackhub::TrackDb> trackdbs_list_ ;
+  list<gbtools::trackhub::TrackDb> &trackdbs_list_ ;
   GtkTreeView *list_widget_ ;
 } ;
 
@@ -169,7 +169,7 @@ static void cancelCB(GtkWidget *widget, gpointer cb_data) ;
 static void applyCB(GtkWidget *widget, gpointer cb_data) ;
 static GtkWidget *makeMainFrame(MainFrame main_data, ZMapFeatureSequenceMap sequence_map) ;
 static gboolean applyFile(MainFrame main_data) ;
-static void setWidgetsVisibility(list<GtkWidget*> widget_list, const gboolean visible) ;
+static void setWidgetsVisibility(list<GtkWidget*> &widget_list, const gboolean visible) ;
 static void updatePanelFromSource(MainFrame main_data, ZMapConfigSource source) ;
 static gboolean applyTrackhub(MainFrame main_frame);
 
@@ -562,7 +562,7 @@ static GtkWidget* makeEntryWidget(const char *label_str,
 
 
 /* Set the visibility of all the widgets in the given list */
-static void setWidgetsVisibility(list<GtkWidget*> widget_list, const gboolean visible)
+static void setWidgetsVisibility(list<GtkWidget*> &widget_list, const gboolean visible)
 {
   for (list<GtkWidget*>::const_iterator iter = widget_list.begin(); iter != widget_list.end(); ++iter)
     {
@@ -1123,9 +1123,9 @@ static gboolean applyEnsembl(MainFrame main_frame)
 
 
 /* Get the list of databases available from the host specified in the entry widgets */
-static list<string>* mainFrameGetDatabaseList(MainFrame main_data, GError **error)
+static list<string> mainFrameGetDatabaseList(MainFrame main_data, GError **error)
 {
-  list<string> *db_list = NULL ;
+  list<string> db_list ;
   
   zMapReturnValIfFail(main_data && 
                       main_data->host_widg && main_data->port_widg && 
@@ -1144,9 +1144,9 @@ static list<string>* mainFrameGetDatabaseList(MainFrame main_data, GError **erro
 
 
 /* Get the list of featuresets available from the database specified in the entry widgets */
-static list<string>* mainFrameGetFeaturesetsList(MainFrame main_data, GError **error)
+static list<string> mainFrameGetFeaturesetsList(MainFrame main_data, GError **error)
 {
-  list<string> *db_list = NULL ;
+  list<string> db_list ;
   
   zMapReturnValIfFail(main_data && 
                       main_data->host_widg && main_data->port_widg && 
@@ -1166,9 +1166,9 @@ static list<string>* mainFrameGetFeaturesetsList(MainFrame main_data, GError **e
 
 
 /* Get the list of biotypes available from the database specified in the entry widgets */
-static list<string>* mainFrameGetBiotypesList(MainFrame main_data, GError **error)
+static list<string> mainFrameGetBiotypesList(MainFrame main_data, GError **error)
 {
-  list<string> *db_list = NULL ;
+  list<string> db_list ;
   
   zMapReturnValIfFail(main_data && 
                       main_data->host_widg && main_data->port_widg && 
@@ -1353,10 +1353,10 @@ static void createTreeViewTextColumn(GtkTreeView *tree_view,
 
 
 static void listStorePopulate(GtkListStore *store,
-                              const list<string> *vals_list)
+                              const list<string> &vals_list)
 {
   /* Loop through all of the names */
-  for (const auto &name : *vals_list)
+  for (const auto &name : vals_list)
     {
       /* Create a new row in the list store and set the column values */
       GtkTreeIter store_iter ;
@@ -1369,10 +1369,10 @@ static void listStorePopulate(GtkListStore *store,
 }
 
 static void listStorePopulate(GtkListStore *store,
-                            const list<gbtools::trackhub::TrackDb> *trackdb_list)
+                            const list<gbtools::trackhub::TrackDb> &trackdb_list)
 {
   /* Loop through all of the trackdbs */
-  for (const auto &trackdb : *trackdb_list)
+  for (const auto &trackdb : trackdb_list)
     {
       /* Create a new row in the list store and set the column values */
       GtkTreeIter store_iter ;
@@ -1395,7 +1395,7 @@ static void listStorePopulate(GtkListStore *store,
 
 template<typename ListType>
 static void treeViewRefresh(GtkTreeView *tree_view, 
-                            const ListType *val_list)
+                            const list<ListType> &val_list)
 {
   GtkListStore *store = NULL ;
   GtkTreeModel *model = gtk_tree_view_get_model(tree_view) ;
@@ -1422,7 +1422,7 @@ static void treeViewRefresh(GtkTreeView *tree_view,
 
 /* Create a tree view widget to show name values in the given list */
 static GtkTreeView* createListWidget(MainFrame main_data, 
-                                     const list<string> *val_list,
+                                     const list<string> &val_list,
                                      SearchListData search_data, 
                                      const gboolean allow_multiple)
 {
@@ -1470,7 +1470,7 @@ static GtkTreeView* createListWidget(MainFrame main_data,
 
 /* Create a tree view widget to show trackdb values in the given list */
 static GtkTreeView* createListWidget(MainFrame main_data, 
-                                     const list<gbtools::trackhub::TrackDb> *trackdb_list, 
+                                     const list<gbtools::trackhub::TrackDb> &trackdb_list, 
                                      SearchListData search_data, 
                                      const gboolean allow_multiple)
 {
@@ -1606,13 +1606,13 @@ static void clear_button_cb(GtkButton *button, gpointer user_data)
 
 template<typename ListType>
 static GtkWidget* createListDialog(MainFrame main_data, 
-                                   list<ListType> *values_list, 
+                                   const list<ListType> &values_list, 
                                    const char *title,
                                    const char allow_multiple,
                                    GtkTreeView **list_widget_out)
 {
   GtkWidget *dialog = NULL ;
-  zMapReturnValIfFail(main_data && values_list, dialog) ;
+  zMapReturnValIfFail(main_data, dialog) ;
 
   dialog = gtk_dialog_new_with_buttons(title,
                                        NULL,
@@ -1676,14 +1676,14 @@ static GtkWidget* createListDialog(MainFrame main_data,
  * createListWidget for the relevant type. */
 template<typename ListType, typename ColType>
 static gboolean runListDialog(MainFrame main_data, 
-                              list<ListType> *values_list, 
+                              const list<ListType> &values_list, 
                               ColType result_col,
                               GtkEntry *result_widg,
                               const char *title,
                               const char allow_multiple)
 {
   gboolean ok = FALSE ;
-  zMapReturnValIfFail(main_data && values_list, ok) ;
+  zMapReturnValIfFail(main_data, ok) ;
 
   GtkTreeView *list_widget = NULL ;
   GtkWidget *dialog = createListDialog(main_data, values_list, title, allow_multiple, &list_widget) ;
@@ -1718,14 +1718,12 @@ static void dbnameCB(GtkWidget *widget, gpointer cb_data)
 
   /* Connect to the host and get the list of databases */
   GError *error = NULL ;
-  list<string> *db_list = mainFrameGetDatabaseList(main_data, &error) ;
+  list<string> db_list = mainFrameGetDatabaseList(main_data, &error) ;
 
-  if (db_list)
+  if (!db_list.empty())
     {
       runListDialog(main_data, db_list, GenericListColumn::NAME, 
                     GTK_ENTRY(main_data->dbname_widg), "Select database", FALSE) ;
-
-      delete db_list ;
     }
   else
     {
@@ -1749,13 +1747,12 @@ static void featuresetsCB(GtkWidget *widget, gpointer cb_data)
     {
       /* Connect to the database and get the list of featuresets */
       GError *error = NULL ;
-      list<string> *featuresets_list = mainFrameGetFeaturesetsList(main_data, &error) ;
+      list<string> featuresets_list = mainFrameGetFeaturesetsList(main_data, &error) ;
 
-      if (featuresets_list)
+      if (!featuresets_list.empty())
         {
           runListDialog(main_data, featuresets_list, GenericListColumn::NAME,
                         GTK_ENTRY(main_data->featuresets_widg), "Select featureset(s)", TRUE) ;
-          delete featuresets_list ;
         }
       else
         {
@@ -1784,13 +1781,12 @@ static void biotypesCB(GtkWidget *widget, gpointer cb_data)
     {
       /* Connect to the database and get the list of biotypes */
       GError *error = NULL ;
-      list<string> *biotypes_list = mainFrameGetBiotypesList(main_data, &error) ;
+      list<string> biotypes_list = mainFrameGetBiotypesList(main_data, &error) ;
 
-      if (biotypes_list)
+      if (!biotypes_list.empty())
         {
           runListDialog(main_data, biotypes_list, GenericListColumn::NAME,
                         GTK_ENTRY(main_data->biotypes_widg), "Select biotype(s)", TRUE) ;
-          delete biotypes_list ;
         }
       else
         {
@@ -1888,7 +1884,7 @@ static void trackhubSearchCB(GtkWidget *widget, gpointer cb_data)
                                                                             hub_text) ;
 
       runListDialog(main_data, 
-                    &results, 
+                    results, 
                     TrackListColumn::ID,
                     GTK_ENTRY(main_data->trackdb_widg), 
                     "Select track hub",
@@ -1942,7 +1938,7 @@ static void loginButtonClickedCB(GtkWidget *button, gpointer user_data)
             {
               // Update the list of trackdbs
               login_data->trackdbs_list_ = main_data->registry.retrieveHub() ;
-              treeViewRefresh(login_data->list_widget_, &login_data->trackdbs_list_) ;
+              treeViewRefresh(login_data->list_widget_, login_data->trackdbs_list_) ;
               
               // Change the button label to "logout" 
               gtk_button_set_label(GTK_BUTTON(button), LOGOUT_LABEL) ;
@@ -1961,7 +1957,7 @@ static void loginButtonClickedCB(GtkWidget *button, gpointer user_data)
       if (main_data->registry.logout())
         {
           login_data->trackdbs_list_.clear() ;
-          treeViewRefresh(login_data->list_widget_, &login_data->trackdbs_list_) ;
+          treeViewRefresh(login_data->list_widget_, login_data->trackdbs_list_) ;
           gtk_button_set_label(GTK_BUTTON(button), LOGIN_LABEL) ;
         }
       else
@@ -1990,7 +1986,7 @@ static void trackhubBrowseCB(GtkWidget *widget, gpointer cb_data)
   // Create a dialog that will show the results in a list
   GtkTreeView *list_widget = NULL ;
   GtkWidget *dialog = createListDialog(main_data, 
-                                       &trackdbs_list, 
+                                       trackdbs_list, 
                                        "Select track hub",
                                        false,
                                        &list_widget) ;
