@@ -123,7 +123,6 @@ typedef struct MainFrameStructName
 
   // Trackhub
   gbtools::trackhub::Registry registry;
-  list<gbtools::trackhub::TrackDb> user_trackdbs;
   list<GtkWidget*> trackhub_widgets;
   GtkWidget *trackdb_widg;
   GtkWidget *search_widg;
@@ -131,6 +130,23 @@ typedef struct MainFrameStructName
   GtkWidget *register_widg;
 
 } MainFrameStruct, *MainFrame ;
+
+
+class LoginCBData
+{
+public:
+  LoginCBData(MainFrame main_data, 
+              list<gbtools::trackhub::TrackDb> trackdbs_list, 
+              GtkTreeView *list_widget) 
+    : main_data_(main_data),
+      trackdbs_list_(trackdbs_list),
+      list_widget_(list_widget)
+  {} ;
+
+  MainFrame main_data_ ;
+  list<gbtools::trackhub::TrackDb> trackdbs_list_ ;
+  GtkTreeView *list_widget_ ;
+} ;
 
 
 typedef struct SearcListDataStructName
@@ -1587,43 +1603,32 @@ static void clear_button_cb(GtkButton *button, gpointer user_data)
     gtk_tree_model_filter_refilter(filter) ;
 }
 
-/* Create and run a dialog to show the given list of values in a gtk tree view and to set the
- * given entry widget with the result when the user selects a row and hits ok. If the user
- * selects multiple values then it sets a semi-colon-separated list in the entry widget.
- * This function can take lists of different types of values and will call an overload of
- * createListWidget for the relevant type. 
- * top_panel is an optional extra panel to display at the top of the dialog */
-template<typename ListType, typename ColType>
-static gboolean runListDialog(MainFrame main_data, 
-                              list<ListType> *values_list, 
-                              ColType result_col,
-                              GtkEntry *result_widg,
-                              const char *title,
-                              const char allow_multiple,
-                              GtkWidget *top_panel = NULL)
-{
-  gboolean ok = FALSE ;
-  zMapReturnValIfFail(main_data && values_list, ok) ;
 
-  GtkWidget *dialog = gtk_dialog_new_with_buttons(title,
-                                                  NULL,
-                                                  (GtkDialogFlags)(GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT),
-                                                  GTK_STOCK_REFRESH, GTK_RESPONSE_APPLY,
-                                                  GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-                                                  GTK_STOCK_OK, GTK_RESPONSE_OK,
-                                                  NULL);
+template<typename ListType>
+static GtkWidget* createListDialog(MainFrame main_data, 
+                                   list<ListType> *values_list, 
+                                   const char *title,
+                                   const char allow_multiple,
+                                   GtkTreeView **list_widget_out)
+{
+  GtkWidget *dialog = NULL ;
+  zMapReturnValIfFail(main_data && values_list, dialog) ;
+
+  dialog = gtk_dialog_new_with_buttons(title,
+                                       NULL,
+                                       (GtkDialogFlags)(GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT),
+                                       GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+                                       GTK_STOCK_OK, GTK_RESPONSE_OK,
+                                       NULL);
 
   gtk_dialog_set_default_response(GTK_DIALOG(dialog), GTK_RESPONSE_OK) ;
+  int width = 0 ;
   int height = 0 ;
 
-  if (gbtools::GUIGetTrueMonitorSize(dialog, NULL, &height))
-    gtk_window_set_default_size(GTK_WINDOW(dialog), -1, height * 0.5) ;
+  if (gbtools::GUIGetTrueMonitorSize(dialog, &width, &height))
+    gtk_window_set_default_size(GTK_WINDOW(dialog), width * 0.3, height * 0.5) ;
 
   GtkBox *content = GTK_BOX(GTK_DIALOG(dialog)->vbox) ;
-
-  /* Add caller-specified top panel, if any */
-  if (top_panel)
-    gtk_box_pack_start(content, top_panel, FALSE, FALSE, 0) ;
 
   /* Search/filter toolbar */
   GtkWidget *hbox = gtk_hbox_new(FALSE, 0) ;
@@ -1656,8 +1661,34 @@ static gboolean runListDialog(MainFrame main_data,
   GtkTreeView *list_widget = createListWidget(main_data, values_list, &search_data, allow_multiple) ;
   gtk_container_add(GTK_CONTAINER(scrollwin), GTK_WIDGET(list_widget)) ;
 
-  gtk_widget_show_all(dialog) ;
+  if (list_widget_out)
+    *list_widget_out = list_widget ;
 
+  return dialog ;
+}
+
+
+
+/* Create and run a dialog to show the given list of values in a gtk tree view and to set the
+ * given entry widget with the result when the user selects a row and hits ok. If the user
+ * selects multiple values then it sets a semi-colon-separated list in the entry widget.
+ * This function can take lists of different types of values and will call an overload of
+ * createListWidget for the relevant type. */
+template<typename ListType, typename ColType>
+static gboolean runListDialog(MainFrame main_data, 
+                              list<ListType> *values_list, 
+                              ColType result_col,
+                              GtkEntry *result_widg,
+                              const char *title,
+                              const char allow_multiple)
+{
+  gboolean ok = FALSE ;
+  zMapReturnValIfFail(main_data && values_list, ok) ;
+
+  GtkTreeView *list_widget = NULL ;
+  GtkWidget *dialog = createListDialog(main_data, values_list, title, allow_multiple, &list_widget) ;
+
+  gtk_widget_show_all(dialog) ;
   gint response = gtk_dialog_run(GTK_DIALOG(dialog)) ;
 
   if (response == GTK_RESPONSE_OK)
@@ -1667,10 +1698,6 @@ static gboolean runListDialog(MainFrame main_data,
           gtk_widget_destroy(dialog) ;
           ok = TRUE ;
         }
-    }
-  else if (response == GTK_RESPONSE_APPLY)
-    {
-      treeViewRefresh(list_widget, values_list) ;
     }
   else
     {
@@ -1874,7 +1901,10 @@ static void trackhubSearchCB(GtkWidget *widget, gpointer cb_data)
 
 static void loginButtonClickedCB(GtkWidget *button, gpointer user_data)
 {
-  MainFrame main_data = (MainFrame)user_data ;
+  LoginCBData *login_data = (LoginCBData*)user_data ;
+  zMapReturnIfFail(login_data && login_data->main_data_) ;
+
+  MainFrame main_data = login_data->main_data_ ;
   const char* label = gtk_button_get_label(GTK_BUTTON(button)) ;
 
   if (strcmp(label, LOGIN_LABEL) == 0)
@@ -1911,7 +1941,8 @@ static void loginButtonClickedCB(GtkWidget *button, gpointer user_data)
           if (main_data->registry.login(user, pass))
             {
               // Update the list of trackdbs
-              main_data->user_trackdbs = main_data->registry.retrieveHub() ;
+              login_data->trackdbs_list_ = main_data->registry.retrieveHub() ;
+              treeViewRefresh(login_data->list_widget_, &login_data->trackdbs_list_) ;
               
               // Change the button label to "logout" 
               gtk_button_set_label(GTK_BUTTON(button), LOGOUT_LABEL) ;
@@ -1929,7 +1960,8 @@ static void loginButtonClickedCB(GtkWidget *button, gpointer user_data)
       // Log out. If successful, change the button label back to "login"
       if (main_data->registry.logout())
         {
-          main_data->user_trackdbs.clear() ;
+          login_data->trackdbs_list_.clear() ;
+          treeViewRefresh(login_data->list_widget_, &login_data->trackdbs_list_) ;
           gtk_button_set_label(GTK_BUTTON(button), LOGIN_LABEL) ;
         }
       else
@@ -1943,27 +1975,52 @@ static void loginButtonClickedCB(GtkWidget *button, gpointer user_data)
 /* Show a dialog where the user can browse trackhubs that they have previously registered */
 static void trackhubBrowseCB(GtkWidget *widget, gpointer cb_data)
 {
+  bool ok = false ;
+
   MainFrame main_data = (MainFrame)cb_data ;
   zMapReturnIfFail(main_data && main_data->browse_widg) ;
 
+  // If the user is logged in, get the list of trackdbs they have registered, otherwise leave it
+  // as an empty list for now
+  list<gbtools::trackhub::TrackDb> trackdbs_list ;
 
-  // Create a button where the user can log in / log out
+  if (main_data->registry.loggedIn())
+    trackdbs_list = main_data->registry.retrieveHub() ;
+
+  // Create a dialog that will show the results in a list
+  GtkTreeView *list_widget = NULL ;
+  GtkWidget *dialog = createListDialog(main_data, 
+                                       &trackdbs_list, 
+                                       "Select track hub",
+                                       false,
+                                       &list_widget) ;
+
+  GtkBox *content = GTK_BOX(GTK_DIALOG(dialog)->vbox) ;
+
+  // Add a button where the user can log in / log out. After logging in, the callback will update
+  // the list of registered hubs displayed to the user.
+  LoginCBData login_data(main_data, trackdbs_list, list_widget) ;
   GtkWidget *login_btn = gtk_button_new_with_label(LOGIN_LABEL) ;
+  g_signal_connect(G_OBJECT(login_btn), "clicked", G_CALLBACK(loginButtonClickedCB), &login_data) ;
 
   if (main_data->registry.loggedIn())
     gtk_button_set_label(GTK_BUTTON(login_btn), LOGOUT_LABEL) ;
 
-  g_signal_connect(G_OBJECT(login_btn), "clicked", G_CALLBACK(loginButtonClickedCB), main_data) ;
+  gtk_box_pack_start(content, login_btn, FALSE, FALSE, 0) ;
 
-  // Run a dialog that will show search results in a list
-  runListDialog(main_data, 
-                &main_data->user_trackdbs, 
-                TrackListColumn::ID,
-                GTK_ENTRY(main_data->trackdb_widg), 
-                "Select track hub",
-                false,
-                login_btn) ;
+  // Run the dialog
+  gtk_widget_show_all(dialog) ;
+  gint response = gtk_dialog_run(GTK_DIALOG(dialog)) ;
 
+  if (response == GTK_RESPONSE_OK)
+    {
+      if (setEntryFromSelection(list_widget, GTK_ENTRY(main_data->trackdb_widg), TrackListColumn::ID))
+        {
+          ok = true ;
+        }
+    }
+
+  gtk_widget_destroy(dialog) ;
 }
 
 
