@@ -838,7 +838,7 @@ static void makeTrackhubWidgets(MainFrame main_data,
   /* Display the trackDb details */
   main_data->trackdb_id_widg = makeEntryWidget("ID :", NULL, "REQUIRED: The track database ID from the Ensembl Track Hub Registry.\nClick on the Search button to look up a track hub.",
                                                table, &row, col, col + 2, TRUE, &main_data->trackhub_widgets);
-  main_data->trackdb_name_widg = makeEntryWidget("Name :", NULL, "The track database name",
+  main_data->trackdb_name_widg = makeEntryWidget("Name :", NULL, "The hub name",
                                                  table, &row, col, col + 2, FALSE, &main_data->trackhub_widgets);
   main_data->trackdb_species_widg = makeEntryWidget("Species :", NULL, "The species this hub belongs to",
                                                     table, &row, col, col + 2, FALSE, &main_data->trackhub_widgets);
