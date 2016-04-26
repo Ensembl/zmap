@@ -803,6 +803,7 @@ static void onTrackDbIdChanged(GtkEditable *editable, gpointer user_data)
 {
   MainFrame main_data = (MainFrame)user_data ;
   zMapReturnIfFail(main_data && 
+                   main_data->name_widg &&
                    main_data->trackdb_id_widg &&
                    main_data->trackdb_name_widg &&
                    main_data->trackdb_species_widg &&
@@ -814,10 +815,15 @@ static void onTrackDbIdChanged(GtkEditable *editable, gpointer user_data)
   // be empty strings in the TrackDb class if not found so will clear the boxes.)
   gbtools::trackhub::TrackDb trackdb = main_data->registry.searchTrackDb(trackdb_id) ;
       
-  gtk_entry_set_text(GTK_ENTRY(main_data->trackdb_name_widg), trackdb.name().c_str()) ;
+  gtk_entry_set_text(GTK_ENTRY(main_data->trackdb_name_widg), trackdb.label().c_str()) ;
   gtk_entry_set_text(GTK_ENTRY(main_data->trackdb_species_widg), trackdb.species().c_str()) ;
   gtk_entry_set_text(GTK_ENTRY(main_data->trackdb_assembly_widg), trackdb.assembly().c_str()) ;
- 
+
+  // If the name widget is not already set, use the trackdb name for the source name
+  const char *name = gtk_entry_get_text(GTK_ENTRY(main_data->name_widg)) ;
+  
+  if (!name || *name == '\0')
+    gtk_entry_set_text(GTK_ENTRY(main_data->name_widg), trackdb.name().c_str()) ;
 }
 
 
@@ -1425,7 +1431,7 @@ static void listStorePopulate(GtkListStore *store,
       num_tracks << trackdb.num_with_data() << "/" << trackdb.num_tracks();
 
       gtk_list_store_set(store, &store_iter, 
-                         TrackListColumn::NAME, trackdb.name().c_str(), 
+                         TrackListColumn::NAME, trackdb.label().c_str(), 
                          TrackListColumn::ID, trackdb.id().c_str(), 
                          TrackListColumn::SPECIES, trackdb.species().c_str(), 
                          TrackListColumn::ASSEMBLY, trackdb.assembly().c_str(), 
