@@ -1906,11 +1906,11 @@ static void trackhubSearchCB(GtkWidget *widget, gpointer cb_data)
                                             "MANDATORY: Enter the query string to search for. This can be simple text,\nor more complex queries can be made using wildcards,\nregular expressions, logical and fuzzy operators, proximity searches and grouping.\nSee the documentation at http://trackhubregistry.org/docs/search/advanced",
                                             table, &row, col, col + 2, true, NULL, true) ;
   GtkWidget *species_entry = makeEntryWidget("Species: ", "", "OPTIONAL: Enter the species",
-                                             table, &row, col, col + 2, true, NULL, true) ;
+                                             table, &row, col, col + 2, false, NULL, true) ;
   GtkWidget *assembly_entry = makeEntryWidget("Assembly: ", "", "OPTIONAL: Enter the assembly",
-                                              table, &row, col, col + 2, true, NULL, true) ;
+                                              table, &row, col, col + 2, false, NULL, true) ;
   GtkWidget *hub_entry = makeEntryWidget("Hub: ", "", "OPTIONAL: Enter the hub name",
-                                         table, &row, col, col + 2, true, NULL, true) ;
+                                         table, &row, col, col + 2, false, NULL, true) ;
 
   /* Run the dialog */
   gtk_widget_show_all(dialog) ;
