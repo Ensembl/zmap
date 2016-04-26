@@ -2062,17 +2062,27 @@ static void setUpServerConnectionByScheme(ZMapView zmap_view,
 
           if (trackdb_id)
             {
+              string err_msg;
               gbtools::trackhub::Registry registry ;
-              gbtools::trackhub::TrackDb trackdb = registry.searchTrackDb(trackdb_id) ;
+              gbtools::trackhub::TrackDb trackdb = registry.searchTrackDb(trackdb_id, err_msg) ;
 
-              // Create a source for each individual track in this trackdb
-              for (auto &track : trackdb.tracks())
+              if (err_msg.empty())
                 {
-                  trackhubTrackCreateServer(track, 
-                                            zmap_view, 
-                                            current_server->featuresets,
-                                            current_server->biotypes,
-                                            servers_inout) ;
+                  // Create a source for each individual track in this trackdb
+                  for (auto &track : trackdb.tracks())
+                    {
+                      trackhubTrackCreateServer(track, 
+                                                zmap_view, 
+                                                current_server->featuresets,
+                                                current_server->biotypes,
+                                                servers_inout) ;
+                    }
+                }
+              else
+                {
+                  g_set_error(error, ZMAP_VIEW_ERROR, ZMAPVIEW_ERROR_CONNECT,
+                              "Error getting tracks for trackDb '%s': %s", 
+                              trackdb_id, err_msg.c_str()) ;
                 }
             }
           else

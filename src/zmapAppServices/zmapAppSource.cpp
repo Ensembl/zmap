@@ -813,7 +813,11 @@ static void onTrackDbIdChanged(GtkEditable *editable, gpointer user_data)
 
   // Find the trackdb in the registry, if it exists, and update the trackdb details. (These will
   // be empty strings in the TrackDb class if not found so will clear the boxes.)
-  gbtools::trackhub::TrackDb trackdb = main_data->registry.searchTrackDb(trackdb_id) ;
+  string err_msg;
+  gbtools::trackhub::TrackDb trackdb = main_data->registry.searchTrackDb(trackdb_id, err_msg) ;
+  
+  if (!err_msg.empty())
+    zMapLogWarning("%s", err_msg.c_str()) ;
       
   gtk_entry_set_text(GTK_ENTRY(main_data->trackdb_name_widg), trackdb.label().c_str()) ;
   gtk_entry_set_text(GTK_ENTRY(main_data->trackdb_species_widg), trackdb.species().c_str()) ;
@@ -1922,18 +1926,26 @@ static void trackhubSearchCB(GtkWidget *widget, gpointer cb_data)
       const char *species_text = gtk_entry_get_text(GTK_ENTRY(species_entry)) ;
       const char *assembly_text = gtk_entry_get_text(GTK_ENTRY(assembly_entry)) ;
       const char *hub_text = gtk_entry_get_text(GTK_ENTRY(hub_entry)) ;
+      string err_msg;
 
       list<gbtools::trackhub::TrackDb> results = main_data->registry.search(search_text,
                                                                             species_text,
                                                                             assembly_text,
-                                                                            hub_text) ;
-
-      runListDialog(main_data, 
-                    results, 
-                    TrackListColumn::ID,
-                    GTK_ENTRY(main_data->trackdb_id_widg), 
-                    "Select track hub",
-                    false) ;
+                                                                            hub_text,
+                                                                            err_msg) ;
+      if (err_msg.empty())
+        {
+          runListDialog(main_data, 
+                        results, 
+                        TrackListColumn::ID,
+                        GTK_ENTRY(main_data->trackdb_id_widg), 
+                        "Select track hub",
+                        false) ;
+        }
+      else
+        {
+          zMapWarning("Search failed: %s", err_msg.c_str()) ;
+        }
     }
 
   gtk_widget_destroy(dialog) ;
@@ -1986,10 +1998,11 @@ static bool runLoginDialog(MainFrame main_data)
       const char *pass = gtk_entry_get_text(GTK_ENTRY(pass_entry)) ;
 
       // Attempt to log in to the registry.
-      if (main_data->registry.login(user, pass))
+      string err_msg;
+      if (main_data->registry.login(user, pass, err_msg) && err_msg.empty())
         result = true ;
       else
-        zMapWarning("%s", "Error logging in") ;
+        zMapWarning("%s", "Error logging in: %s", err_msg.c_str()) ;
     }
 
   gtk_widget_destroy(dialog) ;
@@ -2012,17 +2025,27 @@ static void loginButtonClickedCB(GtkWidget *button, gpointer user_data)
       if (runLoginDialog(main_data))
         {
           // Update the list of trackdbs
-          login_data->trackdbs_list_ = main_data->registry.retrieveHub() ;
-          treeViewRefresh(login_data->list_widget_, login_data->trackdbs_list_) ;
+          string err_msg;
+          login_data->trackdbs_list_ = main_data->registry.retrieveHub("", err_msg) ;
+
+          if (err_msg.empty())
+            {
+              treeViewRefresh(login_data->list_widget_, login_data->trackdbs_list_) ;
               
-          // Change the button label to "logout" 
-          gtk_button_set_label(GTK_BUTTON(button), LOGOUT_LABEL) ;
+              // Change the button label to "logout" 
+              gtk_button_set_label(GTK_BUTTON(button), LOGOUT_LABEL) ;
+            }
+          else
+            {
+              zMapWarning("Error retrieving track hubs: %s", err_msg.c_str()) ;
+            }
         }
     }
   else
     {
       // Log out. If successful, change the button label back to "login"
-      if (main_data->registry.logout())
+      string err_msg;
+      if (main_data->registry.logout(err_msg) && err_msg.empty())
         {
           login_data->trackdbs_list_.clear() ;
           treeViewRefresh(login_data->list_widget_, login_data->trackdbs_list_) ;
@@ -2030,7 +2053,7 @@ static void loginButtonClickedCB(GtkWidget *button, gpointer user_data)
         }
       else
         {
-          zMapWarning("%s", "Error logging out") ;
+          zMapWarning("%s", "Error logging out: %s", err_msg.c_str()) ;
         }
     }
 }
@@ -2047,44 +2070,52 @@ static void trackhubBrowseCB(GtkWidget *widget, gpointer cb_data)
   // If the user is logged in, get the list of trackdbs they have registered, otherwise leave it
   // as an empty list for now
   list<gbtools::trackhub::TrackDb> trackdbs_list ;
+  string err_msg;
 
   if (main_data->registry.loggedIn())
-    trackdbs_list = main_data->registry.retrieveHub() ;
+    trackdbs_list = main_data->registry.retrieveHub("", err_msg) ;
 
-  // Create a dialog that will show the results in a list
-  GtkTreeView *list_widget = NULL ;
-  GtkWidget *dialog = createListDialog(main_data, 
-                                       trackdbs_list, 
-                                       "Select track hub",
-                                       false,
-                                       &list_widget) ;
-
-  GtkBox *content = GTK_BOX(GTK_DIALOG(dialog)->vbox) ;
-
-  // Add a button where the user can log in / log out. After logging in, the callback will update
-  // the list of registered hubs displayed to the user.
-  LoginCBData login_data(main_data, trackdbs_list, list_widget) ;
-  GtkWidget *login_btn = gtk_button_new_with_label(LOGIN_LABEL) ;
-  g_signal_connect(G_OBJECT(login_btn), "clicked", G_CALLBACK(loginButtonClickedCB), &login_data) ;
-
-  if (main_data->registry.loggedIn())
-    gtk_button_set_label(GTK_BUTTON(login_btn), LOGOUT_LABEL) ;
-
-  gtk_box_pack_start(content, login_btn, FALSE, FALSE, 0) ;
-
-  // Run the dialog
-  gtk_widget_show_all(dialog) ;
-  gint response = gtk_dialog_run(GTK_DIALOG(dialog)) ;
-
-  if (response == GTK_RESPONSE_OK)
+  if (err_msg.empty())
     {
-      if (setEntryFromSelection(list_widget, GTK_ENTRY(main_data->trackdb_id_widg), TrackListColumn::ID))
-        {
-          ok = true ;
-        }
-    }
+      // Create a dialog that will show the results in a list
+      GtkTreeView *list_widget = NULL ;
+      GtkWidget *dialog = createListDialog(main_data, 
+                                           trackdbs_list, 
+                                           "Select track hub",
+                                           false,
+                                           &list_widget) ;
 
-  gtk_widget_destroy(dialog) ;
+      GtkBox *content = GTK_BOX(GTK_DIALOG(dialog)->vbox) ;
+
+      // Add a button where the user can log in / log out. After logging in, the callback will update
+      // the list of registered hubs displayed to the user.
+      LoginCBData login_data(main_data, trackdbs_list, list_widget) ;
+      GtkWidget *login_btn = gtk_button_new_with_label(LOGIN_LABEL) ;
+      g_signal_connect(G_OBJECT(login_btn), "clicked", G_CALLBACK(loginButtonClickedCB), &login_data) ;
+
+      if (main_data->registry.loggedIn())
+        gtk_button_set_label(GTK_BUTTON(login_btn), LOGOUT_LABEL) ;
+
+      gtk_box_pack_start(content, login_btn, FALSE, FALSE, 0) ;
+
+      // Run the dialog
+      gtk_widget_show_all(dialog) ;
+      gint response = gtk_dialog_run(GTK_DIALOG(dialog)) ;
+
+      if (response == GTK_RESPONSE_OK)
+        {
+          if (setEntryFromSelection(list_widget, GTK_ENTRY(main_data->trackdb_id_widg), TrackListColumn::ID))
+            {
+              ok = true ;
+            }
+        }
+
+      gtk_widget_destroy(dialog) ;
+    }
+  else
+    {
+      zMapWarning("%s", err_msg.c_str()) ;
+    }
 }
 
 
@@ -2162,7 +2193,11 @@ static void trackhubRegisterCB(GtkWidget *widget, gpointer cb_data)
                 }
 
               // Register the hub
-              main_data->registry.registerHub(url, assemblies_map, type, is_public) ;
+              string err_msg;
+              main_data->registry.registerHub(url, assemblies_map, type, is_public, err_msg) ;
+
+              if (!err_msg.empty())
+                zMapWarning("Error registering hub: %s", err_msg.c_str()) ;
             }
           else
             {
