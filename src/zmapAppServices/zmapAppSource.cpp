@@ -819,11 +819,8 @@ static void onTrackDbIdChanged(GtkEditable *editable, gpointer user_data)
   gtk_entry_set_text(GTK_ENTRY(main_data->trackdb_species_widg), trackdb.species().c_str()) ;
   gtk_entry_set_text(GTK_ENTRY(main_data->trackdb_assembly_widg), trackdb.assembly().c_str()) ;
 
-  // If the name widget is not already set, use the trackdb name for the source name
-  const char *name = gtk_entry_get_text(GTK_ENTRY(main_data->name_widg)) ;
-  
-  if (!name || *name == '\0')
-    gtk_entry_set_text(GTK_ENTRY(main_data->name_widg), trackdb.name().c_str()) ;
+  // Use the trackdb name for the source name
+  gtk_entry_set_text(GTK_ENTRY(main_data->name_widg), trackdb.name().c_str()) ;
 }
 
 
