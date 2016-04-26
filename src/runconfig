@@ -16,7 +16,14 @@
 #
 #
 
-INSTALL_DIR=$1
+INSTALL_DIR=''
+
+if [ -n "$1" ] ; then
+  INSTALL_DIR="--prefix=$1"
+
+  zmap_message_out "Install dir has been set to: $INSTALL_DIR"
+fi
+
 
 
 SCRIPT_NAME=$(basename $0)
@@ -168,10 +175,9 @@ zmap_message_out "PKG_CONFIG_PATH is set to: $PKG_CONFIG_PATH"
 
 zmap_message_out "Running configure as:  " \
     $BASE_DIR/configure \
-    $INSTALL_DIR \
     $COMMON_CONFIGURE_ARGS \
     $SPECIFIC_CONFIGURE_ARGS \
-    $CC_param $CFLAGS_param $LDFLAGS_param "$@"
+    $CC_param $CFLAGS_param $LDFLAGS_param $INSTALL_DIR 
 
 zmap_message_out "=========================================================================="
 
@@ -181,10 +187,9 @@ zmap_message_out "==============================================================
 # be interpreted as a single cmdline arg, sometimes as multiple ones.
 
 $BASE_DIR/configure \
-$INSTALL_DIR \
 $COMMON_CONFIGURE_ARGS \
 $SPECIFIC_CONFIGURE_ARGS \
-"$CC_param" "$CFLAGS_param" "$LDFLAGS_param" "$@" || zmap_message_exit "configure script failed."
+"$CC_param" "$CFLAGS_param" "$LDFLAGS_param" "$INSTALL_DIR" || zmap_message_exit "configure script failed."
 
 
 
