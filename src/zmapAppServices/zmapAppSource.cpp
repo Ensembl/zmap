@@ -498,12 +498,13 @@ static GtkWidget* makeEntryWidget(const char *label_str,
                                   const int col,
                                   const int max_col, 
                                   gboolean mandatory,
-                                  list<GtkWidget*> *widget_list)
+                                  list<GtkWidget*> *widget_list,
+                                  const bool activates_default = false)
 {
   GtkWidget *label = gtk_label_new(label_str) ;
   gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5) ;
   gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
-  gtk_table_attach(table, label, col, col + 1, *row, *row + 1, GTK_SHRINK, GTK_SHRINK, xpad, ypad) ;
+  gtk_table_attach(table, label, col, col + 1, *row, *row + 1, GTK_FILL, GTK_SHRINK, xpad, ypad) ;
 
   if (mandatory)
     {
@@ -517,13 +518,16 @@ static GtkWidget* makeEntryWidget(const char *label_str,
 
   gtk_table_attach(table, entry, col + 1, max_col, *row, *row + 1, 
                    (GtkAttachOptions)(GTK_EXPAND | GTK_FILL), 
-                   (GtkAttachOptions)(GTK_EXPAND | GTK_FILL), 
+                   GTK_SHRINK, 
                    xpad, ypad) ;
 
   *row += 1;
 
   if (default_value)
     gtk_entry_set_text(GTK_ENTRY(entry), default_value) ;
+
+  if (activates_default)
+    gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE) ;
 
   if (tooltip)
     {
@@ -1325,7 +1329,7 @@ static void createTreeViewTextColumn(GtkTreeView *tree_view,
   gtk_tree_view_column_set_reorderable(column, TRUE) ;
 
   if (hide)
-    gtk_tree_view_column_set_reorderable(column, FALSE) ;
+    gtk_tree_view_column_set_visible(column, FALSE) ;
 
   gtk_tree_view_append_column(tree_view, column);
 
@@ -1806,15 +1810,23 @@ static void trackhubSearchCB(GtkWidget *widget, gpointer cb_data)
                                                   NULL);
 
   gtk_dialog_set_default_response(GTK_DIALOG(dialog), GTK_RESPONSE_OK) ;
-
   GtkBox *content = GTK_BOX(GTK_DIALOG(dialog)->vbox) ;
 
-  GtkBox *hbox = GTK_BOX(gtk_hbox_new(FALSE, 0)) ;
-  gtk_box_pack_start(content, GTK_WIDGET(hbox), FALSE, FALSE, 0) ;
+  GtkTable *table = GTK_TABLE(gtk_table_new(4, 4, FALSE)) ;
+  gtk_box_pack_start(content, GTK_WIDGET(table), FALSE, FALSE, 0) ;
 
-  gtk_box_pack_start(hbox, gtk_label_new("Search text: "), FALSE, FALSE, 0) ;
-  GtkEntry *search_entry = GTK_ENTRY(gtk_entry_new()) ;
-  gtk_box_pack_start(hbox, GTK_WIDGET(search_entry), FALSE, FALSE, 0) ;
+  int row = 0 ;
+  int col = 0 ;
+
+  GtkWidget *search_entry = makeEntryWidget("Search text: ", "", 
+                                            "MANDATORY: Enter the query string to search for. This can be simple text,\nor more complex queries can be made using wildcards,\nregular expressions, logical and fuzzy operators, proximity searches and grouping.\nSee the documentation at http://trackhubregistry.org/docs/search/advanced",
+                                            table, &row, col, col + 2, true, NULL, true) ;
+  GtkWidget *species_entry = makeEntryWidget("Species: ", "", "OPTIONAL: Enter the species",
+                                             table, &row, col, col + 2, true, NULL, true) ;
+  GtkWidget *assembly_entry = makeEntryWidget("Assembly: ", "", "OPTIONAL: Enter the assembly",
+                                              table, &row, col, col + 2, true, NULL, true) ;
+  GtkWidget *hub_entry = makeEntryWidget("Hub: ", "", "OPTIONAL: Enter the hub name",
+                                         table, &row, col, col + 2, true, NULL, true) ;
 
   /* Run the dialog */
   gtk_widget_show_all(dialog) ;
@@ -1822,8 +1834,15 @@ static void trackhubSearchCB(GtkWidget *widget, gpointer cb_data)
 
   if (response == GTK_RESPONSE_OK)
     {
-      const char *search_text = gtk_entry_get_text(search_entry) ;
-      list<gbtools::trackhub::TrackDb> results = main_data->registry.search(search_text) ;
+      string search_text(gtk_entry_get_text(GTK_ENTRY(search_entry))) ;
+      string species_text(gtk_entry_get_text(GTK_ENTRY(species_entry))) ;
+      string assembly_text(gtk_entry_get_text(GTK_ENTRY(assembly_entry))) ;
+      string hub_text(gtk_entry_get_text(GTK_ENTRY(hub_entry))) ;
+
+      list<gbtools::trackhub::TrackDb> results = main_data->registry.search(search_text,
+                                                                            species_text,
+                                                                            assembly_text,
+                                                                            hub_text) ;
 
       runListDialog(main_data, 
                     &results, 
