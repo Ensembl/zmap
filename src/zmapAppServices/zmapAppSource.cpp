@@ -1873,10 +1873,10 @@ static void trackhubSearchCB(GtkWidget *widget, gpointer cb_data)
 
   if (response == GTK_RESPONSE_OK)
     {
-      string search_text(gtk_entry_get_text(GTK_ENTRY(search_entry))) ;
-      string species_text(gtk_entry_get_text(GTK_ENTRY(species_entry))) ;
-      string assembly_text(gtk_entry_get_text(GTK_ENTRY(assembly_entry))) ;
-      string hub_text(gtk_entry_get_text(GTK_ENTRY(hub_entry))) ;
+      const char *search_text = gtk_entry_get_text(GTK_ENTRY(search_entry)) ;
+      const char *species_text = gtk_entry_get_text(GTK_ENTRY(species_entry)) ;
+      const char *assembly_text = gtk_entry_get_text(GTK_ENTRY(assembly_entry)) ;
+      const char *hub_text = gtk_entry_get_text(GTK_ENTRY(hub_entry)) ;
 
       list<gbtools::trackhub::TrackDb> results = main_data->registry.search(search_text,
                                                                             species_text,
@@ -2037,42 +2037,60 @@ static void trackhubRegisterCB(GtkWidget *widget, gpointer cb_data)
 
   GtkBox *content = GTK_BOX(GTK_DIALOG(dialog)->vbox) ;
 
-  GtkBox *vbox = GTK_BOX(gtk_vbox_new(FALSE, 0)) ;
-  gtk_box_pack_start(content, GTK_WIDGET(vbox), FALSE, FALSE, 0) ;
+  GtkTable *table = GTK_TABLE(gtk_table_new(4, 4, FALSE)) ;
+  gtk_box_pack_start(content, GTK_WIDGET(table), FALSE, FALSE, 0) ;
 
-  gtk_box_pack_start(vbox, gtk_label_new("URL: "), FALSE, FALSE, 0) ;
-  GtkEntry *url_entry = GTK_ENTRY(gtk_entry_new()) ;
-  gtk_box_pack_start(vbox, GTK_WIDGET(url_entry), FALSE, FALSE, 0) ;
+  int row = 0 ;
+  int col = 0 ;
 
-  gtk_box_pack_start(vbox, gtk_label_new("Assemblies: "), FALSE, FALSE, 0) ;
-  GtkEntry *assemblies_entry = GTK_ENTRY(gtk_entry_new()) ;
-  gtk_box_pack_start(vbox, GTK_WIDGET(assemblies_entry), FALSE, FALSE, 0) ;
-  gtk_widget_set_tooltip_text(GTK_WIDGET(assemblies_entry), 
-                              "Semi-colon separated list of key=value pairs, e.g. araTha1=GCA_000001735.1") ;
-
-  gtk_box_pack_start(vbox, gtk_label_new("Type: "), FALSE, FALSE, 0) ;
-  GtkEntry *type_entry = GTK_ENTRY(gtk_entry_new()) ;
-  gtk_box_pack_start(vbox, GTK_WIDGET(type_entry), FALSE, FALSE, 0) ;
-  gtk_widget_set_tooltip_text(GTK_WIDGET(type_entry), "genomics/epigenomics/transcriptomics/proteomics") ;
+  GtkWidget *url_entry = makeEntryWidget("URL: ", "", 
+                                         "MANDATORY: Enter the URL of the hub",
+                                         table, &row, col, col + 2, true, NULL, true) ;
+  GtkWidget *assemblies_entry = makeEntryWidget("Assemblies: ", "", 
+                                                "OPTIONAL: If your hub genome subdirectory names are not valid UCSC DB names,\nthen you must provide a map from these names to their\ncorresponding INSDC accessions here as a semi-colon\nseparated list of key=value pairs, e.g. araTha1=GCA_000001735.1 ; ricCom1=GCA_000151685.2",
+                                                table, &row, col, col + 2, false, NULL, true) ;
+  GtkWidget *type_entry = makeEntryWidget("Type: ", "", 
+                                          "OPTIONAL: Enter the type (one of genomics/epigenomics/transcriptomics/proteomics)",
+                                          table, &row, col, col + 2, false, NULL, true) ;
 
   GtkWidget *public_btn = gtk_check_button_new_with_label("Public") ;
   gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(public_btn), FALSE) ;
-  gtk_box_pack_start(vbox, GTK_WIDGET(public_btn), FALSE, FALSE, 0) ;
-
+  gtk_widget_set_tooltip_text(public_btn, "Tick this box if the track hub should be visible to other users in Track Hub Registry search results") ;
+  gtk_table_attach(table, public_btn, col, col + 1, row, row + 1, GTK_SHRINK, GTK_SHRINK, xpad, ypad) ;
+  ++row ;
+  
   gtk_widget_show_all(dialog) ;
 
   gint response = gtk_dialog_run(GTK_DIALOG(dialog)) ;
 
   if (response == GTK_RESPONSE_OK)
     {
-      const char *url = gtk_entry_get_text(url_entry) ;
-      const char *assemblies = gtk_entry_get_text(assemblies_entry) ;
-      const char *type = gtk_entry_get_text(type_entry) ;
+      const char *url = gtk_entry_get_text(GTK_ENTRY(url_entry)) ;
+      const char *assemblies = gtk_entry_get_text(GTK_ENTRY(assemblies_entry)) ;
+      const char *type = gtk_entry_get_text(GTK_ENTRY(type_entry)) ;
       bool is_public = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(public_btn)) ;
 
       if (url && assemblies)
         {
-          //main_data.registry.registerHub(url, assemblies, type, is_public) ;
+          map<string, string> assemblies_map ;
+
+          if (assemblies)
+            {
+              // Split key-value pairs into map
+              char **tokens = g_strsplit(assemblies, ";", -1) ;
+              for (char *token = *tokens; token; ++token)
+                {
+                  char **key_val = g_strsplit(token, "=", -1) ;
+
+                  // We should have 2 and only 2 entries in the key_val list
+                  if (key_val && key_val[0] && key_val[1] && !key_val[2])
+                    assemblies_map[key_val[0]] = key_val[1] ;
+                  else
+                    zMapWarning("%s", "Invalid key=value pair in assembly list") ;
+                }
+            }
+
+          main_data->registry.registerHub(url, assemblies_map, type, is_public) ;
           gtk_widget_destroy(dialog) ;  
         }
       else
