@@ -1,6 +1,7 @@
 
 Git commits for  from commit "production" until commit "release/2.8.0"
 
+225750f 2016-04-27 Retrofit code to log blixem commandline, in develop already. - REGRESSION FIX
 9d73a0b 2016-04-25 Fix but I unwittingly introduced into canvasFeature sorting. - REGRESSION FIX
 0e3ef70 2016-04-12 Fix type causing regression - REGRESSION FIX
 b7127f1 2016-04-12 Various updates to title page, introduction and first section. - DEVELOP
