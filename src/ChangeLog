@@ -1,3 +1,10 @@
+2016-04-28  zmap  <zmap@sanger.ac.uk>
+ ZMap version 2.7.1-56-g225750f - Update RT and git commit reports
+ src/ChangeLog                                  | 12 ++++++++++++
+ src/build/release_docs/GIT_COMMITS.txt         |  1 +
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt |  2 +-
+ 3 files changed, 14 insertions(+), 1 deletion(-)
+
 2016-04-27  Ed Griffiths  <edgrif@sanger.ac.uk>
  Retrofit code to log blixem commandline, in develop already. - REGRESSION FIX
  src/zmapView/zmapViewCallBlixem.cpp | 29 ++++++++++++++++++++++++++++-
