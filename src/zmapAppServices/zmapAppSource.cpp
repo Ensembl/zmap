@@ -845,7 +845,7 @@ static void makeTrackhubWidgets(MainFrame main_data,
                                 int &col)
 {
   /* Display the trackDb details */
-  main_data->trackdb_id_widg = makeEntryWidget("ID :", NULL, "REQUIRED: The track database ID from the Ensembl Track Hub Registry.\nClick on the Search button to look up a track hub.",
+  main_data->trackdb_id_widg = makeEntryWidget("ID :", NULL, "REQUIRED: The track database ID from the Ensembl Track Hub Registry. Click on the Search button to look up a track hub.",
                                                table, &row, col, col + 2, TRUE, &main_data->trackhub_widgets);
   main_data->trackdb_name_widg = makeEntryWidget("Name :", NULL, "The hub name",
                                                  table, &row, col, col + 2, FALSE, &main_data->trackhub_widgets);
@@ -1945,7 +1945,7 @@ static void trackhubSearchCB(GtkWidget *widget, gpointer cb_data)
   int col = 0 ;
 
   GtkWidget *search_entry = makeEntryWidget("Search text: ", "", 
-                                            "MANDATORY: Enter the query string to search for. This can be simple text,\nor more complex queries can be made using wildcards,\nregular expressions, logical and fuzzy operators, proximity searches and grouping.\nSee the documentation at http://trackhubregistry.org/docs/search/advanced",
+                                            "MANDATORY: Enter the query string to search for. This can be simple text, or more complex queries can be made using wildcards, regular expressions, logical and fuzzy operators, proximity searches and grouping. See the documentation at http://trackhubregistry.org/docs/search/advanced",
                                             table, &row, col, col + 2, true, NULL, true) ;
   GtkWidget *species_entry = makeEntryWidget("Species: ", "", "OPTIONAL: Enter the species",
                                              table, &row, col, col + 2, false, NULL, true) ;
@@ -2189,7 +2189,7 @@ static void trackhubRegisterCB(GtkWidget *widget, gpointer cb_data)
                                              "MANDATORY: Enter the URL of the hub",
                                              table, &row, col, col + 2, true, NULL, true) ;
       GtkWidget *assemblies_entry = makeEntryWidget("Assemblies: ", "", 
-                                                    "OPTIONAL: If your hub genome subdirectory names are not valid UCSC DB names,\nthen you must provide a map from these names to their\ncorresponding INSDC accessions here as a semi-colon\nseparated list of key=value pairs, e.g. araTha1=GCA_000001735.1 ; ricCom1=GCA_000151685.2",
+                                                    "OPTIONAL: If your hub genome subdirectory names are not valid UCSC DB names, then you must provide a map from these names to their corresponding INSDC accessions here as a semi-colon separated list of key=value pairs, e.g. araTha1=GCA_000001735.1 ; ricCom1=GCA_000151685.2",
                                                     table, &row, col, col + 2, false, NULL, true) ;
       GtkWidget *type_entry = makeEntryWidget("Type: ", "", 
                                               "OPTIONAL: Enter the type (one of genomics/epigenomics/transcriptomics/proteomics)",
