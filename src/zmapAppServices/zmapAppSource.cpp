@@ -135,17 +135,21 @@ typedef struct MainFrameStructName
 } MainFrameStruct, *MainFrame ;
 
 
-class LoginCBData
+/* Utility class to hold data about the users' trackhubs */
+class UserTrackhubs
 {
 public:
-  LoginCBData(MainFrame main_data, 
-              list<gbtools::trackhub::TrackDb> &trackdbs_list, 
-              GtkTreeView *list_widget) 
-    : main_data_(main_data),
+  UserTrackhubs(GtkWindow *parent,
+                MainFrame main_data, 
+                list<gbtools::trackhub::TrackDb> &trackdbs_list, 
+                GtkTreeView *list_widget) 
+    : parent_(parent),
+      main_data_(main_data),
       trackdbs_list_(trackdbs_list),
       list_widget_(list_widget)
   {} ;
 
+  GtkWindow *parent_ ;
   MainFrame main_data_ ;
   list<gbtools::trackhub::TrackDb> &trackdbs_list_ ;
   GtkTreeView *list_widget_ ;
@@ -827,7 +831,7 @@ static void onTrackDbIdChanged(GtkEditable *editable, gpointer user_data)
   if (!err_msg.empty())
     zMapLogWarning("%s", err_msg.c_str()) ;
       
-  gtk_entry_set_text(GTK_ENTRY(main_data->trackdb_name_widg), trackdb.label().c_str()) ;
+  gtk_entry_set_text(GTK_ENTRY(main_data->trackdb_name_widg), trackdb.name().c_str()) ;
   gtk_entry_set_text(GTK_ENTRY(main_data->trackdb_species_widg), trackdb.species().c_str()) ;
   gtk_entry_set_text(GTK_ENTRY(main_data->trackdb_assembly_widg), trackdb.assembly().c_str()) ;
 
@@ -1460,7 +1464,7 @@ static void listStorePopulate(GtkListStore *store,
       num_tracks << trackdb.num_with_data() << "/" << trackdb.num_tracks();
 
       gtk_list_store_set(store, &store_iter, 
-                         TrackListColumn::NAME, trackdb.label().c_str(), 
+                         TrackListColumn::NAME, trackdb.name().c_str(), 
                          TrackListColumn::ID, trackdb.id().c_str(), 
                          TrackListColumn::SPECIES, trackdb.species().c_str(), 
                          TrackListColumn::ASSEMBLY, trackdb.assembly().c_str(), 
@@ -1694,7 +1698,7 @@ static GtkWidget* createListDialog(MainFrame main_data,
 
   dialog = gtk_dialog_new_with_buttons(title,
                                        NULL,
-                                       (GtkDialogFlags)(GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT),
+                                       (GtkDialogFlags)(GTK_DIALOG_DESTROY_WITH_PARENT),
                                        GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
                                        GTK_STOCK_OK, GTK_RESPONSE_OK,
                                        NULL);
@@ -1930,7 +1934,7 @@ static void trackhubSearchCB(GtkWidget *widget, gpointer cb_data)
 
   GtkWidget *dialog = gtk_dialog_new_with_buttons("Search for Track Hubs",
                                                   NULL,
-                                                  (GtkDialogFlags)(GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT),
+                                                  (GtkDialogFlags)(GTK_DIALOG_DESTROY_WITH_PARENT),
                                                   GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
                                                   GTK_STOCK_OK, GTK_RESPONSE_OK,
                                                   NULL);
@@ -2050,12 +2054,12 @@ static bool runLoginDialog(MainFrame main_data)
 
 
 /* Callback called when the user hits the login/logout button */
-static void loginButtonClickedCB(GtkWidget *button, gpointer user_data)
+static void loginButtonClickedCB(GtkWidget *button, gpointer data)
 {
-  LoginCBData *login_data = (LoginCBData*)user_data ;
-  zMapReturnIfFail(login_data && login_data->main_data_) ;
+  UserTrackhubs *user_data = (UserTrackhubs*)data ;
+  zMapReturnIfFail(user_data && user_data->main_data_) ;
 
-  MainFrame main_data = login_data->main_data_ ;
+  MainFrame main_data = user_data->main_data_ ;
   const char* label = gtk_button_get_label(GTK_BUTTON(button)) ;
 
   if (strcmp(label, LOGIN_LABEL) == 0)
@@ -2064,11 +2068,11 @@ static void loginButtonClickedCB(GtkWidget *button, gpointer user_data)
         {
           // Update the list of trackdbs
           string err_msg;
-          login_data->trackdbs_list_ = main_data->registry.retrieveHub("", err_msg) ;
+          user_data->trackdbs_list_ = main_data->registry.retrieveHub("", err_msg) ;
 
           if (err_msg.empty())
             {
-              treeViewRefresh(login_data->list_widget_, login_data->trackdbs_list_) ;
+              treeViewRefresh(user_data->list_widget_, user_data->trackdbs_list_) ;
               
               // Change the button label to "logout" 
               gtk_button_set_label(GTK_BUTTON(button), LOGOUT_LABEL) ;
@@ -2085,14 +2089,66 @@ static void loginButtonClickedCB(GtkWidget *button, gpointer user_data)
       string err_msg;
       if (main_data->registry.logout(err_msg) && err_msg.empty())
         {
-          login_data->trackdbs_list_.clear() ;
-          treeViewRefresh(login_data->list_widget_, login_data->trackdbs_list_) ;
+          user_data->trackdbs_list_.clear() ;
+          treeViewRefresh(user_data->list_widget_, user_data->trackdbs_list_) ;
           gtk_button_set_label(GTK_BUTTON(button), LOGIN_LABEL) ;
         }
       else
         {
           zMapCritical("%s", "Error logging out: %s", err_msg.c_str()) ;
         }
+    }
+}
+
+
+/* Callback called when the user hits the delete-trackhub button */
+static void deleteButtonClickedCB(GtkWidget *button, gpointer data)
+{
+  UserTrackhubs *user_data = (UserTrackhubs*)data ;
+  zMapReturnIfFail(user_data && user_data->main_data_ && user_data->list_widget_) ;
+
+  MainFrame main_data = user_data->main_data_ ;
+  GtkTreeView *tree_view = user_data->list_widget_ ;
+
+  GtkTreeSelection *selection = gtk_tree_view_get_selection(tree_view) ;
+
+  if (selection)
+    {
+      GtkTreeModel *model = gtk_tree_view_get_model(tree_view) ;
+      GList *rows = gtk_tree_selection_get_selected_rows(selection, &model) ;
+
+      stringstream msg_ss ;
+      msg_ss << "You are about to delete " << g_list_length(rows) << " trackDbs from the registry.\n\nContinue?" ;
+
+      if (zMapGUIMsgGetBool(NULL, ZMAP_MSG_CRITICAL, msg_ss.str().c_str()))
+        {
+          for (GList *item = rows; item; item = item->next)
+            {
+              GtkTreePath *path = (GtkTreePath*)(item->data) ;
+              GtkTreeIter iter ;
+              gtk_tree_model_get_iter(model, &iter, path) ;
+
+              char *trackdb_id = NULL ;
+              gtk_tree_model_get(model, &iter,
+                                 TrackListColumn::ID, &trackdb_id,
+                                 -1);
+
+              if (trackdb_id)
+                {
+                  string err_msg;
+                  main_data->registry.deleteTrackDb(trackdb_id, err_msg) ;
+
+                  if (!err_msg.empty())
+                    zMapCritical("%s", "Error deleting trackDb: %s", err_msg.c_str()) ;
+
+                  g_free(trackdb_id) ;
+                }
+            }
+        }
+    }
+  else
+    {
+      zMapCritical("%s", "Please select a track hub to delete") ;
     }
 }
 
@@ -2127,16 +2183,23 @@ static void trackhubBrowseCB(GtkWidget *widget, gpointer cb_data)
 
       GtkBox *content = GTK_BOX(GTK_DIALOG(dialog)->vbox) ;
 
+
       // Add a button where the user can log in / log out. After logging in, the callback will update
       // the list of registered hubs displayed to the user.
-      LoginCBData login_data(main_data, trackdbs_list, list_widget) ;
+      UserTrackhubs user_data(GTK_WINDOW(dialog), main_data, trackdbs_list, list_widget) ;
       GtkWidget *login_btn = gtk_button_new_with_label(LOGIN_LABEL) ;
-      g_signal_connect(G_OBJECT(login_btn), "clicked", G_CALLBACK(loginButtonClickedCB), &login_data) ;
+      g_signal_connect(G_OBJECT(login_btn), "clicked", G_CALLBACK(loginButtonClickedCB), &user_data) ;
+      gtk_box_pack_start(content, login_btn, FALSE, FALSE, 0) ;
 
       if (main_data->registry.loggedIn())
         gtk_button_set_label(GTK_BUTTON(login_btn), LOGOUT_LABEL) ;
 
-      gtk_box_pack_start(content, login_btn, FALSE, FALSE, 0) ;
+
+      // Add a button where the user can delete a selected hub
+      GtkWidget *delete_btn = gtk_button_new_with_label("Delete") ;
+      g_signal_connect(G_OBJECT(delete_btn), "clicked", G_CALLBACK(deleteButtonClickedCB), &user_data) ;
+      gtk_box_pack_start(content, delete_btn, FALSE, FALSE, 0) ;
+
 
       // Run the dialog
       gtk_widget_show_all(dialog) ;
@@ -2170,7 +2233,7 @@ static void trackhubRegisterCB(GtkWidget *widget, gpointer cb_data)
     {
       GtkWidget *dialog = gtk_dialog_new_with_buttons("Register a Track Hub",
                                                       NULL,
-                                                      (GtkDialogFlags)(GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT),
+                                                      (GtkDialogFlags)(GTK_DIALOG_DESTROY_WITH_PARENT),
                                                       GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
                                                       GTK_STOCK_OK, GTK_RESPONSE_OK,
                                                       NULL);
