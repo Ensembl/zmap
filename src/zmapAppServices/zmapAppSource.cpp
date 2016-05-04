@@ -1089,9 +1089,28 @@ static string constructUrl(const char *host, const char *port,
                            const char *user, const char *pass,
                            const char *dbname, const char *dbprefix)
 {
+  string result ;
   stringstream url ;
 
-  url << "ensembl://" << user << ":" << pass << "@" << host << ":" << port ;
+  url << "ensembl://" ;
+  
+  if (user)
+    url << user ;
+
+  url << ":" ;
+
+  if (pass)
+    url << pass ;
+
+  url << "@" ;
+
+  if (host)
+    url << host ;
+
+  url << ":" ;
+
+  if (port)
+    url << port ;
 
   const char *separator= "?";
 
@@ -1107,7 +1126,8 @@ static string constructUrl(const char *host, const char *port,
       separator = "&" ;
     }
 
-  return url.str() ;
+  result = url.str() ;
+  return result ;
 }
 
 
