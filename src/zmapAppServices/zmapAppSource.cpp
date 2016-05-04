@@ -1045,11 +1045,11 @@ static gboolean applyFile(MainFrame main_frame)
 
   if (!source_name)
     {
-      zMapWarning("%s", "Please enter a source name") ;
+      zMapCritical("%s", "Please enter a source name") ;
     }
   else if (!path)
     {
-      zMapWarning("%s", "Please enter a path/URL") ;
+      zMapCritical("%s", "Please enter a path/URL") ;
     }
   else
     {
@@ -1070,7 +1070,7 @@ static gboolean applyFile(MainFrame main_frame)
       (main_frame->user_func)(source_name, url, NULL, NULL, main_frame->user_data, &tmp_error) ;
 
       if (tmp_error)
-        zMapWarning("Failed to create new source: %s", tmp_error->message) ;
+        zMapCritical("Failed to create new source: %s", tmp_error->message) ;
 
       ok = TRUE ;
     }
@@ -1149,15 +1149,15 @@ static gboolean applyEnsembl(MainFrame main_frame)
 
   if (!source_name)
     {
-      zMapWarning("%s", "Please enter a source name") ;
+      zMapCritical("%s", "Please enter a source name") ;
     }
   else if (!host)
     {
-      zMapWarning("%s", "Please enter a host") ;
+      zMapCritical("%s", "Please enter a host") ;
     }
   else if (!dbname)
     {
-      zMapWarning("%s", "Please enter a database name") ;
+      zMapCritical("%s", "Please enter a database name") ;
     }
   else
     {
@@ -1187,7 +1187,7 @@ static gboolean applyEnsembl(MainFrame main_frame)
       (main_frame->user_func)(source_name, url, featuresets, biotypes, main_frame->user_data, &tmp_error) ;
 
       if (tmp_error)
-        zMapWarning("Failed to create new source: %s", tmp_error->message) ;
+        zMapCritical("Failed to create new source: %s", tmp_error->message) ;
 
       ok = TRUE ;
     }
@@ -1491,7 +1491,7 @@ static void treeViewRefresh(GtkTreeView *tree_view,
     }
   else
     {
-      zMapWarning("%s", "Program error: cannot refresh list: expected list store") ;
+      zMapCritical("%s", "Program error: cannot refresh list: expected list store") ;
       zMapWarnIfReached() ;
     }
 }
@@ -1901,7 +1901,7 @@ static gboolean applyTrackhub(MainFrame main_frame)
 
   if (!source_name)
     {
-      zMapWarning("%s", "Please enter a source name") ;
+      zMapCritical("%s", "Please enter a source name") ;
     }
   else
     {
@@ -1913,7 +1913,7 @@ static gboolean applyTrackhub(MainFrame main_frame)
       (main_frame->user_func)(source_name, url.str(), NULL, NULL, main_frame->user_data, &tmp_error) ;
 
       if (tmp_error)
-        zMapWarning("Failed to create new source: %s", tmp_error->message) ;
+        zMapCritical("Failed to create new source: %s", tmp_error->message) ;
 
       ok = TRUE ;
     }
@@ -1982,7 +1982,7 @@ static void trackhubSearchCB(GtkWidget *widget, gpointer cb_data)
         }
       else
         {
-          zMapWarning("Search failed: %s", err_msg.c_str()) ;
+          zMapCritical("Search failed: %s", err_msg.c_str()) ;
         }
     }
 
@@ -2040,7 +2040,7 @@ static bool runLoginDialog(MainFrame main_data)
       if (main_data->registry.login(user, pass, err_msg) && err_msg.empty())
         result = true ;
       else
-        zMapWarning("%s", "Error logging in: %s", err_msg.c_str()) ;
+        zMapCritical("%s", "Error logging in: %s", err_msg.c_str()) ;
     }
 
   gtk_widget_destroy(dialog) ;
@@ -2075,7 +2075,7 @@ static void loginButtonClickedCB(GtkWidget *button, gpointer user_data)
             }
           else
             {
-              zMapWarning("Error retrieving track hubs: %s", err_msg.c_str()) ;
+              zMapCritical("Error retrieving track hubs: %s", err_msg.c_str()) ;
             }
         }
     }
@@ -2091,7 +2091,7 @@ static void loginButtonClickedCB(GtkWidget *button, gpointer user_data)
         }
       else
         {
-          zMapWarning("%s", "Error logging out: %s", err_msg.c_str()) ;
+          zMapCritical("%s", "Error logging out: %s", err_msg.c_str()) ;
         }
     }
 }
@@ -2154,7 +2154,7 @@ static void trackhubBrowseCB(GtkWidget *widget, gpointer cb_data)
     }
   else
     {
-      zMapWarning("%s", err_msg.c_str()) ;
+      zMapCritical("%s", err_msg.c_str()) ;
     }
 }
 
@@ -2228,7 +2228,7 @@ static void trackhubRegisterCB(GtkWidget *widget, gpointer cb_data)
                       if (key_val && key_val[0] && key_val[1] && !key_val[2])
                         assemblies_map[key_val[0]] = key_val[1] ;
                       else
-                        zMapWarning("%s", "Invalid key=value pair in assembly list") ;
+                        zMapCritical("%s", "Invalid key=value pair in assembly list") ;
                     }
                 }
 
@@ -2237,11 +2237,11 @@ static void trackhubRegisterCB(GtkWidget *widget, gpointer cb_data)
               main_data->registry.registerHub(url, assemblies_map, type, is_public, err_msg) ;
 
               if (!err_msg.empty())
-                zMapWarning("Error registering hub: %s", err_msg.c_str()) ;
+                zMapCritical("Error registering hub: %s", err_msg.c_str()) ;
             }
           else
             {
-              zMapWarning("%s", "Please enter the URL and list of assemblies") ;
+              zMapCritical("%s", "Please enter the URL and list of assemblies") ;
             }
         }
 
