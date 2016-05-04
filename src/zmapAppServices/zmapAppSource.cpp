@@ -152,12 +152,20 @@ public:
 } ;
 
 
-typedef struct SearcListDataStructName
+/* Utility class to pass data about a search-list to callback functions */
+class SearchListData
 {
+public:
+  SearchListData() 
+    : search_entry(NULL),
+      filter_entry(NULL),
+      tree_model(NULL)
+  {} ;
+
   GtkEntry *search_entry ;
   GtkEntry *filter_entry ;
   GtkTreeModel *tree_model ;
-} SearchListDataStruct, *SearchListData ;
+} ;
 
 
 static GtkWidget *makePanel(GtkWidget *toplevel,
@@ -1472,7 +1480,7 @@ static void treeViewRefresh(GtkTreeView *tree_view,
 /* Create a tree view widget to show name values in the given list */
 static GtkTreeView* createListWidget(MainFrame main_data, 
                                      const list<string> &val_list,
-                                     SearchListData search_data, 
+                                     SearchListData &search_data, 
                                      const gboolean allow_multiple)
 {
   /* Create the data store */
@@ -1480,11 +1488,11 @@ static GtkTreeView* createListWidget(MainFrame main_data,
 
   /* Create a filtered version of the data store */
   GtkTreeModel *filtered = gtk_tree_model_filter_new(GTK_TREE_MODEL(store), NULL) ;
-  search_data->tree_model = filtered ;
+  search_data.tree_model = filtered ;
 
   gtk_tree_model_filter_set_visible_func(GTK_TREE_MODEL_FILTER(filtered), 
                                          generic_list_filter_visible_cb, 
-                                         search_data->filter_entry,
+                                         search_data.filter_entry,
                                          NULL);
 
   listStorePopulate(store, val_list) ;
@@ -1495,7 +1503,7 @@ static GtkTreeView* createListWidget(MainFrame main_data,
   /* Set various properties on the tree widget */
   gtk_tree_view_set_enable_search(tree_view, FALSE);
   gtk_tree_view_set_search_column(tree_view, (int)GenericListColumn::NAME);
-  gtk_tree_view_set_search_entry(tree_view, search_data->search_entry) ;
+  gtk_tree_view_set_search_entry(tree_view, search_data.search_entry) ;
   gtk_tree_view_set_search_equal_func(tree_view, generic_search_equal_func_cb, NULL, NULL) ;
 
   GtkTreeSelection *tree_selection = gtk_tree_view_get_selection(tree_view) ;
@@ -1520,7 +1528,7 @@ static GtkTreeView* createListWidget(MainFrame main_data,
 /* Create a tree view widget to show trackdb values in the given list */
 static GtkTreeView* createListWidget(MainFrame main_data, 
                                      const list<gbtools::trackhub::TrackDb> &trackdb_list, 
-                                     SearchListData search_data, 
+                                     SearchListData &search_data, 
                                      const gboolean allow_multiple)
 {
   /* Create the data store */
@@ -1535,11 +1543,11 @@ static GtkTreeView* createListWidget(MainFrame main_data,
 
   /* Create a filtered version of the data store */
   GtkTreeModel *filtered = gtk_tree_model_filter_new(GTK_TREE_MODEL(store), NULL) ;
-  search_data->tree_model = filtered ;
+  search_data.tree_model = filtered ;
 
   gtk_tree_model_filter_set_visible_func(GTK_TREE_MODEL_FILTER(filtered), 
                                          track_list_filter_visible_cb, 
-                                         search_data->filter_entry,
+                                         search_data.filter_entry,
                                          NULL);
 
   listStorePopulate(store, trackdb_list) ;
@@ -1550,7 +1558,7 @@ static GtkTreeView* createListWidget(MainFrame main_data,
   /* Set various properties on the tree widget */
   gtk_tree_view_set_enable_search(tree_view, FALSE);
   gtk_tree_view_set_search_column(tree_view, (int)TrackListColumn::NAME);
-  gtk_tree_view_set_search_entry(tree_view, search_data->search_entry) ;
+  gtk_tree_view_set_search_entry(tree_view, search_data.search_entry) ;
   gtk_tree_view_set_search_equal_func(tree_view, track_search_equal_func_cb, NULL, NULL) ;
 
   GtkTreeSelection *tree_selection = gtk_tree_view_get_selection(tree_view) ;
@@ -1624,8 +1632,8 @@ static gboolean setEntryFromSelection(GtkTreeView *tree_view,
 /* Callback called when the user hits the enter key in the filter text entry box */
 static void filter_entry_activate_cb(GtkEntry *entry, gpointer user_data)
 {
-  SearchListData search_data = (SearchListData)user_data ;
-  zMapReturnIfFail(search_data->tree_model) ;
+  SearchListData *search_data = (SearchListData*)user_data ;
+  zMapReturnIfFail(search_data && search_data->tree_model) ;
 
   GtkTreeModelFilter *filter = GTK_TREE_MODEL_FILTER(search_data->tree_model) ;
 
@@ -1637,8 +1645,8 @@ static void filter_entry_activate_cb(GtkEntry *entry, gpointer user_data)
 
 static void clear_button_cb(GtkButton *button, gpointer user_data)
 {
-  SearchListData search_data = (SearchListData)user_data ;
-  zMapReturnIfFail(search_data->tree_model) ;
+  SearchListData *search_data = (SearchListData*)user_data ;
+  zMapReturnIfFail(search_data && search_data->tree_model) ;
 
   if (search_data->search_entry)
     gtk_entry_set_text(search_data->search_entry, "") ;
@@ -1658,6 +1666,7 @@ static GtkWidget* createListDialog(MainFrame main_data,
                                    const list<ValueType> &values_list, 
                                    const char *title,
                                    const char allow_multiple,
+                                   SearchListData &search_data,
                                    GtkTreeView **list_widget_out)
 {
   GtkWidget *dialog = NULL ;
@@ -1697,7 +1706,8 @@ static GtkWidget* createListDialog(MainFrame main_data,
   gtk_widget_set_tooltip_text(button, "Clear the search/filter boxes") ;
   gtk_widget_set_tooltip_text(GTK_WIDGET(filter_entry), "Show only values containing this text. Press enter to apply the filter.") ;
 
-  SearchListDataStruct search_data = {search_entry, filter_entry, NULL} ;
+  search_data.search_entry = search_entry ;
+  search_data.filter_entry = filter_entry ;
   g_signal_connect(G_OBJECT(filter_entry), "activate", G_CALLBACK(filter_entry_activate_cb), &search_data) ;
   g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(clear_button_cb), &search_data) ;
 
@@ -1707,7 +1717,7 @@ static GtkWidget* createListDialog(MainFrame main_data,
   gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrollwin), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
   gtk_box_pack_start(content, GTK_WIDGET(scrollwin), TRUE, TRUE, 0) ;
 
-  GtkTreeView *list_widget = createListWidget(main_data, values_list, &search_data, allow_multiple) ;
+  GtkTreeView *list_widget = createListWidget(main_data, values_list, search_data, allow_multiple) ;
   gtk_container_add(GTK_CONTAINER(scrollwin), GTK_WIDGET(list_widget)) ;
 
   if (list_widget_out)
@@ -1735,14 +1745,23 @@ static gboolean runListDialog(MainFrame main_data,
   zMapReturnValIfFail(main_data, ok) ;
 
   GtkTreeView *list_widget = NULL ;
-  GtkWidget *dialog = createListDialog(main_data, values_list, title, allow_multiple, &list_widget) ;
+  SearchListData search_data ;
+  GtkWidget *dialog = createListDialog(main_data, values_list, title, allow_multiple, search_data, &list_widget) ;
 
-  gtk_widget_show_all(dialog) ;
-  gint response = gtk_dialog_run(GTK_DIALOG(dialog)) ;
-
-  if (response == GTK_RESPONSE_OK)
+  if (dialog)
     {
-      if (setEntryFromSelection(list_widget, result_widg, result_col))
+      gtk_widget_show_all(dialog) ;
+      gint response = gtk_dialog_run(GTK_DIALOG(dialog)) ;
+
+      if (response == GTK_RESPONSE_OK)
+        {
+          if (setEntryFromSelection(list_widget, result_widg, result_col))
+            {
+              gtk_widget_destroy(dialog) ;
+              ok = TRUE ;
+            }
+        }
+      else
         {
           gtk_widget_destroy(dialog) ;
           ok = TRUE ;
@@ -1750,8 +1769,7 @@ static gboolean runListDialog(MainFrame main_data,
     }
   else
     {
-      gtk_widget_destroy(dialog) ;
-      ok = TRUE ;
+      zMapCritical("%s", "Failed to create list dialog") ;
     }
 
   return ok ;
@@ -2079,10 +2097,12 @@ static void trackhubBrowseCB(GtkWidget *widget, gpointer cb_data)
     {
       // Create a dialog that will show the results in a list
       GtkTreeView *list_widget = NULL ;
+      SearchListData search_data ;
       GtkWidget *dialog = createListDialog(main_data, 
                                            trackdbs_list, 
                                            "Select track hub",
                                            false,
+                                           search_data,
                                            &list_widget) ;
 
       GtkBox *content = GTK_BOX(GTK_DIALOG(dialog)->vbox) ;
