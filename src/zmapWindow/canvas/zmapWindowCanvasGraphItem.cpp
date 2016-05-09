@@ -237,15 +237,6 @@ static void graphZoom(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable
   /* Some displays must be rebinned on zoom. */
   if (featureset->re_bin)
     {
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      if (featureset->display_index)
-        {
-          zMapSkipListDestroy(featureset->display_index, zmapWindowCanvasFeatureFree);
-          featureset->display = NULL;
-          featureset->display_index = NULL;
-        }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
       if (featureset->display_index)
         zmapWindowCanvasFeaturesetFreeDisplayLists(featureset) ;
 

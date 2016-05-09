@@ -32,7 +32,7 @@
 
 #include <glib-object.h>
 #include <map>
-
+#include <list>
 
 #include <ZMap/zmapConfigStanzaStructs.hpp>
 
@@ -184,7 +184,7 @@ ZMapConfigIniContext zMapConfigIniContextProvide(const char *config_file, ZMapCo
 ZMapConfigIniContext zMapConfigIniContextProvideNamed(const char *config_file, const char *stanza_name, ZMapConfigIniFileType file_type) ;
 
 gboolean zMapConfigIniHasStanza(ZMapConfigIni config, const char *stanza_name, GKeyFile **which);
-gboolean zMapConfigIniHasStanzaAll(ZMapConfigIni config, const char *stanza_name, GList **which);
+gboolean zMapConfigIniHasStanzaAll(ZMapConfigIni config, const char *stanza_name, std::list<GKeyFile*> &which);
 
 GList *zMapConfigIniContextGetSources(ZMapConfigIniContext context) ;
 GList *zMapConfigIniContextGetNamed(ZMapConfigIniContext context, char *stanza_name) ;
@@ -198,8 +198,10 @@ GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context,GHash
 gboolean zMapConfigLegacyStyles(char *config_file) ;
 
 char *zMapConfigNormaliseWhitespace(char *str,gboolean cannonical);
-GList *zMapConfigString2QuarkList(const char *string_list,gboolean cannonical);
-GList *zMapConfigString2QuarkIDList(const char *string_list);
+std::list<GQuark> zMapConfigString2QuarkList(const char *string_list,gboolean cannonical);
+std::list<GQuark> zMapConfigString2QuarkIDList(const char *string_list);
+GList *zMapConfigString2QuarkGList(const char *string_list,gboolean cannonical);
+GList *zMapConfigString2QuarkIDGList(const char *string_list);
 
 GHashTable *zMapConfigIniGetQQHash(ZMapConfigIniContext context, const char *stanza, int how) ;
 void zMapConfigIniSetQQHash(ZMapConfigIniContext context, ZMapConfigIniFileType file_type, const char *stanza, GHashTable *ghash) ;
@@ -208,6 +210,8 @@ void zMapConfigIniSetQQHash(ZMapConfigIniContext context, ZMapConfigIniFileType 
 #define QQ_STYLE  2
 
 GKeyFile *zMapConfigIniGetKeyFile(ZMapConfigIniContext config, ZMapConfigIniFileType file_type) ;
+
+std::list<GQuark> zMapConfigIniMergeColumnsLists(std::list<GQuark> &src_list, std::list<GQuark> &dest_list, const bool unique = false) ;
 
 GHashTable *zMapConfigIniGetFeatureset2Featureset(ZMapConfigIniContext context,
 						  GHashTable *fset_src, GHashTable *fset2col) ;

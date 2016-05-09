@@ -163,6 +163,7 @@ void zMapGFFIncrementLineFas(ZMapGFFParser parser) ;
 int zMapGFFGetFeaturesStart(ZMapGFFParser parser) ;
 int zMapGFFGetFeaturesEnd(ZMapGFFParser parser) ;
 char* zMapGFFGetSequenceName(ZMapGFFParser parser) ;
+gboolean zMapGFFGotSequenceRegion(ZMapGFFParser parser) ;
 gboolean zMapGFFTerminated(ZMapGFFParser parser) ;
 void zMapGFFSetFreeOnDestroy(ZMapGFFParser parser, gboolean free_on_destroy) ;
 void zMapGFFDestroyParser(ZMapGFFParser parser) ;

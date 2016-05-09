@@ -90,6 +90,8 @@ void zMapWindowCanvasFeatureAddSplicePos(ZMapWindowCanvasFeature feature_item, i
                                          gboolean match, ZMapBoundaryType boundary_type) ;
 void zMapWindowCanvasFeatureRemoveSplicePos(ZMapWindowCanvasFeature feature_item) ;
 GString *zMapWindowCanvasFeature2Txt(ZMapWindowCanvasFeature canvas_feature) ;
+double zMapWindowCanvasFeatureGetBumpOffset(ZMapWindowCanvasFeature canvas_feature) ;
+double zMapWindowCanvasFeatureGetWidth(ZMapWindowCanvasFeature canvas_feature) ;
 
 gint zMapWindowFeatureCmp(gconstpointer a, gconstpointer b) ;
 gint zMapWindowFeatureFullCmp(gconstpointer a, gconstpointer b) ;

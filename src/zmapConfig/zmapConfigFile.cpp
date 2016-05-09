@@ -42,6 +42,8 @@
 #include <zmapConfigIni_P.hpp>
 
 
+using namespace std ;
+
 
 #undef WITH_LOGGING
 
@@ -383,7 +385,7 @@ gboolean zMapConfigIniHasStanza(ZMapConfigIni config, const char *stanza_name,GK
 
 /* Return true if any of our config files contains the given stanza. Sets the list of key files to
  * contain all config files that have this stanza */
-gboolean zMapConfigIniHasStanzaAll(ZMapConfigIni config, const char *stanza_name, GList **which)
+gboolean zMapConfigIniHasStanzaAll(ZMapConfigIni config, const char *stanza_name, list<GKeyFile*> &which)
 {
   gboolean result = FALSE;
 
@@ -400,9 +402,7 @@ gboolean zMapConfigIniHasStanzaAll(ZMapConfigIni config, const char *stanza_name
       if(config->key_file[file_type] && g_key_file_has_group(config->key_file[file_type], stanza_name))
         {
           result = TRUE ;
-          
-          if(which)
-            *which = g_list_append(*which, config->key_file[file_type]);
+          which.push_back(config->key_file[file_type]);
         }
     }
 

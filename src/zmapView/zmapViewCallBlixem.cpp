@@ -44,6 +44,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>                                            /* for chmod() */
 #include <glib.h>
+#include <string>
 
 #include <ZMap/zmapUtils.hpp>
 #include <ZMap/zmapSO.hpp>
@@ -60,6 +61,7 @@
 /* private header for this module */
 #include <zmapView_P.hpp>
 
+using namespace std ;
 
 
 /* some blixem defaults.... */
@@ -243,7 +245,9 @@ static gboolean initBlixemData(ZMapView view, ZMapFeatureBlock block,
                                ZMapWindowAlignSetType align_set,
                                ZMapBlixemData blixem_data, char **err_msg) ;
 static gboolean setBlixemScope(ZMapBlixemData blixem_data, const bool features_from_mark) ;
+
 static gboolean buildParamString (ZMapBlixemData blixem_data, char **paramString);
+static void buildCmdLine(const char **argv, string &cmdline) ;
 
 static void deleteBlixemData(ZMapBlixemData *blixem_data);
 static ZMapBlixemData createBlixemData() ;
@@ -469,7 +473,12 @@ gboolean zmapViewCallBlixem(ZMapView view,
         }
       else
         {
-          zMapLogMessage("Blixem process spawned successfully. PID = '%d'", spawned_pid);
+          string cmdline ;
+
+          buildCmdLine((const char **)argv, cmdline) ;
+
+          zMapLogMessage("Blixem process spawned with PID = '%d' and command line:\"%s\"",
+                         spawned_pid, cmdline.c_str()) ;
         }
 
       zMapThreadForkUnlock();
@@ -788,7 +797,7 @@ static void getUserPrefsFile(ZMapView view,
       if (zMapConfigIniContextGetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
                                        ZMAPSTANZA_BLIXEM_DNA_FS, &tmp_string))
         {
-          GList *dna_sets = zMapConfigString2QuarkList(tmp_string,FALSE);
+          GList *dna_sets = zMapConfigString2QuarkGList(tmp_string,FALSE);
           file_prefs->assoc_featuresets = g_list_concat(file_prefs->assoc_featuresets, dna_sets) ;
           g_free(tmp_string);
           file_prefs->is_set.assoc_featuresets = TRUE ;
@@ -797,7 +806,7 @@ static void getUserPrefsFile(ZMapView view,
       if (zMapConfigIniContextGetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
                                        ZMAPSTANZA_BLIXEM_PROT_FS, &tmp_string))
         {
-          GList *protein_sets = zMapConfigString2QuarkList(tmp_string,FALSE);
+          GList *protein_sets = zMapConfigString2QuarkGList(tmp_string,FALSE);
           file_prefs->assoc_featuresets = g_list_concat(file_prefs->assoc_featuresets, protein_sets) ;
           g_free(tmp_string);
           file_prefs->is_set.assoc_featuresets = TRUE ;
@@ -806,7 +815,7 @@ static void getUserPrefsFile(ZMapView view,
       if (zMapConfigIniContextGetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
                                        ZMAPSTANZA_BLIXEM_FS, &tmp_string))
         {
-          GList *assoc_featuresets = zMapConfigString2QuarkList(tmp_string,FALSE);
+          GList *assoc_featuresets = zMapConfigString2QuarkGList(tmp_string,FALSE);
           file_prefs->assoc_featuresets = g_list_concat(file_prefs->assoc_featuresets, assoc_featuresets) ;
           g_free(tmp_string);
           file_prefs->is_set.assoc_featuresets = TRUE ;
@@ -3224,5 +3233,23 @@ static void cancelCB(ZMapGuiNotebookAny any_section, void *user_data_unused)
 
   return ;
 }
+
+
+
+static void buildCmdLine(const char **argv, string &cmdline)
+{
+
+  while (*argv)
+    {
+      cmdline += *argv ;
+      cmdline += " " ;
+
+      argv++ ;
+    }
+
+  return ;
+}
+
+
 
 /*************************** end of file *********************************/

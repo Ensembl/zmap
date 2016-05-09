@@ -33,6 +33,7 @@
 #define ZMAP_FEATURE_LOAD_DISPLAY_H
 
 #include <map>
+#include <list>
 
 #include <ZMap/zmapStyle.hpp>
 #include <ZMap/zmapStyleTree.hpp>
@@ -238,8 +239,9 @@ typedef struct ZMapFeatureContextMapStructType
 
   ZMapFeatureColumn getSetColumn(GQuark set_id) ;
   GList *getColumnFeatureSets(GQuark column_id, gboolean unique_id) ;
-  GList* getOrderedColumnsListIDs() ;
-  GList* getOrderedColumnsList() ;
+  std::list<GQuark> getOrderedColumnsListIDs(const bool unique = true) ;
+  std::list<ZMapFeatureColumn> getOrderedColumnsList() ;
+  GList* getOrderedColumnsGListIDs() ;
   GQuark getRelatedColumnID(const GQuark fset_id) ;
 
   bool updateContextColumns(_ZMapConfigIniContextStruct *context, ZMapConfigIniFileType file_type) ;

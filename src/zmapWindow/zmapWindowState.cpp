@@ -632,7 +632,7 @@ static void state_focus_items_restore(ZMapWindow window, ZMapWindowFocusSerialSt
                                                                      NULL, NULL)))
         {
           //          zmapWindowFocusAddItem(window->focus, possible_focus_items->data,NULL);
-          zmapWindowFocusAddItems(window->focus, possible_focus_items,NULL);
+          zmapWindowFocusAddItems(window->focus, possible_focus_items, NULL, NULL) ;
 
           zmapWindowHighlightFocusItems(window);
 

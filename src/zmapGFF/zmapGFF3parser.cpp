@@ -355,6 +355,28 @@ gboolean zMapGFFGetHeaderGotMinimal_V3(ZMapGFFParser pParserBase)
 }
 
 
+/*
+ * Return the got_sqr flag. This style of header flags is only
+ * used for version 3.
+ */
+gboolean zMapGFFGetHeaderGotSequenceRegion_V3(ZMapGFFParser pParserBase)
+{
+  gboolean bResult = FALSE ;
+  zMapReturnValIfFail(pParserBase, FALSE );
+  ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
+
+  /*
+   *
+   */
+  if ( pParser->pHeader->flags.got_sqr )
+    {
+      bResult = TRUE ;
+    }
+
+  return bResult ; // (gboolean) pParser->pHeader->flags.got_min ;
+}
+
+
 
 
 
@@ -2238,6 +2260,23 @@ static gboolean parseBodyLine_V3(ZMapGFFParser pParserBase, const char * const s
    * Initial error check.
    */
   zMapReturnValIfFail(pParser && pParser->pHeader && sLine && *sLine, FALSE) ;
+
+  /*
+   * We must have a sequence name
+   */
+  if (!pParser->sequence_name)
+    {
+      if (pParser->error)
+        {
+          g_error_free(pParser->error) ;
+          pParser->error = NULL ;
+        }
+      pParser->error = g_error_new(pParser->error_domain, ZMAPGFF_ERROR_BODY,
+                                   "No sequence has been specified to load features for") ;
+
+      bResult = FALSE ;
+      goto return_point;
+    }
 
   /*
    * If the line length is too large, then we exit with an error set.

@@ -1,18 +1,31 @@
 
-Git commits for  from commit "production" until commit "release/2.7.0"
+Git commits for  from commit "production" until commit "release/2.8.0"
 
-9710b29 2016-03-22 Fix a bug calling blixem on bam columns - RT 521742
-2e47bb8 2016-03-16 Fix typo in Charlie's name - DOC
-d00a915 2016-03-16 I noticed several uses of gtk level stuff from code that will be run in threads so have removed them. - DEVELOP
-184b8fb 2016-03-16 Fix a bug importing file using htslib - BUG FIX
-1aa8a59 2016-03-15 Replace pfetch in menu with db entry. - TRIVIA
-b44fd25 2016-03-15 Fix BAM colinear line colour problem - RT '519209'
-8071704 2016-03-15 Add NOTES file to ignored files. - TRIVIA
-9058092 2016-03-10 Update installation instructions - DOC
-ca0bb1a 2016-02-26 Merge branch 'feature/bam' into develop
-502e170 2016-02-25 Fix zmap to use new pfetch C++ objects. - DEVELOP
-a76831f 2016-02-19 Add a link to the user manual from docs/user - DOC
-6c32471 2016-02-18 Fix a bug reading the columns stanza - RT '515503'
+225750f 2016-04-27 Retrofit code to log blixem commandline, in develop already. - REGRESSION FIX
+9d73a0b 2016-04-25 Fix but I unwittingly introduced into canvasFeature sorting. - REGRESSION FIX
+0e3ef70 2016-04-12 Fix type causing regression - REGRESSION FIX
+b7127f1 2016-04-12 Various updates to title page, introduction and first section. - DEVELOP
+171bd80 2016-04-12 Fix bugs in output. - REGRESSION FIX
+a9d40ce 2016-04-12 Disable y scrolling because scrolling to items only has meaning for columns now. - REGRESSION FIX
+b927024 2016-04-11 Add function to store a cursor for moving along display index to fix moving through features. - REGRESSION FIX
+11eea3f 2016-04-11 Fix small buglet in sorting code for item features. - REGRESSION FIX
+ecf774b 2016-04-11 Add code to call new delete display list call. - REGRESSION FIX
+7e1c922 2016-04-11 Fix jump feature/column functions, completely broken. - REGRESSION FIX
+9e8b70a 2016-04-11 Fix bug in setting hot feature in focus. - REGRESSION FIX
+0584df2 2016-04-11 Fix scroll to feature/item code...seems utterly broken. - REGRESSION FIX
+268f0ab 2016-04-11 Add hot feature param for focus call. - REGRESSION FIX
+a1154a1 2016-04-11 Add new scroltofeature func, add hot feature param to set focus. - REGRESSION FIX
+26215a1 2016-03-31 Fix jump column to work. - BUG FIX
+86558d9 2016-03-31 Make column to column cursoring work again. - BUG FIX
+9c1f5ef 2016-03-31 Add canvas positions to print out for items. - DEVELOP
+033303f 2016-03-31 Add new getLastCol function and improve existing getFirstCol func. - DEVELOP
+60f11ca 2016-04-04 Fix a bug where editing an ftp source doesn't work - BUG FIX
+f874c29 2016-03-31 Remove lambda until we upgrade to gcc 4.5 - REGRESSION FIX
+dcae5ac 2016-03-31 Merge branch 'feature/column_order' into develop - NEW FEATURE 'column reordering'
+7d3008c 2016-03-29 Add missing latex file - DOC
+27905b5 2016-03-22 Fix a bug calling blixem on bam columns - RT 521742
+4968f6e 2016-03-22 Revert "Fix a bug calling blixem on bam columns - RT 521742"
+de4432e 2016-03-22 Fix a bug calling blixem on bam columns - RT 521742
 
 
 End of git commits

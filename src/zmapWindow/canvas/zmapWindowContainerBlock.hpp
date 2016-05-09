@@ -35,21 +35,29 @@
 
 #include <glib-object.h>
 #include <libzmapfoocanvas/libfoocanvas.h>
+
+// this should not be at this level....window files should not be here....
+#include <zmapWindowMark.hpp>	/* ZMapWindowMark ... */
+
 #include <zmapWindowContainerGroup_I.hpp>
 #include <zmapWindowContainerFeatureSet.hpp>
-#include <zmapWindowMark.hpp>	/* ZMapWindowMark ... */
+
 
 #define ZMAP_WINDOW_CONTAINER_BLOCK_NAME 	"ZMapWindowContainerBlock"
 
 
 #define ZMAP_TYPE_CONTAINER_BLOCK           (zmapWindowContainerBlockGetType())
 
-#define ZMAP_CONTAINER_BLOCK(obj)	    (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_CONTAINER_BLOCK, zmapWindowContainerBlock))
-#define ZMAP_CONTAINER_BLOCK_CONST(obj)     (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_CONTAINER_BLOCK, zmapWindowContainerBlock const))
-
-#define ZMAP_CONTAINER_BLOCK_CLASS(klass)   (G_TYPE_CHECK_CLASS_CAST((klass),  ZMAP_TYPE_CONTAINER_BLOCK, zmapWindowContainerBlockClass))
-#define ZMAP_IS_CONTAINER_BLOCK(obj)	    (G_TYPE_CHECK_INSTANCE_TYPE((obj), ZMAP_TYPE_CONTAINER_BLOCK))
-#define ZMAP_CONTAINER_BLOCK_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS((obj),  ZMAP_TYPE_CONTAINER_BLOCK, zmapWindowContainerBlockClass))
+#define ZMAP_CONTAINER_BLOCK(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_CONTAINER_BLOCK, zmapWindowContainerBlock))
+#define ZMAP_CONTAINER_BLOCK_CONST(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_CONTAINER_BLOCK, zmapWindowContainerBlock const))
+#define ZMAP_CONTAINER_BLOCK_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_CAST((klass),  ZMAP_TYPE_CONTAINER_BLOCK, zmapWindowContainerBlockClass))
+#define ZMAP_IS_CONTAINER_BLOCK(obj) \
+  (G_TYPE_CHECK_INSTANCE_TYPE((obj), ZMAP_TYPE_CONTAINER_BLOCK))
+#define ZMAP_CONTAINER_BLOCK_GET_CLASS(obj) \
+  (G_TYPE_INSTANCE_GET_CLASS((obj),  ZMAP_TYPE_CONTAINER_BLOCK, zmapWindowContainerBlockClass))
 
 
 /* Instance */

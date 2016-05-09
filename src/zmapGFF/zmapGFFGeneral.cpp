@@ -844,6 +844,24 @@ char* zMapGFFGetSequenceName(ZMapGFFParser parser)
 }
 
 
+/* 
+ * Only applicable to GFF3.
+ *
+ * Return true if the sequence-region was specified in the header
+ */
+gboolean zMapGFFGotSequenceRegion(ZMapGFFParser parser)
+{
+  gboolean bResult = FALSE;
+
+  if (parser && parser->gff_version == ZMAPGFF_VERSION_3)
+    {
+      bResult = zMapGFFGetHeaderGotMinimal_V3(parser) ;
+    }
+
+  return bResult;
+}
+
+
 /*
  * Used by both versions.
  *

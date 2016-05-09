@@ -40,8 +40,11 @@
 /* This absolutely should NOT be in here..... */
 #include <ZMap/zmapWindow.hpp>	/* ZMapWindow type */
 
+
 /* Temp, make things compile.... */
 #include <zmapWindowCanvasItem.hpp>
+
+
 
 
 #define ZMAP_WINDOW_CONTAINER_FEATURESET_NAME 	"ZMapWindowContainerFeatureSet"
