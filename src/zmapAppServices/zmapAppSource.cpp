@@ -1795,7 +1795,7 @@ template<typename ValueType>
 static GtkWidget* createListDialog(MainFrame main_data, 
                                    const list<ValueType> &values_list, 
                                    const char *title,
-                                   const char allow_multiple,
+                                   const gboolean allow_multiple,
                                    SearchListData &search_data,
                                    GtkTreeView **list_widget_out)
 {
@@ -1869,7 +1869,7 @@ static gboolean runListDialog(MainFrame main_data,
                               ColType result_col,
                               GtkEntry *result_widg,
                               const char *title,
-                              const char allow_multiple)
+                              const gboolean allow_multiple)
 {
   gboolean ok = FALSE ;
   zMapReturnValIfFail(main_data, ok) ;
