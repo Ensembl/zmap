@@ -2088,7 +2088,6 @@ gboolean zMapGFFParse_V3(ZMapGFFParser pParserBase, char * const sLine)
    */
   if (pParser->state == ZMAPGFF_PARSER_BOD)
     {
-
       bResult = parseBodyLine_V3(pParserBase, sLine) ;
       if (!bResult && pParser->error && pParser->stop_on_error)
         {
@@ -2939,6 +2938,20 @@ static ZMapFeature makeFeatureTranscript(ZMapGFF3Parser const pParser,
                                               dScore,
                                               cStrand) ;
 
+      // check for start_not_found/end_not_found which will be in the transcript gff line.
+      if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_start_not_found)))
+        {
+          bStartNotFound = zMapAttParseCDSStartNotFound(pAttribute, &iStartNotFound) ;
+        }
+      if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_end_not_found)))
+        {
+          bEndNotFound = zMapAttParseCDSEndNotFound(pAttribute) ;
+        }
+
+      bDataAdded = zMapFeatureAddTranscriptStartEnd(pFeature,
+                                                    bStartNotFound, iStartNotFound,
+                                                    bEndNotFound) ;
+
       /*
        * Add feature to featureset
        */
@@ -2977,19 +2990,7 @@ static ZMapFeature makeFeatureTranscript(ZMapGFF3Parser const pParser,
             }
           else if (bIsCDS)
             {
-              /*
-               * CDS data; also include start_not_found and end_not_found.
-               */
-              if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_start_not_found)))
-                {
-                  bStartNotFound = zMapAttParseCDSStartNotFound(pAttribute, &iStartNotFound) ;
-                }
-              if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_end_not_found)))
-                {
-                  bEndNotFound = zMapAttParseCDSEndNotFound(pAttribute) ;
-                }
-              bDataAdded = zMapFeatureAddTranscriptCDSDynamic(pFeature, iStart, iEnd, cPhase,
-                                                              bStartNotFound, bEndNotFound, iStartNotFound) ;
+              bDataAdded = zMapFeatureAddTranscriptCDSDynamic(pFeature, iStart, iEnd, cPhase) ;
             }
         }
 
