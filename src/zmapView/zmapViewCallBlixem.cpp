@@ -44,6 +44,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>                                            /* for chmod() */
 #include <glib.h>
+#include <string>
 
 #include <ZMap/zmapUtils.hpp>
 #include <ZMap/zmapSO.hpp>
@@ -60,6 +61,7 @@
 /* private header for this module */
 #include <zmapView_P.hpp>
 
+using namespace std ;
 
 
 /* some blixem defaults.... */
@@ -243,7 +245,9 @@ static gboolean initBlixemData(ZMapView view, ZMapFeatureBlock block,
                                ZMapWindowAlignSetType align_set,
                                ZMapBlixemData blixem_data, char **err_msg) ;
 static gboolean setBlixemScope(ZMapBlixemData blixem_data, const bool features_from_mark) ;
+
 static gboolean buildParamString (ZMapBlixemData blixem_data, char **paramString);
+static void buildCmdLine(const char **argv, string &cmdline) ;
 
 static void deleteBlixemData(ZMapBlixemData *blixem_data);
 static ZMapBlixemData createBlixemData() ;
@@ -469,7 +473,12 @@ gboolean zmapViewCallBlixem(ZMapView view,
         }
       else
         {
-          zMapLogMessage("Blixem process spawned successfully. PID = '%d'", spawned_pid);
+          string cmdline ;
+
+          buildCmdLine((const char **)argv, cmdline) ;
+
+          zMapLogMessage("Blixem process spawned with PID = '%d' and command line:\"%s\"",
+                         spawned_pid, cmdline.c_str()) ;
         }
 
       zMapThreadForkUnlock();
@@ -3224,5 +3233,23 @@ static void cancelCB(ZMapGuiNotebookAny any_section, void *user_data_unused)
 
   return ;
 }
+
+
+
+static void buildCmdLine(const char **argv, string &cmdline)
+{
+
+  while (*argv)
+    {
+      cmdline += *argv ;
+      cmdline += " " ;
+
+      argv++ ;
+    }
+
+  return ;
+}
+
+
 
 /*************************** end of file *********************************/

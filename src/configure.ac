@@ -102,7 +102,11 @@ AM_COND_IF([HAVE_MYSQL],
 # two options mutually exclusive.
 AM_CONDITIONAL([REFERENCE_ENSEMBL], [ test -n "$HAVE_MYSQL" && test -f "$srcdir/ensembl_ref_but_no_build" ])
    
-AM_CONDITIONAL([USE_ENSEMBL_SUBDIR], [ test -n "$HAVE_MYSQL" && test -f "$srcdir/ensc-core/src/Makefile" ])
+AM_CONDITIONAL([USE_ENSEMBL_SUBDIR], [ test -n "$HAVE_MYSQL" && test -f "$srcdir/ensc-core/src/configure.ac" ])
+
+if test -e "$srcdir/ensc-core/src/configure.ac"; then
+AC_CONFIG_SUBDIRS([ensc-core/src])
+fi
 
 #AM_COND_IF([REFERENCE_ENSEMBL],
 #           [ echo 'ENSEMBL IS AVAILABLE BUT WE ARE ONLY REFERENCING IT !!!' ])
@@ -175,6 +179,8 @@ echo \
  Welcome to ./configure for $PACKAGE_STRING
  Cmd: $0 $@
  Environment:
+   CXX              : $CXX
+   CXXFLAGS         : $CXXFLAGS
    CC               : $CC
    CFLAGS           : $CFLAGS
    LD               : $LD
@@ -290,9 +296,11 @@ AM_PROG_CC_C_O
 LT_INIT
 LT_LANG([C++])
 
-
-# Tell make to use the ustar tar format as this allows file paths longer than 99 chars.
-#
+# make options
+# tar-ustar - use the ustar tar format as this allows file paths longer than 99 chars.
+# subdir-objects - compile code that is in a subdirectory of the directory containing the Makefile.am
+#                  (don't set this....there's a bug in autmake 1.nn if you do !)
+#AM_INIT_AUTOMAKE([tar-ustar] [subdir-objects])
 AM_INIT_AUTOMAKE([tar-ustar])
 
 
@@ -647,8 +655,9 @@ echo \
 
  ${PACKAGE_NAME} Version ${PACKAGE_VERSION}
 
- Prefix: '${prefix}'
- Compiler: '${CC} ${CFLAGS} ${CPPFLAGS}'
+       Prefix: '${prefix}'
+ C++ Compiler: '${CXX} ${CXXFLAGS} ${CPPFLAGS}'
+   C Compiler: '${CC} ${CFLAGS} ${CPPFLAGS}'
 
  Now type 'make @<:@<target>@:>@'
    where the optional @<:@<target>@:>@ is:
@@ -665,7 +674,7 @@ fi
 
 if test -z "$HAVE_MYSQL"
 then
-  echo " Warning: MySql is not installed so Ensembl server access is disabled."
+  echo " Warning: MySql is not installed so ensc-core access is disabled."
   echo
 fi
 
@@ -683,7 +692,7 @@ fi
 
 if test -z "$USE_ZEROMQ"
 then
-  echo " Warning: zeromq is not installed so RemoteControl is disabled."
+  echo " Warning: zeromq is not installed so ZMap RemoteControl is disabled."
   echo
 fi
 

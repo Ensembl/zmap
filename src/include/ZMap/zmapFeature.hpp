@@ -1129,8 +1129,7 @@ gboolean zMapFeatureHasMatchingBoundary(ZMapFeature feature,
 gboolean zMapFeatureTranscriptSortExons(ZMapFeature feature) ;
 gboolean zMapFeatureTranscriptInit(ZMapFeature feature) ;
 GArray *zMapFeatureTranscriptCreateSpanArray(void) ;
-gboolean zMapFeatureAddTranscriptCDSDynamic(ZMapFeature feature, Coord start, Coord end, ZMapPhase phase,
-                                            gboolean, gboolean, int) ;
+gboolean zMapFeatureAddTranscriptCDSDynamic(ZMapFeature feature, Coord start, Coord end, ZMapPhase phase) ;
 gboolean zMapFeatureAddTranscriptCDS(ZMapFeature feature, gboolean cds, Coord cds_start, Coord cds_end) ;
 gboolean zMapFeatureMergeTranscriptCDS(ZMapFeature src_feature, ZMapFeature dest_feature);
 gboolean zMapFeatureMergeTranscriptCDSCoords(ZMapFeature dest_feature, const int cds_start, const int cds_end) ;

@@ -14,7 +14,7 @@ AceConn/*
 !AceConn/README_ZMAP
 
 # ensembl_ref_but_no_build is used by autogen.sh and configure.ac
-ensc-core/*
+ensc-core
 !ensc-core/README_ZMAP
 !ensc-core/src/README_ZMAP
 ensembl_ref_but_no_build
