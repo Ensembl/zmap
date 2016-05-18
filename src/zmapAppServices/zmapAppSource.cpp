@@ -56,7 +56,7 @@
 #endif
 
 using namespace std ;
-
+using namespace gbtools::trackhub ;
 
 
 // unnamed namespace
@@ -127,7 +127,7 @@ typedef struct MainFrameStructName
 #endif
 
   // Trackhub
-  gbtools::trackhub::Registry registry;
+  Registry registry;
   list<GtkWidget*> trackhub_widgets;
   GtkWidget *trackdb_id_widg;
   GtkWidget *trackdb_name_widg;
@@ -147,7 +147,7 @@ class UserTrackhubs
 public:
   UserTrackhubs(GtkWindow *parent,
                 MainFrame main_data, 
-                list<gbtools::trackhub::TrackDb> &trackdbs_list, 
+                list<TrackDb> &trackdbs_list, 
                 GtkTreeView *list_widget) 
     : parent_(parent),
       main_data_(main_data),
@@ -157,7 +157,7 @@ public:
 
   GtkWindow *parent_ ;
   MainFrame main_data_ ;
-  list<gbtools::trackhub::TrackDb> &trackdbs_list_ ;
+  list<TrackDb> &trackdbs_list_ ;
   GtkTreeView *list_widget_ ;
 } ;
 
@@ -746,7 +746,7 @@ void onTrackDbIdChanged(GtkEditable *editable, gpointer user_data)
   // Find the trackdb in the registry, if it exists, and update the trackdb details. (These will
   // be empty strings in the TrackDb class if not found so will clear the boxes.)
   string err_msg;
-  gbtools::trackhub::TrackDb trackdb = main_data->registry.searchTrackDb(trackdb_id, err_msg) ;
+  TrackDb trackdb = main_data->registry.searchTrackDb(trackdb_id, err_msg) ;
   
   if (!err_msg.empty())
     zMapLogWarning("%s", err_msg.c_str()) ;
@@ -1475,7 +1475,7 @@ void listStorePopulate(GtkListStore *store,
 }
 
 void listStorePopulate(GtkListStore *store,
-                       const list<gbtools::trackhub::TrackDb> &trackdb_list)
+                       const list<TrackDb> &trackdb_list)
 {
   /* Loop through all of the trackdbs */
   for (const auto &trackdb : trackdb_list)
@@ -1576,7 +1576,7 @@ GtkTreeView* createListWidget(MainFrame main_data,
 
 /* Create a tree view widget to show trackdb values in the given list */
 GtkTreeView* createListWidget(MainFrame main_data, 
-                              const list<gbtools::trackhub::TrackDb> &trackdb_list, 
+                              const list<TrackDb> &trackdb_list, 
                               SearchListData &search_data, 
                               const gboolean allow_multiple)
 {
@@ -1995,11 +1995,11 @@ void trackhubSearchCB(GtkWidget *widget, gpointer cb_data)
       const char *hub_text = gtk_entry_get_text(GTK_ENTRY(hub_entry)) ;
       string err_msg;
 
-      list<gbtools::trackhub::TrackDb> results = main_data->registry.search(search_text,
-                                                                            species_text,
-                                                                            assembly_text,
-                                                                            hub_text,
-                                                                            err_msg) ;
+      list<TrackDb> results = main_data->registry.search(search_text,
+                                                         species_text,
+                                                         assembly_text,
+                                                         hub_text,
+                                                         err_msg) ;
       if (err_msg.empty())
         {
           runListDialog(main_data, 
@@ -2084,7 +2084,7 @@ void trackhubBrowseCB(GtkWidget *widget, gpointer cb_data)
     {
       // If the user is logged in, get the list of trackdbs they have registered, otherwise leave it
       // as an empty list for now
-      list<gbtools::trackhub::TrackDb> trackdbs_list ;
+      list<TrackDb> trackdbs_list ;
       string err_msg;
 
       if (main_data->registry.loggedIn())
