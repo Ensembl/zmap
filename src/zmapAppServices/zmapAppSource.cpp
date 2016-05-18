@@ -1580,9 +1580,9 @@ static void listStorePopulate(GtkListStore *store,
 }
 
 
-template<class ValueType>
+template<class ListType>
 static void treeViewRefresh(GtkTreeView *tree_view, 
-                            const list<ValueType> &val_list)
+                            const ListType &val_list)
 {
   GtkListStore *store = NULL ;
   GtkTreeModel *model = gtk_tree_view_get_model(tree_view) ;
@@ -1710,7 +1710,7 @@ static GtkTreeView* createListWidget(MainFrame main_data,
 template<class ColType>
 static gboolean setEntryFromSelection(GtkTreeView *tree_view,
                                       GtkEntry *entry, 
-                                      ColType col_id)
+                                      const ColType col_id)
 {
   gboolean ok = FALSE ;
 
@@ -1791,9 +1791,9 @@ static void clear_button_cb(GtkButton *button, gpointer user_data)
 }
 
 
-template<class ValueType>
+template<class ListType>
 static GtkWidget* createListDialog(MainFrame main_data, 
-                                   const list<ValueType> &values_list, 
+                                   const ListType &values_list, 
                                    const char *title,
                                    const gboolean allow_multiple,
                                    SearchListData &search_data,
@@ -1863,10 +1863,10 @@ static GtkWidget* createListDialog(MainFrame main_data,
  * selects multiple values then it sets a semi-colon-separated list in the entry widget.
  * This function can take lists of different types of values and will call an overload of
  * createListWidget for the relevant type. */
-template<class ValueType, class ColType>
+template<class ListType, class ColType>
 static gboolean runListDialog(MainFrame main_data, 
-                              const list<ValueType> &values_list, 
-                              ColType result_col,
+                              const ListType &values_list, 
+                              const ColType result_col,
                               GtkEntry *result_widg,
                               const char *title,
                               const gboolean allow_multiple)
@@ -2088,7 +2088,7 @@ static void trackhubSearchCB(GtkWidget *widget, gpointer cb_data)
                         TrackListColumn::ID,
                         GTK_ENTRY(main_data->trackdb_id_widg), 
                         "Select track hub",
-                        false) ;
+                        FALSE) ;
         }
       else
         {
