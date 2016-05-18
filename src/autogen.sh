@@ -280,19 +280,6 @@ for i in "${!install[@]}"
         fi
         ;;
 
-      # If the ensc-core autogen.sh script exists then run that. This is necessary
-      # for ensc-core to create its ensc_version.m4 file.
-      $ensc_core_key )
-        if [ -e "./${dir[$i]}/src/autogen.sh" ] ; then
-
-          cur_dir=`pwd`
-          cd ./${dir[$i]}/src
-          ./autogen.sh
-          cd $cur_dir
-	
-        fi
-        ;;
-
       # zeromq has the -Werror compiler option on by default which means the build
       # will fail if we turn on all warnings for the compilation so we turn them off.
       $zeromq_key )

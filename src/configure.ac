@@ -102,11 +102,7 @@ AM_COND_IF([HAVE_MYSQL],
 # two options mutually exclusive.
 AM_CONDITIONAL([REFERENCE_ENSEMBL], [ test -n "$HAVE_MYSQL" && test -f "$srcdir/ensembl_ref_but_no_build" ])
    
-AM_CONDITIONAL([USE_ENSEMBL_SUBDIR], [ test -n "$HAVE_MYSQL" && test -f "$srcdir/ensc-core/src/configure.ac" ])
-
-if test -e "$srcdir/ensc-core/src/configure.ac"; then
-AC_CONFIG_SUBDIRS([ensc-core])
-fi
+AM_CONDITIONAL([USE_ENSEMBL_SUBDIR], [ test -n "$HAVE_MYSQL" && test -f "$srcdir/ensc-core/src/Makefile" ])
 
 #AM_COND_IF([REFERENCE_ENSEMBL],
 #           [ echo 'ENSEMBL IS AVAILABLE BUT WE ARE ONLY REFERENCING IT !!!' ])
