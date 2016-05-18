@@ -1395,7 +1395,7 @@ static char* my_strcasestr(const char *haystack, const char *needle)
 
 
 /* Return true if the given search term matches the value in the given tree row. */
-template<typename ColType>
+template<class ColType>
 gboolean treeRowContainsText(GtkTreeModel *model,
                              const gchar *search_term,
                              GtkTreeIter *iter,
@@ -1513,7 +1513,7 @@ static gboolean track_list_filter_visible_cb(GtkTreeModel *model,
 
 
 /* Utility to create a text column in a tree view */
-template<typename ColType>
+template<class ColType>
 static void createTreeViewTextColumn(GtkTreeView *tree_view, 
                                      const char *title, 
                                      const ColType col_id,
@@ -1580,7 +1580,7 @@ static void listStorePopulate(GtkListStore *store,
 }
 
 
-template<typename ValueType>
+template<class ValueType>
 static void treeViewRefresh(GtkTreeView *tree_view, 
                             const list<ValueType> &val_list)
 {
@@ -1707,7 +1707,7 @@ static GtkTreeView* createListWidget(MainFrame main_data,
 
 /* Update the given entry with the selected value(s) from the given tree. Uses the given column
  * in the tree for the result */
-template<typename ColType>
+template<class ColType>
 static gboolean setEntryFromSelection(GtkTreeView *tree_view,
                                       GtkEntry *entry, 
                                       ColType col_id)
@@ -1791,7 +1791,7 @@ static void clear_button_cb(GtkButton *button, gpointer user_data)
 }
 
 
-template<typename ValueType>
+template<class ValueType>
 static GtkWidget* createListDialog(MainFrame main_data, 
                                    const list<ValueType> &values_list, 
                                    const char *title,
@@ -1863,7 +1863,7 @@ static GtkWidget* createListDialog(MainFrame main_data,
  * selects multiple values then it sets a semi-colon-separated list in the entry widget.
  * This function can take lists of different types of values and will call an overload of
  * createListWidget for the relevant type. */
-template<typename ValueType, typename ColType>
+template<class ValueType, class ColType>
 static gboolean runListDialog(MainFrame main_data, 
                               const list<ValueType> &values_list, 
                               ColType result_col,
