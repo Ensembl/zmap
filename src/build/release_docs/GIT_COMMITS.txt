@@ -1,9 +1,18 @@
 
-Git commits for  from commit "production" until commit "release/2.9.0"
+Git commits for  from commit "production" until commit "release/2.7.0"
 
-c9c1e4e 2016-05-17 Fix  but in start/end_not_found handling. - RT523445
-895a1ea 2016-05-17 Remove start/end_not_found, wrong place. - RT523445
-985ac5f 2016-04-27 Add back in routine that logs the command line blixem was called with. - REGRESSION FIX
+9710b29 2016-03-22 Fix a bug calling blixem on bam columns - RT 521742
+2e47bb8 2016-03-16 Fix typo in Charlie's name - DOC
+d00a915 2016-03-16 I noticed several uses of gtk level stuff from code that will be run in threads so have removed them. - DEVELOP
+184b8fb 2016-03-16 Fix a bug importing file using htslib - BUG FIX
+1aa8a59 2016-03-15 Replace pfetch in menu with db entry. - TRIVIA
+b44fd25 2016-03-15 Fix BAM colinear line colour problem - RT '519209'
+8071704 2016-03-15 Add NOTES file to ignored files. - TRIVIA
+9058092 2016-03-10 Update installation instructions - DOC
+ca0bb1a 2016-02-26 Merge branch 'feature/bam' into develop
+502e170 2016-02-25 Fix zmap to use new pfetch C++ objects. - DEVELOP
+a76831f 2016-02-19 Add a link to the user manual from docs/user - DOC
+6c32471 2016-02-18 Fix a bug reading the columns stanza - RT '515503'
 
 
 End of git commits
