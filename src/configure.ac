@@ -105,7 +105,7 @@ AM_CONDITIONAL([REFERENCE_ENSEMBL], [ test -n "$HAVE_MYSQL" && test -f "$srcdir/
 AM_CONDITIONAL([USE_ENSEMBL_SUBDIR], [ test -n "$HAVE_MYSQL" && test -f "$srcdir/ensc-core/src/configure.ac" ])
 
 if test -e "$srcdir/ensc-core/src/configure.ac"; then
-AC_CONFIG_SUBDIRS([ensc-core])
+AC_CONFIG_SUBDIRS([ensc-core/src])
 fi
 
 #AM_COND_IF([REFERENCE_ENSEMBL],
