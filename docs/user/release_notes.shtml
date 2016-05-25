@@ -6,6 +6,13 @@
 <body>
 <h2>ZMap - Release Notes</h2>
 
+<h4>Version 2.9.0</h4>
+<ul>
+  <li>Fix bug in start/end_not_found handling. - RT523445
+  <li>Remove start/end_not_found, wrong place. - RT523445
+  <li>Fix a problem creating zmap's compile date file meaning it had to be compiled twice - RT523795
+</ul>
+
 <h4>Version 2.8.0</h4>
 <ul>
   <li>     Fix a bug calling blixem on bam columns - RT 521742
