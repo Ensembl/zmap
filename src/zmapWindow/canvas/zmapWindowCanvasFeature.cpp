@@ -403,22 +403,33 @@ gint zMapWindowFeatureCmp(gconstpointer a, gconstpointer b)
   if(feata->y1 > featb->y1)
     return(1);
 
-  if (!(feata->feature) || !(featb->feature))
-    {
-      if(feata->y2 < featb->y2)
-        return(-1);
+  if(feata->y2 < featb->y2)
+    return(-1);
 
-      if(feata->y2 > featb->y2)
-        return(1);
-    }
-  else
-    {
-      if(feata->feature->x2 < featb->feature->x2)
-        return(-1);
+  if(feata->y2 > featb->y2)
+    return(1);
 
-      if(feata->feature->x2 > featb->feature->x2)
-        return(1);
+  if (feata->type >= FEATURE_BASIC && feata->type <=FEATURE_GLYPH
+      && featb->type >= FEATURE_BASIC && featb->type <=FEATURE_GLYPH)
+    {
+      if (!(feata->feature) || !(featb->feature))
+        {
+          if(feata->y2 < featb->y2)
+            return(-1);
+
+          if(feata->y2 > featb->y2)
+            return(1);
+        }
+      else
+        {
+          if(feata->feature->x2 < featb->feature->x2)
+            return(-1);
+
+          if(feata->feature->x2 > featb->feature->x2)
+            return(1);
+        }
     }
+
 
   return 0 ;
 }
