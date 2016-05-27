@@ -348,6 +348,10 @@ GTK2_MODULES="pango >= 0.1 gtk+-2.0 >= 2.10.0 glib-2.0 gthread-2.0"
 PKG_CHECK_MODULES([GTK], [${GTK2_MODULES}])
 
 
+# Check for OpenSSL
+AX_CHECK_OPENSSL()
+AM_CONDITIONAL([HAVE_SSL], [test -n $OPENSSL_LIBS])
+
 
 # canvas_choice compilation is disabled for now, it should be moved
 # out of the src dir into its own dir. It does not fit in with

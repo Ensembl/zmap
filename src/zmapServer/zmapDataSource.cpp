@@ -274,7 +274,11 @@ ZMapDataSourceBEDStruct::ZMapDataSourceBEDStruct(const GQuark source_name,
 
   errCatchEnd(err_catch_);
   if (err_catch_->gotError)
-    zMapLogWarning("Error opening file '%s': %s", file_name, err_catch_->message->string);
+    {
+      g_set_error(&error_, g_quark_from_string("ZMap"), 99, "Failed to open file '%s'",
+                  file_name, err_catch_->message->string) ;
+      bed_features_ = NULL ;
+    }
 }
 
 ZMapDataSourceBIGBEDStruct::ZMapDataSourceBIGBEDStruct(const GQuark source_name, 
@@ -306,7 +310,11 @@ ZMapDataSourceBIGBEDStruct::ZMapDataSourceBIGBEDStruct(const GQuark source_name,
 
   errCatchEnd(err_catch_);
   if (err_catch_->gotError)
-    zMapLogWarning("Error opening file '%s': %s", file_name, err_catch_->message->string);
+    {
+      g_set_error(&error_, g_quark_from_string("ZMap"), 99, "Failed to open file '%s'",
+                  file_name, err_catch_->message->string) ;
+      bbi_file_ = NULL ;
+    }
 }
 
 ZMapDataSourceBIGWIGStruct::ZMapDataSourceBIGWIGStruct(const GQuark source_name, 
@@ -337,7 +345,11 @@ ZMapDataSourceBIGWIGStruct::ZMapDataSourceBIGWIGStruct(const GQuark source_name,
 
   errCatchEnd(err_catch_);
   if (err_catch_->gotError)
-    zMapLogWarning("Error opening file '%s': %s", file_name, err_catch_->message->string);
+    {
+      g_set_error(&error_, g_quark_from_string("ZMap"), 99, "Failed to open file '%s'",
+                  file_name, err_catch_->message->string) ;
+      bbi_file_ = NULL ;
+    }
 }
 
 #ifdef USE_HTSLIB
@@ -654,8 +666,10 @@ bool ZMapDataSourceBIGBEDStruct::checkHeader()
 
   errCatchEnd(err_catch_);
   if (err_catch_->gotError)
-    g_set_error(&error_, g_quark_from_string("ZMap"), 99,
-                "Error checking file header: %s", err_catch_->message->string);
+    {
+      g_set_error(&error_, g_quark_from_string("ZMap"), 99,
+                  "Error checking file header: %s", err_catch_->message->string);
+    }
 
   return result ;
 }
@@ -694,8 +708,11 @@ bool ZMapDataSourceBIGWIGStruct::checkHeader()
 
   errCatchEnd(err_catch_);
   if (err_catch_->gotError)
-    g_set_error(&error_, g_quark_from_string("ZMap"), 99,
-                "Error checking file header: %s", err_catch_->message->string);
+    {
+      g_set_error(&error_, g_quark_from_string("ZMap"), 99,
+                  "Error checking file header: %s", err_catch_->message->string);
+    }
+
   return result ;
 }
 
@@ -852,8 +869,11 @@ bool ZMapDataSourceBIGBEDStruct::readLine(GString * const str)
 
       errCatchEnd(err_catch_);
       if (err_catch_->gotError)
-        zMapLogWarning("Error initialising bigBed parser for '%s:%d-%d': %s",
-                       sequence_, start_, end_, err_catch_->message->string);
+        {
+          g_set_error(&error_, g_quark_from_string("ZMap"), 99, 
+                      "Error initialising bigBed parser for '%s:%d-%d': %s",
+                      sequence_, start_, end_, err_catch_->message->string);
+        }
     }
 
   if (cur_interval_)
@@ -878,7 +898,11 @@ bool ZMapDataSourceBIGBEDStruct::readLine(GString * const str)
 
       errCatchEnd(err_catch_);
       if (err_catch_->gotError)
-        zMapLogWarning("Error processing line '%s': %s", cur_interval_->rest, err_catch_->message->string);
+        {
+          g_set_error(&error_, g_quark_from_string("ZMap"), 99, 
+                      "Error processing line '%s': %s", 
+                      cur_interval_->rest, err_catch_->message->string);
+        }
     }
   else
     {
@@ -891,7 +915,9 @@ bool ZMapDataSourceBIGBEDStruct::readLine(GString * const str)
 
       errCatchEnd(err_catch_);
       if (err_catch_->gotError)
-        zMapLogWarning("Error cleaning up bigBed parser: %s", err_catch_->message->string);
+        {
+          zMapLogWarning("Error cleaning up bigBed parser: %s", err_catch_->message->string);
+        }
     }
           
   return result ;
@@ -922,8 +948,11 @@ bool ZMapDataSourceBIGWIGStruct::readLine(GString * const str)
 
       errCatchEnd(err_catch_);
       if (err_catch_->gotError)
-        zMapLogWarning("Error initialising bigWig parser for '%s:%d-%d': %s", 
-                       sequence_, start_, end_, err_catch_->message->string);
+        {
+          g_set_error(&error_, g_quark_from_string("ZMap"), 99,
+                      "Error initialising bigWig parser for '%s:%d-%d': %s", 
+                      sequence_, start_, end_, err_catch_->message->string);
+        }
     }
 
   if (cur_interval_)
