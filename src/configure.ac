@@ -53,6 +53,17 @@ AX_CXX_COMPILE_STDCXX_0X()
 #    - a shell variable via AC_SUBST
 #
 
+# Check for openssl
+#
+AX_CHECK_OPENSSL()
+AM_CONDITIONAL([HAVE_SSL], [ test -n "$OPENSSL_INCLUDES" ])
+AM_COND_IF([HAVE_SSL], 
+           [ echo 'openssl is available!' ])
+AM_COND_IF([HAVE_SSL], 
+           [AC_SUBST([HAVE_SSL], [have_ssl])])
+AM_COND_IF([HAVE_SSL], 
+           [AC_DEFINE([HAVE_SSL], [1], [Define to 1 if openssl is available])])
+
 
 # Check for aceconn
 #
@@ -347,10 +358,6 @@ AC_SUBST(LDFLAGS)
 GTK2_MODULES="pango >= 0.1 gtk+-2.0 >= 2.10.0 glib-2.0 gthread-2.0"
 PKG_CHECK_MODULES([GTK], [${GTK2_MODULES}])
 
-
-# Check for OpenSSL
-AX_CHECK_OPENSSL()
-AM_CONDITIONAL([HAVE_SSL], [test -n $OPENSSL_LIBS])
 
 
 # canvas_choice compilation is disabled for now, it should be moved

@@ -33,6 +33,10 @@
 #define ZMAPURL_H
 
 #include <glib.h>
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif 
+
 
 /* Default port definitions */
 #define DEFAULT_HTTP_PORT 80

@@ -34,6 +34,10 @@ so, delete this exception statement from your version.  */
 /* Needed for FDP.  */
 #include <stdio.h>
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif 
+
 
 
 typedef struct 
