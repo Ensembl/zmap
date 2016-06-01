@@ -275,8 +275,9 @@ ZMapDataSourceBEDStruct::ZMapDataSourceBEDStruct(const GQuark source_name,
   errCatchEnd(err_catch_);
   if (err_catch_->gotError)
     {
-      g_set_error(&error_, g_quark_from_string("ZMap"), 99, "Failed to open file '%s'",
-                  file_name, err_catch_->message->string) ;
+      g_set_error(&error_, g_quark_from_string("ZMap"), 99, 
+                  "Failed to open file: %s",
+                  err_catch_->message->string) ;
       bed_features_ = NULL ;
     }
 }
@@ -311,8 +312,9 @@ ZMapDataSourceBIGBEDStruct::ZMapDataSourceBIGBEDStruct(const GQuark source_name,
   errCatchEnd(err_catch_);
   if (err_catch_->gotError)
     {
-      g_set_error(&error_, g_quark_from_string("ZMap"), 99, "Failed to open file '%s'",
-                  file_name, err_catch_->message->string) ;
+      g_set_error(&error_, g_quark_from_string("ZMap"), 99, 
+                  "Failed to open file: %s",
+                  err_catch_->message->string) ;
       bbi_file_ = NULL ;
     }
 }
@@ -346,8 +348,9 @@ ZMapDataSourceBIGWIGStruct::ZMapDataSourceBIGWIGStruct(const GQuark source_name,
   errCatchEnd(err_catch_);
   if (err_catch_->gotError)
     {
-      g_set_error(&error_, g_quark_from_string("ZMap"), 99, "Failed to open file '%s'",
-                  file_name, err_catch_->message->string) ;
+      g_set_error(&error_, g_quark_from_string("ZMap"), 99,
+                  "Failed to open file: %s",
+                  err_catch_->message->string) ;
       bbi_file_ = NULL ;
     }
 }
@@ -377,7 +380,7 @@ ZMapDataSourceHTSStruct::ZMapDataSourceHTSStruct(const GQuark source_name,
     }
   else
     {
-      g_set_error(&error_, g_quark_from_string("ZMap"), 99, "Failed to open file '%s'", file_name) ;
+      g_set_error(&error_, g_quark_from_string("ZMap"), 99, "Failed to open file") ;
     }
 }
 
@@ -406,7 +409,7 @@ ZMapDataSourceBCFStruct::ZMapDataSourceBCFStruct(const GQuark source_name,
     }
   else
     {
-      g_set_error(&error_, g_quark_from_string("ZMap"), 99, "Failed to open file '%s'", file_name) ;
+      g_set_error(&error_, g_quark_from_string("ZMap"), 99, "Failed to open file") ;
     }
 }
 #endif
@@ -668,7 +671,7 @@ bool ZMapDataSourceBIGBEDStruct::checkHeader()
   if (err_catch_->gotError)
     {
       g_set_error(&error_, g_quark_from_string("ZMap"), 99,
-                  "Error checking file header: %s", err_catch_->message->string);
+                  "Error checking header: %s", err_catch_->message->string);
     }
 
   return result ;
