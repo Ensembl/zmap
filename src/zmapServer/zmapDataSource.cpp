@@ -66,10 +66,6 @@ using namespace std ;
 namespace // unnamed namespace
 {
 
-// Mutex to lock calls to the blatSrc library (for BED/BIGBED/BIGWIG files)
-static pthread_mutex_t blatSrc_mutex_G = PTHREAD_MUTEX_INITIALIZER ;
-
-
 /*
  * The SO terms that contain the string "read" are as follows:
  *
@@ -103,46 +99,6 @@ static const char * const ZMAP_BED_SO_TERM  = "sequence_feature" ;
 static const char * const ZMAP_BIGBED_SO_TERM  = "sequence_feature" ;
 static const char * const ZMAP_BIGWIG_SO_TERM  = "score" ;
 #define ZMAP_CIGARSTRING_MAXLENGTH 2048
-
-
-/* Utilities to lock/unlock the mutex (checks for failure) */
-void blatSrcMutexLock(void)
-{
-  int locked = pthread_mutex_lock(&blatSrc_mutex_G) ;
-
-  switch (locked)
-    {
-    case EINVAL:
-      zMapLogFatal("%s", "pthread_mutex_lock() called on a mutex which is not correctly initialised.") ;
-      break ;						    /* Not zmaplogfatal terminates the process in fact. */
-    case EDEADLK:
-      zMapLogFatal("%s", "pthread_mutex_lock() called on a mutex which is already locked by this thread.") ;
-      break ;
-    default:
-      break ;
-    }
-
-  return ;
-}
-
-void blatSrcMutexUnlock(void)
-{
-  int unlocked = pthread_mutex_unlock(&blatSrc_mutex_G) ;
-
-  switch (unlocked)
-    {
-    case EINVAL:
-      zMapLogFatal("%s", "pthread_mutex_unlock() called on a mutex which is not correctly initialised.") ;
-      break ;						    /* Not zmaplogfatal terminates the process in fact. */
-    case EPERM:
-      zMapLogCritical("%s", "pthread_mutex_unlock() called on a mutex which this thread does not own.") ;
-      break ;
-    default:
-      break ;
-    }
-
-  return ;
-}
 
 
 
@@ -319,8 +275,6 @@ ZMapDataSourceBEDStruct::ZMapDataSourceBEDStruct(const GQuark source_name,
   zMapReturnIfFail(file_name) ;
   type = ZMapDataSourceType::BED ;
 
-  blatSrcMutexLock() ;
-
   // Set up error handler so that the library doesn't abort
   err_catch_ = errCatchNew() ;
 
@@ -340,8 +294,6 @@ ZMapDataSourceBEDStruct::ZMapDataSourceBEDStruct(const GQuark source_name,
                   err_catch_->message->string) ;
       bed_features_ = NULL ;
     }
-
-  blatSrcMutexUnlock() ;
 }
 
 ZMapDataSourceBIGBEDStruct::ZMapDataSourceBIGBEDStruct(const GQuark source_name, 
@@ -359,8 +311,6 @@ ZMapDataSourceBIGBEDStruct::ZMapDataSourceBIGBEDStruct(const GQuark source_name,
 {
   zMapReturnIfFail(file_name) ;
   type = ZMapDataSourceType::BIGBED ;
-
-  blatSrcMutexLock() ;
 
   // Set up error handler so that the library doesn't abort
   err_catch_ = errCatchNew() ;
@@ -381,8 +331,6 @@ ZMapDataSourceBIGBEDStruct::ZMapDataSourceBIGBEDStruct(const GQuark source_name,
                   err_catch_->message->string) ;
       bbi_file_ = NULL ;
     }
-
-  blatSrcMutexUnlock() ;
 }
 
 ZMapDataSourceBIGWIGStruct::ZMapDataSourceBIGWIGStruct(const GQuark source_name, 
@@ -399,8 +347,6 @@ ZMapDataSourceBIGWIGStruct::ZMapDataSourceBIGWIGStruct(const GQuark source_name,
     cur_interval_(NULL)
 {
   type = ZMapDataSourceType::BIGWIG ;
-
-  blatSrcMutexLock() ;
 
   // Set up error handler so that the library doesn't abort
   err_catch_ = errCatchNew() ;
@@ -421,8 +367,6 @@ ZMapDataSourceBIGWIGStruct::ZMapDataSourceBIGWIGStruct(const GQuark source_name,
                   err_catch_->message->string) ;
       bbi_file_ = NULL ;
     }
-
-  blatSrcMutexUnlock() ;
 }
 
 #ifdef USE_HTSLIB
@@ -514,8 +458,6 @@ ZMapDataSourceGIOStruct::~ZMapDataSourceGIOStruct()
 
 ZMapDataSourceBEDStruct::~ZMapDataSourceBEDStruct()
 {
-  blatSrcMutexLock() ;
-
   if (bed_features_)
     {
       bedFreeList(&bed_features_) ;
@@ -524,14 +466,10 @@ ZMapDataSourceBEDStruct::~ZMapDataSourceBEDStruct()
 
   if (err_catch_)
     errCatchFree(&err_catch_); 
-
-  blatSrcMutexUnlock() ;
 }
 
 ZMapDataSourceBIGBEDStruct::~ZMapDataSourceBIGBEDStruct()
 {
-  blatSrcMutexLock() ;
-
   if (bbi_file_)
     {
       bigBedFileClose(&bbi_file_) ;
@@ -540,14 +478,10 @@ ZMapDataSourceBIGBEDStruct::~ZMapDataSourceBIGBEDStruct()
 
   if (err_catch_)
     errCatchFree(&err_catch_); 
-
-  blatSrcMutexUnlock() ;
 }
 
 ZMapDataSourceBIGWIGStruct::~ZMapDataSourceBIGWIGStruct()
 {
-  blatSrcMutexLock() ;
-
   if (bbi_file_)
     {
       bigWigFileClose(&bbi_file_) ;
@@ -556,8 +490,6 @@ ZMapDataSourceBIGWIGStruct::~ZMapDataSourceBIGWIGStruct()
 
   if (err_catch_)
     errCatchFree(&err_catch_); 
-
-  blatSrcMutexUnlock() ;
 }
 
 
@@ -724,8 +656,6 @@ bool ZMapDataSourceBIGBEDStruct::checkHeader()
   bool result = false ;
   zMapReturnValIfFail(isOpen(), result) ;
 
-  blatSrcMutexLock() ;
-
   if (errCatchStart(err_catch_))
     {
       // Get the list of sequences in the file and check whether our required sequence exists
@@ -758,8 +688,6 @@ bool ZMapDataSourceBIGBEDStruct::checkHeader()
                   "Error checking header: %s", err_catch_->message->string);
     }
 
-  blatSrcMutexUnlock() ;
-
   return result ;
 }
 
@@ -769,8 +697,6 @@ bool ZMapDataSourceBIGWIGStruct::checkHeader()
 {
   bool result = false ;
   zMapReturnValIfFail(isOpen(), result) ;
-
-  blatSrcMutexLock() ;
 
   if (errCatchStart(err_catch_))
     {
@@ -803,8 +729,6 @@ bool ZMapDataSourceBIGWIGStruct::checkHeader()
       g_set_error(&error_, g_quark_from_string("ZMap"), 99,
                   "Error checking file header: %s", err_catch_->message->string);
     }
-
-  blatSrcMutexUnlock() ;
 
   return result ;
 }
@@ -944,8 +868,6 @@ bool ZMapDataSourceBIGBEDStruct::readLine(GString * const str)
 {
   bool result = false ;
 
-  blatSrcMutexLock() ;
-
   // Get the next feature in the list (or the first one if we haven't started yet)
   if (cur_interval_)
     {
@@ -1014,8 +936,6 @@ bool ZMapDataSourceBIGBEDStruct::readLine(GString * const str)
           zMapLogWarning("Error cleaning up bigBed parser: %s", err_catch_->message->string);
         }
     }
-
-  blatSrcMutexUnlock() ;
           
   return result ;
 }
@@ -1026,8 +946,6 @@ bool ZMapDataSourceBIGBEDStruct::readLine(GString * const str)
 bool ZMapDataSourceBIGWIGStruct::readLine(GString * const str)
 {
   bool result = false ;
-
-  blatSrcMutexLock() ;
 
   // Get the next feature in the list (or the first one if we haven't started yet)
   if (cur_interval_)
@@ -1085,8 +1003,6 @@ bool ZMapDataSourceBIGWIGStruct::readLine(GString * const str)
       if (err_catch_->gotError)
         zMapLogWarning("Error cleaning up bigWig parser: %s", err_catch_->message->string);
     }
-
-  blatSrcMutexUnlock() ;
 
   return result ;
 }
