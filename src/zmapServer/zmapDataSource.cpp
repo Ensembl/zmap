@@ -153,7 +153,7 @@ void createGFFLine(GString *pStr,
                    const int iStart,
                    const int iEnd,
                    const double dScore,
-                   const char cStrand,
+                   const char cStrand_in,
                    const char *pName_in,
                    const bool haveTarget = false,
                    const int iTargetStart = 0,
@@ -177,6 +177,20 @@ void createGFFLine(GString *pStr,
    */
   g_string_erase(pStr, string_start, -1) ;
 
+  /*
+   * Make sure we have a valid strand ('.' if n/a) 
+   */
+  char cStrand = cStrand_in ;
+  if (cStrand == '\0')
+    {
+      cStrand = '.' ;
+    }
+  else if (cStrand != '+' && cStrand != '-' && cStrand != '.')
+    {
+      zMapLogWarning("Invalid strand '%c' given for sequence %s:%d-%d", 
+                     cStrand_in, sequence, iStart, iEnd) ;
+      cStrand = '.' ;
+    }
 
   /* 
    * Escape the name string
