@@ -175,6 +175,8 @@ echo \
  Welcome to ./configure for $PACKAGE_STRING
  Cmd: $0 $@
  Environment:
+   CXX              : $CXX
+   CXXFLAGS         : $CXXFLAGS
    CC               : $CC
    CFLAGS           : $CFLAGS
    LD               : $LD
@@ -649,8 +651,9 @@ echo \
 
  ${PACKAGE_NAME} Version ${PACKAGE_VERSION}
 
- Prefix: '${prefix}'
- Compiler: '${CC} ${CFLAGS} ${CPPFLAGS}'
+       Prefix: '${prefix}'
+ C++ Compiler: '${CXX} ${CXXFLAGS} ${CPPFLAGS}'
+   C Compiler: '${CC} ${CFLAGS} ${CPPFLAGS}'
 
  Now type 'make @<:@<target>@:>@'
    where the optional @<:@<target>@:>@ is:
@@ -685,7 +688,7 @@ fi
 
 if test -z "$USE_ZEROMQ"
 then
-  echo " Warning: zeromq is not installed so RemoteControl is disabled."
+  echo " Warning: zeromq is not installed so ZMap RemoteControl is disabled."
   echo
 fi
 

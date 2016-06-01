@@ -1,328 +1,117 @@
-2016-05-04  zmap  <zmap@sanger.ac.uk>
- ZMap version 2.7.1-58-ge5abded - Update RT and git commit reports
- src/ChangeLog                                  | 6 ++++++
- src/build/release_docs/RT_TICKETS_RESOLVED.txt | 2 +-
- 2 files changed, 7 insertions(+), 1 deletion(-)
-
-2016-05-03  zmap  <zmap@sanger.ac.uk>
- ZMap version 2.7.1-57-g8f9e30e - Update RT and git commit reports
- src/ChangeLog                                  | 7 +++++++
- src/build/release_docs/RT_TICKETS_RESOLVED.txt | 2 +-
- 2 files changed, 8 insertions(+), 1 deletion(-)
-
-2016-04-28  zmap  <zmap@sanger.ac.uk>
- ZMap version 2.7.1-56-g225750f - Update RT and git commit reports
- src/ChangeLog                                  | 12 ++++++++++++
- src/build/release_docs/GIT_COMMITS.txt         |  1 +
- src/build/release_docs/RT_TICKETS_RESOLVED.txt |  2 +-
- 3 files changed, 14 insertions(+), 1 deletion(-)
-
-2016-04-27  Ed Griffiths  <edgrif@sanger.ac.uk>
- Retrofit code to log blixem commandline, in develop already. - REGRESSION FIX
- src/zmapView/zmapViewCallBlixem.cpp | 29 ++++++++++++++++++++++++++++-
- 1 file changed, 28 insertions(+), 1 deletion(-)
-
-2016-04-26  zmap  <zmap@sanger.ac.uk>
- ZMap version 2.7.1-54-g14439d7 - Update RT and git commit reports
- src/ChangeLog                                  | 15 +++++++++++++++
- src/build/release_docs/GIT_COMMITS.txt         |  1 +
- src/build/release_docs/RT_TICKETS_RESOLVED.txt |  2 +-
- 3 files changed, 17 insertions(+), 1 deletion(-)
-
-2016-04-26  Ed Griffiths  <edgrif@sanger.ac.uk>
- Fix problem in runconfig with arg handling caused by my own changes in zmap_build. - BUILD
- src/runconfig | 15 ++++++++++-----
- 1 file changed, 10 insertions(+), 5 deletions(-)
-
-2016-04-25  Ed Griffiths  <edgrif@sanger.ac.uk>
- Fix but I unwittingly introduced into canvasFeature sorting. - REGRESSION FIX
- src/zmapWindow/canvas/zmapWindowCanvasFeature.cpp | 35 +++++++++++++++--------
- 1 file changed, 23 insertions(+), 12 deletions(-)
-
-2016-04-18  zmap  <zmap@sanger.ac.uk>
- ZMap version 2.7.1-51-g90d8a86 - Update RT and git commit reports
+2016-05-20  Gemma Guest  <gb10@sanger.ac.uk>
+ Merge branch 'production' into release/2.9.0
+2016-05-20  zmap  <zmap@sanger.ac.uk>
+ ZMap version 2.7.1-68-g615c847 - Update RT and git commit reports
  src/ChangeLog | 6 ++++++
  1 file changed, 6 insertions(+)
 
-2016-04-18  zmap  <zmap@sanger.ac.uk>
- ZMap version 2.7.1-50-gea5a1c7 - Update RT and git commit reports
+2016-05-20  zmap  <zmap@sanger.ac.uk>
+ ZMap version 2.7.1-67-gc40a574 - Update RT and git commit reports
  src/ChangeLog                                  | 12 ++++++++++++
  src/build/release_docs/RT_TICKETS_RESOLVED.txt |  2 +-
  2 files changed, 13 insertions(+), 1 deletion(-)
 
-2016-04-15  Steve Miller  <sm23@sanger.ac.uk>
- release notes editing
- docs/user/release_notes.shtml | 9 +++++++++
- 1 file changed, 9 insertions(+)
+2016-05-19  Gemma Guest  <gb10@sanger.ac.uk>
+ Update release notes - DOC
+ docs/user/release_notes.shtml | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
 
-2016-04-15  zmap  <zmap@sanger.ac.uk>
- ZMap version 2.7.1-48-g07111c7 - Update RT and git commit reports
- src/ChangeLog                                  | 524 ++++++++++++-------------
- src/build/release_docs/GIT_COMMITS.txt         |  37 +-
- src/build/release_docs/RT_TICKETS_RESOLVED.txt |  82 +---
- 3 files changed, 290 insertions(+), 353 deletions(-)
+2016-05-19  zmap  <zmap@sanger.ac.uk>
+ ZMap version 2.7.1-65-gcb6aa17 - Update RT and git commit reports
+ src/ChangeLog                                  | 376 ++++++-------------------
+ src/build/release_docs/GIT_COMMITS.txt         |  17 +-
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt |  92 ++----
+ 3 files changed, 110 insertions(+), 375 deletions(-)
 
-2016-04-15  Gemma Guest  <gb10@sanger.ac.uk>
- Merge branch 'production' into develop
-2016-04-14  Ed Griffiths  <edgrif@sanger.ac.uk>
- Change output for missing libs, document subdirs warning messages. - TRIVIAL
- src/configure.ac | 10 ++++++----
- 1 file changed, 6 insertions(+), 4 deletions(-)
+2016-05-18  Gemma Guest  <gb10@sanger.ac.uk>
+ Revert "ensc-core now uses autoconf - WIP"
+ src/autogen.sh   | 13 -------------
+ src/configure.ac |  6 +-----
+ 2 files changed, 1 insertion(+), 18 deletions(-)
 
-2016-04-12  Gemma Guest  <gb10@sanger.ac.uk>
- Fix type causing regression - REGRESSION FIX
- src/zmapAppServices/zmapAppSource.cpp | 8 +++++---
- 1 file changed, 5 insertions(+), 3 deletions(-)
+2016-05-18  Gemma Guest  <gb10@sanger.ac.uk>
+ Revert "Fixes for ensc-core autoconf stuff - BUILD"
+ src/Makefile.am  | 6 +-----
+ src/configure.ac | 2 +-
+ 2 files changed, 2 insertions(+), 6 deletions(-)
 
-2016-04-12  Ed Griffiths  <edgrif@sanger.ac.uk>
- Various updates to title page, introduction and first section. - DEVELOP
- docs/user/manual/ZMap_User_Manual.pdf | Bin 5924964 -> 5927314 bytes
- docs/user/manual/ZMap_User_Manual.tex | 131 ++++++++++++++++++++++++++--------
- 2 files changed, 101 insertions(+), 30 deletions(-)
-
-2016-04-12  Ed Griffiths  <edgrif@sanger.ac.uk>
- Fix bugs in output. - REGRESSION FIX
- src/zmapWindow/zmapWindowItemDebug.cpp | 203 +++++++++++++++++++++++++--------
- 1 file changed, 156 insertions(+), 47 deletions(-)
-
-2016-04-12  Ed Griffiths  <edgrif@sanger.ac.uk>
- Disable y scrolling because scrolling to items only has meaning for columns now. - REGRESSION FIX
- src/zmapWindow/zmapWindowItem.cpp | 16 ++++++++++++++++
- 1 file changed, 16 insertions(+)
-
-2016-04-12  Ed Griffiths  <edgrif@sanger.ac.uk>
- Tidy up comments. - TRIVIAL
- src/zmapWindow/zmapWindow.cpp | 24 +++++-------------------
- 1 file changed, 5 insertions(+), 19 deletions(-)
-
-2016-04-12  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add plain debug print with no func name/newline etc. - TRIVIAL
- src/include/ZMap/zmapUtilsDebug.hpp | 4 ++++
- 1 file changed, 4 insertions(+)
-
-2016-04-11  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add function to store a cursor for moving along display index to fix moving through features. - REGRESSION FIX
- .../canvas/zmapWindowCanvasFeatureset.cpp          | 82 +++++++++++++++++++++-
- .../canvas/zmapWindowCanvasFeatureset.hpp          |  7 +-
- .../canvas/zmapWindowCanvasFeatureset_I.hpp        |  4 ++
- 3 files changed, 90 insertions(+), 3 deletions(-)
-
-2016-04-11  Ed Griffiths  <edgrif@sanger.ac.uk>
- Fix small buglet in sorting code for item features. - REGRESSION FIX
- src/zmapWindow/canvas/zmapWindowCanvasFeature.cpp | 73 ++++++++++++++++++++---
- src/zmapWindow/canvas/zmapWindowCanvasFeature.hpp |  2 +
- 2 files changed, 68 insertions(+), 7 deletions(-)
-
-2016-04-11  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add code to call new delete display list call. - REGRESSION FIX
- src/zmapWindow/canvas/zmapWindowCanvasGraphItem.cpp | 9 ---------
- 1 file changed, 9 deletions(-)
-
-2016-04-11  Ed Griffiths  <edgrif@sanger.ac.uk>
- formatting + trivia - TRIVIAL
- src/zmapWindow/canvas/zmapWindowContainerFeatureSet.cpp | 5 +++--
- src/zmapWindow/canvas/zmapWindowContainerFeatureSet.hpp | 3 +++
+2016-05-18  Gemma Guest  <gb10@sanger.ac.uk>
+ Fixes for ensc-core autoconf stuff - BUILD
+ src/Makefile.am  | 6 +++++-
+ src/configure.ac | 2 +-
  2 files changed, 6 insertions(+), 2 deletions(-)
 
-2016-04-11  Ed Griffiths  <edgrif@sanger.ac.uk>
- formatting only. - FORMATTING ONLY
- src/zmapWindow/canvas/zmapWindowCanvasItem.hpp | 1 +
- 1 file changed, 1 insertion(+)
+2016-05-17  Gemma Guest  <gb10@sanger.ac.uk>
+ ensc-core now uses autoconf - WIP
+ src/autogen.sh   | 13 +++++++++++++
+ src/configure.ac |  6 +++++-
+ 2 files changed, 18 insertions(+), 1 deletion(-)
 
-2016-04-11  Ed Griffiths  <edgrif@sanger.ac.uk>
- Fix jump feature/column functions, completely broken. - REGRESSION FIX
- src/zmapWindow/zmapWindow.cpp | 172 +++++++++++++++++++++++++++++++-----------
- 1 file changed, 128 insertions(+), 44 deletions(-)
+2016-05-17  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Fix  but in start/end_not_found handling. - RT523445
+ src/zmapGFF/zmapGFF3parser.cpp | 29 +++++++++++++++--------------
+ 1 file changed, 15 insertions(+), 14 deletions(-)
 
-2016-04-11  Ed Griffiths  <edgrif@sanger.ac.uk>
- Fix bug in setting hot feature in focus. - REGRESSION FIX
- src/zmapWindow/zmapWindowFocus.cpp | 13 ++++++-------
- 1 file changed, 6 insertions(+), 7 deletions(-)
+2016-05-17  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Remove start/end_not_found, wrong place. - RT523445
+ src/include/ZMap/zmapFeature.hpp          |  3 +--
+ src/zmapFeature/zmapFeatureTranscript.cpp | 13 +------------
+ 2 files changed, 2 insertions(+), 14 deletions(-)
 
-2016-04-11  Ed Griffiths  <edgrif@sanger.ac.uk>
- Fix scroll to feature/item code...seems utterly broken. - REGRESSION FIX
- src/zmapWindow/zmapWindowItem.cpp | 199 ++++++++++++++++++++++++++++----------
- 1 file changed, 148 insertions(+), 51 deletions(-)
+2016-05-12  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Make sure -std=c++0x is always set (for normal, full and dist builds) - BUILD
+ src/Makefile.common | 2 +-
+ src/runconfig       | 3 ++-
+ 2 files changed, 3 insertions(+), 2 deletions(-)
 
-2016-04-11  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add hot feature param for focus call. - REGRESSION FIX
- src/zmapWindow/zmapWindowMenus.cpp | 3 +--
- src/zmapWindow/zmapWindowState.cpp | 2 +-
- 2 files changed, 2 insertions(+), 3 deletions(-)
-
-2016-04-11  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add new scroltofeature func, add hot feature param to set focus. - REGRESSION FIX
- src/zmapWindow/zmapWindow_P.hpp | 18 ++++++------------
- 1 file changed, 6 insertions(+), 12 deletions(-)
-
-2016-03-31  Ed Griffiths  <edgrif@sanger.ac.uk>
- Fix jump column to work. - BUG FIX
- src/zmapWindow/zmapWindow.cpp | 2 +-
+2016-05-12  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Small improvement to ignored files in ensc-core - BUILD
+ src/.gitignore | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-2016-03-31  Ed Griffiths  <edgrif@sanger.ac.uk>
- Comment out some unused functions. - TRIVIAL
- src/zmapWindow/zmapWindowItem.cpp | 218 +++++++++++++++++++++++++++++---------
- 1 file changed, 168 insertions(+), 50 deletions(-)
+2016-05-09  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Revert "Revert "Fix long standing irritation over compiledata file reported as missing on first compile. - BUILD""
+ src/zmapUtils/Makefile.am | 25 ++++++++++++-------------
+ 1 file changed, 12 insertions(+), 13 deletions(-)
 
-2016-03-31  Ed Griffiths  <edgrif@sanger.ac.uk>
- Make column to column cursoring work again. - BUG FIX
- src/zmapWindow/zmapWindow.cpp | 148 +++++++++++++++++++++++++-----------------
- 1 file changed, 88 insertions(+), 60 deletions(-)
+2016-05-06  Gemma Guest  <gb10@sanger.ac.uk>
+ Revert "Fix long standing irritation over compiledata file reported as missing on first compile. - BUILD"
+ src/zmapUtils/Makefile.am | 25 +++++++++++++------------
+ 1 file changed, 13 insertions(+), 12 deletions(-)
 
-2016-03-31  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add canvas positions to print out for items. - DEVELOP
- src/zmapWindow/zmapWindowItemDebug.cpp | 23 +++++++++++++++++++----
- 1 file changed, 19 insertions(+), 4 deletions(-)
+2016-04-28  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Fix long standing irritation over compiledata file reported as missing on first compile. - BUILD
+ src/zmapUtils/Makefile.am | 25 ++++++++++++-------------
+ 1 file changed, 12 insertions(+), 13 deletions(-)
 
-2016-03-31  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add new getLastCol function and improve existing getFirstCol func. - DEVELOP
- src/zmapWindow/zmapWindowCanvas.cpp | 99 ++++++++++++++++++++++++++++---------
- src/zmapWindow/zmapWindow_P.hpp     |  1 +
- 2 files changed, 76 insertions(+), 24 deletions(-)
+2016-04-27  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Add back in routine that logs the command line blixem was called with. - REGRESSION FIX
+ src/zmapView/zmapViewCallBlixem.cpp | 29 ++++++++++++++++++++++++++++-
+ 1 file changed, 28 insertions(+), 1 deletion(-)
 
-2016-03-31  Ed Griffiths  <edgrif@sanger.ac.uk>
- Commenting, formatting. - TRIVIA
- src/zmapWindow/canvas/zmapWindowContainerBlock.hpp | 22 +++++++++++++++-------
- 1 file changed, 15 insertions(+), 7 deletions(-)
+2016-04-21  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Add proper detection of unset build vars to handle our build_config.sh stuff. - BUILD
+ src/runconfig | 121 +++++++++++++++++-----------------------------------------
+ 1 file changed, 34 insertions(+), 87 deletions(-)
 
-2016-03-31  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add debug flag to foocanvas build. - BUILD
- src/libzmapfoocanvas/Makefile.am | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+2016-04-21  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Fix my bug but also a long standing duplication of the install dir in arg parsing. - BUILD
+ src/runconfig | 24 ++++++++++++++++++------
+ 1 file changed, 18 insertions(+), 6 deletions(-)
 
-2016-04-04  Ed Griffiths  <edgrif@sanger.ac.uk>
- Merge branch 'production' into develop
-2016-04-04  Gemma Guest  <gb10@sanger.ac.uk>
- Fix a bug where editing an ftp source doesn't work - BUG FIX
- src/zmapAppServices/zmapAppSource.cpp      | 21 +++++++++++++++++++--
- src/zmapFeature/zmapFeatureLoadDisplay.cpp |  4 +++-
- 2 files changed, 22 insertions(+), 3 deletions(-)
+2016-04-20  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Fix up install dir....need to add --prefix in this script now. - BUILD
+ src/runconfig | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
 
-2016-04-04  Ed Griffiths  <edgrif@sanger.ac.uk>
- Merge branch 'production' into develop
-2016-03-31  Gemma Guest  <gb10@sanger.ac.uk>
- Remove unused functions - FORMATTING ONLY
- src/zmapConfig/zmapConfigIni.cpp   | 8 --------
- src/zmapConfig/zmapConfigIni_P.hpp | 2 --
- 2 files changed, 10 deletions(-)
+2016-04-20  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Add code to support runconfig supplying optimising or debugging flags to configure. - BUILD
+ src/Makefile.common |   9 ++-
+ src/configure.ac    |   9 ++-
+ src/runconfig       | 215 ++++++++++++++++++++++++++++++++++++++++++++++------
+ 3 files changed, 205 insertions(+), 28 deletions(-)
 
-2016-03-31  Gemma Guest  <gb10@sanger.ac.uk>
- Use unnamed namespace instead of static - FORMATTING ONLY
- src/zmapConfig/zmapConfigIni.cpp | 332 ++++++++++++++++++++-------------------
- 1 file changed, 167 insertions(+), 165 deletions(-)
-
-2016-03-31  Gemma Guest  <gb10@sanger.ac.uk>
- Remove lambda until we upgrade to gcc 4.5 - REGRESSION FIX
- src/zmapConfig/zmapConfigIni.cpp | 29 ++++++++++++++++++++++++-----
- 1 file changed, 24 insertions(+), 5 deletions(-)
-
-2016-03-31  Gemma Guest  <gb10@sanger.ac.uk>
- Fix missing include of header - WIP
- src/zmapConfig/zmapConfigIni.cpp | 10 ++++++----
- 1 file changed, 6 insertions(+), 4 deletions(-)
-
-2016-03-31  Gemma Guest  <gb10@sanger.ac.uk>
- Merge branch 'feature/column_order' into develop - NEW FEATURE 'column reordering'
-2016-03-31  Gemma Guest  <gb10@sanger.ac.uk>
- Update case of saved columns from current session - WIP
- src/zmapConfig/zmapConfigIni.cpp | 6 ++++++
- 1 file changed, 6 insertions(+)
-
-2016-03-31  Gemma Guest  <gb10@sanger.ac.uk>
- Fix case sensitivity error excluding strand separator - WIP
- src/zmapFeature/zmapFeatureLoadDisplay.cpp | 11 +++++++----
- 1 file changed, 7 insertions(+), 4 deletions(-)
-
-2016-03-31  Gemma Guest  <gb10@sanger.ac.uk>
- Fix case of saved columns - WIP
- src/include/ZMap/zmapConfigIni.hpp         |  2 +-
- src/include/ZMap/zmapStyle.hpp             |  1 +
- src/zmapConfig/zmapConfigIni.cpp           | 32 +++++++++++++++++++++++++-----
- src/zmapFeature/zmapFeatureLoadDisplay.cpp |  2 +-
- src/zmapFeature/zmapStyleObj.cpp           | 11 ++++++++++
- 5 files changed, 41 insertions(+), 7 deletions(-)
-
-2016-03-31  Gemma Guest  <gb10@sanger.ac.uk>
- Don't save strand separator order - WIP
- src/zmapFeature/zmapFeatureLoadDisplay.cpp | 10 +++++++---
- 1 file changed, 7 insertions(+), 3 deletions(-)
-
-2016-03-31  Gemma Guest  <gb10@sanger.ac.uk>
- Merge new columns list with existing when saving - WIP
- src/include/ZMap/zmapFeatureLoadDisplay.hpp |  4 +--
- src/zmapFeature/zmapFeatureLoadDisplay.cpp  | 53 ++++++++++++++---------------
- src/zmapWindow/zmapWindowColConfig.cpp      |  8 +++--
- src/zmapWindow/zmapWindowColOrder.cpp       |  8 ++---
- 4 files changed, 36 insertions(+), 37 deletions(-)
-
-2016-03-31  Gemma Guest  <gb10@sanger.ac.uk>
- Merge new columns list with existing when saving - WIP
- src/include/ZMap/zmapConfigIni.hpp          |  2 +
- src/include/ZMap/zmapFeatureLoadDisplay.hpp |  4 +-
- src/zmapConfig/zmapConfigIni.cpp            | 58 +++++++++++++++++++++++++++++
- src/zmapConfig/zmapConfigLoader.cpp         | 55 +--------------------------
- src/zmapFeature/zmapFeatureLoadDisplay.cpp  | 53 ++++++++++++++++++++++----
- src/zmapView/zmapView.cpp                   |  2 +-
- src/zmapWindow/zmapWindowColConfig.cpp      |  5 +--
- 7 files changed, 112 insertions(+), 67 deletions(-)
-
-2016-03-30  Gemma Guest  <gb10@sanger.ac.uk>
- Present the columns window when pressing the button - WIP
- src/zmapWindow/zmapWindowColConfig.cpp | 17 +++++++++++++----
- 1 file changed, 13 insertions(+), 4 deletions(-)
-
-2016-03-30  Gemma Guest  <gb10@sanger.ac.uk>
- Merge columns fields from multiple config files - WIP
- src/include/ZMap/zmapConfigIni.hpp         |  10 +-
- src/zmapConfig/zmapConfigFile.cpp          |   8 +-
- src/zmapConfig/zmapConfigIni.cpp           |   2 +-
- src/zmapConfig/zmapConfigLoader.cpp        | 156 ++++++++++++++++++++++++-----
- src/zmapFeature/zmapFeatureLoadDisplay.cpp |   2 +-
- src/zmapFeature/zmapStyle.cpp              |   2 +-
- src/zmapView/zmapView.cpp                  |  10 +-
- src/zmapView/zmapViewCallBlixem.cpp        |   6 +-
- src/zmapWindow/zmapWindowColConfig.cpp     |   2 +-
- 9 files changed, 152 insertions(+), 46 deletions(-)
-
-2016-03-30  Gemma Guest  <gb10@sanger.ac.uk>
- Allow GFF files without a sequence-region comment - NEW FEATURE 'GFF sequence-region'
- src/include/ZMap/zmapGFF.hpp   |  1 +
- src/zmapApp/zmapAppmain_c.cpp  | 44 ++++++++++++++++--------------------------
- src/zmapGFF/zmapGFF3_P.hpp     |  1 +
- src/zmapGFF/zmapGFF3parser.cpp | 39 +++++++++++++++++++++++++++++++++++++
- src/zmapGFF/zmapGFFGeneral.cpp | 18 +++++++++++++++++
- 5 files changed, 76 insertions(+), 27 deletions(-)
-
-2016-03-14  Gemma Guest  <gb10@sanger.ac.uk>
- Use unnamed namespace instead of static - TRIVIAL
- src/zmapServer/ensembl/ensemblUtils.cpp | 135 +++++++++++++++-----------------
- 1 file changed, 65 insertions(+), 70 deletions(-)
-
-2016-03-29  Gemma Barson  <gb10@sanger.ac.uk>
- Add missing latex file - DOC
- docs/user/manual/ZMap_User_Manual.pdf |  Bin 5236740 -> 5924964 bytes
- docs/user/manual/ZMap_User_Manual.tex |    2 +-
- docs/user/manual/xcolor.sty           | 1449 +++++++++++++++++++++++++++++++++
- 3 files changed, 1450 insertions(+), 1 deletion(-)
-
-2016-03-23  Gemma Guest  <gb10@sanger.ac.uk>
- Merge branch 'release/2.7.0' into develop
-2016-03-22  Gemma Guest  <gb10@sanger.ac.uk>
- Fix a bug calling blixem on bam columns - RT 521742
- src/zmapWindow/zmapWindowMenus.cpp | 6 ++++--
- 1 file changed, 4 insertions(+), 2 deletions(-)
-
-2016-03-22  Gemma Guest  <gb10@sanger.ac.uk>
- Revert "Fix a bug calling blixem on bam columns - RT 521742"
- src/include/ZMap/zmapFeatureLoadDisplay.hpp |  6 +---
- src/zmapFeature/zmapFeatureLoadDisplay.cpp  | 54 +++++------------------------
- src/zmapWindow/zmapWindowMenus.cpp          | 14 ++------
- 3 files changed, 11 insertions(+), 63 deletions(-)
-
-2016-03-22  Gemma Guest  <gb10@sanger.ac.uk>
- Fix a bug calling blixem on bam columns - RT 521742
- src/include/ZMap/zmapFeatureLoadDisplay.hpp |  6 +++-
- src/zmapFeature/zmapFeatureLoadDisplay.cpp  | 54 ++++++++++++++++++++++++-----
- src/zmapWindow/zmapWindowMenus.cpp          | 14 ++++++--
- 3 files changed, 63 insertions(+), 11 deletions(-)
+2016-04-20  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Add code to switch _off_ -Werror flag in zeromq build so we can turn on max. warnings. - BUILD
+ src/autogen.sh | 35 ++++++++++++++++-------------------
+ 1 file changed, 16 insertions(+), 19 deletions(-)

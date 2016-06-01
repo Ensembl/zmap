@@ -1,33 +1,23 @@
 
-Request Tracker Tickets Resolved from 16/03/2016 to 05/05/2016
+Request Tracker Tickets Resolved from 15/04/2016 to 20/05/2016
 
-ticket/517878
-id: ticket/517878
+ticket/523445
+id: ticket/523445
 Queue: zmap
-Subject: otter error: Otter-99-09 saving column order not working completely
-Requestors: mms@sanger.ac.uk
-Owner: gb10
-Resolved: Mon Apr 04 10:44:09 2016
+Subject: protein translation in zmap with 'p' shortcut
+Requestors: sb7@sanger.ac.uk, th2@sanger.ac.uk
+Owner: mg13
+Resolved: Tue May 17 16:41:31 2016
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
-ticket/519398
-id: ticket/519398
+ticket/523795
+id: ticket/523795
 Queue: zmap
-Subject: Selecting single exons to add to a temporary feature
-Requestors: edgrif@sanger.ac.uk
+Subject: Problem compiling ZMap from git
+Requestors: thibaut@ebi.ac.uk
 Owner: edgrif
-Resolved: Wed Mar 16 08:23:26 2016
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/520882
-id: ticket/520882
-Queue: zmap
-Subject: Clicking on composite BAM reads should show accessions.
-Requestors: cas@sanger.ac.uk
-Owner: gb10
-Resolved: Wed Mar 16 08:23:53 2016
+Resolved: Tue May 17 14:16:26 2016
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
