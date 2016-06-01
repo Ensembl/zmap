@@ -2072,11 +2072,10 @@ void deleteButtonClickedCB(GtkWidget *button, gpointer data)
 
 
 /* Show a dialog where the user can browse trackhubs that they have previously registered */
-void trackhubBrowseCB(GtkWidget *widget, gpointer cb_data)
+void trackhubBrowse(MainFrame main_data)
 {
   bool ok = false ;
 
-  MainFrame main_data = (MainFrame)cb_data ;
   zMapReturnIfFail(main_data && main_data->browse_widg) ;
 
   // Log in first, if not already logged in
@@ -2135,10 +2134,18 @@ void trackhubBrowseCB(GtkWidget *widget, gpointer cb_data)
 }
 
 
-/* Show a dialog where the user can register a trackhubs */
-void trackhubRegisterCB(GtkWidget *widget, gpointer cb_data)
+void trackhubBrowseCB(GtkWidget *widget, gpointer cb_data)
 {
   MainFrame main_data = (MainFrame)cb_data ;
+
+  trackhubBrowse(main_data) ;
+}
+
+
+/* Show a dialog where the user can register a trackhubs */
+void trackhubRegister(MainFrame main_data)
+{
+  bool ok = false ;
   zMapReturnIfFail(main_data && main_data->search_widg) ;
 
   // Log in first, if not already logged in
@@ -2212,7 +2219,9 @@ void trackhubRegisterCB(GtkWidget *widget, gpointer cb_data)
               string err_msg;
               main_data->registry.registerHub(url, assemblies_map, type, is_public, err_msg) ;
 
-              if (!err_msg.empty())
+              if (err_msg.empty())
+                ok = true ;
+              else
                 zMapCritical("Error registering hub: %s", err_msg.c_str()) ;
             }
           else
@@ -2223,6 +2232,19 @@ void trackhubRegisterCB(GtkWidget *widget, gpointer cb_data)
 
       gtk_widget_destroy(dialog) ;  
     }
+
+  // If successful, show the registered hub to the user. (For now,
+  // just open the registered hubs dialog - should really add a filter
+  // to this to only show the recently registered hub.)
+  if (ok)
+    trackhubBrowse(main_data) ;
+}
+
+
+void trackhubRegisterCB(GtkWidget *widget, gpointer cb_data)
+{
+  MainFrame main_data = (MainFrame)cb_data ;
+  trackhubRegister(main_data) ;
 }
 
 } //unnamed namespace
