@@ -1815,7 +1815,8 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
         }
 
 
-      zmapWindowCoordPairToDisplay(window, dna_start, dna_end, &display_start, &display_end) ;
+      zmapWindowCoordPairToDisplay(window, window->display_coordinates,
+                                   dna_start, dna_end, &display_start, &display_end) ;
 
 
       select.feature_desc.feature_name   = (char *)g_quark_to_string(feature->original_id) ;
@@ -1942,7 +1943,8 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
           if (feature_total_length)
             select.feature_desc.feature_total_length = g_strdup_printf("%d", feature_total_length) ;
 
-          zmapWindowCoordPairToDisplay(window, feature_start, feature_end, &feature_start, &feature_end) ;
+          zmapWindowCoordPairToDisplay(window, window->display_coordinates,
+                                       feature_start, feature_end, &feature_start, &feature_end) ;
 
           select.feature_desc.feature_start  = g_strdup_printf("%d", feature_start) ;
           select.feature_desc.feature_end    = g_strdup_printf("%d", feature_end) ;
@@ -2038,8 +2040,8 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
                                  prop_term,   &sub_feature_term,
                                  NULL))
             {
-              zmapWindowCoordPairToDisplay(window, sub_feature_start, sub_feature_end,
-                                           &sub_feature_start, &sub_feature_end) ;
+              zmapWindowCoordPairToDisplay(window, window->display_coordinates,
+                                           sub_feature_start, sub_feature_end, &sub_feature_start, &sub_feature_end) ;
 
               select.feature_desc.sub_feature_index = g_strdup_printf("%d", sub_feature_index) ;
               select.feature_desc.sub_feature_start = g_strdup_printf("%d", sub_feature_start) ;
@@ -7507,22 +7509,22 @@ static char * tooltipTextCreate(ZMapWindow window, double wx, double wy)
   if (window->sequence)
     {
       display_coord = (int)floor(wy);
+
       switch (display_coordinates)
         {
           case ZMAP_WINDOW_DISPLAY_SLICE:
-            display_coord = zmapWindowCoordToDisplay(window, display_coord) ;
-            text = g_strdup_printf("%d", display_coord) ;
-            break ;
           case ZMAP_WINDOW_DISPLAY_CHROM:
-            display_coord = zmapWindowWorldToSequenceForward(window, display_coord) ;
-            if (zMapWindowGetFlag(window, ZMAPFLAG_REVCOMPED_FEATURES))
-              display_coord = -display_coord ;
+
+            display_coord = zmapWindowCoordToDisplay(window, display_coordinates, display_coord) ;
             text = g_strdup_printf("%d", display_coord) ;
+
             break ;
+
           case ZMAP_WINDOW_DISPLAY_OTHER:
           case ZMAP_WINDOW_DISPLAY_INVALID:
             text = NULL ;
             break ;
+
           default:
             break ;
         }

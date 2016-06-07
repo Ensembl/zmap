@@ -983,7 +983,7 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
                 {
                   int display_start, display_end ;
 
-                  zmapWindowCoordPairToDisplay(show->zmapWindow,
+                  zmapWindowCoordPairToDisplay(show->zmapWindow, show->zmapWindow->display_coordinates,
                                                feature->feature.transcript.cds_start,
                                                feature->feature.transcript.cds_end,
                                                &display_start, &display_end) ;
@@ -2154,8 +2154,8 @@ static void addTagValue(gpointer data, gpointer user_data)
                            zMapFeatureStrand2Str(feature->feature.homol.strand)) ;
   column_data = g_list_append(column_data, strand) ;
 
-  zmapWindowCoordPairToDisplay(para_data->window, feature->x1, feature->x2,
-                               &display_start, &display_end) ;
+  zmapWindowCoordPairToDisplay(para_data->window, para_data->window->display_coordinates,
+                               feature->x1, feature->x2, &display_start, &display_end) ;
 
   column_data = g_list_append(column_data, GINT_TO_POINTER(display_start)) ;
   column_data = g_list_append(column_data, GINT_TO_POINTER(display_end)) ;
@@ -2225,8 +2225,8 @@ static ZMapGuiNotebook makeTranscriptExtras(ZMapWindow window, ZMapFeature featu
 
           exon_span = &g_array_index(feature->feature.transcript.exons, ZMapSpanStruct, index);
 
-          zmapWindowCoordPairToDisplay(window, exon_span->x1, exon_span->x2,
-                                       &display_start, &display_end) ;
+          zmapWindowCoordPairToDisplay(window, window->display_coordinates,
+                                       exon_span->x1, exon_span->x2, &display_start, &display_end) ;
 
           column_data = g_list_append(column_data, GINT_TO_POINTER(display_start)) ;
           column_data = g_list_append(column_data, GINT_TO_POINTER(display_end)) ;
