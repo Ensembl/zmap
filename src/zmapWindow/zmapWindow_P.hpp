@@ -1344,8 +1344,8 @@ void zmapWindowPrintItemCoords(FooCanvasItem *item) ;
 char *zmapWindowItemCoordsText(FooCanvasItem *item) ;
 void zmapWindowShowItem(FooCanvasItem *item) ;
 
-int zmapWindowCoordToDisplay(ZMapWindow window, int coord) ;
-void zmapWindowCoordPairToDisplay(ZMapWindow window,
+int zmapWindowCoordToDisplay(ZMapWindow window, ZMapWindowDisplayCoordinates display_mode, int coord) ;
+void zmapWindowCoordPairToDisplay(ZMapWindow window, ZMapWindowDisplayCoordinates display_mode,
 				  int start_in, int end_in,
 				  int *display_start_out, int *display_end_out) ;
 int zmapWindowCoordFromDisplay(ZMapWindow window, int coord) ;

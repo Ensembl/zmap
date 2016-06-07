@@ -53,6 +53,12 @@ typedef struct
 
 
 
+
+
+
+
+
+
 /* Reworked coordinate functions
  *
  * NOTE we assume window->min_coord and window->max_coord are valid and there is only one block
@@ -61,50 +67,39 @@ typedef struct
  */
 
 
-
-/* THIS ALL NEEDS RATIONALISING TO CONVERT FOR CHROMOSOME OR DISPLAY COORDS.... */
-
-/* Zmap internal seq coord to canvas coord;
- * seq is chromosome based from otterlace but could be 1-based eg w/ wormbase
- */
-int zmapWindowCoordToDisplay(ZMapWindow window, int coord)
+int zmapWindowCoordToDisplay(ZMapWindow window, ZMapWindowDisplayCoordinates display_mode, int coord)
 {
-  /*
-   * TRUE     means our "normal" way of looking at the interval
-   * FALSE    means chromosome coordinates
-   */
-  gboolean normal_coords = TRUE ;
   /* min_coord is the start of the sequence even if revcomp'ed
    * window->sequence->start is fwd strand
    * but note that max_coord has been incremented to cover beyond the last base
    */
-  if (normal_coords)
+  if (window->display_coordinates == ZMAP_WINDOW_DISPLAY_SLICE)
     coord = coord - window->min_coord + 1 ;
 
   if (zMapWindowGetFlag(window, ZMAPFLAG_REVCOMPED_FEATURES))
     {
-      if (normal_coords)
-        coord -= window->sequence->end - window->sequence->start + 2 ;
+      if (window->display_coordinates == ZMAP_WINDOW_DISPLAY_SLICE)
+        {
+          coord -= window->sequence->end - window->sequence->start + 2 ;
+        }
       else
         {
-          coord = -window->sequence->start -
-                   (window->max_coord - window->min_coord - coord) ;
+          coord = -window->sequence->start - (window->max_coord - window->min_coord - coord) ;
         }
     }
 
-  return(coord);
+  return coord ;
 }
 
 
-
-void zmapWindowCoordPairToDisplay(ZMapWindow window,
+void zmapWindowCoordPairToDisplay(ZMapWindow window, ZMapWindowDisplayCoordinates display_mode,
                                   int start_in, int end_in,
                                   int *display_start_out, int *display_end_out)
 {
   int start, end ;
 
-  start = zmapWindowCoordToDisplay(window, start_in) ;
-  end = zmapWindowCoordToDisplay(window, end_in) ;
+  start = zmapWindowCoordToDisplay(window, display_mode, start_in) ;
+  end = zmapWindowCoordToDisplay(window, display_mode, end_in) ;
 
   /* Note that the start/ends get swopped if we are reversed complemented and
    * display forwards coords so their order fits the "forwards" display. */
@@ -118,35 +113,6 @@ void zmapWindowCoordPairToDisplay(ZMapWindow window,
 }
 
 
-/* This routine and the one above should be merged...I'm pretty unhappy about this and
- * will change it.....
- *
- * If _not_ reverse complemented simply returns original coords.
- *  */
-void zmapWindowParentCoordPairToDisplay(ZMapWindow window,
-                                        int start_in, int end_in,
-                                        int *display_start_out, int *display_end_out)
-{
-
-  if (zMapWindowGetFlag(window, ZMAPFLAG_REVCOMPED_FEATURES))
-    {
-      zMapFeatureReverseComplementCoords(window->feature_context, &(start_in), &(end_in)) ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      start_in = -(start_in) ;
-      end_in = -(end_in) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-    }
-
-  *display_start_out = start_in ;
-  *display_end_out = end_in ;
-
-  return ;
-}
-
-
-
-
 
 
 /* start and end in current fwd strand coordinates (revcomped is -ve) */
@@ -157,7 +123,8 @@ gboolean zmapWindowGetCurrentSpan(ZMapWindow window, int *start, int *end)
      zmapWindowSeq2CanExt() see comment above that function
      i'd prefer to use sequence->start,end but on revcomp this gives us chromo coords
   */
-  zmapWindowCoordPairToDisplay(window,window->min_coord,window->max_coord-1,start,end) ;
+  zmapWindowCoordPairToDisplay(window, window->display_coordinates,
+                               window->min_coord,window->max_coord-1,start,end) ;
 
   return(TRUE);
 }
