@@ -725,7 +725,7 @@ void makeEnsemblWidgets(MainFrame main_data,
   main_data->ensembl_widgets.push_back(main_data->dna_check) ;
   ++row ;
 }
-#endif
+#endif /* USE_ENSEMBL */
 
 
 /* This is called after the trackdb_id has changed. It looks up the trackdb_id
@@ -1624,60 +1624,6 @@ GtkTreeView* createListWidget(MainFrame main_data,
 }
 
 
-/* Update the given entry with the selected value(s) from the given tree. Uses the given column
- * in the tree for the result */
-template<class ColType>
-gboolean setEntryFromSelection(GtkTreeView *tree_view,
-                               GtkEntry *entry, 
-                               const ColType col_id)
-{
-  gboolean ok = FALSE ;
-
-  GtkTreeSelection *tree_selection = gtk_tree_view_get_selection(tree_view) ;
-
-  if (tree_selection)
-    {
-      /* Loop through all rows in the selection and compile values into a semi-colon-separated
-       * list */
-      string result ;
-      GtkTreeModel *model = NULL ;
-      GList *rows = gtk_tree_selection_get_selected_rows(tree_selection, &model) ;
-          
-      for (GList *row = rows; row; row = g_list_next(row))
-        {
-          GtkTreePath *path = (GtkTreePath*)(row->data) ;
-          GtkTreeIter iter ;
-          gtk_tree_model_get_iter(model, &iter, path) ;
-
-          char *value_str = NULL ;
-
-          gtk_tree_model_get(model, &iter, col_id, &value_str, -1) ;
-
-          if (value_str)
-            {
-              if (result.size() > 0)
-                result += "; " ;
-                
-              result += value_str ;
-
-              g_free(value_str) ;
-              value_str = NULL ;
-            }
-        }
-
-      gtk_entry_set_text(entry, result.c_str()) ;
-      ok = TRUE ;
-    }
-  else
-    {
-      zMapCritical("%s", "Please select a database name") ;
-      ok = FALSE ;
-    }
-
-  return ok ;
-}
-
-
 /* Callback called when the user hits the enter key in the filter text entry box */
 void filter_entry_activate_cb(GtkEntry *entry, gpointer user_data)
 {
@@ -1707,121 +1653,6 @@ void clear_button_cb(GtkButton *button, gpointer user_data)
   GtkTreeModelFilter *filter = GTK_TREE_MODEL_FILTER(search_data->tree_model) ;
   if (filter)
     gtk_tree_model_filter_refilter(filter) ;
-}
-
-
-template<class ListType>
-GtkWidget* createListDialog(MainFrame main_data, 
-                            const ListType &values_list, 
-                            const char *title,
-                            const gboolean allow_multiple,
-                            SearchListData &search_data,
-                            GtkTreeView **list_widget_out)
-{
-  GtkWidget *dialog = NULL ;
-  zMapReturnValIfFail(main_data, dialog) ;
-
-  dialog = gtk_dialog_new_with_buttons(title,
-                                       NULL,
-                                       (GtkDialogFlags)(GTK_DIALOG_DESTROY_WITH_PARENT),
-                                       GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-                                       GTK_STOCK_OK, GTK_RESPONSE_OK,
-                                       NULL);
-
-  gtk_dialog_set_default_response(GTK_DIALOG(dialog), GTK_RESPONSE_OK) ;
-  int width = 0 ;
-  int height = 0 ;
-
-  if (gbtools::GUIGetTrueMonitorSize(dialog, &width, &height))
-    gtk_window_set_default_size(GTK_WINDOW(dialog), width * 0.3, height * 0.5) ;
-
-  GtkBox *content = GTK_BOX(GTK_DIALOG(dialog)->vbox) ;
-
-  /* Search/filter toolbar */
-  GtkWidget *hbox = gtk_hbox_new(FALSE, 0) ;
-  gtk_box_pack_start(content, hbox, FALSE, FALSE, 0) ;
-
-  gtk_box_pack_start(GTK_BOX(hbox), gtk_label_new("Search:"), FALSE, FALSE, 0) ;
-  GtkEntry *search_entry = GTK_ENTRY(gtk_entry_new()) ;
-  gtk_box_pack_start(GTK_BOX(hbox), GTK_WIDGET(search_entry), FALSE, FALSE, 0) ;
-
-  gtk_box_pack_start(GTK_BOX(hbox), gtk_label_new("Filter:"), FALSE, FALSE, 0) ;
-  GtkEntry *filter_entry = GTK_ENTRY(gtk_entry_new()) ;
-  gtk_box_pack_start(GTK_BOX(hbox), GTK_WIDGET(filter_entry), FALSE, FALSE, 0) ;
-  gtk_widget_set_tooltip_text(GTK_WIDGET(search_entry), "Search for values containing this text. Press the up/down arrows to progress to next/previous match.") ;
-
-  GtkWidget *button = gtk_button_new_with_mnemonic("C_lear") ;
-  gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
-  gtk_widget_set_tooltip_text(button, "Clear the search/filter boxes") ;
-  gtk_widget_set_tooltip_text(GTK_WIDGET(filter_entry), "Show only values containing this text. Press enter to apply the filter.") ;
-
-  search_data.search_entry = search_entry ;
-  search_data.filter_entry = filter_entry ;
-  g_signal_connect(G_OBJECT(filter_entry), "activate", G_CALLBACK(filter_entry_activate_cb), &search_data) ;
-  g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(clear_button_cb), &search_data) ;
-
-
-  /* Scrolled list of all values */
-  GtkWidget *scrollwin = gtk_scrolled_window_new(NULL, NULL) ;
-  gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrollwin), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
-  gtk_box_pack_start(content, GTK_WIDGET(scrollwin), TRUE, TRUE, 0) ;
-
-  GtkTreeView *list_widget = createListWidget(main_data, values_list, search_data, allow_multiple) ;
-  gtk_container_add(GTK_CONTAINER(scrollwin), GTK_WIDGET(list_widget)) ;
-
-  if (list_widget_out)
-    *list_widget_out = list_widget ;
-
-  return dialog ;
-}
-
-
-
-/* Create and run a dialog to show the given list of values in a gtk tree view and to set the
- * given entry widget with the result when the user selects a row and hits ok. If the user
- * selects multiple values then it sets a semi-colon-separated list in the entry widget.
- * This function can take lists of different types of values and will call an overload of
- * createListWidget for the relevant type. */
-template<class ListType, class ColType>
-gboolean runListDialog(MainFrame main_data, 
-                       const ListType &values_list, 
-                       const ColType result_col,
-                       GtkEntry *result_widg,
-                       const char *title,
-                       const gboolean allow_multiple)
-{
-  gboolean ok = FALSE ;
-  zMapReturnValIfFail(main_data, ok) ;
-
-  GtkTreeView *list_widget = NULL ;
-  SearchListData search_data ;
-  GtkWidget *dialog = createListDialog(main_data, values_list, title, allow_multiple, search_data, &list_widget) ;
-
-  if (dialog)
-    {
-      gtk_widget_show_all(dialog) ;
-      gint response = gtk_dialog_run(GTK_DIALOG(dialog)) ;
-
-      if (response == GTK_RESPONSE_OK)
-        {
-          if (setEntryFromSelection(list_widget, result_widg, result_col))
-            {
-              gtk_widget_destroy(dialog) ;
-              ok = TRUE ;
-            }
-        }
-      else
-        {
-          gtk_widget_destroy(dialog) ;
-          ok = TRUE ;
-        }
-    }
-  else
-    {
-      zMapCritical("%s", "Failed to create list dialog") ;
-    }
-
-  return ok ;
 }
 
 
@@ -1919,6 +1750,174 @@ void biotypesCB(GtkWidget *widget, gpointer cb_data)
 
 
 #endif /* USE_ENSEMBL */
+
+
+/* Update the given entry with the selected value(s) from the given tree. Uses the given column
+ * in the tree for the result */
+template<class ColType>
+gboolean setEntryFromSelection(GtkTreeView *tree_view,
+                               GtkEntry *entry, 
+                               const ColType col_id)
+{
+  gboolean ok = FALSE ;
+
+  GtkTreeSelection *tree_selection = gtk_tree_view_get_selection(tree_view) ;
+
+  if (tree_selection)
+    {
+      /* Loop through all rows in the selection and compile values into a semi-colon-separated
+       * list */
+      string result ;
+      GtkTreeModel *model = NULL ;
+      GList *rows = gtk_tree_selection_get_selected_rows(tree_selection, &model) ;
+          
+      for (GList *row = rows; row; row = g_list_next(row))
+        {
+          GtkTreePath *path = (GtkTreePath*)(row->data) ;
+          GtkTreeIter iter ;
+          gtk_tree_model_get_iter(model, &iter, path) ;
+
+          char *value_str = NULL ;
+
+          gtk_tree_model_get(model, &iter, col_id, &value_str, -1) ;
+
+          if (value_str)
+            {
+              if (result.size() > 0)
+                result += "; " ;
+                
+              result += value_str ;
+
+              g_free(value_str) ;
+              value_str = NULL ;
+            }
+        }
+
+      gtk_entry_set_text(entry, result.c_str()) ;
+      ok = TRUE ;
+    }
+  else
+    {
+      zMapCritical("%s", "Please select a database name") ;
+      ok = FALSE ;
+    }
+
+  return ok ;
+}
+
+
+template<class ListType>
+GtkWidget* createListDialog(MainFrame main_data, 
+                            const ListType &values_list, 
+                            const char *title,
+                            const gboolean allow_multiple,
+                            SearchListData &search_data,
+                            GtkTreeView **list_widget_out)
+{
+  GtkWidget *dialog = NULL ;
+  zMapReturnValIfFail(main_data, dialog) ;
+
+  dialog = gtk_dialog_new_with_buttons(title,
+                                       NULL,
+                                       (GtkDialogFlags)(GTK_DIALOG_DESTROY_WITH_PARENT),
+                                       GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+                                       GTK_STOCK_OK, GTK_RESPONSE_OK,
+                                       NULL);
+
+  gtk_dialog_set_default_response(GTK_DIALOG(dialog), GTK_RESPONSE_OK) ;
+  int width = 0 ;
+  int height = 0 ;
+
+  if (gbtools::GUIGetTrueMonitorSize(dialog, &width, &height))
+    gtk_window_set_default_size(GTK_WINDOW(dialog), width * 0.3, height * 0.5) ;
+
+  GtkBox *content = GTK_BOX(GTK_DIALOG(dialog)->vbox) ;
+
+  /* Search/filter toolbar */
+  GtkWidget *hbox = gtk_hbox_new(FALSE, 0) ;
+  gtk_box_pack_start(content, hbox, FALSE, FALSE, 0) ;
+
+  gtk_box_pack_start(GTK_BOX(hbox), gtk_label_new("Search:"), FALSE, FALSE, 0) ;
+  GtkEntry *search_entry = GTK_ENTRY(gtk_entry_new()) ;
+  gtk_box_pack_start(GTK_BOX(hbox), GTK_WIDGET(search_entry), FALSE, FALSE, 0) ;
+
+  gtk_box_pack_start(GTK_BOX(hbox), gtk_label_new("Filter:"), FALSE, FALSE, 0) ;
+  GtkEntry *filter_entry = GTK_ENTRY(gtk_entry_new()) ;
+  gtk_box_pack_start(GTK_BOX(hbox), GTK_WIDGET(filter_entry), FALSE, FALSE, 0) ;
+  gtk_widget_set_tooltip_text(GTK_WIDGET(search_entry), "Search for values containing this text. Press the up/down arrows to progress to next/previous match.") ;
+
+  GtkWidget *button = gtk_button_new_with_mnemonic("C_lear") ;
+  gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
+  gtk_widget_set_tooltip_text(button, "Clear the search/filter boxes") ;
+  gtk_widget_set_tooltip_text(GTK_WIDGET(filter_entry), "Show only values containing this text. Press enter to apply the filter.") ;
+
+  search_data.search_entry = search_entry ;
+  search_data.filter_entry = filter_entry ;
+  g_signal_connect(G_OBJECT(filter_entry), "activate", G_CALLBACK(filter_entry_activate_cb), &search_data) ;
+  g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(clear_button_cb), &search_data) ;
+
+
+  /* Scrolled list of all values */
+  GtkWidget *scrollwin = gtk_scrolled_window_new(NULL, NULL) ;
+  gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrollwin), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+  gtk_box_pack_start(content, GTK_WIDGET(scrollwin), TRUE, TRUE, 0) ;
+
+  GtkTreeView *list_widget = createListWidget(main_data, values_list, search_data, allow_multiple) ;
+  gtk_container_add(GTK_CONTAINER(scrollwin), GTK_WIDGET(list_widget)) ;
+
+  if (list_widget_out)
+    *list_widget_out = list_widget ;
+
+  return dialog ;
+}
+
+
+/* Create and run a dialog to show the given list of values in a gtk tree view and to set the
+ * given entry widget with the result when the user selects a row and hits ok. If the user
+ * selects multiple values then it sets a semi-colon-separated list in the entry widget.
+ * This function can take lists of different types of values and will call an overload of
+ * createListWidget for the relevant type. */
+template<class ListType, class ColType>
+gboolean runListDialog(MainFrame main_data, 
+                       const ListType &values_list, 
+                       const ColType result_col,
+                       GtkEntry *result_widg,
+                       const char *title,
+                       const gboolean allow_multiple)
+{
+  gboolean ok = FALSE ;
+  zMapReturnValIfFail(main_data, ok) ;
+
+  GtkTreeView *list_widget = NULL ;
+  SearchListData search_data ;
+  GtkWidget *dialog = createListDialog(main_data, values_list, title, allow_multiple, search_data, &list_widget) ;
+
+  if (dialog)
+    {
+      gtk_widget_show_all(dialog) ;
+      gint response = gtk_dialog_run(GTK_DIALOG(dialog)) ;
+
+      if (response == GTK_RESPONSE_OK)
+        {
+          if (setEntryFromSelection(list_widget, result_widg, result_col))
+            {
+              gtk_widget_destroy(dialog) ;
+              ok = TRUE ;
+            }
+        }
+      else
+        {
+          gtk_widget_destroy(dialog) ;
+          ok = TRUE ;
+        }
+    }
+  else
+    {
+      zMapCritical("%s", "Failed to create list dialog") ;
+    }
+
+  return ok ;
+}
 
 
 gboolean applyTrackhub(MainFrame main_frame)
