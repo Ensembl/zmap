@@ -1301,6 +1301,101 @@ list<string> mainFrameGetBiotypesList(MainFrame main_data, GError **error)
 }
 
 
+/* Called when the user hits the button to search for a database name. If the user selects a name
+ * successfully then this updates the value in the dbname_widg */
+void dbnameCB(GtkWidget *widget, gpointer cb_data)
+{
+  MainFrame main_data = (MainFrame)cb_data ;
+  zMapReturnIfFail(main_data) ;
+
+  /* Connect to the host and get the list of databases */
+  GError *error = NULL ;
+  list<string> db_list = mainFrameGetDatabaseList(main_data, &error) ;
+
+  if (!db_list.empty())
+    {
+      runListDialog(main_data, db_list, GenericListColumn::NAME, 
+                    GTK_ENTRY(main_data->dbname_widg), "Select database", FALSE) ;
+    }
+  else
+    {
+      zMapCritical("Could not get database list: %s", error ? error->message : "") ;
+    }
+
+  return ;
+}
+
+
+/* Called when the user hits the button to search for featureset names. If the user selects featuresets
+ * successfully then this updates the value in the featuresets_widg */
+void featuresetsCB(GtkWidget *widget, gpointer cb_data)
+{
+  MainFrame main_data = (MainFrame)cb_data ;
+  zMapReturnIfFail(main_data && main_data->dbname_widg) ;
+
+  const char *dbname = gtk_entry_get_text(GTK_ENTRY(main_data->dbname_widg)) ;
+
+  if (dbname && *dbname)
+    {
+      /* Connect to the database and get the list of featuresets */
+      GError *error = NULL ;
+      list<string> featuresets_list = mainFrameGetFeaturesetsList(main_data, &error) ;
+
+      if (!featuresets_list.empty())
+        {
+          runListDialog(main_data, featuresets_list, GenericListColumn::NAME,
+                        GTK_ENTRY(main_data->featuresets_widg), "Select featureset(s)", TRUE) ;
+        }
+      else
+        {
+          zMapCritical("Could not get featuresets list: %s", error ? error->message : "") ;
+        }
+    }
+  else
+    {
+      zMapCritical("%s", "Please specify a database first") ;
+    }
+
+  return ;
+}
+
+
+/* Called when the user hits the button to search for biotypes. If the user selects biotypes
+ * successfully then this updates the value in the biotypes_widg */
+void biotypesCB(GtkWidget *widget, gpointer cb_data)
+{
+  MainFrame main_data = (MainFrame)cb_data ;
+  zMapReturnIfFail(main_data && main_data->dbname_widg) ;
+
+  const char *dbname = gtk_entry_get_text(GTK_ENTRY(main_data->dbname_widg)) ;
+
+  if (dbname && *dbname)
+    {
+      /* Connect to the database and get the list of biotypes */
+      GError *error = NULL ;
+      list<string> biotypes_list = mainFrameGetBiotypesList(main_data, &error) ;
+
+      if (!biotypes_list.empty())
+        {
+          runListDialog(main_data, biotypes_list, GenericListColumn::NAME,
+                        GTK_ENTRY(main_data->biotypes_widg), "Select biotype(s)", TRUE) ;
+        }
+      else
+        {
+          zMapCritical("Could not get biotypes list: %s", error ? error->message : "") ;
+        }
+    }
+  else
+    {
+      zMapCritical("%s", "Please specify a database first") ;
+    }
+
+  return ;
+}
+
+
+#endif /* USE_ENSEMBL */
+
 /* Case insensitive version of strstr */
 char* my_strcasestr(const char *haystack, const char *needle)
 {
@@ -1375,37 +1470,6 @@ gboolean track_search_equal_func_cb(GtkTreeModel *model,
 
 
 /* Callback used to determine if a given row in the filtered tree model is visible */
-gboolean generic_list_filter_visible_cb(GtkTreeModel *model, 
-                                        GtkTreeIter *iter, 
-                                        gpointer user_data)
-{
-  gboolean result = FALSE ;
-
-  GtkEntry *search_entry = GTK_ENTRY(user_data) ;
-  zMapReturnValIfFail(search_entry, result) ;
-
-  const char *search_term = gtk_entry_get_text(search_entry) ;
-  char *column_name = NULL ;
-
-  gtk_tree_model_get(model, iter,
-                     GenericListColumn::NAME, &column_name,
-                     -1) ;
-
-  if (!search_term || *search_term == 0)
-    {
-      /* If text isn't specified, show everything */
-      result = TRUE ;
-    }
-  else
-    {
-      result = treeRowContainsText(model, search_term, iter, GenericListColumn::NAME) ;
-    }
-
-  return result ;
-}
-
-
-/* Callback used to determine if a given row in the filtered tree model is visible */
 gboolean track_list_filter_visible_cb(GtkTreeModel *model, 
                                       GtkTreeIter *iter, 
                                       gpointer user_data)
@@ -1439,30 +1503,120 @@ gboolean track_list_filter_visible_cb(GtkTreeModel *model,
 }
 
 
-/* Utility to create a text column in a tree view */
+/* Update the given entry with the selected value(s) from the given tree. Uses the given column
+ * in the tree for the result */
 template<class ColType>
-void createTreeViewTextColumn(GtkTreeView *tree_view, 
-                              const char *title, 
-                              const ColType col_id,
-                              const bool hide = false)
+gboolean setEntryFromSelection(GtkTreeView *tree_view,
+                               GtkEntry *entry, 
+                               const ColType col_id)
 {
-  GtkCellRenderer *renderer = gtk_cell_renderer_text_new() ;
+  gboolean ok = FALSE ;
 
-  GtkTreeViewColumn *column = gtk_tree_view_column_new_with_attributes(title, 
-                                                                       renderer, 
-                                                                       "text", 
-                                                                       (int)col_id, 
-                                                                       NULL);
+  GtkTreeSelection *tree_selection = gtk_tree_view_get_selection(tree_view) ;
 
-  gtk_tree_view_column_set_resizable(column, TRUE) ;
-  gtk_tree_view_column_set_clickable(column, TRUE) ;
-  gtk_tree_view_column_set_reorderable(column, TRUE) ;
+  if (tree_selection)
+    {
+      /* Loop through all rows in the selection and compile values into a semi-colon-separated
+       * list */
+      string result ;
+      GtkTreeModel *model = NULL ;
+      GList *rows = gtk_tree_selection_get_selected_rows(tree_selection, &model) ;
+          
+      for (GList *row = rows; row; row = g_list_next(row))
+        {
+          GtkTreePath *path = (GtkTreePath*)(row->data) ;
+          GtkTreeIter iter ;
+          gtk_tree_model_get_iter(model, &iter, path) ;
 
-  if (hide)
-    gtk_tree_view_column_set_visible(column, FALSE) ;
+          char *value_str = NULL ;
 
-  gtk_tree_view_append_column(tree_view, column);
+          gtk_tree_model_get(model, &iter, col_id, &value_str, -1) ;
 
+          if (value_str)
+            {
+              if (result.size() > 0)
+                result += "; " ;
+                
+              result += value_str ;
+
+              g_free(value_str) ;
+              value_str = NULL ;
+            }
+        }
+
+      gtk_entry_set_text(entry, result.c_str()) ;
+      ok = TRUE ;
+    }
+  else
+    {
+      zMapCritical("%s", "Please select a database name") ;
+      ok = FALSE ;
+    }
+
+  return ok ;
+}
+
+
+/* Callback called when the user hits the enter key in the filter text entry box */
+void filter_entry_activate_cb(GtkEntry *entry, gpointer user_data)
+{
+  SearchListData *search_data = (SearchListData*)user_data ;
+  zMapReturnIfFail(search_data && search_data->tree_model) ;
+
+  GtkTreeModelFilter *filter = GTK_TREE_MODEL_FILTER(search_data->tree_model) ;
+
+  /* Refilter the filtered model */
+  if (filter)
+    gtk_tree_model_filter_refilter(filter) ;
+}
+
+
+void clear_button_cb(GtkButton *button, gpointer user_data)
+{
+  SearchListData *search_data = (SearchListData*)user_data ;
+  zMapReturnIfFail(search_data && search_data->tree_model) ;
+
+  if (search_data->search_entry)
+    gtk_entry_set_text(search_data->search_entry, "") ;
+
+  if (search_data->filter_entry)
+    gtk_entry_set_text(search_data->filter_entry, "") ;
+
+  /* Refilter the filtered model */
+  GtkTreeModelFilter *filter = GTK_TREE_MODEL_FILTER(search_data->tree_model) ;
+  if (filter)
+    gtk_tree_model_filter_refilter(filter) ;
+}
+
+
+/* Callback used to determine if a given row in the filtered tree model is visible */
+gboolean generic_list_filter_visible_cb(GtkTreeModel *model, 
+                                        GtkTreeIter *iter, 
+                                        gpointer user_data)
+{
+  gboolean result = FALSE ;
+
+  GtkEntry *search_entry = GTK_ENTRY(user_data) ;
+  zMapReturnValIfFail(search_entry, result) ;
+
+  const char *search_term = gtk_entry_get_text(search_entry) ;
+  char *column_name = NULL ;
+
+  gtk_tree_model_get(model, iter,
+                     GenericListColumn::NAME, &column_name,
+                     -1) ;
+
+  if (!search_term || *search_term == 0)
+    {
+      /* If text isn't specified, show everything */
+      result = TRUE ;
+    }
+  else
+    {
+      result = treeRowContainsText(model, search_term, iter, GenericListColumn::NAME) ;
+    }
+
+  return result ;
 }
 
 
@@ -1507,30 +1661,30 @@ void listStorePopulate(GtkListStore *store,
 }
 
 
-template<class ListType>
-void treeViewRefresh(GtkTreeView *tree_view, 
-                     const ListType &val_list)
+/* Utility to create a text column in a tree view */
+template<class ColType>
+void createTreeViewTextColumn(GtkTreeView *tree_view, 
+                              const char *title, 
+                              const ColType col_id,
+                              const bool hide = false)
 {
-  GtkListStore *store = NULL ;
-  GtkTreeModel *model = gtk_tree_view_get_model(tree_view) ;
-  GtkTreeModel *real_model = model ;
+  GtkCellRenderer *renderer = gtk_cell_renderer_text_new() ;
 
-  // Check if it's a filtered model and if so get the real (unfiltered) model
-  if (GTK_IS_TREE_MODEL_FILTER(model))
-    real_model = gtk_tree_model_filter_get_model(GTK_TREE_MODEL_FILTER(model)) ;
+  GtkTreeViewColumn *column = gtk_tree_view_column_new_with_attributes(title, 
+                                                                       renderer, 
+                                                                       "text", 
+                                                                       (int)col_id, 
+                                                                       NULL);
 
-  if (real_model && GTK_IS_LIST_STORE(real_model))
-    {
-      store = GTK_LIST_STORE(real_model) ;
+  gtk_tree_view_column_set_resizable(column, TRUE) ;
+  gtk_tree_view_column_set_clickable(column, TRUE) ;
+  gtk_tree_view_column_set_reorderable(column, TRUE) ;
 
-      gtk_list_store_clear(store) ;
-      listStorePopulate(store, val_list) ;
-    }
-  else
-    {
-      zMapCritical("%s", "Program error: cannot refresh list: expected list store") ;
-      zMapWarnIfReached() ;
-    }
+  if (hide)
+    gtk_tree_view_column_set_visible(column, FALSE) ;
+
+  gtk_tree_view_append_column(tree_view, column);
+
 }
 
 
@@ -1629,188 +1783,6 @@ GtkTreeView* createListWidget(MainFrame main_data,
   createTreeViewTextColumn(tree_view, "Tracks", TrackListColumn::TRACKS) ;
 
   return tree_view ;
-}
-
-
-/* Callback called when the user hits the enter key in the filter text entry box */
-void filter_entry_activate_cb(GtkEntry *entry, gpointer user_data)
-{
-  SearchListData *search_data = (SearchListData*)user_data ;
-  zMapReturnIfFail(search_data && search_data->tree_model) ;
-
-  GtkTreeModelFilter *filter = GTK_TREE_MODEL_FILTER(search_data->tree_model) ;
-
-  /* Refilter the filtered model */
-  if (filter)
-    gtk_tree_model_filter_refilter(filter) ;
-}
-
-
-void clear_button_cb(GtkButton *button, gpointer user_data)
-{
-  SearchListData *search_data = (SearchListData*)user_data ;
-  zMapReturnIfFail(search_data && search_data->tree_model) ;
-
-  if (search_data->search_entry)
-    gtk_entry_set_text(search_data->search_entry, "") ;
-
-  if (search_data->filter_entry)
-    gtk_entry_set_text(search_data->filter_entry, "") ;
-
-  /* Refilter the filtered model */
-  GtkTreeModelFilter *filter = GTK_TREE_MODEL_FILTER(search_data->tree_model) ;
-  if (filter)
-    gtk_tree_model_filter_refilter(filter) ;
-}
-
-
-/* Called when the user hits the button to search for a database name. If the user selects a name
- * successfully then this updates the value in the dbname_widg */
-void dbnameCB(GtkWidget *widget, gpointer cb_data)
-{
-  MainFrame main_data = (MainFrame)cb_data ;
-  zMapReturnIfFail(main_data) ;
-
-  /* Connect to the host and get the list of databases */
-  GError *error = NULL ;
-  list<string> db_list = mainFrameGetDatabaseList(main_data, &error) ;
-
-  if (!db_list.empty())
-    {
-      runListDialog(main_data, db_list, GenericListColumn::NAME, 
-                    GTK_ENTRY(main_data->dbname_widg), "Select database", FALSE) ;
-    }
-  else
-    {
-      zMapCritical("Could not get database list: %s", error ? error->message : "") ;
-    }
-
-  return ;
-}
-
-
-/* Called when the user hits the button to search for featureset names. If the user selects featuresets
- * successfully then this updates the value in the featuresets_widg */
-void featuresetsCB(GtkWidget *widget, gpointer cb_data)
-{
-  MainFrame main_data = (MainFrame)cb_data ;
-  zMapReturnIfFail(main_data && main_data->dbname_widg) ;
-
-  const char *dbname = gtk_entry_get_text(GTK_ENTRY(main_data->dbname_widg)) ;
-
-  if (dbname && *dbname)
-    {
-      /* Connect to the database and get the list of featuresets */
-      GError *error = NULL ;
-      list<string> featuresets_list = mainFrameGetFeaturesetsList(main_data, &error) ;
-
-      if (!featuresets_list.empty())
-        {
-          runListDialog(main_data, featuresets_list, GenericListColumn::NAME,
-                        GTK_ENTRY(main_data->featuresets_widg), "Select featureset(s)", TRUE) ;
-        }
-      else
-        {
-          zMapCritical("Could not get featuresets list: %s", error ? error->message : "") ;
-        }
-    }
-  else
-    {
-      zMapCritical("%s", "Please specify a database first") ;
-    }
-
-  return ;
-}
-
-
-/* Called when the user hits the button to search for biotypes. If the user selects biotypes
- * successfully then this updates the value in the biotypes_widg */
-void biotypesCB(GtkWidget *widget, gpointer cb_data)
-{
-  MainFrame main_data = (MainFrame)cb_data ;
-  zMapReturnIfFail(main_data && main_data->dbname_widg) ;
-
-  const char *dbname = gtk_entry_get_text(GTK_ENTRY(main_data->dbname_widg)) ;
-
-  if (dbname && *dbname)
-    {
-      /* Connect to the database and get the list of biotypes */
-      GError *error = NULL ;
-      list<string> biotypes_list = mainFrameGetBiotypesList(main_data, &error) ;
-
-      if (!biotypes_list.empty())
-        {
-          runListDialog(main_data, biotypes_list, GenericListColumn::NAME,
-                        GTK_ENTRY(main_data->biotypes_widg), "Select biotype(s)", TRUE) ;
-        }
-      else
-        {
-          zMapCritical("Could not get biotypes list: %s", error ? error->message : "") ;
-        }
-    }
-  else
-    {
-      zMapCritical("%s", "Please specify a database first") ;
-    }
-
-  return ;
-}
-
-
-#endif /* USE_ENSEMBL */
-
-
-/* Update the given entry with the selected value(s) from the given tree. Uses the given column
- * in the tree for the result */
-template<class ColType>
-gboolean setEntryFromSelection(GtkTreeView *tree_view,
-                               GtkEntry *entry, 
-                               const ColType col_id)
-{
-  gboolean ok = FALSE ;
-
-  GtkTreeSelection *tree_selection = gtk_tree_view_get_selection(tree_view) ;
-
-  if (tree_selection)
-    {
-      /* Loop through all rows in the selection and compile values into a semi-colon-separated
-       * list */
-      string result ;
-      GtkTreeModel *model = NULL ;
-      GList *rows = gtk_tree_selection_get_selected_rows(tree_selection, &model) ;
-          
-      for (GList *row = rows; row; row = g_list_next(row))
-        {
-          GtkTreePath *path = (GtkTreePath*)(row->data) ;
-          GtkTreeIter iter ;
-          gtk_tree_model_get_iter(model, &iter, path) ;
-
-          char *value_str = NULL ;
-
-          gtk_tree_model_get(model, &iter, col_id, &value_str, -1) ;
-
-          if (value_str)
-            {
-              if (result.size() > 0)
-                result += "; " ;
-                
-              result += value_str ;
-
-              g_free(value_str) ;
-              value_str = NULL ;
-            }
-        }
-
-      gtk_entry_set_text(entry, result.c_str()) ;
-      ok = TRUE ;
-    }
-  else
-    {
-      zMapCritical("%s", "Please select a database name") ;
-      ok = FALSE ;
-    }
-
-  return ok ;
 }
 
 
