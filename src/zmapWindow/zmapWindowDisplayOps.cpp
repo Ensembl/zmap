@@ -205,23 +205,26 @@ char *zmapWindowMakeColumnSelectionText(ZMapWindow window, double wx, double wy,
     {
       int start, end ;
       char *chromosome = NULL ;
+      ZMapWindowDisplayCoordinates display_coords ;
+
+      if (display_style->coord_frame == ZMAPWINDOW_COORD_ONE_BASED)
+        display_coords = ZMAP_WINDOW_DISPLAY_SLICE ;
+      else
+        display_coords = ZMAP_WINDOW_DISPLAY_CHROM ;
+
 
       zmapWindowMarkGetSequenceRange(window->mark, &start, &end) ;
 
-      if (display_style->coord_frame == ZMAPWINDOW_COORD_ONE_BASED)
-        {
-          zmapWindowCoordPairToDisplay(window, start, end, &start, &end) ;
-        }
-      else
+      if (display_style->coord_frame == ZMAPWINDOW_COORD_NATURAL)
         {
           ZMapFeatureAlignment align ;
 
           align = window->feature_context->master_align ;
           chromosome = zMapFeatureAlignmentGetChromosome(align) ;
-
-          zmapWindowParentCoordPairToDisplay(window, start, end,
-                                             &start, &end) ;
         }
+
+      zmapWindowCoordPairToDisplay(window, display_coords,
+                                   start, end, &start, &end) ;
 
       if (start > end)
         zMapUtilsSwop(int, start, end) ;
@@ -581,6 +584,13 @@ static void makeSelectionString(ZMapWindow window, ZMapWindowDisplayStyle displa
   int i ;
   ZMapFeatureAlignment align ;
   char *chromosome ;
+  ZMapWindowDisplayCoordinates display_coords ;
+
+  if (display_style->coord_frame == ZMAPWINDOW_COORD_ONE_BASED)
+    display_coords = ZMAP_WINDOW_DISPLAY_SLICE ;
+  else
+    display_coords = ZMAP_WINDOW_DISPLAY_CHROM ;
+
 
   align = window->feature_context->master_align ;
   chromosome = zMapFeatureAlignmentGetChromosome(align) ;
@@ -591,17 +601,9 @@ static void makeSelectionString(ZMapWindow window, ZMapWindowDisplayStyle displa
 
       feature_coord = &g_array_index(feature_coords, FeatureCoordStruct, i) ;
 
-      if (display_style->coord_frame == ZMAPWINDOW_COORD_ONE_BASED)
-        {
-          zmapWindowCoordPairToDisplay(window, feature_coord->start, feature_coord->end,
-                                       &feature_coord->start, &feature_coord->end) ;
-        }
-      else
-        {
-          zmapWindowParentCoordPairToDisplay(window, feature_coord->start, feature_coord->end,
-                                             &feature_coord->start, &feature_coord->end) ;
-        }
-
+      zmapWindowCoordPairToDisplay(window, display_coords,
+                                   feature_coord->start, feature_coord->end,
+                                   &feature_coord->start, &feature_coord->end) ;
 
       if (feature_coord->start > feature_coord->end)
         zMapUtilsSwop(int, feature_coord->start, feature_coord->end) ;
