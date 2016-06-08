@@ -198,6 +198,14 @@ void trackhubSearchCB(GtkWidget *widget, gpointer cb_data);
 void trackhubBrowseCB(GtkWidget *widget, gpointer cb_data);
 void trackhubRegisterCB(GtkWidget *widget, gpointer cb_data);
 
+template<class ListType, class ColType>
+gboolean runListDialog(MainFrame main_data, 
+                       const ListType &values_list, 
+                       const ColType result_col,
+                       GtkEntry *result_widg,
+                       const char *title,
+                       const gboolean allow_multiple) ;
+
 #ifdef USE_ENSEMBL
 void dbnameCB(GtkWidget *widget, gpointer cb_data) ;
 void featuresetsCB(GtkWidget *widget, gpointer cb_data) ;
