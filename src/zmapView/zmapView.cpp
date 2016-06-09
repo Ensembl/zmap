@@ -1887,7 +1887,11 @@ static ZMapViewConnection zmapViewRequestServer(ZMapView view, ZMapViewConnectio
   zMapStartTimer("LoadFeatureSet", g_quark_to_string(GPOINTER_TO_UINT(req_featuresets->data)));
 
   /* force pipe servers to terminate, to fix mis-config error that causes a crash (RT 223055) */
-  is_pipe = g_str_has_prefix(server->url,"pipe://");
+  is_pipe = 
+    g_str_has_prefix(server->url,"pipe://") ||
+    g_str_has_prefix(server->url,"file://") ||
+    g_str_has_prefix(server->url,"http://") ||
+    g_str_has_prefix(server->url,"https://") ;
 
   if ((view_conn = createViewConnection(view, view_conn,
                                         context, server->name_, server->url,

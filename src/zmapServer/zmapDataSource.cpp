@@ -36,6 +36,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <glib.h>
+#include <mutex>
+#include <condition_variable>
 
 #include <ZMap/zmapUtils.hpp>
 #include <ZMap/zmapGLibUtils.hpp>
@@ -101,6 +103,39 @@ static const char * const ZMAP_BIGWIG_SO_TERM  = "score" ;
 #define ZMAP_CIGARSTRING_MAXLENGTH 2048
 
 
+/* Need a semaphore to limit the number of threads.
+ * From http://stackoverflow.com/questions/4792449/c0x-has-no-semaphores-how-to-synchronize-threads */
+class Semaphore {
+public:
+  Semaphore (int count = 0)
+    : count_(count) {} ;
+
+  inline void release()
+  {
+    std::unique_lock<std::mutex> lock(mtx_);
+    count_++;
+    cv_.notify_one();
+  }
+
+  inline void wait()
+  {
+    std::unique_lock<std::mutex> lock(mtx_);
+
+    while(count_ == 0)
+      cv_.wait(lock);
+   
+    count_--;
+  }
+
+private:
+    std::mutex mtx_;
+    std::condition_variable cv_;
+    int count_;
+};
+
+/* Keep track of how many files we've opened in different threads */
+#define MAX_FILE_THREADS 10
+static Semaphore semaphore_G(MAX_FILE_THREADS) ;
 
 void createGFFLine(GString *pStr, 
                    const char *sequence,
@@ -251,6 +286,8 @@ ZMapDataSourceStruct::ZMapDataSourceStruct(const GQuark source_name,
     source_name_(source_name),
     error_(NULL)
 {
+  semaphore_G.wait() ;
+
   if (sequence)
     sequence_ = g_strdup(sequence) ;
 }
@@ -428,6 +465,8 @@ ZMapDataSourceBCFStruct::ZMapDataSourceBCFStruct(const GQuark source_name,
 
 ZMapDataSourceStruct::~ZMapDataSourceStruct()
 {
+  semaphore_G.release() ;
+
   if (sequence_)
     g_free(sequence_) ;
 }
