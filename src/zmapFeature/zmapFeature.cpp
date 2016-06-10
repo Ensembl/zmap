@@ -76,10 +76,76 @@ typedef struct
 
 
 
-
 // 
 //                    Globals
 //    
+
+// Limit the maximum number of features zmap attempts to load. It's not good that we have to do
+// this but otherwise at the moment zmap will continue loading features until it falls over. It
+// should at the least be improved by making it configurable.
+#define ZMAP_MAX_FEATURES_HARD_LIMIT 1000
+
+
+// Singleton class to check if we've exceeded the max number of allowed features
+class FeatureCount
+{
+public:
+  // Delete the methods we don't want
+  FeatureCount(FeatureCount const&) = delete ;
+  FeatureCount& operator=(FeatureCount const&) = delete ;
+
+  // Access the single instance
+  static FeatureCount& instance()
+  {
+    static FeatureCount instance ;
+    return instance ;
+  } ;
+
+  // Operators
+  void operator++()
+  {
+    ++loaded_features_ ;
+  }
+
+  void operator--()
+  {
+    --loaded_features_ ;
+    warn_exceed_max_ = true ; // so we will warn again next time limit is reached
+  }
+
+  // Return true if we've reached limit. Issues a warning to the user if this is the
+  // first time we've hit the limit. It will only warn again if the user first removes features
+  // and then we hit the limit again.
+  bool hitLimit() 
+  {
+    bool result = loaded_features_ >= max_features_ ;
+
+    if (result && warn_exceed_max_)
+      {
+        zMapCritical("Exceeded maximum number of features (%d)! Further features will not be loaded until some are removed first.", 
+                     max_features_) ;
+      
+        zMapLogCritical("Exceeded maximum number of features (%d)! Further features will not be loaded until some are removed first.", 
+                        max_features_) ;
+
+        warn_exceed_max_ = false ;
+      }
+
+    return result ;
+  };
+
+private:
+  // Private constructor
+  FeatureCount()
+    : max_features_(ZMAP_MAX_FEATURES_HARD_LIMIT),
+      loaded_features_(0),
+      warn_exceed_max_(true)
+  {} ;
+
+  int max_features_ ;     // max number of allowed features
+  int loaded_features_ ;  // total features in memory
+  bool warn_exceed_max_ ; // true if we should warn the user when we hit the limit
+} ;
 
 
 
@@ -99,17 +165,25 @@ typedef struct
  * add functions from below. */
 
 
-
 /* Returns a single feature correctly initialised to be a "NULL" feature. */
 ZMapFeature zMapFeatureCreateEmpty(void)
 {
-  ZMapFeature feature ;
+  ZMapFeature feature = NULL ;
 
-  feature = (ZMapFeature)zmapFeatureAnyCreateFeature(ZMAPFEATURE_STRUCT_FEATURE, NULL,
-                                                     ZMAPFEATURE_NULLQUARK, ZMAPFEATURE_NULLQUARK,
-                                                     NULL) ;
-  feature->db_id = ZMAPFEATUREID_NULL ;
-  feature->mode = ZMAPSTYLE_MODE_INVALID ;
+  if (!FeatureCount::instance().hitLimit())
+    {
+      feature = (ZMapFeature)zmapFeatureAnyCreateFeature(ZMAPFEATURE_STRUCT_FEATURE, NULL,
+                                                         ZMAPFEATURE_NULLQUARK, ZMAPFEATURE_NULLQUARK,
+                                                         NULL) ;
+
+      ++FeatureCount::instance() ;
+    }
+
+  if (feature)
+    {
+      feature->db_id = ZMAPFEATUREID_NULL ;
+      feature->mode = ZMAPSTYLE_MODE_INVALID ;
+    }
 
   return feature ;
 }
@@ -521,6 +595,8 @@ void zMapFeatureDestroy(ZMapFeature feature)
     return ;
 
   zmapDestroyFeatureAnyWithChildren((ZMapFeatureAny)feature, FALSE) ;
+
+  --FeatureCount::instance() ;
 
   return ;
 }
