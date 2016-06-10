@@ -37,11 +37,27 @@
 #include <stdio.h>
 #include <string.h>
 #include <glib.h>
+#include <mutex>
 
 #include <ZMap/zmapUtilsDebug.hpp>
 #include <ZMap/zmapGLibUtils.hpp>
 #include <ZMap/zmapUtils.hpp>
 #include <zmapFeature_P.hpp>
+
+
+/*
+ * We follow glib convention in error domain naming:
+ *          "The error domain is called <NAMESPACE>_<MODULE>_ERROR"
+ */
+#define ZMAP_FEATURE_ERROR g_quark_from_string("ZMAP_FEATURE_ERROR")
+
+/*
+ * Some error types for use in the view
+ */
+typedef enum
+{
+  ZMAPFEATURE_ERROR_FEATURE_LIMIT // reached max number of features allowed
+} ZMapFeatureError ;
 
 
 
@@ -83,7 +99,7 @@ typedef struct
 // Limit the maximum number of features zmap attempts to load. It's not good that we have to do
 // this but otherwise at the moment zmap will continue loading features until it falls over. It
 // should at the least be improved by making it configurable.
-#define ZMAP_MAX_FEATURES_HARD_LIMIT 1000
+#define ZMAP_MAX_FEATURES_HARD_LIMIT 10000000
 
 
 // Singleton class to check if we've exceeded the max number of allowed features
@@ -104,33 +120,43 @@ public:
   // Operators
   void operator++()
   {
+    mutex_.lock() ;
     ++loaded_features_ ;
+    mutex_.unlock() ;
   }
 
   void operator--()
   {
+    mutex_.lock() ;
     --loaded_features_ ;
     warn_exceed_max_ = true ; // so we will warn again next time limit is reached
+    mutex_.unlock() ;
   }
 
-  // Return true if we've reached limit. Issues a warning to the user if this is the
-  // first time we've hit the limit. It will only warn again if the user first removes features
-  // and then we hit the limit again.
-  bool hitLimit() 
+  // Return true if we've reached limit.
+  bool hitLimit(GError **error) 
   {
-    bool result = loaded_features_ >= max_features_ ;
+    bool result = false ;
 
-    if (result && warn_exceed_max_)
+    mutex_.lock() ;
+    result = loaded_features_ >= max_features_ ;
+
+    if (result)
       {
-        zMapCritical("Exceeded maximum number of features (%d)! Further features will not be loaded until some are removed first.", 
-                     max_features_) ;
-      
-        zMapLogCritical("Exceeded maximum number of features (%d)! Further features will not be loaded until some are removed first.", 
+        // Issue a warning to the user if this is the first time we've hit the
+        // limit. We will only warn again if the user first removes features
+        // and then we hit the limit again.
+        if (warn_exceed_max_ && error)
+          {
+            g_set_error(error, ZMAP_FEATURE_ERROR, ZMAPFEATURE_ERROR_FEATURE_LIMIT,
+                        "Exceeded maximum number of features (%d)! Further features will not be loaded until some are removed first.", 
                         max_features_) ;
-
+          }
+      
         warn_exceed_max_ = false ;
       }
 
+    mutex_.unlock() ;
     return result ;
   };
 
@@ -145,6 +171,7 @@ private:
   int max_features_ ;     // max number of allowed features
   int loaded_features_ ;  // total features in memory
   bool warn_exceed_max_ ; // true if we should warn the user when we hit the limit
+  std::mutex mutex_ ;
 } ;
 
 
@@ -164,13 +191,24 @@ private:
  * via a simple new "create and add" function that merely calls both the create and
  * add functions from below. */
 
+/* Return true if the given error is a fatal error e.g. we have hit the feature limit and cannot
+ * create any more features (at least until the user has destroyed some) */
+bool zMapFeatureErrorIsFatal(GError **error)
+{
+  bool result = false ;
+
+  if (error && *error && (*error)->code == ZMAPFEATURE_ERROR_FEATURE_LIMIT)
+    result = true ;
+
+  return result ;
+}
 
 /* Returns a single feature correctly initialised to be a "NULL" feature. */
-ZMapFeature zMapFeatureCreateEmpty(void)
+ZMapFeature zMapFeatureCreateEmpty(GError **error)
 {
   ZMapFeature feature = NULL ;
 
-  if (!FeatureCount::instance().hitLimit())
+  if (!FeatureCount::instance().hitLimit(error))
     {
       feature = (ZMapFeature)zmapFeatureAnyCreateFeature(ZMAPFEATURE_STRUCT_FEATURE, NULL,
                                                          ZMAPFEATURE_NULLQUARK, ZMAPFEATURE_NULLQUARK,
@@ -201,12 +239,13 @@ ZMapFeature zMapFeatureCreateFromStandardData(const char *name, const char *sequ
                                               ZMapFeatureTypeStyle *style,
                                               int start, int end,
                                               gboolean has_score, double score,
-                                              ZMapStrand strand)
+                                              ZMapStrand strand,
+                                              GError **error)
 {
   ZMapFeature feature = NULL;
   gboolean good = FALSE;
 
-  if ((feature = zMapFeatureCreateEmpty()))
+  if ((feature = zMapFeatureCreateEmpty(error)))
     {
       char *feature_name_id = NULL;
 
@@ -752,46 +791,49 @@ gint zMapFeatureCmp(gconstpointer a, gconstpointer b)
 
 /* Make a shallow copy of the given feature. The caller should free the returned ZMapFeature
  * struct with zMapFeatureAnyDestroyShallow */
-ZMapFeature zMapFeatureShallowCopy(ZMapFeature src)
+ZMapFeature zMapFeatureShallowCopy(ZMapFeature src, GError **error)
 {
   ZMapFeature dest = NULL;
   zMapReturnValIfFail(src && src->mode != ZMAPSTYLE_MODE_INVALID, dest) ;
 
-  dest = zMapFeatureCreateEmpty() ;
+  dest = zMapFeatureCreateEmpty(error) ;
 
+  if (dest)
+    {
 #ifdef FEATURES_NEED_MAGIC
-  dest->magic = src->magic ;
+      dest->magic = src->magic ;
 #endif
 
-  dest->struct_type = src->struct_type ;
-  dest->parent = src->parent ;
-  dest->unique_id = src->unique_id ;
-  dest->original_id = src->original_id ;
-  dest->no_children = src->no_children ;
-  dest->flags.has_score = src->flags.has_score ;
-  dest->flags.has_boundary = src->flags.has_boundary ;
-  dest->flags.collapsed = src->flags.collapsed ;
-  dest->flags.squashed = src->flags.squashed ;
-  dest->flags.squashed_start = src->flags.squashed_start ;
-  dest->flags.squashed_end = src->flags.squashed_end ;
-  dest->flags.joined = src->flags.joined ;
-  dest->children = src->children ;
-  dest->composite = src->composite ;
-  dest->db_id = src->db_id ;
-  dest->mode = src->mode ;
-  dest->SO_accession = src->SO_accession ;
-  dest->style = src->style;
-  dest->x1 = src->x1 ;
-  dest->x2 = src->x2 ;
-  dest->strand = src->strand ;
-  dest->boundary_type = src->boundary_type ;
-  dest->score = src->score ;
-  dest->population = src->population;
-  dest->source_id = src->source_id ; 
-  dest->source_text = src->source_text ;
-  dest->description = src->description ;
-  dest->url = src->url ;
-  dest->feature = src->feature ;
+      dest->struct_type = src->struct_type ;
+      dest->parent = src->parent ;
+      dest->unique_id = src->unique_id ;
+      dest->original_id = src->original_id ;
+      dest->no_children = src->no_children ;
+      dest->flags.has_score = src->flags.has_score ;
+      dest->flags.has_boundary = src->flags.has_boundary ;
+      dest->flags.collapsed = src->flags.collapsed ;
+      dest->flags.squashed = src->flags.squashed ;
+      dest->flags.squashed_start = src->flags.squashed_start ;
+      dest->flags.squashed_end = src->flags.squashed_end ;
+      dest->flags.joined = src->flags.joined ;
+      dest->children = src->children ;
+      dest->composite = src->composite ;
+      dest->db_id = src->db_id ;
+      dest->mode = src->mode ;
+      dest->SO_accession = src->SO_accession ;
+      dest->style = src->style;
+      dest->x1 = src->x1 ;
+      dest->x2 = src->x2 ;
+      dest->strand = src->strand ;
+      dest->boundary_type = src->boundary_type ;
+      dest->score = src->score ;
+      dest->population = src->population;
+      dest->source_id = src->source_id ; 
+      dest->source_text = src->source_text ;
+      dest->description = src->description ;
+      dest->url = src->url ;
+      dest->feature = src->feature ;
+    }
 
   return dest ;
 }
