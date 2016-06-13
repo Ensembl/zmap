@@ -37,7 +37,13 @@
 #include <ZMap/zmapView.hpp>
 #include <ZMap/zmapWindow.hpp>
 #include <ZMap/zmapWindowNavigator.hpp>
+#include <ZMap/zmapDataSourceServer.hpp>
+#include <ZMap/zmapDataSourceStepList.hpp>
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #include <zmapViewServer.hpp>
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 /*
@@ -71,6 +77,88 @@ typedef struct _ZMapViewWindowStruct
   ZMapWindow window ;
 
 } ZMapViewWindowStruct ;
+
+
+
+/* Struct describing features loaded. */
+typedef struct LoadFeaturesDataStructType
+{
+  char *err_msg;                                            /* from the server mainly */
+  gchar *stderr_out;
+  gint exit_code;
+
+  gboolean status;                                          /* load sucessful? */
+
+
+  /* why is this here ????? */
+  unsigned long xwid ;                                      /* X Window id for the xremote widg. */
+
+  GList *feature_sets ;
+  int start, end ;                                          /* requested coords */
+
+
+  ZMapFeatureContextMergeStatsStruct merge_stats ;          /* Stats from merge of features into existing
+                                                             * context. */
+
+
+} LoadFeaturesDataStruct, *LoadFeaturesData ;
+
+
+
+
+/* State for a single connection to a data source. */
+typedef struct ZMapConnectionDataStructType
+{
+  /* Processing options. */
+
+  gboolean dynamic_loading ;
+
+
+  /* Context data. */
+  ZMapView view ;
+
+  ZMapViewConnectionStepList step_list ;		    /* List of steps required to get data
+                                                               from server. */
+
+
+  /* database data. */
+  ZMapServerReqGetServerInfoStruct session ;
+
+
+  /* Why are start/end separate...are they not in sequence_map ??? */
+  ZMapFeatureSequenceMap sequence_map;
+  gint start,end;
+
+  /* Move into loaded_features ? */
+  GError *error;
+  gchar *stderr_out;
+  gint exit_code;
+  gboolean status;                                            // load sucessful?
+
+  GList *feature_sets ;
+
+  GList *required_styles ;
+  gboolean server_styles_have_mode ;
+
+  GHashTable *column_2_styles ;                                    /* Mapping of each column to all
+                                                               the styles it requires. */
+
+  GHashTable *featureset_2_column;                            /* needed by pipeServers */
+  GHashTable *source_2_sourcedata;
+
+  ZMapStyleTree *curr_styles ;                                    /* Styles for this context. */
+  ZMapFeatureContext curr_context ;
+
+  ZMapServerReqGetFeatures get_features;                    /* features got from the server,
+                                                               save for display after checking status */
+
+  /* Oh gosh this is hokey....ugh....... */
+  ZMapServerReqType display_after ;                            /* what step to display features after */
+
+  LoadFeaturesData loaded_features ;                            /* List of feature sets loaded for this connection. */
+
+} ZMapConnectionDataStruct, *ZMapConnectionData ;
+
 
 
 
@@ -156,7 +244,7 @@ typedef struct _ZMapViewStruct
                                                                reset on next load command */
 
   GList *connection_list ;				    /* Of ZMapViewConnection. */
-  ZMapViewConnection sequence_server ;			    /* Which connection to get raw
+  ZMapNewDataSource sequence_server ;			    /* Which connection to get raw
 							       sequence from. */
 
   /* The features....needs thought as to how this updated/constructed..... */
@@ -287,11 +375,14 @@ gboolean zmapViewCWHRemoveContextWindow(GHashTable *table, ZMapFeatureContext *c
                                         ZMapWindow window, gboolean *is_only_context);
 void zmapViewCWHDestroy(GHashTable **ghash);
 
-void zmapViewSessionAddServer(ZMapViewSessionServer session_data, ZMapURL url, char *format) ;
-void zmapViewSessionAddServerInfo(ZMapViewSessionServer session_data, ZMapServerReqGetServerInfo session) ;
-void zmapViewSessionFreeServer(ZMapViewSessionServer session_data) ;
 
-ZMapViewConnection zmapViewRequestServer(ZMapView view, ZMapViewConnection view_conn,
+LoadFeaturesData zmapViewCreateLoadFeatures(GList *feature_sets) ;
+LoadFeaturesData zmapViewCopyLoadFeatures(LoadFeaturesData loaded_features_in) ;
+void zmapViewDestroyLoadFeatures(LoadFeaturesData loaded_features) ;
+
+
+
+ZMapNewDataSource zmapViewRequestServer(ZMapView view, ZMapNewDataSource view_conn,
 					 ZMapFeatureBlock block_orig, GList *req_featuresets, GList *req_biotypes,
 					 gpointer server, /* ZMapConfigSource */
 					 int req_start, int req__end,
@@ -312,9 +403,6 @@ ZMapFeatureContext zmapViewCopyContextAll(ZMapFeatureContext context,
                                           ZMapFeatureSet feature_set,
                                           GList **feature_list,
                                           ZMapFeature *feature_copy_out) ;
-
-
-gboolean zmapViewGetFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature_req, ConnectionData connect_data) ;
 
 void zmapViewMergeNewFeature(ZMapView view, ZMapFeature feature, ZMapFeatureSet feature_set) ;
 gboolean zmapViewMergeNewFeatures(ZMapView view,
@@ -352,6 +440,23 @@ void zmapViewScratchRemoveFeatures(ZMapView view, GList *feature_list) ;
 void zmapViewScratchSaveFeature(ZMapView window, GQuark feature_id) ;
 void zmapViewScratchSaveFeatureSet(ZMapView window, GQuark feature_set_id) ;
 void zmapViewScratchResetAttributes(ZMapView view) ;
+
+
+gboolean zmapViewSetUpServerConnections(ZMapView zmap_view, GList *settings_list, GError **error) ;
+
+
+void zmapViewMergeColNames(ZMapView view, GList *names) ;
+ZMapFeatureContextMergeCode zmapJustMergeContext(ZMapView view, ZMapFeatureContext *context_inout,
+                                                 ZMapFeatureContextMergeStats *merge_stats_out,
+                                                 GList **masked,
+                                                 gboolean request_as_columns, gboolean revcomp_if_needed) ;
+void zmapJustDrawContext(ZMapView view, ZMapFeatureContext diff_context,
+                         GList *masked, ZMapFeature highlight_feature,
+                         ZMapConnectionData connect_data) ;
+
+
+
+
 
 #ifdef LOTS_OF_EXONS
 #define ZMAP_VIEW_REMOTE_SEND_XML_TEST "<zmap>\
