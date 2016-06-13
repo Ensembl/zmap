@@ -29,9 +29,14 @@
 #ifndef ZMAP_SLAVE_P_H
 #define ZMAP_SLAVE_P_H
 
-#include <glib.h>
-#include <ZMap/zmapThreads.hpp>
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+#include <glib.h>
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+#include <ZMap/zmapThreads.hpp>
+#include <ZMap/zmapSlaveHandler.hpp>
 
 
 typedef struct
@@ -42,7 +47,17 @@ typedef struct
 							       serious error that caused thread
 							       termination. */
 
+  /* User registered routine which the thread calls to handle requests and replies. */
+  ZMapSlaveRequestHandlerFunc handler_func ;
+
+  /* User registered routine to terminate thread if it needs to exit abnormally. */
+  ZMapSlaveTerminateHandlerFunc terminate_func ;
+
+  /* User registered routine to destroy/clean up thread if it needs to exit abnormally. */
+  ZMapSlaveDestroyHandlerFunc destroy_func ;
+
   void *slave_data ;					    /* Any state required by slave. */
+
 } zmapThreadCBstruct, *zmapThreadCB ;
 
 
