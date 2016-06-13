@@ -29,23 +29,22 @@
  */
 #ifndef ZMAP_THREAD_H
 #define ZMAP_THREAD_H
+
 #include <config.h>
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+// WHAT ON EARTH IS THIS ABOUT, WE SHOULDN'T NEED THIS HERE........
+
 #if defined DARWIN
 #include <pthread.h>
 #endif
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* WARNING, IN THEORY WE SHOULD INCLUDE THIS AS WE REFERENCE A PTHREAD TYPE BELOW,
- * _BUT_ IF WE DO THEN WE RUN INTO TROUBLE ON THE ALPHAS AS FOR UNKNOWN AND PROBABLY
- * BIZARRE REASONS IT FAILS TO COMPILE COMPLAINING ABOUT "leave" IN THE Window/View
- * HEADERS TO BE ILLEGAL...THEY INCLUDE THIS HEADER...SIGH... WE COULD JUST HACK
- * OUR OWN VERSION OF THE pthread_t type to get round this.... */
-
-#include <pthread.h>
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+#include <glib.h>
 
 #include <ZMap/zmapEnum.hpp>
+
 
 
 /* The calls need changing to handle a more general
@@ -98,39 +97,31 @@ ZMAP_DEFINE_ENUM(ZMapThreadReturnCode, ZMAP_THREAD_RETURNCODE_LIST) ;
 
 
 
-/*
- * Callbacks that the application (slave code) must register when creating a thread
- * to handle requests/data and error conditions.
- */
-
-/* Function to handle requests received by the thread.
- *
- * slave_data will be passed into the handler function each time it is called to provide a
- *            mechanism for the slave to get at its own state data.
- * request is the request from the controlling thread
- * reply   is the reply from the slave code. */
-typedef ZMapThreadReturnCode (*ZMapThreadRequestHandlerFunc)(void **slave_data,
-                                                             pthread_mutex_t *mutex,
-							     void *request,
-							     void **reply, char **err_msg_out) ;
-
-/* Function that the thread code will call when the thread gets terminated abnormally by an
- * error or thread cancel, this gives the slave code the chance to close down properly. */
-typedef ZMapThreadReturnCode (*ZMapThreadTerminateHandler)(void **slave_data, char **err_msg_out) ;
-
-/* Function that the thread code will call when the thread gets terminated abnormally by an
- * error or thread cancel, this gives the slave code the chance to clean up, the slave code
- * should set slave_data to null on returning. */
-typedef ZMapThreadReturnCode (*ZMapThreadDestroyHandler)(void **slave_data) ;
-
-
-
 /* The thread, one per connection, an opaque private type. */
 typedef struct _ZMapThreadStruct *ZMapThread ;
 
 
-ZMapThread zMapThreadCreate(ZMapThreadRequestHandlerFunc handler_func,
-			    ZMapThreadTerminateHandler terminate_func, ZMapThreadDestroyHandler destroy_func) ;
+// Opaque pointer to thread handler data needed in thread polling functions.
+//
+typedef struct ZMapThreadPollSlaveCallbackDataStructType *ZMapThreadPollSlaveCallbackData ;
+
+
+// User function to call when slave has replied.
+typedef void (*ZMapThreadPollSlaveUserReplyFunc)(void *func_data) ;
+
+
+
+// bool "new_interface" is TEMP NEW/OLD INTERFACE WHILE I SET UP THE NEW THREADS STUFF....
+// true means use new interface, false the old/existing interface.
+ZMapThread zMapThreadCreate(bool new_interface) ;
+
+
+ZMapThreadPollSlaveCallbackData zMapThreadPollSlaveStart(ZMapThread thread,
+                                                         ZMapThreadPollSlaveUserReplyFunc user_reply_func,
+                                                         void *user_reply_func_data) ;
+void zMapThreadPollSlaveStop(ZMapThreadPollSlaveCallbackData poll_cb_data) ;
+
+
 void zMapThreadRequest(ZMapThread thread, void *request) ;
 gboolean zMapThreadGetReply(ZMapThread thread, ZMapThreadReply *state) ;
 void zMapThreadSetReply(ZMapThread thread, ZMapThreadReply state) ;
@@ -143,7 +134,6 @@ void zMapThreadKill(ZMapThread thread) ;
 gboolean zMapThreadExists(ZMapThread thread);
 void zMapThreadDestroy(ZMapThread thread) ;
 
-
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zMapThreadRequest2ExactStr, ZMapThreadRequest) ;
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zMapThreadReply2ExactStr, ZMapThreadReply) ;
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zMapThreadReturnCode2ExactStr, ZMapThreadReturnCode) ;
@@ -151,6 +141,10 @@ ZMAP_ENUM_AS_EXACT_STRING_DEC(zMapThreadReturnCode2ExactStr, ZMapThreadReturnCod
 
 
 
+
+
+// THESE SHOULD NOT BE HERE.... MOVE TO ZMAPUTILS WHERE THEY BELONG...THEY ARE NOTHING TO DO WITH
+// THIS THREADING INTERFACE.......
 void zMapThreadForkLock(void) ;
 void zMapThreadForkUnlock(void) ;
 
