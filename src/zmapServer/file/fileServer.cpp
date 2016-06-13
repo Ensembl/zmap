@@ -62,10 +62,28 @@ static const char *PROTOCOL_NAME = "FileServer" ;
  * Interface functions.
  */
 static gboolean globalInit(void) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static gboolean createConnection(void **server_out,
                                  char *config_file, ZMapURL url, char *format,
                                  char *version_str, int timeout,
                                  pthread_mutex_t *mutex) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+static gboolean createConnection(void **server_out,
+                                 char *config_file, ZMapURL url,
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+                                 char *format,
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+                                 char *version_str
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+, int timeout
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+) ;
+
 static ZMapServerResponseType openConnection(void *server, ZMapServerReqOpen req_open) ;
 static ZMapServerResponseType getInfo(void *server, ZMapServerReqGetServerInfo info) ;
 static ZMapServerResponseType getFeatureSetNames(void *server,
@@ -185,10 +203,19 @@ static gboolean isRemoteFileScheme(const ZMapURLScheme scheme)
 static gboolean createConnection(void **server_out,
                                  char *config_file,
                                  ZMapURL url,
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
                                  char *format,
-                                 char *version_str,
-                                 int timeout_unused,
-                                 pthread_mutex_t *mutex_unused)
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+                                 char *version_str
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+,
+                                 int timeout_unused
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+)
 {
   gboolean result = FALSE ;
   FileServer server = NULL ;
@@ -201,7 +228,7 @@ static gboolean createConnection(void **server_out,
   server->scheme = SCHEME_INVALID ;
   server->path = NULL ;
   server->data_dir = NULL ;
-  server->data_source = NULL ;
+  server->data_stream = NULL ;
   server->result = ZMAP_SERVERRESPONSE_OK ;
   server->error = FALSE ;
   server->last_err_msg = NULL ;
@@ -307,9 +334,9 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
    * If the server has a file already we set an
    * error and return, doing nothing else.
    */
-  if ( server->data_source != NULL )
+  if ( server->data_stream != NULL )
     {
-      char * err_msg = g_strdup("Error in fileServer::openConnection(); server->data_source already set") ;
+      char * err_msg = g_strdup("Error in fileServer::openConnection(); server->data_stream already set") ;
       error = g_error_new(g_quark_from_string(__FILE__) , 0, "%s", err_msg)  ;
       if (error)
         {
@@ -331,8 +358,8 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
   /*
    * Create data source object (file or GIOChannel)
    */
-  server->data_source = zMapDataSourceCreate(server->path, &error) ;
-  if (server->data_source != NULL )
+  server->data_stream = zMapDataStreamCreate(server->path, &error) ;
+  if (server->data_stream != NULL )
     status = TRUE ;
 
   if (!status)
@@ -356,7 +383,7 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
   if (!parser_version)
     {
       int gff_version = ZMAPGFF_VERSION_UNKNOWN ;
-      if (!zMapDataSourceGetGFFVersion(server->data_source, &gff_version ))
+      if (!zMapDataStreamGetGFFVersion(server->data_stream, &gff_version ))
         {
           /* sourceempty error */
           server->last_err_msg = g_strdup("No data returned from file.") ;
@@ -689,7 +716,7 @@ static ZMapServerResponseType getConnectState(void *server_conn, ZMapServerConne
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   FileServer server = (FileServer)server_conn ;
 
-  if (zMapDataSourceIsOpen(server->data_source))
+  if (zMapDataStreamIsOpen(server->data_stream))
     *connect_state = ZMAP_SERVERCONNECT_STATE_CONNECTED ;
 
   return result ;
@@ -708,8 +735,8 @@ static ZMapServerResponseType closeConnection(void *server_in)
   if (server->buffer_line)
     g_string_free(server->buffer_line, TRUE) ;
 
-  if (server->data_source)
-    zMapDataSourceDestroy(&(server->data_source)) ;
+  if (server->data_stream)
+    zMapDataStreamDestroy(&(server->data_stream)) ;
 
   return result ;
 }
@@ -796,12 +823,12 @@ static ZMapServerResponseType fileGetHeader_GIO(FileServer server)
     done_header = FALSE ;
   ZMapGFFHeaderState header_state = GFF_HEADER_NONE ;
 
-  zMapReturnValIfFail(server->data_source->type == ZMapDataSourceType::GIO, result) ;
+  zMapReturnValIfFail(server->data_stream->type == ZMapDataStreamType::GIO, result) ;
 
   /*
    * Read lines from the source.
    */
-  while ((status = zMapDataSourceReadLine(server->data_source, server->buffer_line) ? G_IO_STATUS_NORMAL : G_IO_STATUS_EOF ) == G_IO_STATUS_NORMAL)
+  while ((status = zMapDataStreamReadLine(server->data_stream, server->buffer_line) ? G_IO_STATUS_NORMAL : G_IO_STATUS_EOF ) == G_IO_STATUS_NORMAL)
     {
 
       empty_file = FALSE ;
@@ -906,14 +933,14 @@ static ZMapServerResponseType fileGetHeader_GIO(FileServer server)
 static ZMapServerResponseType fileGetHeader_HTS(FileServer server)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
-  zMapReturnValIfFail(server->data_source->type == ZMapDataSourceType::HTS, result) ;
+  zMapReturnValIfFail(server->data_stream->type == ZMapDataStreamType::HTS, result) ;
 
   /*
    * Attempt to read HTS header and then...
    */
-  if (zMapDataSourceReadHTSHeader(server->data_source, server->sequence_map->sequence))
+  if (zMapDataStreamReadHTSHeader(server->data_stream, server->sequence_map->sequence))
     {
-      if (((ZMapDataSourceHTSFile) server->data_source)->sequence)
+      if ((zMapDataStreamGetSequence(server->data_stream)))
         {
           /*
            *  (i) Put in a fake header line to make it look to ZMap like something
@@ -941,7 +968,7 @@ static ZMapServerResponseType fileGetHeader_HTS(FileServer server)
 static ZMapServerResponseType fileGetHeader(FileServer server)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
-  ZMapDataSourceType data_source_type = ZMapDataSourceType::UNK ;
+  ZMapDataStreamType data_source_type = ZMapDataStreamType::UNK ;
 
   /*
    * reset done flag for seq else skip the data
@@ -952,13 +979,13 @@ static ZMapServerResponseType fileGetHeader(FileServer server)
   /*
    * Call different functions for different file types.
    */
-  data_source_type = zMapDataSourceGetType(server->data_source) ;
-  if (data_source_type == ZMapDataSourceType::GIO)
+  data_source_type = zMapDataStreamGetType(server->data_stream) ;
+  if (data_source_type == ZMapDataStreamType::GIO)
     {
       result = fileGetHeader_GIO(server) ;
     }
 #ifdef USE_HTSLIB
-  else if (data_source_type ==   ZMapDataSourceType::HTS)
+  else if (data_source_type ==   ZMapDataStreamType::HTS)
     {
       result = fileGetHeader_HTS(server) ;
     }
@@ -987,7 +1014,7 @@ static ZMapServerResponseType fileGetSequence(FileServer server)
       if (!zMapGFFParseSequence(server->parser, server->buffer_line->str, &sequence_finished) || sequence_finished)
         break;
 
-      status = zMapDataSourceReadLine(server->data_source, server->buffer_line) ? G_IO_STATUS_NORMAL : G_IO_STATUS_EOF ;
+      status = zMapDataStreamReadLine(server->data_stream, server->buffer_line) ? G_IO_STATUS_NORMAL : G_IO_STATUS_EOF ;
 
     } while ( status == G_IO_STATUS_NORMAL );
 
@@ -1131,7 +1158,7 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
               break ;
             }
         }
-    } while ((status = zMapDataSourceReadLine(server->data_source, server->buffer_line)
+    } while ((status = zMapDataStreamReadLine(server->data_stream, server->buffer_line)
                       ? G_IO_STATUS_NORMAL : G_IO_STATUS_EOF ) == G_IO_STATUS_NORMAL) ;
 
 

@@ -52,6 +52,10 @@
 #include <ZMap/zmapConfigStrings.hpp>
 #include <ZMap/zmapGFF.hpp>
 #include <ZMap/zmapServerProtocol.hpp>
+
+#include <ZMap/zmapThreads.hpp>                             // for threadforklock/unlock which
+                                                            // shouldn't be in here....
+
 #include <pipeServer_P.hpp>
 
 
@@ -86,10 +90,28 @@ typedef struct GetFeaturesDataStructType
 
 
 static gboolean globalInit(void) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static gboolean createConnection(void **server_out,
                                  char *config_file, ZMapURL url, char *format,
                                  char *version_str, int timeout,
                                  pthread_mutex_t *mutex) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+static gboolean createConnection(void **server_out,
+                                 char *config_file, ZMapURL url,
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+                                 char *format,
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+                                 char *version_str
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+, int timeout
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+) ;
+
 static ZMapServerResponseType openConnection(void *server, ZMapServerReqOpen req_open) ;
 static ZMapServerResponseType getInfo(void *server, ZMapServerReqGetServerInfo info) ;
 static ZMapServerResponseType getFeatureSetNames(void *server,
@@ -218,10 +240,21 @@ static gboolean globalInit(void)
  * parameters....
  *
  */
+
 static gboolean createConnection(void **server_out,
-                                 char *config_file, ZMapURL url, char *format,
-                                 char *version_str, int timeout_unused,
-                                 pthread_mutex_t *mutex_unused)
+                                 char *config_file, ZMapURL url,
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+                                 char *format,
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+                                 char *version_str
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+, int timeout_unused
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+)
 {
   gboolean result = FALSE ;
   PipeServer server ;

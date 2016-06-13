@@ -34,6 +34,8 @@
  * we set a minimum acedb version that the code requires to work properly. */
 #define ACEDB_SERVER_MIN_VERSION "4.9.48"
 
+#define ACEDB_SERVER_DEFAULT_TIMEOUT 0
+
 
 #define ACEDB_PROTOCOL_STR "Acedb"			    /* For error messages. */
 
