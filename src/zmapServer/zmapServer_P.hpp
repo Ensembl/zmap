@@ -21,10 +21,11 @@
  * and was written by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description:
- * Exported functions: See XXXXXXXXXXXXX.h
+ * Description: Private header for generalised server layer code that
+ *              interfaces to the acedb/file etc. sources.
+ *
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SERVER_P_H
@@ -33,8 +34,6 @@
 #include <zmapServer.hpp>
 #include <zmapServerPrototype.hpp>
 #include <ZMap/zmapServerProtocol.hpp>
-
-
 
 
 /* A connection to a database. */
