@@ -31,6 +31,7 @@
 #define ZMAP_FEATURE_H
 
 #include <gdk/gdkcolor.h>
+#include <mutex>
 
 #include <ZMap/zmapConfigStyleDefaults.hpp>
 #include <ZMap/zmapStyle.hpp>
@@ -1062,6 +1063,41 @@ typedef gboolean (*ZMapFeatureDumpFeatureFunc)(ZMapFeatureAny feature_any,
 					       GError       **error,
 					       gpointer       user_data) ;
 
+
+
+// Singleton class to keep count of, and limit, the number of features loaded in zmap.
+// Use via the instance function e.g. ZMapFeatureCount::instance().hitLimit(error)
+class ZMapFeatureCount
+{
+public:
+  // Delete the methods we don't want
+  ZMapFeatureCount(ZMapFeatureCount const&) = delete ;
+  ZMapFeatureCount& operator=(ZMapFeatureCount const&) = delete ;
+
+  // Access the single instance
+  static ZMapFeatureCount& instance()
+  {
+    static ZMapFeatureCount instance ;
+    return instance ;
+  } ;
+
+  // Operators
+  void operator++() ;
+  void operator--() ;
+
+  // Set/query the limit
+  void setLimit(const int max_features) ;
+  bool hitLimit(GError **error)  ;
+
+private:
+  // Private constructor
+  ZMapFeatureCount() ;
+
+  int max_features_ ;     // max number of allowed features
+  int loaded_features_ ;  // total features in memory
+  bool warn_exceed_max_ ; // true if we should warn the user when we hit the limit
+  std::mutex mutex_ ;
+} ;
 
 
 

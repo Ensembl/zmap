@@ -37,7 +37,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <glib.h>
-#include <mutex>
 
 #include <ZMap/zmapUtilsDebug.hpp>
 #include <ZMap/zmapGLibUtils.hpp>
@@ -50,6 +49,11 @@
  *          "The error domain is called <NAMESPACE>_<MODULE>_ERROR"
  */
 #define ZMAP_FEATURE_ERROR g_quark_from_string("ZMAP_FEATURE_ERROR")
+
+// Limit the maximum number of features zmap attempts to load. It's not good that we have to do
+// this but otherwise at the moment zmap will continue loading features until it falls over.
+#define ZMAP_MAX_FEATURES_HARD_LIMIT 100000
+
 
 /*
  * Some error types for use in the view
@@ -92,87 +96,76 @@ typedef struct
 
 
 
+
 // 
 //                    Globals
 //    
 
-// Limit the maximum number of features zmap attempts to load. It's not good that we have to do
-// this but otherwise at the moment zmap will continue loading features until it falls over. It
-// should at the least be improved by making it configurable.
-#define ZMAP_MAX_FEATURES_HARD_LIMIT 10000000
 
 
-// Singleton class to check if we've exceeded the max number of allowed features
-class FeatureCount
+/*
+ *                          ZMapFeatureCount class
+ */
+
+
+// Constructor
+ZMapFeatureCount::ZMapFeatureCount()
+  : max_features_(ZMAP_MAX_FEATURES_HARD_LIMIT),
+    loaded_features_(0),
+    warn_exceed_max_(true)
 {
-public:
-  // Delete the methods we don't want
-  FeatureCount(FeatureCount const&) = delete ;
-  FeatureCount& operator=(FeatureCount const&) = delete ;
+}
 
-  // Access the single instance
-  static FeatureCount& instance()
-  {
-    static FeatureCount instance ;
-    return instance ;
-  } ;
+// Increment/decrement operators change the number of loaded features
+void ZMapFeatureCount::operator++()
+{
+  mutex_.lock() ;
+  ++loaded_features_ ;
+  mutex_.unlock() ;
+}
 
-  // Operators
-  void operator++()
-  {
-    mutex_.lock() ;
-    ++loaded_features_ ;
-    mutex_.unlock() ;
-  }
+void ZMapFeatureCount::operator--()
+{
+  mutex_.lock() ;
+  --loaded_features_ ;
+  warn_exceed_max_ = true ; // so we will warn again next time limit is reached
+  mutex_.unlock() ;
+}
 
-  void operator--()
-  {
-    mutex_.lock() ;
-    --loaded_features_ ;
-    warn_exceed_max_ = true ; // so we will warn again next time limit is reached
-    mutex_.unlock() ;
-  }
 
-  // Return true if we've reached limit.
-  bool hitLimit(GError **error) 
-  {
-    bool result = false ;
+// Set the limit
+void ZMapFeatureCount::setLimit(const int max_features)
+{
+  max_features_ = max_features ;
+}
 
-    mutex_.lock() ;
-    result = loaded_features_ >= max_features_ ;
 
-    if (result)
-      {
-        // Issue a warning to the user if this is the first time we've hit the
-        // limit. We will only warn again if the user first removes features
-        // and then we hit the limit again.
-        if (warn_exceed_max_ && error)
-          {
-            g_set_error(error, ZMAP_FEATURE_ERROR, ZMAPFEATURE_ERROR_FEATURE_LIMIT,
-                        "Exceeded maximum number of features (%d)! Further features will not be loaded until some are removed first.", 
-                        max_features_) ;
-          }
+// Return true if we've reached limit.
+bool ZMapFeatureCount::hitLimit(GError **error) 
+{
+  bool result = false ;
+
+  mutex_.lock() ;
+  result = loaded_features_ >= max_features_ ;
+
+  if (result)
+    {
+      // Issue a warning to the user if this is the first time we've hit the
+      // limit. We will only warn again if the user first removes features
+      // and then we hit the limit again.
+      if (warn_exceed_max_ && error)
+        {
+          g_set_error(error, ZMAP_FEATURE_ERROR, ZMAPFEATURE_ERROR_FEATURE_LIMIT,
+                      "Exceeded maximum number of features (%d)! Further features will not be loaded until some are removed first.", 
+                      max_features_) ;
+        }
       
-        warn_exceed_max_ = false ;
-      }
+      warn_exceed_max_ = false ;
+    }
 
-    mutex_.unlock() ;
-    return result ;
-  };
-
-private:
-  // Private constructor
-  FeatureCount()
-    : max_features_(ZMAP_MAX_FEATURES_HARD_LIMIT),
-      loaded_features_(0),
-      warn_exceed_max_(true)
-  {} ;
-
-  int max_features_ ;     // max number of allowed features
-  int loaded_features_ ;  // total features in memory
-  bool warn_exceed_max_ ; // true if we should warn the user when we hit the limit
-  std::mutex mutex_ ;
-} ;
+  mutex_.unlock() ;
+  return result ;
+}
 
 
 
@@ -208,13 +201,13 @@ ZMapFeature zMapFeatureCreateEmpty(GError **error)
 {
   ZMapFeature feature = NULL ;
 
-  if (!FeatureCount::instance().hitLimit(error))
+  if (!ZMapFeatureCount::instance().hitLimit(error))
     {
       feature = (ZMapFeature)zmapFeatureAnyCreateFeature(ZMAPFEATURE_STRUCT_FEATURE, NULL,
                                                          ZMAPFEATURE_NULLQUARK, ZMAPFEATURE_NULLQUARK,
                                                          NULL) ;
 
-      ++FeatureCount::instance() ;
+      ++ZMapFeatureCount::instance() ;
     }
 
   if (feature)
@@ -635,7 +628,7 @@ void zMapFeatureDestroy(ZMapFeature feature)
 
   zmapDestroyFeatureAnyWithChildren((ZMapFeatureAny)feature, FALSE) ;
 
-  --FeatureCount::instance() ;
+  --ZMapFeatureCount::instance() ;
 
   return ;
 }
