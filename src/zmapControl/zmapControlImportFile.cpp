@@ -20,7 +20,7 @@
  * This file is part of the ZMap genome database package
  * originally written by:
  *
- * Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
@@ -44,12 +44,22 @@
 #include <ZMap/zmapString.hpp>    /* testing only. */
 
 #include <config.h>
+
 #include <ZMap/zmapConfigIni.hpp>
 #include <ZMap/zmapConfigStanzaStructs.hpp>
 #include <ZMap/zmapConfigStrings.hpp>
-#include <ZMap/zmapControlImportFile.hpp>
 #include <ZMap/zmapFeatureLoadDisplay.hpp>
 #include <zmapControl_P.hpp>
+
+#include <ZMap/zmapDataSource.hpp>
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+#include <ZMap/zmapDataSourceRequest.hpp>
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+using namespace std ;
+using namespace ZMapDataSource ;
 
 
 /* number of optional dialog entries for ZMAPSOURCE_FILE_NONE (is really 8 so i allowed a few spare) */
@@ -93,32 +103,37 @@ typedef struct MainFrameStruct_
 
   ZMapFeatureSequenceMap sequence_map;
 
-  ZMapControlImportFileCB user_func ;
-  gpointer user_data ;
+  ZMap zmap ;
+
 } MainFrameStruct, *MainFrame ;
 
 
 
 
-static MainFrame makePanel(GtkWidget *toplevel, gpointer *seqdata_out,
-                      ZMapControlImportFileCB user_func, gpointer user_data,
-                      ZMapFeatureSequenceMap sequence_map, int req_start, int req_end) ;
+static MainFrame makePanel(GtkWidget *toplevel,
+                           ZMap zmap,
+                           ZMapFeatureSequenceMap sequence_map, int req_start, int req_end) ;
 static GtkWidget *makeMainFrame(MainFrame main_frame, ZMapFeatureSequenceMap sequence_map) ;
 static GtkWidget *makeOptionsBox(MainFrame main_frame, const char *seq, int start, int end);
 static void makeButtonBox(GtkWidget *toplevel, MainFrame main_frame) ;
-
+static void importDialogResponseCB(GtkDialog *dialog, gint response_id, gpointer data) ;
 static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data) ;
-static void importFileCB(gpointer cb_data) ;
+
 #ifndef __CYGWIN__
 static void chooseConfigCB(GtkFileChooserButton *widget, gpointer user_data) ;
 #endif
-static void closeCB(gpointer cb_data) ;
-
-#ifdef NOT_USED
-static void sequenceCB(GtkWidget *widget, gpointer cb_data) ;
-#endif
-
+static void closeDialog(MainFrame main_frame) ;
 static void fileChangedCB(GtkWidget *widget, gpointer user_data);
+
+
+static void ImportFile(MainFrame main_frame) ;
+
+
+
+static void importNewDialogResponseCB(GtkDialog *dialog, gint response_id, gpointer data) ;
+static void newImportFile(MainFrame main_frame) ;
+static void newCallBackFunc(DataSourceFeatures *features_source, void *user_data) ;
+
 
 
 
@@ -127,44 +142,59 @@ static void fileChangedCB(GtkWidget *widget, gpointer user_data);
  *                   External interface routines.
  */
 
-/* \brief Handles the response to the import dialog */
-void importDialogResponseCB(GtkDialog *dialog, gint response_id, gpointer data)
-{
-  switch (response_id)
-  {
-    case GTK_RESPONSE_ACCEPT:
-    case GTK_RESPONSE_APPLY:
-    case GTK_RESPONSE_OK:
-      importFileCB(data) ;
-      break;
+// None currently.
 
-    case GTK_RESPONSE_CANCEL:
-    case GTK_RESPONSE_CLOSE:
-    case GTK_RESPONSE_REJECT:
-      closeCB(data) ;
-      break;
 
-    default:
-      break;
-  };
-}
+
+/*
+ *                   Package routines.
+ */
+
 
 
 /* Display a dialog to get from the reader a file to be displayed
  * with a optional start/end and various mapping parameters
  */
-void zMapControlImportFile(ZMapControlImportFileCB user_func, gpointer user_data,
-    ZMapFeatureSequenceMap sequence_map, int req_start, int req_end)
+void zmapControlImportFile(ZMap zmap,
+                           ZMapFeatureSequenceMap sequence_map, int req_start, int req_end)
 {
   GtkWidget *toplevel ;
-  gpointer seq_data = NULL ;
-  MainFrame main_frame = NULL ;
+  MainFrame main_frame ;
 
-  /* if (!user_func)
-    return ; */
-  zMapReturnIfFail(user_func && user_data) ;
+  zmap->import_file_dialog = toplevel = zMapGUIDialogNew(NULL, "Please choose a file to import.", NULL, NULL) ;
 
-  ZMap zmap = (ZMap)user_data;
+  /* Make sure the dialog is destroyed if the zmap window is closed */
+  /*! \todo For some reason this doesn't work and the dialog hangs around
+   * after zmap->toplevel is destroyed */
+  if (zmap && zmap->toplevel && GTK_IS_WINDOW(zmap->toplevel))
+    gtk_window_set_transient_for(GTK_WINDOW(toplevel), GTK_WINDOW(zmap->toplevel)) ;
+
+  gtk_window_set_policy(GTK_WINDOW(toplevel), FALSE, TRUE, FALSE ) ;
+  gtk_container_border_width(GTK_CONTAINER(toplevel), 0) ;
+
+  main_frame = makePanel(toplevel, zmap, sequence_map, req_start, req_end) ;
+
+  g_signal_connect(G_OBJECT(toplevel), "response", G_CALLBACK(importDialogResponseCB), main_frame) ;
+
+  gtk_signal_connect(GTK_OBJECT(toplevel), "destroy",
+                     GTK_SIGNAL_FUNC(toplevelDestroyCB), main_frame) ;
+
+  gtk_widget_show_all(toplevel) ;
+
+  return ;
+}
+
+
+
+
+// Test dialog for new server stuff....
+//
+//
+void zmapControlNewImportFile(ZMap zmap,
+                              ZMapFeatureSequenceMap sequence_map, int req_start, int req_end)
+{
+  GtkWidget *toplevel ;
+  MainFrame main_frame ;
 
   toplevel = zMapGUIDialogNew(NULL, "Please choose a file to import.", NULL, NULL) ;
 
@@ -177,12 +207,12 @@ void zMapControlImportFile(ZMapControlImportFileCB user_func, gpointer user_data
   gtk_window_set_policy(GTK_WINDOW(toplevel), FALSE, TRUE, FALSE ) ;
   gtk_container_border_width(GTK_CONTAINER(toplevel), 0) ;
 
-  main_frame = makePanel(toplevel, &seq_data, user_func, user_data, sequence_map, req_start, req_end) ;
+  main_frame = makePanel(toplevel, zmap, sequence_map, req_start, req_end) ;
 
-  g_signal_connect(G_OBJECT(toplevel), "response", G_CALLBACK(importDialogResponseCB), main_frame) ;
+  g_signal_connect(G_OBJECT(toplevel), "response", G_CALLBACK(importNewDialogResponseCB), main_frame) ;
 
   gtk_signal_connect(GTK_OBJECT(toplevel), "destroy",
-     GTK_SIGNAL_FUNC(toplevelDestroyCB), seq_data) ;
+                     GTK_SIGNAL_FUNC(toplevelDestroyCB), main_frame) ;
 
   gtk_widget_show_all(toplevel) ;
 
@@ -197,7 +227,6 @@ void zMapControlImportFile(ZMapControlImportFileCB user_func, gpointer user_data
  */
 
 
-
 /* To fit in w/ ZMap practice we have to handle multiple views and config files
  * so this all has to be allocated */
 static void importGetConfig(MainFrame main_frame, char *config_file)
@@ -205,18 +234,6 @@ static void importGetConfig(MainFrame main_frame, char *config_file)
   ZMapConfigIniContext context;
   /* in parallel with the filetype enum */
   char *tmp_string;
-  /*ZMapImportScript scripts = main_frame->scripts;*/
-
-  /* make some defaults for the file types we know to allow running unconfigured */
-  /*for( i = 0;  i < N_FILE_TYPE; i++)
-    {
-      s = scripts + i;
-      s->file_type = (ZMapSourceFileType) i;
-      s->script = NULL;
-      s->args = NULL;
-      s->allocd = NULL;
-    }*/
-  /*scripts[2].args = g_strsplit("--fruit=apple --car=jeep --weather=sunny", " ", 0); */
 
   if ((context = zMapConfigIniContextProvide(config_file, ZMAPCONFIG_FILE_NONE)))
     {
@@ -226,12 +243,14 @@ static void importGetConfig(MainFrame main_frame, char *config_file)
       gsize len;
 
       if(zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
-       ZMAPSTANZA_APP_CSVER, &tmp_string))
+                                       ZMAPSTANZA_APP_CSVER, &tmp_string))
         {
           if(!g_ascii_strcasecmp(tmp_string,"Otter"))
             {
               char *chr;
+
               main_frame->is_otter = TRUE;
+
               if(zMapConfigIniContextGetString(context,ZMAPSTANZA_APP_CONFIG,ZMAPSTANZA_APP_CONFIG,ZMAPSTANZA_APP_CHR,&chr))
                 {
                   main_frame->chr = chr;
@@ -284,22 +303,13 @@ static void importGetConfig(MainFrame main_frame, char *config_file)
       context = NULL ;
     }
 
-  /*for( i = 0; i < N_FILE_TYPE; i++)
-    {
-      s = scripts + i;
-      if(!s->script)
-        s->script = g_strdup(default_scripts[i]);
-    }
-  */
-  /*scripts[2].args = g_strsplit("--fruit=apple --car=jeep --weather=sunny", " ", 0); */
-
   return ;
 }
 
 
 /* Make the whole panel returning the top container of the panel. */
-static MainFrame makePanel(GtkWidget *toplevel, gpointer *our_data,
-                           ZMapControlImportFileCB user_func, gpointer user_data,
+static MainFrame makePanel(GtkWidget *toplevel,
+                           ZMap zmap,
                            ZMapFeatureSequenceMap sequence_map, int req_start, int req_end)
 {
   GtkWidget *vbox, *main_frame, *options_box;
@@ -311,23 +321,18 @@ static MainFrame makePanel(GtkWidget *toplevel, gpointer *our_data,
 
   main_data = g_new0(MainFrameStruct, 1) ;
 
-  main_data->user_func = user_func ;
-  main_data->user_data = user_data ;
+  main_data->toplevel = toplevel ;
 
-  importGetConfig(main_data, sequence_map->config_file );
+  main_data->zmap = zmap ;
 
-  if (toplevel)
-    {
-      main_data->toplevel = toplevel ;
-      *our_data = main_data ;
-    }
+  importGetConfig(main_data, sequence_map->config_file ) ;
 
   main_frame = makeMainFrame(main_data, sequence_map) ;
   gtk_box_pack_start(GTK_BOX(vbox), main_frame, TRUE, TRUE, 0) ;
 
-  main_data->sequence_map = sequence_map;
-  if(sequence_map)
-    sequence = sequence_map->sequence;/* request defaults to original */
+  main_data->sequence_map = sequence_map ;
+
+  sequence = sequence_map->sequence ;
 
   options_box = makeOptionsBox(main_data, sequence, req_start, req_end) ;
   gtk_box_pack_start(GTK_BOX(vbox), options_box, TRUE, TRUE, 0) ;
@@ -348,17 +353,14 @@ static GtkWidget *makeMainFrame(MainFrame main_frame, ZMapFeatureSequenceMap seq
   const char *sequence = "", *dataset = "" ;
   char *start = NULL, *end = NULL ;
 
-  if (sequence_map)
-    {
-      if (sequence_map->sequence)
-        sequence = sequence_map->sequence ;
-      if (sequence_map->dataset)
-        dataset = sequence_map->dataset ;
-      if (sequence_map->start)
-        start = g_strdup_printf("%d", sequence_map->start) ;
-      if (sequence_map->end)
-        end = g_strdup_printf("%d", sequence_map->end) ;
-    }
+  if (sequence_map->sequence)
+    sequence = sequence_map->sequence ;
+  if (sequence_map->dataset)
+    dataset = sequence_map->dataset ;
+  if (sequence_map->start)
+    start = g_strdup_printf("%d", sequence_map->start) ;
+  if (sequence_map->end)
+    end = g_strdup_printf("%d", sequence_map->end) ;
 
   frame = gtk_frame_new( "ZMap Sequence: " );
   gtk_container_border_width(GTK_CONTAINER(frame), 5);
@@ -425,36 +427,12 @@ static GtkWidget *makeMainFrame(MainFrame main_frame, ZMapFeatureSequenceMap seq
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
   gtk_widget_set_sensitive(GTK_WIDGET(entry),FALSE);
 
-  /*
-  ZMap zmap = (ZMap) main_frame->user_data;
-  ZMapWindow window = zMapViewGetWindow(zmap->focus_viewwindow);
-
-  if(zMapWindowMarkIsSet(window))
-    {
-      hbox = gtk_hbox_new(FALSE, 0) ;
-      gtk_container_border_width(GTK_CONTAINER(hbox), 0);
-      gtk_box_pack_start(GTK_BOX(topbox), hbox, TRUE, FALSE, 0) ;
-
-      main_frame->whole_widg = button = gtk_button_new_with_label("Whole Sequence") ;
-      gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
-      gtk_signal_connect(GTK_OBJECT(button), "clicked",
-                         GTK_SIGNAL_FUNC(sequenceCB), (gpointer)main_frame) ;
-
-      main_frame->mark_widg = button = gtk_button_new_with_label("Use Mark") ;
-      gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
-      gtk_signal_connect(GTK_OBJECT(button), "clicked",
-      GTK_SIGNAL_FUNC(sequenceCB), (gpointer)main_frame) ;
-    }
-  */
 
   /* Free resources. */
-  if (sequence_map)
-    {
-      if (*start)
-        g_free(start) ;
-      if (*end)
-        g_free(end) ;
-    }
+  if (*start)
+    g_free(start) ;
+  if (*end)
+    g_free(end) ;
 
 
   return frame ;
@@ -515,18 +493,6 @@ static GtkWidget *makeOptionsBox(MainFrame main_frame, const char *req_sequence,
   gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
 #endif
 
-  /*
-  label = gtk_label_new( "Script " ) ;
-  gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5);
-  gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
-  */
-
-  /*
-  label = gtk_label_new( "Extra Parameters " ) ;
-  gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5);
-  gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
-  */
-
   label = gtk_label_new( "Sequence " ) ;
   gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5);
   gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
@@ -551,18 +517,9 @@ static GtkWidget *makeOptionsBox(MainFrame main_frame, const char *req_sequence,
   gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5);
   gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
 
-  /*label = gtk_label_new( "Style " ) ;
-  gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5);
-  gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;*/
-
   label = gtk_label_new( "Map Features " ) ;
   gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5);
   gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
-
-  /*label = gtk_label_new( "Sequence Offset " ) ;
-  gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5);
-  gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;*/
-
 
 
   /* Entries.... */
@@ -575,22 +532,6 @@ static GtkWidget *makeOptionsBox(MainFrame main_frame, const char *req_sequence,
   gtk_signal_connect(GTK_OBJECT(entry), "changed",
      GTK_SIGNAL_FUNC(fileChangedCB), (gpointer)main_frame) ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
-
-  /*
-  main_frame->script_widg = entry = gtk_entry_new() ;
-  gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE) ;
-  gtk_entry_set_text(GTK_ENTRY(entry), "") ;
-  gtk_signal_connect(GTK_OBJECT(entry), "changed",
-     GTK_SIGNAL_FUNC(scriptChangedCB), (gpointer)main_frame) ;
-  gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, TRUE, 0) ;
-  */
-
-  /*
-  main_frame->args_widg = entry = gtk_entry_new() ;
-  gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE) ;
-  gtk_entry_set_text(GTK_ENTRY(entry), "") ;
-  gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, TRUE, 0) ;
-  */
 
   main_frame->req_sequence_widg = entry = gtk_entry_new() ;
   gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE) ;
@@ -624,22 +565,11 @@ static GtkWidget *makeOptionsBox(MainFrame main_frame, const char *req_sequence,
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
   gtk_widget_set_sensitive(main_frame->strand_widg, FALSE );
 
-  /*main_frame->style_widg = entry = gtk_entry_new() ;
-  gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE) ;
-  gtk_entry_set_text(GTK_ENTRY(entry), "") ;
-  gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, TRUE, 0) ; */
-
-
   /* Make the default remap setting true if we're hooked up to otterlace (which does the
    * remapping), false otherwise. */
   main_frame->map_widg = map_seq_button = gtk_check_button_new () ;
   gtk_toggle_button_set_active((GtkToggleButton*)map_seq_button, main_frame->is_otter) ;
   gtk_box_pack_start(GTK_BOX(entrybox), map_seq_button, FALSE, TRUE, 0) ;
-
-  /*main_frame->offset_widg = entry = gtk_entry_new() ;
-  gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE) ;
-  gtk_entry_set_text(GTK_ENTRY(entry), "") ;
-  gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, TRUE, 0) ;*/
 
 
   if (*start)
@@ -664,33 +594,66 @@ static void makeButtonBox(GtkWidget *toplevel, MainFrame main_frame)
 
   gtk_dialog_set_default_response(dialog, GTK_RESPONSE_OK) ;
 
-
-  /*
-  GtkDialog *dialog = GTK_DIALOG(toplevel) ;
-
-  gtk_dialog_add_button(dialog, GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL) ;
-  gtk_dialog_add_button(dialog, GTK_STOCK_OPEN, GTK_RESPONSE_OK) ;
-
-  create_button = gtk_button_new_with_label("Import File") ;
-  gtk_signal_connect(GTK_OBJECT(create_button), "clicked",
-     GTK_SIGNAL_FUNC(importFileCB), (gpointer)main_frame) ;
-  gtk_box_pack_start(GTK_BOX(button_box), create_button, FALSE, TRUE, 0) ;
-
-
-  if (main_frame->toplevel)
-    {
-      close_button = gtk_button_new_with_label("Close") ;
-      gtk_signal_connect(GTK_OBJECT(close_button), "clicked",
- GTK_SIGNAL_FUNC(closeCB), (gpointer)main_frame) ;
-      gtk_box_pack_start(GTK_BOX(button_box), close_button, FALSE, TRUE, 0) ;
-
-      GTK_WIDGET_SET_FLAGS(create_button, GTK_CAN_DEFAULT) ;
-      gtk_window_set_default(GTK_WINDOW(main_frame->toplevel), create_button) ;
-    }
-
-  return frame ;
-  */
+  return ;
 }
+
+
+
+
+/* \brief Handles the response to the import dialog */
+static void importDialogResponseCB(GtkDialog *dialog, gint response_id, gpointer data)
+{
+  MainFrame main_frame = (MainFrame)data ;
+
+  switch (response_id)
+  {
+    case GTK_RESPONSE_ACCEPT:
+    case GTK_RESPONSE_APPLY:
+    case GTK_RESPONSE_OK:
+      ImportFile(main_frame) ;
+      break;
+
+    case GTK_RESPONSE_CANCEL:
+    case GTK_RESPONSE_CLOSE:
+    case GTK_RESPONSE_REJECT:
+      closeDialog(main_frame) ;
+      break;
+
+    default:
+      break;
+  };
+
+  return ;
+}
+
+
+
+/* Handles the response to the import dialog */
+static void importNewDialogResponseCB(GtkDialog *dialog, gint response_id, gpointer data)
+{
+  MainFrame main_frame = (MainFrame)data ;
+
+  switch (response_id)
+  {
+    case GTK_RESPONSE_ACCEPT:
+    case GTK_RESPONSE_APPLY:
+    case GTK_RESPONSE_OK:
+      newImportFile(main_frame) ;
+      break;
+
+    case GTK_RESPONSE_CANCEL:
+    case GTK_RESPONSE_CLOSE:
+    case GTK_RESPONSE_REJECT:
+      closeDialog(main_frame) ;
+      break;
+
+    default:
+      break;
+  };
+
+  return ;
+}
+
 
 
 
@@ -700,77 +663,24 @@ static void makeButtonBox(GtkWidget *toplevel, MainFrame main_frame)
  */
 static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data)
 {
-  /*MainFrame main_frame = (MainFrame)cb_data ;
-    int i;*/
+  MainFrame main_frame = (MainFrame)cb_data ;
 
-  /*for(i = 0; i < N_FILE_TYPE;i++)
-    {
-      if(main_frame->scripts[i].script)
-        g_free(main_frame->scripts[i].script);
+  main_frame->zmap->import_file_dialog = NULL ;
 
-      if(main_frame->scripts[i].allocd)
-        g_strfreev(main_frame->scripts[i].allocd);
-    }
-  */
+
+  g_free(main_frame) ;
 
   return ;
 }
 
 
 /* Kill the dialog. */
-static void closeCB(gpointer cb_data)
+static void closeDialog(MainFrame main_frame)
 {
-  MainFrame main_frame = (MainFrame)cb_data ;
-
   gtk_widget_destroy(main_frame->toplevel) ;
 
   return ;
 }
-
-
-/* set start, end as requested */
-#ifdef NOT_USED
-static void sequenceCB(GtkWidget *widget, gpointer cb_data)
-{
-  MainFrame main_frame = (MainFrame)cb_data ;
-  int start = 0, end = 0;
-  char buf[32];
-
-  /* NOTE we get -fsd coords from this function if revcomped */
-  /*if(widget == main_frame->mark_widg)
-    {
-      ZMap zmap = (ZMap) main_frame->user_data;
-      ZMapWindow window = zMapViewGetWindow(zmap->focus_viewwindow);
-
-      zMapWindowGetMark(window, &start, &end);
-
-      if(start < 0)
-        start = -start;
-      if(end < 0)
-        end = -end;
-
-      start += main_frame->sequence_map->start;
-      end   += main_frame->sequence_map->start;
-    }*/
-  /*else*/
-  /*if(widget == main_frame->whole_widg)
-    {
-      start = main_frame->sequence_map->start;
-      end   = main_frame->sequence_map->end;
-    }
-  else
-    {
-      return;
-    }
-  */
-
-  sprintf(buf,"%d",start);
-  gtk_entry_set_text(GTK_ENTRY( main_frame->req_start_widg), buf) ;
-  sprintf(buf,"%d",end);
-  gtk_entry_set_text(GTK_ENTRY( main_frame->req_end_widg),   buf) ;
-}
-#endif
-
 
 
 #ifndef __CYGWIN__
@@ -832,22 +742,7 @@ static void fileChangedCB(GtkWidget *widget, gpointer user_data)
   char *extent;
   ZMapSourceFileType file_type = ZMAPSOURCE_FILE_NONE ;
   char *source_txt = NULL;
-  /*ZMapFeatureSource src;
-  ZMapView view;
-  ZMap zmap = (ZMap) main_frame->user_data;*/
 
-  /*
-  char *args_txt = "";
-  ZMapImportScript scripts;
-  */
-
-  /* Check that the zmap window has not been closed (currently
-   * the import dialog isn't closed with it, which will cause
-   * problems if we don't exit early here )
-   */
-  /*if (!zmap->toplevel)
-    return;
-  view = zMapViewGetView(zmap->focus_viewwindow);*/
 
   /*
    * Inspect the file extension to determine type.
@@ -1185,13 +1080,12 @@ static void validateStrand(bool &status,
  * remapping should be done.
  *
  */
-static void importFileCB(gpointer cb_data)
+static void ImportFile(MainFrame main_frame)
 {
   bool status = TRUE ;
   bool have_dataset = FALSE ;
   bool have_assembly = FALSE ;
   bool remap_features = TRUE ;
-  MainFrame main_frame = NULL ;
   ZMapFeatureSequenceMap sequence_map = NULL ;
   std::string err_msg("") ;
   char *sequence_txt = NULL ;
@@ -1214,19 +1108,9 @@ static void importFileCB(gpointer cb_data)
   ZMapView view = NULL ;
   ZMap zmap = NULL ;
 
-  main_frame = (MainFrame)cb_data ;
-  zMapReturnIfFail(main_frame) ;
   file_type = main_frame->file_type;
-  zmap = (ZMap) main_frame->user_data;
-  zMapReturnIfFail(zmap) ;
+  zmap = (ZMap) main_frame->zmap ;
   sequence_map = main_frame->sequence_map ;
-  zMapReturnIfFail(sequence_map) ;
-
-  /* Check that the zmap window hasn't been closed (currently the dialog
-   * isn't closed automatically with it, so we'll have problems if we don't
-   * exit early here) */
-  if (!zmap->toplevel)
-    return;
 
   view = zMapViewGetView(zmap->focus_viewwindow);
 
@@ -1351,7 +1235,8 @@ static void importFileCB(gpointer cb_data)
         {
           GList *req_featuresets = NULL ;
           
-          if (zMapViewRequestServer(view, NULL, req_featuresets, NULL, (gpointer)server, req_start, req_end, FALSE, TRUE, TRUE))
+          if (zMapViewRequestServer(view, NULL, req_featuresets, NULL,
+                                    (gpointer)server, req_start, req_end, FALSE, TRUE, TRUE))
             zMapViewShowLoadStatus(view);
           else
             zMapWarning("Request to server failed for %s",file_txt);
@@ -1374,24 +1259,231 @@ static void importFileCB(gpointer cb_data)
 
 
 
+
+
+//
+// gateway to new source interface for Steve
+//
+//
+//
+static void newImportFile(MainFrame main_frame)
+{
+  bool status = TRUE ;
+  bool have_dataset = FALSE ;
+  bool have_assembly = FALSE ;
+  bool remap_features = TRUE ;
+  ZMapFeatureSequenceMap sequence_map = NULL ;
+  std::string err_msg("") ;
+  char *sequence_txt = NULL ;
+  const char *dataset_txt = NULL ;
+  const char *start_txt = NULL ;
+  const char *end_txt = NULL ;
+  const char *file_txt = NULL ;
+  const char *req_start_txt= NULL ;
+  const char *req_end_txt = NULL ;
+  const char *source_txt = NULL ;
+  const char *strand_txt = NULL ;
+  const char *assembly_txt = NULL ;
+  const char *req_sequence_txt = NULL ;
+  int start = 0 ;
+  int end = 0 ;
+  int req_start = 0 ;
+  int req_end = 0 ;
+  int strand = 0 ;
+  ZMapSourceFileType file_type = ZMAPSOURCE_FILE_NONE ;
+  ZMapView view = NULL ;
+  ZMap zmap = NULL ;
+
+  // Error handling seems flakey....
+
+  file_type = main_frame->file_type;
+  zmap = (ZMap) main_frame->zmap ;
+  sequence_map = main_frame->sequence_map ;
+
+
+  // HACKY BUT THIS ISN'T PERMANENT CODE....
+  /* Check that the zmap window hasn't been closed (currently the dialog
+   * isn't closed automatically with it, so we'll have problems if we don't
+   * exit early here) */
+  if (!zmap->toplevel)
+    return;
+
+  view = zMapViewGetView(zmap->focus_viewwindow);
+
+  /* Note gtk_entry returns the empty string "" _not_ NULL when there is no text. */
+  sequence_txt = g_strdup(gtk_entry_get_text(GTK_ENTRY(main_frame->sequence_widg))) ;
+  dataset_txt = gtk_entry_get_text(GTK_ENTRY(main_frame->dataset_widg)) ;
+  start_txt = gtk_entry_get_text(GTK_ENTRY(main_frame->start_widg)) ;
+  end_txt = gtk_entry_get_text(GTK_ENTRY(main_frame->end_widg)) ;
+
+  file_txt = gtk_entry_get_text(GTK_ENTRY(main_frame->file_widg)) ;
+  req_sequence_txt = gtk_entry_get_text(GTK_ENTRY(main_frame->req_sequence_widg)) ;
+  req_start_txt = gtk_entry_get_text(GTK_ENTRY(main_frame->req_start_widg)) ;
+  req_end_txt = gtk_entry_get_text(GTK_ENTRY(main_frame->req_end_widg)) ;
+  source_txt = gtk_entry_get_text(GTK_ENTRY(main_frame->source_widg)) ;
+  assembly_txt = gtk_entry_get_text(GTK_ENTRY(main_frame->assembly_widg)) ;
+  strand_txt = gtk_entry_get_text(GTK_ENTRY(main_frame->strand_widg)) ;
+  remap_features = gtk_toggle_button_get_active((GtkToggleButton*)main_frame->map_widg) ;
+
+  /* Validate the user-specified arguments. These calls set status to false if there is a problem
+   * and also set the err_msg. The start/end/strand functions also set the int from the string. 
+   */
+  validateFile(status, err_msg, file_txt) ;
+  validateSequence(status, err_msg, sequence_txt, start_txt, end_txt, start, end) ;
+  validateReqSequence(status, err_msg, req_sequence_txt, req_start_txt, req_end_txt, req_start, req_end, start) ;
+  validateFileType(status, err_msg, file_type, source_txt, 
+                   assembly_txt, dataset_txt, remap_features, 
+                   have_assembly, have_dataset, sequence_txt) ;
+  validateStrand(status, err_msg, file_type, strand_txt, strand) ;
+
   /*
+   * If we got this far, then attempt to do something.
+   *
+   */
   if (status)
     {
-      if ((*offset_txt) && !zMapStr2Int(offset_txt, &seq_offset))
+      bool create_source_data = FALSE ;
+
+      /* Create the source */
+      ZMapConfigSource source = NULL ;
+
+      if (file_type == ZMAPSOURCE_FILE_GFF)
         {
-          status = FALSE ;
-          err_msg = "Invalid offset specified." ;
+          /* Just load the file directly */
+          source = sequence_map->createFileSource(source_txt, file_txt) ;
+        }
+      else
+        {
+          /* Use a pipe script that will remap the features if necessary. This is also required
+           * in order to be able to blixem the columns because blixem doesn't support bam reading
+           * at the moment, so the script command gets passed through to blixem. */
+          std::string script_err("");
+          const char *script = fileTypeGetPipeScript(file_type, script_err) ;
+
+          GString *args = g_string_new("") ;
+
+          g_string_append_printf(args, "--file=%s&--chr=%s&--start=%d&--end=%d&--gff_seqname=%s&--gff_source=%s",
+                                 file_txt, sequence_txt, req_start, req_end, req_sequence_txt, source_txt) ;
+
+          if (file_type == ZMAPSOURCE_FILE_BIGWIG)
+            g_string_append_printf(args, "&--strand=%d", strand) ;
+
+          if (remap_features)
+            g_string_append_printf(args, "&--csver_remote=%s&--dataset=%s", assembly_txt, dataset_txt) ;
+
+          if (script)
+            {
+              /* Ok, create the source for this pipe scripe */
+              source = sequence_map->createPipeSource(source_txt, file_txt, script, args->str) ;
+              create_source_data = TRUE ;
+            }
+          else if (!remap_features)
+            {
+              /* No script; if not remapping features, we can load directly with htslib
+               * instead. There are a couple of problems with this, though:
+               * - the given source name will be ignored and therefore the source_data won't
+               *   be linked correctly. This means it won't be recognised as a bam.
+               * - blixem won't work (until it can load bam files directly, or unless the user
+               *   has preconfigured the source in the blixem config). */
+#ifdef USE_HTSLIB
+              zMapLogMessage("%s", "Pipe script not available; using htslib") ;
+              source = sequence_map->createFileSource(source_txt, file_txt) ;
+#else
+              err_msg = "Cannot load features; pipe script not available: " ;
+              err_msg += script_err ;
+#endif
+            }
+          else
+            {
+              err_msg = "Cannot remap features: " ;
+              err_msg += script_err ;
+            }
+
+          g_string_free(args, TRUE) ;
+        }
+
+      if (create_source_data)
+        {
+          /* If we're using a pipe script, we need to create the source data for the named source
+           * so that we can set is_seq=true for bam sources (otherwise we don't know when we come
+           * to parse the results of the bam_get script that is_seq should be true).
+           * We don't do this if we're loading the file directly because the named source is not used
+           * (the source data is created when the features are parsed from the file instead) */
+          ZMapFeatureContextMap context_map = zMapViewGetContextMap(view) ;
+
+          GQuark fset_id = zMapFeatureSetCreateID(source_txt);
+          ZMapFeatureSource source_data = context_map->getSource(fset_id);
+
+          if (!source_data)
+            {
+              GQuark source_id = fset_id ;
+              GQuark style_id = zMapStyleCreateID(NULL) ;
+              GQuark source_text = g_quark_from_string(source_txt) ;
+              const bool is_seq = (file_type == ZMAPSOURCE_FILE_BAM || file_type == ZMAPSOURCE_FILE_BIGWIG) ;
+
+              context_map->createSource(fset_id,
+                                        source_id, source_text, style_id,
+                                        0, 0, is_seq) ;
+            }
+        }
+
+      // Create a server connection for the source and start getting the data.
+      if (source)
+        {
+          GList *req_featuresets = NULL ;
+          const string url(source->url) ;
+          ZMapFeatureContextMap context_map ;
+          const string config_file = string("") ;
+          const string version = string("") ;
+          ZMapFeatureContext context ;
+
+          context_map = zMapViewGetContextMap(view) ;
+          context = zMapViewCreateContext(view, req_featuresets, NULL) ;
+
+          DataSourceFeatures *my_feature_request = new DataSourceFeatures(sequence_map, req_start, req_end,
+                                                                          url, config_file, version,
+                                                                          context, &(context_map->styles)) ;
+
+          if (!(my_feature_request->SendRequest(newCallBackFunc, my_feature_request)))
+            {
+              // Really need to be able to get some error state here....should throw from the obj ?
+
+              delete my_feature_request ;
+            }
+        }
+      else
+        {
+          zMapWarning("Failed to set up source for file '%s': %s", file_txt, err_msg.c_str()) ;
         }
     }
-  */
-
-  /*
-   * This was used to get the "mapping" flag.
-   */
-  /*if (status)
+  else
     {
-      map_seq = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON(main_frame->map_widg));
+      zMapWarning("Error: \"%s\"", err_msg.c_str()) ;
     }
-  */
+
+  if (sequence_txt)
+    g_free(sequence_txt) ;
+
+  return ;
+}
 
 
+
+static void newCallBackFunc(DataSourceFeatures *features_source, void *user_data)
+{
+  ZMapFeatureContext context ;
+  ZMapStyleTree *styles ;
+
+
+  // Get the reply data......
+  if (features_source->GetRequestData(&context, &styles))
+    {
+      GError *error = NULL ;
+
+      zMapFeatureDumpStdOutFeatures(context, styles, &error) ;
+    }
+
+  delete features_source ;
+
+  return ;
+}

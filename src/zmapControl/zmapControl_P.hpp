@@ -34,7 +34,6 @@
 
 #include <ZMap/zmapView.hpp>
 #include <ZMap/zmapControl.hpp>
-#include <ZMap/zmapControlImportFile.hpp>
 #include <zmapNavigator_P.hpp>                                /* WHY is this here ?? */
 
 
@@ -143,6 +142,10 @@ typedef struct _ZMapStruct
 
   /* New sequence dialog. */
   GtkWidget *sequence_dialog ;
+
+  // File import dialog, should only be one per zmap.
+  GtkWidget *import_file_dialog ;
+
 
   /* The panes and views and current focus window. */
   GtkWidget *pane_vbox ;				    /* Is the parent of all the panes. */
@@ -256,6 +259,15 @@ void zmapControlPrintView(ZMap zmap, ZMapView view, char *action, gboolean print
 void zmapControlPrintAllViews(ZMap zmap, gboolean print_xids) ;
 
 void zmapControlWindowMaximize(GtkWidget *widget, ZMap map) ;
+
+void zmapControlImportFile(ZMap zmap,
+                           ZMapFeatureSequenceMap sequence_map, int req_start, int req_end) ;
+
+
+void zmapControlNewImportFile(ZMap zmap,
+                              ZMapFeatureSequenceMap sequence_map, int req_start, int req_end) ;
+
+
 
 #endif /* !ZMAP_CONTROL_P_H */
 
