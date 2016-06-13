@@ -3,7 +3,7 @@ include $(top_srcdir)/Makefile.common
 
 SUBDIRS = .
 
-AM_CPPFLAGS += -I$(top_srcdir)/zmapServer
+AM_CPPFLAGS += -I$(top_srcdir)/zmapServer -I$(top_srcdir)/zmapServer/datastream
 
 noinst_LTLIBRARIES = libFileServer.la
 

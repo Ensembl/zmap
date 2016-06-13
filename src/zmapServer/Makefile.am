@@ -1,7 +1,7 @@
 
 include $(top_srcdir)/Makefile.common
 
-SUBDIRS = pipe file
+SUBDIRS = datastream file pipe
 
 if USE_ACECONN
 SUBDIRS += acedb
@@ -14,14 +14,15 @@ endif
 
 noinst_LTLIBRARIES = libZMapServer.la libZMapServers.la
 
-libZMapServer_la_SOURCES = zmapServer.hpp \
+libZMapServer_la_SOURCES = \
 zmapServer.cpp \
-zmapServer_P.hpp \
-zmapServerProtocolHandler.cpp \
+zmapServer.hpp \
 zmapServerPrototype.hpp \
-zmapDataSource_P.hpp \
-zmapDataSource.hpp \
-zmapDataSource.cpp \
+zmapServerRequestHandler.cpp \
+zmapServerRequestHandler.hpp \
+zmapServer_P.hpp \
+zmapSlaveHandler.cpp \
+zmapSlaveHandlerOld.cpp \
 $(NULL)
 
 libZMapServer_la_LIBADD  = 
@@ -29,9 +30,11 @@ libZMapServer_la_CFLAGS  = $(INCLUDE_COMMON)
 libZMapServer_la_LDFLAGS = 
 
 libZMapServers_la_SOURCES = 
+
 libZMapServers_la_LIBADD  = \
-pipe/libPipeServer.la   \
+datastream/libDataStream.la   \
 file/libFileServer.la   \
+pipe/libPipeServer.la   \
 $(NULL)
 
 if USE_ACECONN
