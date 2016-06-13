@@ -1,5 +1,7 @@
 NULL =
 
+# removing this for now: zmapDataSourceRequest.hpp
+
 nobase_include_HEADERS = ZMap/sysdep.h \
 ZMap/safe-ctype.h \
 ZMap/zmap.hpp \
@@ -15,9 +17,11 @@ ZMap/zmapConfigStrings.hpp \
 ZMap/zmapConfigStanzaStructs.hpp \
 ZMap/zmapConfigStyleDefaults.hpp \
 ZMap/zmapControl.hpp \
-ZMap/zmapControlImportFile.hpp \
 ZMap/zmapDAS.hpp \
 ZMap/zmapDNA.hpp \
+ZMap/zmapDataSource.hpp \
+ZMap/zmapDataSourceServer.hpp \
+ZMap/zmapDataSourceStepList.hpp \
 ZMap/zmapDraw.hpp \
 ZMap/zmapEnsemblUtils.hpp \
 ZMap/zmapEnum.hpp \
@@ -42,6 +46,7 @@ ZMap/zmapServerProtocol.hpp \
 ZMap/zmapSO.hpp \
 ZMap/zmapSOParser.hpp \
 ZMap/zmapSkipList.hpp\
+ZMap/zmapSlaveHandler.hpp \
 ZMap/zmapString.hpp \
 ZMap/zmapStyle.hpp \
 ZMap/zmapStyleTree.hpp \
