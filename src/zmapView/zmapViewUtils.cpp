@@ -90,6 +90,7 @@ static void toggleDisplayCoordinatesCB(ZMapWindow, void* user_data) ;
 
 static void formatSession(gpointer data, gpointer user_data) ;
 
+static void invoke_merge_in_names(gpointer list_data, gpointer user_data) ;
 
 
 /*
@@ -99,6 +100,17 @@ static void formatSession(gpointer data, gpointer user_data) ;
 
 /* This wierd macro creates a function that will return string literals for each num in the ZMAP_XXXX_LIST's. */
 ZMAP_ENUM_AS_EXACT_STRING_FUNC(zMapViewThreadStatus2ExactStr, ZMapViewThreadStatus, ZMAP_VIEW_THREAD_STATE_LIST) ;
+
+
+// Simply cover function for internal version.
+ZMapFeatureContext zMapViewCreateContext(ZMapView view, GList *feature_set_names, ZMapFeatureSet feature_set)
+{
+  ZMapFeatureContext context = NULL ;
+
+  context = zmapViewCreateContext(view, feature_set_names, feature_set) ;
+
+  return context ;
+}
 
 
 
@@ -252,7 +264,7 @@ void zmapViewBusyFull(ZMapView zmap_view, gboolean busy, const char *file, const
 /* Return, as text, details of all data connections for this view. Interface is not completely
  * parameterised in that this function "knows" how to format the reply for its caller.
  */
-gboolean zMapViewSessionGetAsText(ZMapViewWindow view_window, GString *session_data_inout)
+gboolean zMapViewSessionGetAsText(ZMapViewWindow view_window, GString *session_str_inout)
 {
   gboolean result = FALSE ;
   ZMapView view ;
@@ -261,9 +273,9 @@ gboolean zMapViewSessionGetAsText(ZMapViewWindow view_window, GString *session_d
 
   if (view->connection_list)
     {
-      g_string_append_printf(session_data_inout, "\tSequence: %s\n\n", view->view_sequence->sequence) ;
+      g_string_append_printf(session_str_inout, "\tSequence: %s\n\n", view->view_sequence->sequence) ;
 
-      g_list_foreach(view->connection_list, formatSession, session_data_inout) ;
+      g_list_foreach(view->connection_list, formatSession, session_str_inout) ;
 
       result = TRUE ;
     }
@@ -279,13 +291,23 @@ gboolean zMapViewSessionGetAsText(ZMapViewWindow view_window, GString *session_d
  */
 
 
+void zmapViewMergeColNames(ZMapView view, GList *names)
+{
+  g_list_foreach(view->window_list, invoke_merge_in_names, names) ;
+
+  return ;
+}
+
+
+
+
 
 /* Not sure where this is used...check this out.... in checkStateConnections() zmapView.c*/
 gboolean zmapAnyConnBusy(GList *connection_list)
 {
   gboolean result = FALSE ;
   GList* list_item ;
-  ZMapViewConnection view_con ;
+  ZMapNewDataSource view_con ;
 
   if (connection_list)
     {
@@ -293,7 +315,7 @@ gboolean zmapAnyConnBusy(GList *connection_list)
 
       do
 	{
-	  view_con = (ZMapViewConnection)(list_item->data) ;
+	  view_con = (ZMapNewDataSource)(list_item->data) ;
 
 	  if (view_con->curr_request == ZMAPTHREAD_REQUEST_EXECUTE)
 	    {
@@ -620,59 +642,40 @@ static void toggleDisplayCoordinatesCB(ZMapWindow window, void* user_data)
  *  */
 static void formatSession(gpointer data, gpointer user_data)
 {
-  ZMapViewConnection view_con = (ZMapViewConnection)data ;
+  ZMapNewDataSource view_con = (ZMapNewDataSource)data ;
   ZMapViewSessionServer server_data = view_con->server ;
   GString *session_text = (GString *)user_data ;
 
   // Get session info as a string....
   zMapServerFormatSession(server_data, session_text) ;
 
+  return ;
+}
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  g_string_append(session_text, "Server\n") ;
 
-  g_string_append_printf(session_text, "\tURL: %s\n\n", server_data->url) ;
-  g_string_append_printf(session_text, "\tProtocol: %s\n\n", server_data->protocol) ;
-  g_string_append_printf(session_text, "\tFormat: %s\n\n",
-			 (server_data->format ? server_data->format : unavailable_txt)) ;
 
-  switch(server_data->scheme)
-    {
-    case SCHEME_ACEDB:
-      {
-	g_string_append_printf(session_text, "\tServer: %s\n\n", server_data->scheme_data.acedb.host) ;
-	g_string_append_printf(session_text, "\tPort: %d\n\n", server_data->scheme_data.acedb.port) ;
-	g_string_append_printf(session_text, "\tDatabase: %s\n\n",
-			       (server_data->scheme_data.acedb.database
-				? server_data->scheme_data.acedb.database : unavailable_txt)) ;
-	break ;
-      }
-    case SCHEME_FILE:
-      {
-	g_string_append_printf(session_text, "\tFile: %s\n\n", server_data->scheme_data.file.path) ;
-	break ;
-      }
-    case SCHEME_PIPE:
-      {
-	g_string_append_printf(session_text, "\tScript: %s\n\n", server_data->scheme_data.pipe.path) ;
-	g_string_append_printf(session_text, "\tQuery: %s\n\n", server_data->scheme_data.pipe.query) ;
-	break ;
-      }
-    case SCHEME_ENSEMBL:
-      {
-        g_string_append_printf(session_text, "\tServer: %s\n\n", server_data->scheme_data.ensembl.host) ;
-        g_string_append_printf(session_text, "\tPort: %d\n\n", server_data->scheme_data.ensembl.port) ;
-        break ;
-      }
-    default:
-      {
-	g_string_append(session_text, "\tUnsupported server type !") ;
-	break ;
-      }
-    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+/* This is called on each view_window in a view to merge the given list of featureset names into
+ * the window's list of feature_set_names */
+static void invoke_merge_in_names(gpointer list_data, gpointer user_data)
+{
+  ZMapViewWindow view_window = (ZMapViewWindow)list_data;
+  GList *feature_set_names = (GList *)user_data;
+
+  /* This relies on hokey code... with a number of issues...
+   * 1) the window function only concats the lists.
+   * 2) this view code might well want to do the merge?
+   * 3) how do we order all these columns?
+   */
+   /* mh17: column ordering is as in ZMap config
+    * either by 'columns' command or by server and then featureset order
+    * concat is ok as featuresets are not duplicated, but beware repeat requests to the same server
+    * NOTE (mar 2011) with req from mark we expect duplicate requests, merge must merge not concatenate
+    */
+  zMapWindowMergeInFeatureSetNames(view_window->window, feature_set_names);
 
   return ;
 }
+
+
 
