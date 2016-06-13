@@ -5,12 +5,15 @@ SUBDIRS = .
 
 noinst_LTLIBRARIES = libZMapThreads.la
 
-libZMapThreads_la_SOURCES = zmapSlave.cpp \
+libZMapThreads_la_SOURCES = \
+zmapMaster.cpp \
+zmapSlave.cpp \
 zmapSlave_P.hpp \
 zmapThreads.cpp \
-zmapThreads_P.hpp \
 zmapThreadsUtils.cpp \
+zmapThreads_P.hpp \
 $(NULL)
+
 libZMapThreads_la_LIBADD  = 
 libZMapThreads_la_CFLAGS  = $(INCLUDE_COMMON)
 libZMapThreads_la_LDFLAGS = 
