@@ -48,11 +48,19 @@
 
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static ZMapThread createThread(ZMapThreadRequestHandlerFunc handler_func,
 			       ZMapThreadTerminateHandler terminate_func, ZMapThreadDestroyHandler destroy_func) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+static ZMapThread createThread() ;
 static void destroyThread(ZMapThread thread) ;
 
 
+
+//
+//                   Globals
+//
 
 /* Turn on/off all debugging messages for threads. */
 gboolean zmap_thread_debug_G = FALSE ;
@@ -61,9 +69,12 @@ gboolean zmap_thread_debug_G = FALSE ;
 /* For locking/unlocking of fork calls. */
 static pthread_mutex_t thread_fork_mutex_G = PTHREAD_MUTEX_INITIALIZER ;
 
-/* For locking/unlocking within a server. */
-static pthread_mutex_t thread_server_mutex_G = PTHREAD_MUTEX_INITIALIZER ;
 
+
+
+//
+//                   External interface
+//
 
 
 
@@ -74,18 +85,16 @@ static pthread_mutex_t thread_server_mutex_G = PTHREAD_MUTEX_INITIALIZER ;
  * handler_func   A function that the slave thread can call to handle all requests.
  * returns a thread object, all subsequent requests must be sent to this thread object.
  *  */
-ZMapThread zMapThreadCreate(ZMapThreadRequestHandlerFunc handler_func,
-			    ZMapThreadTerminateHandler terminate_func, ZMapThreadDestroyHandler destroy_func)
+ZMapThread zMapThreadCreate(bool new_interface)
 {
   ZMapThread thread = NULL ;
   pthread_t thread_id ;
   pthread_attr_t thread_attr ;
   int status = 0 ;
 
-  
-  zMapReturnValIfFail((handler_func), thread) ;
+  thread = createThread() ;
 
-  thread = createThread(handler_func, terminate_func, destroy_func) ;
+  thread->new_interface = new_interface ;
 
   /* ok to just set state here because we have not started the thread yet.... */
   zmapCondVarCreate(&(thread->request)) ;
@@ -166,7 +175,7 @@ void zMapThreadSetReply(ZMapThread thread, ZMapThreadReply state)
 
 
 gboolean zMapThreadGetReplyWithData(ZMapThread thread, ZMapThreadReply *state,
-				  void **data, char **err_msg)
+                                    void **data, char **err_msg)
 {
   gboolean got_value ;
 
@@ -223,24 +232,34 @@ void zMapThreadKill(ZMapThread thread)
   /* Signal the thread to cancel it */
   if ((status = pthread_cancel(thread->thread_id)) != 0)
     {
-      zMapLogFatalSysErr(status, "%s", "Thread cancel") ;
+      zMapLogCritical("Cancel of thread %p failed: %s",
+                      thread->thread_id, g_strsignal(status)) ;
     }
+
+  thread->thread_id = 0 ;
 
   return ;
 }
 
+
 gboolean zMapThreadExists(ZMapThread thread)
 {
-//      if(pthread_kill(thread->thread_id,0) != ESRCH)
-      if(!pthread_kill(thread->thread_id,0))
-            return(TRUE);
-      return(FALSE);
+  gboolean exists = FALSE ;
+
+  if (pthread_kill(thread->thread_id, 0) == 0)
+    exists = TRUE ;
+
+  return exists ;
 }
 
-/* Release the threads resources, don't do this until the slave thread has gone. */
+
+/* Kill the thread if necessary and release its resources. */
 void zMapThreadDestroy(ZMapThread thread)
 {
   ZMAPTHREAD_DEBUG(thread, "Destroying control block/condvar for this thread (%s)", zMapThreadGetThreadID(thread)) ;
+
+  if (thread->thread_id && zMapThreadExists(thread))
+    zMapThreadKill(thread) ;
 
   zmapVarDestroy(&thread->reply) ;
   zmapCondVarDestroy(&(thread->request)) ;
@@ -345,25 +364,34 @@ void zMapThreadForkUnlock(void)
 
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static ZMapThread createThread(ZMapThreadRequestHandlerFunc handler_func,
 			       ZMapThreadTerminateHandler terminate_func, ZMapThreadDestroyHandler destroy_func)
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  static ZMapThread createThread()
 {
   ZMapThread thread ;
 
   static gboolean init = FALSE ;
 
+  // This should not be in here...it's not part of this package at all...should be in zmaputils somewhere.
   if (!init)
     {
       pthread_mutex_init(&thread_fork_mutex_G,NULL) ;
       init = TRUE ;
     }
 
+
   thread = g_new0(ZMapThreadStruct, 1) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   thread->handler_func = handler_func ;
   thread->terminate_func = terminate_func ;
   thread->destroy_func = destroy_func ;
-  thread->mutex = &thread_server_mutex_G ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   return thread ;
 }

@@ -86,24 +86,14 @@ typedef struct _ZMapThreadStruct
 {
   pthread_t thread_id ;
 
+  // TEMP WHILE I SORT OUT SLAVE INTERFACE....
+  bool new_interface ;
+
   /* These control the communication between the GUI thread and the thread threads,
    * they are mutex locked and the request code makes use of the condition variable to
    * communicate with slave threads. */
   ZMapRequestStruct request ;				    /* GUIs request. */
   ZMapReplyStruct reply ;				    /* Slaves reply. */
-
-  /* User registered routine which the thread calls to handle requests and replies. */
-  ZMapThreadRequestHandlerFunc handler_func ;
-
-  /* User registered routine to terminate thread if it needs to exit abnormally. */
-  ZMapThreadTerminateHandler terminate_func ;
-
-  /* User registered routine to destroy/clean up thread if it needs to exit abnormally. */
-  ZMapThreadDestroyHandler destroy_func ;
-
-  /* Mutex used by the ensembl server to lock calls to the non-thread-safe ensc-core library.
-   * We must create the mutex here so we can lock across all threads. */
-  pthread_mutex_t *mutex ;
 
 } ZMapThreadStruct ;
 
