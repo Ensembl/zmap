@@ -307,6 +307,7 @@ enum
     DEVELOPER_FEATURESETITEM_FEATUREITEM_FEATURE,
     DEVELOPER_PRINT_STYLE,
     DEVELOPER_PRINT_CANVAS,
+    DEVELOPER_PRINT_FEATURE_CONTEXT,
     DEVELOPER_STATS
   } ;
 
@@ -2876,6 +2877,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuDeveloperOps(int *start_index_inout,
        DEVELOPER_FEATURESETITEM_FEATUREITEM_FEATURE, developerMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, DEVELOPER_STR "/Print Style", DEVELOPER_PRINT_STYLE, developerMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, DEVELOPER_STR "/Print Canvas", DEVELOPER_PRINT_CANVAS, developerMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, DEVELOPER_STR "/Print Feature Context", DEVELOPER_PRINT_FEATURE_CONTEXT, developerMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, DEVELOPER_STR "/Show Window Stats", DEVELOPER_STATS, developerMenuCB, NULL},
       {ZMAPGUI_MENU_NONE, NULL               , 0, NULL, NULL}
     } ;
@@ -3037,6 +3039,22 @@ static void developerMenuCB(int menu_item_id, gpointer callback_data)
       {
         zmapWindowPrintCanvas(menu_data->window->canvas) ;
 
+        break ;
+      }
+
+    case DEVELOPER_PRINT_FEATURE_CONTEXT:
+      {
+        GError *error = NULL ;
+
+        if (!zMapFeatureDumpStdOutFeatures(menu_data->window->feature_context,
+                                           &(menu_data->window->context_map->styles),
+                                           &error))
+          {
+            zMapWarning("Feature context dump failed: %s", error->message) ;
+
+            g_error_free(error) ;
+          }
+        
         break ;
       }
 
