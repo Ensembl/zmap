@@ -56,8 +56,8 @@ using namespace gbtools ;
 
 
 #define PFETCH_READ_SIZE 80        /* about a line */
-#define PFETCH_FAILED_PREFIX "PFetch failed:"
-#define PFETCH_TITLE_FORMAT "pfetch %s\"%s\""
+#define PFETCH_FAILED_PREFIX "DB fetch failed:"
+#define PFETCH_TITLE_FORMAT "DB fetch %s\"%s\""
 #define PFETCH_FULL_RECORD_ARG "-F "
 
 
@@ -307,12 +307,12 @@ void zmapWindowPfetchEntry(ZMapWindow window, char *sequence_name)
       if (prefs.cookie_jar)
         g_free(prefs.cookie_jar);
 
-      // Show the pfetch dialog with a message of "pfetching..."
+      // Show the DB fetch dialog with a message of "DB fetching..."
       const char *pfetch_args = prefs.full_record ? PFETCH_FULL_RECORD_ARG : "";
 
       pfetch_data->title = g_strdup_printf(PFETCH_TITLE_FORMAT, pfetch_args, sequence_name) ;
 
-      pfetch_data->dialog = zMapGUIShowTextFull(pfetch_data->title, "pfetching...\n",
+      pfetch_data->dialog = zMapGUIShowTextFull(pfetch_data->title, "DB fetching...\n",
                                                 FALSE, NULL, &(pfetch_data->text_buffer));
 
       pfetch_data->widget_destroy_handler_id =
@@ -1209,7 +1209,7 @@ void zmapWindowFeatureContract(ZMapWindow window, FooCanvasItem *foo,
 }
 
 
-// Callback functions for pfetching sequence.
+// Callback functions for DB fetching sequence.
 //
 
 // Called when there is something to read from pfetch.

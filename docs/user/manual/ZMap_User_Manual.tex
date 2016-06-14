@@ -193,20 +193,37 @@
 
 \bigskip
 
-{\centering\large{Written by and contributions from:}\par
-\large{Gemma Guest} {\textless}\href{mailto:gb10@sanger.ac.uk}{gb10@sanger.ac.uk}{\textgreater}\par
-\large{Charlie Stewart}\par
-\large{Laurens Wilming}\par
-\large{Ed Griffiths}\par
-\large{James Gilbert}\par
-\large{Jennifer Harrow}\par
+\bigskip
+
+{\centering\large{ZMap was written by:}\par
+\large{Ed Griffiths, Roy Storey, Malcolm Hinsley, Gemma Guest and Steve Miller}\par
+}
+
+\bigskip
+
+\bigskip
+
+{\centering\large{This manual was written by:}\par
+\large{Gemma Guest, Charlie Steward and Laurens Wilming with contributions from
+Ed Griffiths, James Gilbert and Jennifer Harrow}\par
 }
 
 
 \bigskip
 
+\bigskip
+
+{\centering\large{Please send any comments to: \href{mailto:zmap@sanger.ac.uk}{zmap@sanger.ac.uk}}\par
+}
+
+
+\bigskip
+
+\bigskip
+
 {\centering\large{Wellcome Trust Sanger Institute}\par}
-{\centering16 March 2015\par}
+{\centering12th April 2016\par}
+
 
 
 
@@ -258,11 +275,32 @@
 \clearpage
 \section{Introduction}
 
-ZMap is a software package that provides a visualisation and editing tool for genomic features. The software is written in C/C++, utilising the gnome toolkit (GTK2) to draw features on a canvas.
+ZMap is a software package that provides a visualisation and editing tool for
+genomic features. The software is written in C++ utilising the GTK version 2
+toolkit and is supported on Linux, Apple OS X and MS Windows.
 
-ZMap accepts input from multiple sources in multiple formats across multiple genomes and is written in a way so that the addition of further formats is made as trivial as possible. Currently the list of formats includes GFF, BAM and DAS (which may reside in a file, an acedb instance, or an http server) and Ensembl databases. Multiple genomes and their associated features can be displayed in a single view as aligned blocks providing support for comparative annotation. ZMap provides facilities for editing and creating features, which can then be saved to a GFF file.
+ZMap accepts input from multiple sources in multiple formats across multiple
+genomes and is written in a way so that the addition of further formats is made
+as easy as possible. Currently there is support for GFF versions 2 and 3, and
+BAM and CRAM (which may reside in a file, an acedb instance, or an http server)
+and Ensembl databases. ZMap supports multiple top level windows and multiple
+windows within those top level windows allowing multiple genomes and their
+associated features to be displayed in any combination those windows. This
+makes it a good tool for all sorts of annotation activities including
+comparative genomics. ZMap provides facilities for exploring, editing and
+creating features which can currently be saved/exported as GFF version 3
+files.
 
-ZMap is part of the Otter annotation suite and contains a protocol for two-way communication with Otter so that it operates seamlessly as an additional display. ZMap can also call tools from the SeqTools suite of sequence visualisation tools to analyse alignments in more detail.
+ZMap can be used completely stand alone to view/edit GFF files or to view
+Ensembl websites or using its two-way communication protocol it can be
+integrated into existing annotation suites so that it operates seamlessly as an
+additional display. The latter use includes the Otter system used for
+vertebrate annotation at the Sanger Institute but also the Acedb-based system
+used by Wormbase.
+
+ZMap comes with an additional suite of sequence visualisation tools called
+SeqTools which it calls to provide sophisticated analysis of alignments in more
+detail.
 
 \clearpage
 \section{Starting ZMap}
@@ -367,7 +405,12 @@ ZMap is opened via the Tools menu bar in Otter (figure \ref{img_open_from_otterl
 \clearpage
 \section{The ZMap interface}
 
-The main ZMap display (figure \ref{img_main_interface}) consists of a canvas, which is a drawing area where any analysis and annotation that is present in your region of interest is shown. There is a toolbar, information bar and menu at the top, and a ruler showing the coordinates at the current position based on the current coordinate system. There is also a navigator pane to the left of the ruler, which is hidden by default.
+The main ZMap display (figure \ref{img_main_interface}) consists of a canvas,
+which is a drawing area where any analysis and annotation that is present in
+your region of interest is shown. There is a toolbar, information bar and menu
+at the top, and a ruler showing the coordinates at the current position based
+on the current coordinate system. There is also a navigator pane to the left of
+the ruler, which is hidden by default.
 
 \begin{figure}
 \centering
@@ -379,11 +422,20 @@ The main ZMap display (figure \ref{img_main_interface}) consists of a canvas, wh
 
 
 \subsection{Navigating around the canvas}
-Navigate by using the scroll bars or the middle mouse button (figure \ref{img_navigating}). By clicking the middle mouse anywhere in ZMap you will see a horizontal line. You can move this up and down and the coordinate of the clicked position will be displayed along the line. By default the coordinate display is relative to the start of the loaded region. To toggle to toplevel coordinates, go to the main menu and select \lstinline{View -> Toggle coords}.
+Navigate by using the scroll bars or the middle mouse button (figure
+\ref{img_navigating}). By clicking the middle mouse anywhere in ZMap you will
+see a horizontal line. You can move this up and down and the coordinate of the
+clicked position will be displayed along the line. By default the coordinate
+display is relative to the start of the loaded region. To toggle to toplevel
+coordinates, go to the main menu and select \lstinline{View -> Toggle coords}.
 
-When the button is released, the window will refresh, centering on the position of the line. You can also click in the window to make it active and use the scroll wheel to navigate up and down or achieve the same result using the scroll bar on the right hand side of the window.
+When the button is released, the window will refresh, centering on the position
+of the line. You can also click in the window to make it active and use the
+scroll wheel to navigate up and down or achieve the same result using the
+scroll bar on the right hand side of the window.
 
-If you release the mouse outside the ZMap window, you can then check the sequence position displayed, without re-centering.
+If you release the mouse outside the ZMap window, you can then check the
+sequence position displayed, without re-centering.
 
 \begin{figure}
 \centering
@@ -668,22 +720,41 @@ ZMap has rich feature display capabilities, which are highly configurable. Diffe
 \end{figure}
 
 \begin{enumerate}
-\item  The thick yellow line represents the genomic sequence; everything to the left represents the negative strand and everything to the right the positive strand. DNA matches (i.e. ESTs, mRNAs and RefSeq) and repeats have been configured so that they are all displayed to the right of the center, although they may align to either strand. Other features are configured to display in their relevant strand. The thin bar to the right is the clone that the genomic sequence is made up from. When connected to the Otter peer, double-clicking on this gives access to the DE editing window.
-\item  Annotated transcripts; green is coding (CDS), red is non-coding (UTR and transcript variants) and purple shows the ``coding'' region of NMD variants. Grey transcripts (see dotted line) contain exons outside the sequence slice being viewed and should not be confused with Halfwise hits.
-\item  Curated features, such as PolyA features are seen as horizontal black lines.
-\item  Phastcons44 - conserved regions detected using multiple sequence alignments of 44 organisms.
-\item  Imported annotation from CCDS (human and mouse only).
-\item  Imported transcripts via DAS source. Here PASA\_ESTs are shown.
-\item  Predicted transcripts such as Genscan (pale blue), Augustus (gold) and Halfwise predictions of Pfam (grey).
-\item  Imported annotation from Ensembl.
-\item  gis\_pet\_ditags and chip\_pet\_ditags are indicators of transcript boundaries.
-\item Repeats ( blue=Line , light green=Sine , gold=other ), tandem repeats are red.
+\item The thick yellow line represents the genomic sequence; everything to the
+  left represents the reverse strand and everything to the right the forward
+  strand. DNA matches (i.e. ESTs, mRNAs and RefSeq) and repeats have been
+  configured so that they are all displayed on the current forward strand
+  although they may align to either strand. Other features are configured to
+  display only on their relevant strand. The thin bar to the right is the clone
+  that the genomic sequence is made up from. When connected to the Otter peer,
+  double-clicking on this gives access to the DE editing window.
+\item Annotated transcripts; green is coding (CDS), red is non-coding (UTR and
+transcript variants) and purple shows the ``coding'' region of NMD variants.
+Grey transcripts (see dotted line) contain exons outside the sequence slice
+being viewed and should not be confused with Halfwise hits.
+\item Curated features, such as PolyA features are seen as horizontal black
+lines.
+\item Phastcons44 - conserved regions detected using multiple sequence
+alignments of 44 organisms.
+\item Imported annotation from CCDS (human and mouse only).
+\item Imported transcripts via DAS source. Here PASA\_ESTs are shown.
+\item Predicted transcripts such as Genscan (pale blue), Augustus (gold) and
+Halfwise predictions of Pfam (grey).
+\item Imported annotation from Ensembl.
+\item gis\_pet\_ditags and chip\_pet\_ditags are indicators of transcript
+boundaries.
+\item Repeats ( blue=Line , light green=Sine , gold=other ), tandem repeats are
+red.
 \item CpG islands appear as yellow boxes.
-\item Protein matches are strand specific - SwissProt are light blue and Trembl pink.
-\item EST matches are displayed as purple blocks and are broken down into human ESTs, mouse ESTs, and other ESTs from other organisms. 5' reads are on the left and 3' on the right.
+\item Protein matches are strand specific - SwissProt are light blue and Trembl
+pink.
+\item EST matches are displayed as purple blocks and are broken down into human
+ESTs, mouse ESTs, and other ESTs from other organisms. 5' reads are on the left
+and 3' on the right.
 \item mRNA matches contains all species and are displayed as brown blocks,
 \item RefSeq matches are the orange blocks.
-\item View and configure columns (i.e. the available features and analysis) - see section \ref{sec_track_configuration}.
+\item View and configure columns (i.e. the available features and analysis) -
+see section \ref{sec_track_configuration}.
 \end{enumerate}
 
 
@@ -901,7 +972,7 @@ To edit features in ZMap you must first enable annotation. Go to the menu option
 \subsubsection{Create a temporary feature}
 Features are edited by copying them to a \textbf{temporary feature} in the \textbf{Annotation} column (see figure \ref{img_editing_zmap}). The temporary feature can be based on any existing feature(s). The process is the same whether editing an existing gene model (in which case you will copy the gene model) or creating a new one (in which case you will copy the evidence features).
 
-To create a new temporary feature, select the transcript (or other feature) you wish to create a variant from and press \lstinline{Ctrl-K} (or right-click and select \lstinline{Annotation -> Copy selected transcript(s)}\footnote{Note that you need to enable the Annotation column from the Preferences dialog for the Annotation menu to appear. Ctrl-K will automatically enable the Annotation column if it is not already enabled.}). Alternatively, you can create a transcript from an alignment (or any other feature) by clicking the alignment and pressing \lstinline{Ctrl-K} (or right-click and select \lstinline{Annotatino -> Copy selected alignment(s)}).
+To create a new temporary feature, select the transcript (or other feature) you wish to create a variant from and press \lstinline{Ctrl-K} (or right-click and select \lstinline{Annotation -> Copy selected transcript(s)}\footnote{Note that you need to enable the Annotation column from the Preferences dialog for the Annotation menu to appear. Ctrl-K will automatically enable the Annotation column if it is not already enabled.}). Alternatively, you can create a transcript from an alignment (or any other feature) by clicking the alignment and pressing \lstinline{Ctrl-K} (or right-click and select \lstinline{Annotation -> Copy selected alignment(s)}).
 
 \begin{figure}
 \centering

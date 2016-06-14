@@ -32,6 +32,7 @@
 #include <ZMap/zmap.hpp>
 
 #include <string.h>
+#include <list>
 
 #include <ZMap/zmapUtils.hpp>
 #include <ZMap/zmapGLibUtils.hpp>
@@ -40,6 +41,7 @@
 #include <zmapWindowContainers.hpp>
 #include <gbtools/gbtools.hpp>
 
+using namespace std ;
 
 
 /* Labels for column state, used in code and the help page. */
@@ -270,7 +272,7 @@ static ColConfigure configure_create(ZMapWindow window, ZMapWindowColConfigureMo
 static void requestDestroyCB(gpointer data, guint callback_action, GtkWidget *widget) ;
 static void destroyCB(GtkWidget *widget, gpointer cb_data) ;
 static void saveCB(gpointer cb_data, guint callback_action, GtkWidget *widget) ;
-static void saveColumnsConfig(ZMapWindow window, const char *filename) ;
+static void saveColumnsConfig(ColConfigure configure_data, const char *filename) ;
 
 static void helpCB(gpointer data, guint callback_action, GtkWidget *w) ;
 static void helpDisplayCB(gpointer data, guint callback_action, GtkWidget *w) ;
@@ -434,6 +436,9 @@ void zmapWindowColumnConfigure(ZMapWindow                 window,
       gtk_notebook_set_current_page(GTK_NOTEBOOK(configure_data->notebook), page_no);
 
       gtk_widget_show_all(window->col_config_window);
+
+      if (GTK_IS_WINDOW(window->col_config_window))
+        gtk_window_present(GTK_WINDOW(window->col_config_window)) ;
     }
 
   return ;
@@ -683,7 +688,7 @@ static void loaded_page_apply_reorder_columns(LoadedPageData page_data)
       if (page_data->window->feature_set_names)
         g_list_free(page_data->window->feature_set_names) ;
 
-      page_data->window->feature_set_names = page_data->window->context_map->getOrderedColumnsListIDs() ;
+      page_data->window->feature_set_names = page_data->window->context_map->getOrderedColumnsGListIDs() ;
 
       /* Redraw */
       zmapWindowBusy(page_data->window, FALSE) ;
@@ -781,7 +786,7 @@ static void loaded_page_apply_styles(LoadedPageData page_data)
                       /* Remove the old style(s) */
                       if (old_style_names)
                         {
-                          GList *old_style_ids = zMapConfigString2QuarkIDList(old_style_names) ;
+                          GList *old_style_ids = zMapConfigString2QuarkIDGList(old_style_names) ;
                           
                           for (GList *item = old_style_ids; item; item = g_list_next(item))
                             {
@@ -2411,7 +2416,7 @@ static GtkTreeModel* loaded_cols_panel_create_tree_model(LoadedPageData page_dat
   zMapReturnValIfFail(page_data && page_data->window && page_data->window->context_map, model) ;
 
   /* Get list of column structs in current display order */
-  GList *columns_list = page_data->window->context_map->getOrderedColumnsList() ;
+  list<ZMapFeatureColumn> columns_list = page_data->window->context_map->getOrderedColumnsList() ;
 
   /* Create a tree store containing one row per column */
   GtkListStore *store = gtk_list_store_new(N_COLUMNS, G_TYPE_STRING, 
@@ -2421,9 +2426,9 @@ static GtkTreeModel* loaded_cols_panel_create_tree_model(LoadedPageData page_dat
 
   /* Loop through all columns in display order (columns are shown in mirror order on the rev
    * strand but we always use forward-strand order) */
-  for (GList *col_iter = columns_list; col_iter; col_iter = col_iter->next)
+  for (auto col_iter = columns_list.begin(); col_iter != columns_list.end(); ++col_iter)
     {
-      ZMapFeatureColumn column = (ZMapFeatureColumn)(col_iter->data) ;
+      ZMapFeatureColumn column = *col_iter ;
 
       FooCanvasGroup *column_group_fwd = zmapWindowGetColumnByID(page_data->window, ZMAPSTRAND_FORWARD, column->unique_id) ;
       FooCanvasGroup *column_group_rev = zmapWindowGetColumnByID(page_data->window, ZMAPSTRAND_REVERSE, column->unique_id) ;
@@ -2953,7 +2958,7 @@ static void saveCB(gpointer cb_data, guint callback_action, GtkWidget *widget)
 
   static char *filename = NULL ;
 
-  saveColumnsConfig(configure_data->window, filename) ;
+  saveColumnsConfig(configure_data, filename) ;
 
   return ;
 }
@@ -3650,9 +3655,12 @@ static gboolean zmapAddSizingSignalHandlers(GtkWidget *widget, gboolean debug,
   return TRUE;
 }
 
-static void saveColumnsConfig(ZMapWindow window, const char *filename)
+/* Apply changes and save the columns configuration to the user prefs */
+static void saveColumnsConfig(ColConfigure configure_data, const char *filename)
 {
-  zMapReturnIfFail(window) ;
+  zMapReturnIfFail(configure_data && configure_data->window) ;
+
+  ZMapWindow window = configure_data->window ; 
 
   ZMapConfigIniFileType file_type = ZMAPCONFIG_FILE_PREFS ;
 

@@ -48,14 +48,8 @@
 using namespace std ;
 
 
-static list<string>* ensemblGetList(const char *host,
-                                    const int port,
-                                    const char *user,
-                                    const char *passwd,
-                                    const char *dbname,
-                                    const string &query,
-                                    GError **error) ;
-
+// Unnamed namespace for internal linkage
+namespace {
 
 /*
  * We follow glib convention in error domain naming:
@@ -74,68 +68,13 @@ typedef enum
 
 
 
-list<string>* zMapEnsemblGetDatabaseList(const char *host, 
-                                         const int port,
-                                         const char *user,
-                                         const char *passwd,
-                                         GError **error)
-{
-  list<string> *result = NULL ;
-
-  string query("SHOW DATABASES") ;
-
-  result = ensemblGetList(host, port, user, passwd, NULL, query, error) ;
-
-  return result ;
-}
-
-
-list<string>* zMapEnsemblGetFeaturesetsList(const char *host, 
-                                            const int port,
-                                            const char *user,
-                                            const char *passwd,
-                                            const char *dbname,
-                                            GError **error)
-{
-  list<string> *result = NULL ;
-
-  string query("SELECT logic_name FROM analysis") ;
-
-  result = ensemblGetList(host, port, user, passwd, dbname, query, error) ;
-
-  return result ;
-}
-
-
-list<string>* zMapEnsemblGetBiotypesList(const char *host, 
-                                         const int port,
-                                         const char *user,
-                                         const char *passwd,
-                                         const char *dbname,
-                                         GError **error)
-{
-  list<string> *result = NULL ;
-
-  string query("SELECT biotype FROM gene GROUP BY biotype") ;
-
-  result = ensemblGetList(host, port, user, passwd, dbname, query, error) ;
-
-  return result ;
-}
-
-
-
-/* 
- *    Internal routines
- */
-
-static list<string>* ensemblGetList(const char *host,
-                                    const int port,
-                                    const char *user,
-                                    const char *passwd,
-                                    const char *dbname,
-                                    const string &query,
-                                    GError **error)
+list<string>* ensemblGetList(const char *host,
+                             const int port,
+                             const char *user,
+                             const char *passwd,
+                             const char *dbname,
+                             const string &query,
+                             GError **error)
 {
   list<string> *result = NULL ;
   zMapReturnValIfFail(host, result) ;
@@ -203,5 +142,61 @@ static list<string>* ensemblGetList(const char *host,
 
   return result ;
 }
+
+
+} // Unnamed namespace
+
+
+
+list<string>* zMapEnsemblGetDatabaseList(const char *host, 
+                                         const int port,
+                                         const char *user,
+                                         const char *passwd,
+                                         GError **error)
+{
+  list<string> *result = NULL ;
+
+  string query("SHOW DATABASES") ;
+
+  result = ensemblGetList(host, port, user, passwd, NULL, query, error) ;
+
+  return result ;
+}
+
+
+list<string>* zMapEnsemblGetFeaturesetsList(const char *host, 
+                                            const int port,
+                                            const char *user,
+                                            const char *passwd,
+                                            const char *dbname,
+                                            GError **error)
+{
+  list<string> *result = NULL ;
+
+  string query("SELECT logic_name FROM analysis") ;
+
+  result = ensemblGetList(host, port, user, passwd, dbname, query, error) ;
+
+  return result ;
+}
+
+
+list<string>* zMapEnsemblGetBiotypesList(const char *host, 
+                                         const int port,
+                                         const char *user,
+                                         const char *passwd,
+                                         const char *dbname,
+                                         GError **error)
+{
+  list<string> *result = NULL ;
+
+  string query("SELECT biotype FROM gene GROUP BY biotype") ;
+
+  result = ensemblGetList(host, port, user, passwd, dbname, query, error) ;
+
+  return result ;
+}
+
+
 
 #endif /* USE_ENSEMBL */

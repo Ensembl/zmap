@@ -536,10 +536,11 @@ gboolean zmapWindowContainerFeatureSetAttachFeatureSet(ZMapWindowContainerFeatur
 ZMapWindowFeaturesetItem zmapWindowContainerGetFeatureSetItem(ZMapWindowContainerFeatureSet container)
 {
   ZMapWindowFeaturesetItem container_feature_list = NULL ;
-  FooCanvasGroup *group = NULL ;
+  FooCanvasGroup *group ;
   GList *l ;
 
-  zMapReturnValIfFail(container, container_feature_list) ;
+  zMapReturnValIfFail(container, NULL) ;
+
   group = (FooCanvasGroup *)container ;
 
   for (l = group->item_list ; l ; l = l->next)

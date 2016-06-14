@@ -1,73 +1,33 @@
 
-Request Tracker Tickets Resolved from 14/01/2016 to 29/02/2016
+Request Tracker Tickets Resolved from 15/04/2016 to 20/05/2016
 
-ticket/510659
-id: ticket/510659
+ticket/523445
+id: ticket/523445
 Queue: zmap
-Subject: zmap doesn't like localhost
-Requestors: thibaut@ebi.ac.uk
-Owner: gb10
-Resolved: Fri Feb 05 15:23:49 2016
+Subject: protein translation in zmap with 'p' shortcut
+Requestors: sb7@sanger.ac.uk, th2@sanger.ac.uk
+Owner: mg13
+Resolved: Tue May 17 16:41:31 2016
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
-ticket/510987
-id: ticket/510987
+ticket/523795
+id: ticket/523795
 Queue: zmap
-Subject: Zmap has now crashed twice
-Requestors: erb@sanger.ac.uk
+Subject: Problem compiling ZMap from git
+Requestors: thibaut@ebi.ac.uk
 Owner: edgrif
-Resolved: Thu Jan 21 16:07:33 2016
+Resolved: Tue May 17 14:16:26 2016
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
-ticket/514113
-id: ticket/514113
+ticket/524700
+id: ticket/524700
 Queue: zmap
-Subject: Fetching transcript with different analysis_id than gene
+Subject: Zmap map is not loading transcript anymore
 Requestors: thibaut@ebi.ac.uk
 Owner: gb10
-Resolved: Wed Feb 10 14:18:41 2016
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/514583
-id: ticket/514583
-Queue: zmap
-Subject: Zmap-2.5 on EBI
-Requestors: thibaut@ebi.ac.uk
-Owner: gb10
-Resolved: Fri Feb 05 15:04:46 2016
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/515503
-id: ticket/515503
-Queue: zmap
-Subject: Ensembl_RNAseq_ENCODE_canonical_introns columns not showing in Zmap
-Requestors: erb@sanger.ac.uk
-Owner: sm23
-Resolved: Fri Feb 19 10:35:19 2016
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/516368
-id: ticket/516368
-Queue: zmap
-Subject: Feature request: edit source
-Requestors: thibaut@ebi.ac.uk
-Owner: gb10
-Resolved: Fri Feb 19 10:50:36 2016
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/516846
-id: ticket/516846
-Queue: zmap
-Subject: pfetch still used by dotter launcher in otter
-Requestors: jgrg@sanger.ac.uk, mpk@sanger.ac.uk
-Owner: jgrg
-Resolved: Mon Feb 29 12:26:44 2016
+Resolved: Fri Apr 15 10:47:49 2016
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 

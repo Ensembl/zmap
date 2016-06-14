@@ -36,7 +36,8 @@ libzmapfoocanvas_la_SOURCES =			\
 	libfoocanvas.h                          \
 	$(NULL)
 
-libzmapfoocanvas_la_CFLAGS = $(INCLUDE_COMMON)
+# If you don't like the debug compile then just remove the -g from below.
+libzmapfoocanvas_la_CFLAGS = -g -Wall $(INCLUDE_COMMON)
 
 libzmapfoocanvas_la_marshal = foo-canvas-marshal.list
 

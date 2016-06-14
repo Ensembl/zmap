@@ -1344,8 +1344,8 @@ void zmapWindowPrintItemCoords(FooCanvasItem *item) ;
 char *zmapWindowItemCoordsText(FooCanvasItem *item) ;
 void zmapWindowShowItem(FooCanvasItem *item) ;
 
-int zmapWindowCoordToDisplay(ZMapWindow window, int coord) ;
-void zmapWindowCoordPairToDisplay(ZMapWindow window,
+int zmapWindowCoordToDisplay(ZMapWindow window, ZMapWindowDisplayCoordinates display_mode, int coord) ;
+void zmapWindowCoordPairToDisplay(ZMapWindow window, ZMapWindowDisplayCoordinates display_mode,
 				  int start_in, int end_in,
 				  int *display_start_out, int *display_end_out) ;
 int zmapWindowCoordFromDisplay(ZMapWindow window, int coord) ;
@@ -1753,7 +1753,8 @@ void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
 
 gboolean zmapWindowItemIsOnScreen(ZMapWindow window, FooCanvasItem *item, gboolean completely) ;
 void zmapWindowScrollToItem(ZMapWindow window, FooCanvasItem *item) ;
-
+void zmapWindowScrollToFeature(ZMapWindow window,
+                               FooCanvasItem *feature_column_item, ZMapWindowCanvasFeature canvas_feature) ;
 
 void zmapWindowCreateFeatureFilterWindow(ZMapWindow window, ZMapWindowCallbackCommandFilter filter_data) ;
 
@@ -1776,18 +1777,17 @@ void zmapWindowCreateFeatureFilterWindow(ZMapWindow window, ZMapWindowCallbackCo
 ZMapWindowFocus zmapWindowFocusCreate(ZMapWindow window) ;
 
 
+// DO WE NEED THESE MACROS....??
 /* add subpart flag...a little at a time....most uses use the macro so won't see the change... */
 void zmapWindowFocusAddItemType(ZMapWindowFocus focus, FooCanvasItem *item,
                                 ZMapFeature feature, ZMapFeatureSubPart sub_part, ZMapWindowFocusType type);
 #define zmapWindowFocusAddItem(focus, item_list, feature) \
   zmapWindowFocusAddItemType(focus, item_list, feature, NULL, WINDOW_FOCUS_GROUP_FOCUS);
 
+void zmapWindowFocusAddItemsType(ZMapWindowFocus focus, GList *glist, FooCanvasItem *hot, ZMapFeature hot_feature, ZMapWindowFocusType type);
+#define zmapWindowFocusAddItems(focus, item_list, hot, hot_feature)                 \
+  zmapWindowFocusAddItemsType(focus, item_list, hot, hot_feature, WINDOW_FOCUS_GROUP_FOCUS);
 
-
-
-void zmapWindowFocusAddItemsType(ZMapWindowFocus focus, GList *glist, FooCanvasItem *hot,ZMapWindowFocusType type);
-#define zmapWindowFocusAddItems(focus, item_list, hot) \
-      zmapWindowFocusAddItemsType(focus, item_list, hot, WINDOW_FOCUS_GROUP_FOCUS);
 void zmapWindowFocusForEachFocusItemType(ZMapWindowFocus focus, ZMapWindowFocusType type,
                                          GFunc callback, gpointer user_data) ;
 void zmapWindowFocusResetType(ZMapWindowFocus focus, ZMapWindowFocusType type);
@@ -1800,17 +1800,11 @@ void zmapWindowFocusRemoveFocusItemType(ZMapWindowFocus focus,
 #define zmapWindowFocusRemoveOnlyFocusItem(focus, item) \
   zmapWindowFocusRemoveFocusItemType(focus, item, WINDOW_FOCUS_GROUP_FOCUS, FALSE)
 
-
 void zmapWindowFocusSetHotItem(ZMapWindowFocus focus, FooCanvasItem *item, ZMapFeature feature) ;
 FooCanvasItem *zmapWindowFocusGetHotItem(ZMapWindowFocus focus) ;
 gboolean zmapWindowFocusIsItemFocused(ZMapWindowFocus focus, FooCanvasItem *item) ;
 GList *zmapWindowFocusGetFocusItems(ZMapWindowFocus focus) ;
 GList *zmapWindowFocusGetFocusItemsType(ZMapWindowFocus focus, ZMapWindowFocusType type) ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-#define zmapWindowFocusGetFocusItems(focus) \
-    zmapWindowFocusGetFocusItemsType(focus, WINDOW_FOCUS_GROUP_FOCUS)
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 gboolean zmapWindowFocusIsItemInHotColumn(ZMapWindowFocus focus, FooCanvasItem *item) ;
 void zmapWindowFocusSetHotColumn(ZMapWindowFocus focus, FooCanvasGroup *column, FooCanvasItem *item) ;
@@ -1818,6 +1812,7 @@ FooCanvasGroup *zmapWindowFocusGetHotColumn(ZMapWindowFocus focus) ;
 void zmapWindowFocusDestroy(ZMapWindowFocus focus) ;
 
 FooCanvasGroup *zmapWindowGetFirstColumn(ZMapWindow window, ZMapStrand strand) ;
+FooCanvasGroup *zmapWindowGetLastColumn(ZMapWindow window, ZMapStrand strand) ;
 FooCanvasGroup *zmapWindowGetColumnByID(ZMapWindow window, ZMapStrand strand, GQuark column_id) ;
 
 void zmapWindowFocusHideFocusItems(ZMapWindowFocus focus, GList **hidden_items);

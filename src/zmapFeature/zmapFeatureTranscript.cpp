@@ -188,8 +188,7 @@ GArray *zMapFeatureTranscriptCreateSpanArray(void)
  * that the coordinates are only changed if the range is being expanded. The phase is
  * only stored if the _start_ of the range is expanded.
  */
-gboolean zMapFeatureAddTranscriptCDSDynamic(ZMapFeature feature, Coord start, Coord end, ZMapPhase phase,
-                                            gboolean bStartNotFound, gboolean bEndNotFound, int iStartNotFound)
+gboolean zMapFeatureAddTranscriptCDSDynamic(ZMapFeature feature, Coord start, Coord end, ZMapPhase phase)
 {
   gboolean result = FALSE ;
 
@@ -227,16 +226,6 @@ gboolean zMapFeatureAddTranscriptCDSDynamic(ZMapFeature feature, Coord start, Co
           feature->feature.transcript.cds_end = end ;
         }
       result = TRUE ;
-    }
-
-  if (bStartNotFound)
-    {
-      feature->feature.transcript.flags.start_not_found = 1 ;
-      feature->feature.transcript.start_not_found = iStartNotFound ;
-    }
-  if (bEndNotFound)
-    {
-      feature->feature.transcript.flags.end_not_found = 1 ;
     }
 
   return result ;

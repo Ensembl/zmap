@@ -187,7 +187,8 @@ static ZMapFeature makeFeature(EnsemblServer server,
                                const int match_start,
                                const int match_end,
                                GetFeaturesData get_features_data,
-                               ZMapFeatureBlock feature_block) ;
+                               ZMapFeatureBlock feature_block,
+                               set<GQuark> *transcript_ids = NULL) ;
 
 static ZMapFeature makeFeatureSimple(EnsemblServer server, SimpleFeature *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 static ZMapFeature makeFeatureBaseAlign(EnsemblServer server, BaseAlignFeature *rsf, ZMapHomolType homol_type, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
@@ -1287,28 +1288,20 @@ static ZMapFeature makeFeatureTranscript(EnsemblServer server,
       (biotype && zMap_g_list_find_quark(server->req_biotypes, g_quark_from_string(biotype))))
     {
       feature_name_id = Transcript_getStableId(rsf);
-      GQuark feature_name_id_quark = g_quark_from_string(feature_name_id);
+      feature_name = Transcript_getExternalName(rsf) ;
 
-      /* Only add the transcript if it's not been processed already */
-      if (transcript_ids.find(feature_name_id_quark) == transcript_ids.end())
-        {
-          transcript_ids.insert(feature_name_id_quark);
+      if (!feature_name || *feature_name == '\0')
+        feature_name = feature_name_id ;
 
-          feature_name = Transcript_getExternalName(rsf) ;
+      if (analysis && (!source || *source == '\0'))
+        source = Analysis_getLogicName(analysis) ;
 
-          if (!feature_name || *feature_name == '\0')
-            feature_name = feature_name_id ;
+      if (analysis && (!source || *source == '\0'))
+        source = Analysis_getGFFSource(analysis) ;
 
-          if (analysis && (!source || *source == '\0'))
-            source = Analysis_getLogicName(analysis) ;
-
-          if (analysis && (!source || *source == '\0'))
-            source = Analysis_getGFFSource(analysis) ;
-
-          feature = makeFeature(server, (SeqFeature*)rsf, feature_name_id, feature_name, 
-                                feature_mode, source, gene_source, biotype, 0, 0, 
-                                get_features_data, feature_block) ;
-        }
+      feature = makeFeature(server, (SeqFeature*)rsf, feature_name_id, feature_name, 
+                            feature_mode, source, gene_source, biotype, 0, 0, 
+                            get_features_data, feature_block, &transcript_ids) ;
 
       if (feature)
         {
@@ -1592,7 +1585,8 @@ static ZMapFeature makeFeature(EnsemblServer server,
                                const int match_start,
                                const int match_end,
                                GetFeaturesData get_features_data,
-                               ZMapFeatureBlock feature_block)
+                               ZMapFeatureBlock feature_block,
+                               set<GQuark> *transcript_ids)
 {
   ZMapFeature feature = NULL ;
   const char *feature_name_id = feature_name_id_in ;
@@ -1639,53 +1633,61 @@ static ZMapFeature makeFeature(EnsemblServer server,
       /* Create the unique id from the db name, feature name and coords (cast away const... ugh) */
       unique_id = zMapFeatureCreateID(feature_mode, (char*)feature_name_id, strand, start, end, match_start, match_end);
 
-      /* If a prefix is given, add it to the source name */
-      /* We can get different feature types with the same source, so ensure that the
-       * featureset id is unique by also appending the biotype or SO term */
-      if (server->db_prefix)
-        unique_source = g_strdup_printf("%s_%s_%s", server->db_prefix, source, biotype);
-      else
-        unique_source = g_strdup_printf("%s_%s", source, biotype) ;
-
-      /* Find the featureset, or create it if it doesn't exist */
-      GQuark feature_set_id = zMapFeatureSetCreateID((char*)unique_source) ;
-
-      ZMapFeatureSet feature_set = (ZMapFeatureSet)zMapFeatureAnyGetFeatureByID((ZMapFeatureAny)feature_block,
-                                                                                feature_set_id,
-                                                                                ZMAPFEATURE_STRUCT_FEATURESET) ;
-
-      if (!feature_set)
+      /* If it's a transcript, only add it if it's not been processed already */
+      if (!transcript_ids ||
+          transcript_ids->find(unique_id) == transcript_ids->end())
         {
-          feature_set = makeFeatureSet(feature_name_id, feature_set_id, feature_mode, unique_source, get_features_data, feature_block) ;
-        }
+          if (transcript_ids)
+            transcript_ids->insert(unique_id);
 
-      if (feature_set)
-        {
-          /* ok, actually create the feature now */
-          feature = zMapFeatureCreateEmpty() ;
+          /* If a prefix is given, add it to the source name */
+          /* We can get different feature types with the same source, so ensure that the
+           * featureset id is unique by also appending the biotype or SO term */
+          if (server->db_prefix)
+            unique_source = g_strdup_printf("%s_%s_%s", server->db_prefix, source, biotype);
+          else
+            unique_source = g_strdup_printf("%s_%s", source, biotype) ;
 
-          /* cast away const... ugh */
-          zMapFeatureAddStandardData(feature,
-                                     (char*)g_quark_to_string(unique_id),
-                                     (char*)feature_name,
-                                     sequence,
-                                     (char*)SO_accession,
-                                     feature_mode,
-                                     &feature_set->style,
-                                     start,
-                                     end,
-                                     has_score,
-                                     score,
-                                     strand) ;
+          /* Find the featureset, or create it if it doesn't exist */
+          GQuark feature_set_id = zMapFeatureSetCreateID((char*)unique_source) ;
 
-          //zMapLogMessage("Created feature: name %s, source %s, so %s, mode %d, start %d, end %d, score %f, strand %d",
-          //               feature_name, source, SO_accession, feature_mode, start, end, score, strand) ;
+          ZMapFeatureSet feature_set = (ZMapFeatureSet)zMapFeatureAnyGetFeatureByID((ZMapFeatureAny)feature_block,
+                                                                                    feature_set_id,
+                                                                                    ZMAPFEATURE_STRUCT_FEATURESET) ;
 
-          /* add the new feature to the featureset */
-          ZMapFeature existing_feature = (ZMapFeature)g_hash_table_lookup(((ZMapFeatureAny)feature_set)->children, GINT_TO_POINTER(feature_name_id)) ;
+          if (!feature_set)
+            {
+              feature_set = makeFeatureSet(feature_name_id, feature_set_id, feature_mode, unique_source, get_features_data, feature_block) ;
+            }
 
-          if (!existing_feature)
-            zMapFeatureSetAddFeature(feature_set, feature) ;
+          if (feature_set)
+            {
+              /* ok, actually create the feature now */
+              feature = zMapFeatureCreateEmpty() ;
+
+              /* cast away const... ugh */
+              zMapFeatureAddStandardData(feature,
+                                         (char*)g_quark_to_string(unique_id),
+                                         (char*)feature_name,
+                                         sequence,
+                                         (char*)SO_accession,
+                                         feature_mode,
+                                         &feature_set->style,
+                                         start,
+                                         end,
+                                         has_score,
+                                         score,
+                                         strand) ;
+
+              //zMapLogMessage("Created feature: name %s, source %s, so %s, mode %d, start %d, end %d, score %f, strand %d",
+              //               feature_name, source, SO_accession, feature_mode, start, end, score, strand) ;
+
+              /* add the new feature to the featureset */
+              ZMapFeature existing_feature = (ZMapFeature)g_hash_table_lookup(((ZMapFeatureAny)feature_set)->children, GINT_TO_POINTER(feature_name_id)) ;
+
+              if (!existing_feature)
+                zMapFeatureSetAddFeature(feature_set, feature) ;
+            }
         }
     }
   else if (!SO_accession)

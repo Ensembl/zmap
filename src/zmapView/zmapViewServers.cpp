@@ -147,7 +147,7 @@ void zMapViewSetUpServerConnection(ZMapView zmap_view, ZMapConfigSource current_
             {
               /* req all featuresets  as a list of their quark names. */
               /* we need non canonicalised name to get Capitalised name on the status display */
-              req_featuresets = zMapConfigString2QuarkList(current_server->featuresets,FALSE) ;
+              req_featuresets = zMapConfigString2QuarkGList(current_server->featuresets,FALSE) ;
 
               if(!zmap_view->columns_set)
                 {
@@ -164,7 +164,7 @@ void zMapViewSetUpServerConnection(ZMapView zmap_view, ZMapConfigSource current_
           if(current_server->biotypes)
             {
               /* req all biotypes  as a list of their quark names. */
-              req_biotypes = zMapConfigString2QuarkList(current_server->biotypes,FALSE) ;
+              req_biotypes = zMapConfigString2QuarkGList(current_server->biotypes,FALSE) ;
             }
 
           terminate = g_str_has_prefix(current_server->url,"pipe://");

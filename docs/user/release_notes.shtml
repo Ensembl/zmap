@@ -6,6 +6,38 @@
 <body>
 <h2>ZMap - Release Notes</h2>
 
+<h4>Version 2.9.0</h4>
+<ul>
+  <li>Fix bug in start/end_not_found handling. - RT523445
+  <li>Remove start/end_not_found, wrong place. - RT523445
+  <li>Fix a problem creating zmap's compile date file meaning it had to be compiled twice - RT523795
+</ul>
+
+<h4>Version 2.8.0</h4>
+<ul>
+  <li>     Fix a bug calling blixem on bam columns - RT 521742
+  <li>   otter error: Otter-99-09 saving column order not working completely (rt517878)
+  <li> Selecting single exons to add to a temporary feature (rt519398)
+<li> Clicking on composite BAM reads should show accessions. (rt520882)
+<li> Zmap map is not loading transcript anymore (rt 524700)
+</ul>
+
+<h4>Version 2.7.1</h4>
+<ul>
+  <li>RT '524700' Fix a regression introduced in 2.6.0 where some transcripts are not loading from ensembl.
+</ul>
+
+
+<h4>Version 2.7.0</h4>
+<ul>
+  <li>RT '519209' BAM colinear line colour
+  <li> RT '515503'bug reading the columns stanza
+  <li>RT 521742 bug calling blixem on bam columns
+  <li>RT 514386 Zmap crash pfetching
+  <li>RT 516368 Feature request: edit source
+</ul>
+
+
 <h4>Version 2.6.0</h4>
 <ul>
   <li>RT516368: Add an Edit button to standalone-ZMap's main window so that you can edit sources.

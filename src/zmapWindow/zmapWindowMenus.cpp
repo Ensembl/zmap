@@ -307,6 +307,7 @@ enum
     DEVELOPER_FEATURESETITEM_FEATUREITEM_FEATURE,
     DEVELOPER_PRINT_STYLE,
     DEVELOPER_PRINT_CANVAS,
+    DEVELOPER_PRINT_FEATURE_CONTEXT,
     DEVELOPER_STATS
   } ;
 
@@ -1441,9 +1442,8 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
              * focus hot item if this was a focus highlight
              * in this call it's irrelevant so don't set the hot item, pass NULL instead
              */
-
             zmapWindowFocusAddItemsType(menu_data->window->focus, evidence_items,
-                  NULL /* menu_data->item */, WINDOW_FOCUS_GROUP_EVIDENCE);
+                                        NULL /* menu_data->item */, NULL, WINDOW_FOCUS_GROUP_EVIDENCE);
 
 
             g_list_free(evidence);
@@ -2877,6 +2877,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuDeveloperOps(int *start_index_inout,
        DEVELOPER_FEATURESETITEM_FEATUREITEM_FEATURE, developerMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, DEVELOPER_STR "/Print Style", DEVELOPER_PRINT_STYLE, developerMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, DEVELOPER_STR "/Print Canvas", DEVELOPER_PRINT_CANVAS, developerMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, DEVELOPER_STR "/Print Feature Context", DEVELOPER_PRINT_FEATURE_CONTEXT, developerMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, DEVELOPER_STR "/Show Window Stats", DEVELOPER_STATS, developerMenuCB, NULL},
       {ZMAPGUI_MENU_NONE, NULL               , 0, NULL, NULL}
     } ;
@@ -3038,6 +3039,22 @@ static void developerMenuCB(int menu_item_id, gpointer callback_data)
       {
         zmapWindowPrintCanvas(menu_data->window->canvas) ;
 
+        break ;
+      }
+
+    case DEVELOPER_PRINT_FEATURE_CONTEXT:
+      {
+        GError *error = NULL ;
+
+        if (!zMapFeatureDumpStdOutFeatures(menu_data->window->feature_context,
+                                           &(menu_data->window->context_map->styles),
+                                           &error))
+          {
+            zMapWarning("Feature context dump failed: %s", error->message) ;
+
+            g_error_free(error) ;
+          }
+        
         break ;
       }
 
@@ -4004,13 +4021,15 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
     case BLIX_SET:
       requested_homol_set = ZMAPWINDOW_ALIGNCMD_SET ;
       if (menu_data->feature_set && menu_data->window->context_map->isSeqFeatureSet(menu_data->feature_set->unique_id))
-        seq_sets = zmapWindowCoverageGetRelatedFeaturesets(menu_data->context_map, menu_data->feature_set, seq_sets, FALSE);
+        seq_sets = g_list_append(seq_sets, GINT_TO_POINTER(menu_data->feature_set->unique_id)) ;
+      seq_sets = zmapWindowCoverageGetRelatedFeaturesets(menu_data->context_map, menu_data->feature_set, seq_sets, FALSE);
       break ;
 
     case BLIX_MULTI_SETS:
       requested_homol_set = ZMAPWINDOW_ALIGNCMD_MULTISET ;
       if (menu_data->feature_set && menu_data->window->context_map->isSeqFeatureSet(menu_data->feature_set->unique_id))
-        seq_sets = zmapWindowCoverageGetRelatedFeaturesets(menu_data->context_map, menu_data->feature_set, seq_sets, FALSE);
+        seq_sets = g_list_append(seq_sets, GINT_TO_POINTER(menu_data->feature_set->unique_id)) ;
+      seq_sets = zmapWindowCoverageGetRelatedFeaturesets(menu_data->context_map, menu_data->feature_set, seq_sets, FALSE);
       break;
 
     case BLIX_READS_FEATURESET_MARK: 

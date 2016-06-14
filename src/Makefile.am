@@ -34,6 +34,10 @@ if USE_GBTOOLS
 OPTIONAL_SUBDIRS = gbtools
 endif
 
+if USE_ENSEMBL_SUBDIR
+OPTIONAL_SUBDIRS = ensc-core/src
+endif
+
 SUBDIRS = $(OPTIONAL_SUBDIRS) libzmapfoocanvas
 
 if USE_ACECONN
@@ -198,7 +202,7 @@ endif
 
 if USE_ENSEMBL
 if USE_ENSEMBL_SUBDIR
-zmap_LDADD += $(top_builddir)/ensc-core/src/libensc.a
+zmap_LDADD += $(top_builddir)/ensc-core/src/.libs/libensc.a
 endif
 endif
 

@@ -35,6 +35,7 @@
 #include <libzmapfoocanvas/libfoocanvas.h>
 
 #include <ZMap/zmapFeature.hpp>
+#include <ZMap/zmapSkipList.hpp>
 
 #include <zmapWindowCanvasFeature.hpp>
 
@@ -172,7 +173,7 @@ ZMapWindowFeaturesetItem zMapWindowCanvasItemFeaturesetGetFeaturesetItem(FooCanv
 
 guint zMapWindowCanvasFeaturesetGetId(ZMapWindowFeaturesetItem featureset);
 GQuark zMapWindowCanvasFeaturesetGetSetIDAtPos(ZMapWindowFeaturesetItem fi, double event_x) ;
-
+ZMapSkipList zMapWindowCanvasFeaturesetFindFeature(ZMapWindowFeaturesetItem fi, ZMapFeature feature) ;
 
 gboolean zMapWindowCanvasFeaturesetHasPointFeature(FooCanvasItem *item) ;
 ZMapFeature zMapWindowCanvasFeaturesetGetPointFeature(ZMapWindowFeaturesetItem featureset_item) ;
@@ -281,6 +282,10 @@ void zMapWindowCanvasFeaturesetShowHideMasked(FooCanvasItem *foo, gboolean show,
 
 void zMapWindowCanvasFeaturesetSetStipple(ZMapWindowFeaturesetItem featureset, GdkBitmap *stipple);
 
+void  zMapWindowCanvasFeaturesetPrintFeatureList(ZMapWindowFeaturesetItem fi) ;
+
+ZMapSkipList zMapWindowCanvasFeaturesetGetCurrFeature(ZMapWindowFeaturesetItem fi) ;
+void zMapWindowCanvasFeaturesetSetCurrFeature(ZMapWindowFeaturesetItem fi, ZMapSkipList sl) ;
 
 double zMapWindowCanvasFeatureGetWidthFromScore(ZMapFeatureTypeStyle style, double width, double score);
 double zMapWindowCanvasFeatureGetNormalisedScore(ZMapFeatureTypeStyle style, double score);

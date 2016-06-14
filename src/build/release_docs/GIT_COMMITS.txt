@@ -1,22 +1,9 @@
 
-Git commits for  from commit "production" until commit "release/2.6.0"
+Git commits for  from commit "production" until commit "release/2.9.0"
 
-851516e 2016-02-18 Fix an issue with merging column-groups stanzas - BUG FIX
-a9c11e2 2016-02-17 Add a Filter box to the featureset/biotype search lists - NEW FEATURE 'create sources'
-a89b8ee 2016-02-17 Merge branch 'feature/ensembl' into develop - NEW FEATURE 'create sources'
-afb74bd 2016-02-17 Merge branch 'feature/manual' into develop
-637311f 2016-02-17 Add button to create-source dialog to load dna - NEW FEATURE 'Load dna'
-c06af30 2016-02-16 Fix a typo which broke GFF file import - BUG FIX
-ed90dc3 2016-02-16 Fix a bug saving edited sequence to a real feature - BUG FIX
-c57d1c2 2016-02-16 Fix a bug showing/hiding columns when 3FT is enabled - BUG FIX
-7ea6d2b 2016-02-16 Fix a crash when editing a transcript's sequence - BUG FIX
-f80c823 2016-02-16 Add screenshot for editing transcript's sequence - DOC
-9b96931 2016-02-15 Merge branch 'feature/manual' into develop
-7308d4e 2016-02-10 Merge branch 'feature/ensembl' into develop
-e606808 2016-02-09 Put back code as was, problem in pfetch was in gbtools pfetch code. - REGRESSION FIX
-c2f9bd0 2016-02-03 Fix small bug in colinear colours code. - REGRESSION FIX
-ce61dcf 2016-01-28 Merge branch 'feature/Dashed_gaps' into develop
-148cc0f 2016-01-19 Fix problems using localhost for ensembl db - RT 510659
+c9c1e4e 2016-05-17 Fix  but in start/end_not_found handling. - RT523445
+895a1ea 2016-05-17 Remove start/end_not_found, wrong place. - RT523445
+985ac5f 2016-04-27 Add back in routine that logs the command line blixem was called with. - REGRESSION FIX
 
 
 End of git commits

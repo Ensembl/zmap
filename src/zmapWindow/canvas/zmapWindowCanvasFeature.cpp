@@ -296,6 +296,32 @@ GString *zMapWindowCanvasFeature2Txt(ZMapWindowCanvasFeature canvas_feature)
 }
 
 
+double zMapWindowCanvasFeatureGetBumpOffset(ZMapWindowCanvasFeature canvas_feature)
+{
+  double bump_offset = 0.0 ;
+
+  zMapReturnValIfFail(canvas_feature, 0.0) ;
+
+  bump_offset = canvas_feature->bump_offset ;
+
+  return bump_offset ;
+}
+
+
+
+double zMapWindowCanvasFeatureGetWidth(ZMapWindowCanvasFeature canvas_feature)
+{
+  double width = 0.0 ;
+
+  zMapReturnValIfFail(canvas_feature, 0.0) ;
+
+  width = canvas_feature->width ;
+
+  return width ;
+}
+
+
+
 /* return a span struct for the feature */
 ZMapFeatureSubPart zMapWindowCanvasFeaturesetGetSubPart(FooCanvasItem *foo, ZMapFeature feature,
                                                         double x, double y)
@@ -327,18 +353,20 @@ ZMapFeature zMapWindowCanvasFeatureGetFeature(ZMapWindowCanvasFeature feature_it
 
 
 
-/* Malcolm's comments about being handed NULLs surely implies that his code handling
- * the lists is faulty....it's also annoying that he has inserted return statements
+/* The comments about being handed NULLs surely implies that his code handling
+ * the lists is faulty....it's also annoying that they has inserted return statements
  * everywhere when it's completely unnecessary.....deep sigh.... */
 
 /* sort by genomic coordinate for display purposes */
 /* start coord then end coord reversed, mainly for summarise function */
 /* also used by collapse code and locus de-overlap  */
+// Note that not all ZMapWindowCanvasFeature have an associated feature.
 gint zMapWindowFeatureCmp(gconstpointer a, gconstpointer b)
 {
   ZMapWindowCanvasFeature feata = (ZMapWindowCanvasFeature) a;
   ZMapWindowCanvasFeature featb = (ZMapWindowCanvasFeature) b;
 
+  // THIS SEEMS INCREDIBLY WORRYING DOESN'T IT ???
   /* we can get NULLs due to GLib being silly */
   /* this code is pedantic, but I prefer stable sorting */
   if(!featb)
@@ -350,18 +378,60 @@ gint zMapWindowFeatureCmp(gconstpointer a, gconstpointer b)
   if(!feata)
     return(-1);
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  const char *feata_name, *featb_name ;
+
+  if ((feata->feature && featb->feature) && zMapStyleNameCompare(*(feata->feature->style), (char *)"history"))
+    {
+      feata_name = zMapFeatureName((ZMapFeatureAny)(feata->feature)) ;
+      featb_name = zMapFeatureName((ZMapFeatureAny)(featb->feature)) ;
+ 
+      if (!zMapFeatureIsValid((ZMapFeatureAny)(feata->feature)))
+        printf("bad feature %s\n", feata_name) ;
+      else if (!zMapFeatureIsValid((ZMapFeatureAny)(featb->feature)))
+        printf("bad feature %s\n", featb_name) ;
+
+      printf("found %s and %s\n", feata_name, featb_name) ;
+    }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
   if(feata->y1 < featb->y1)
     return(-1);
+
   if(feata->y1 > featb->y1)
     return(1);
 
-  if(feata->y2 > featb->y2)
+  if(feata->y2 < featb->y2)
     return(-1);
 
-  if(feata->y2 < featb->y2)
+  if(feata->y2 > featb->y2)
     return(1);
 
-  return(0);
+  if (feata->type >= FEATURE_BASIC && feata->type <=FEATURE_GLYPH
+      && featb->type >= FEATURE_BASIC && featb->type <=FEATURE_GLYPH)
+    {
+      if (!(feata->feature) || !(featb->feature))
+        {
+          if(feata->y2 < featb->y2)
+            return(-1);
+
+          if(feata->y2 > featb->y2)
+            return(1);
+        }
+      else
+        {
+          if(feata->feature->x2 < featb->feature->x2)
+            return(-1);
+
+          if(feata->feature->x2 > featb->feature->x2)
+            return(1);
+        }
+    }
+
+
+  return 0 ;
 }
 
 

@@ -159,6 +159,7 @@ ZMapSOSetInUse zMapGFFGetSOSetInUse(ZMapGFFParser pParser );
 gboolean zMapGFFSetSOErrorLevel(ZMapGFFParser pParserBase, ZMapSOErrorLevel cErrorLevel) ;
 ZMapSOErrorLevel zMapGFFGetSOErrorLevel(ZMapGFFParser pParserBase ) ;
 gboolean zMapGFFGetHeaderGotMinimal_V3(ZMapGFFParser pParserBase) ;
+gboolean zMapGFFGetHeaderGotSequenceRegion_V3(ZMapGFFParser pParserBase) ;
 
 
 

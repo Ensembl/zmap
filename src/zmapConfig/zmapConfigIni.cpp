@@ -32,6 +32,7 @@
 
 #include <ZMap/zmap.hpp>
 
+#include <algorithm>
 #include <string.h>/* memset */
 #include <glib.h>
 
@@ -43,12 +44,16 @@
 #include <ZMap/zmapGLibUtils.hpp>
 #include <zmapConfigIni_P.hpp>
 
+using namespace std ;
+
 
 #undef WITH_LOGGING
 
 
 
-
+// Unnamed namespace for internal linkage
+namespace
+{
 
 typedef struct
 {
@@ -74,32 +79,43 @@ typedef struct
 } UpdateStyleDataStruct, *UpdateStyleData ;
 
 
-static GList *copy_keys(ZMapConfigIniContextKeyEntryStruct *keys);
-static void check_required(gpointer list_data, gpointer user_data);
-static gboolean check_required_keys(ZMapConfigIniContext context,
-    ZMapConfigIniContextStanzaEntry stanza);
-static GType get_stanza_key_type(ZMapConfigIniContext context,
-                                 const char *stanza_name,
-                                 const char *stanza_type,
-                                 const char *key_name);
-static gint match_name_type(gconstpointer list_data, gconstpointer user_data);
-static void setErrorMessage(ZMapConfigIniContext context,char *error_message);
-static void context_update_style(ZMapFeatureTypeStyle style, gpointer data);
+/* Case-insensitive comparison of two strings (as GQuarks) */
+class GQuarkNCaseCmp
+{
+public:
+  GQuarkNCaseCmp(const GQuark &val) : m_val(val) {} ;
 
+  bool operator()(const GQuark &compare_val) const
+  {
+    // convert to unique ids to be case-insensitive
+    return zMapStyleCreateIDFromID(compare_val) == zMapStyleCreateIDFromID(m_val);
+  }
+
+private:
+  GQuark m_val;
+} ;
+
+
+GList *copy_keys(ZMapConfigIniContextKeyEntryStruct *keys);
+void check_required(gpointer list_data, gpointer user_data);
+gboolean check_required_keys(ZMapConfigIniContext context,
+                             ZMapConfigIniContextStanzaEntry stanza);
+GType get_stanza_key_type(ZMapConfigIniContext context,
+                          const char *stanza_name,
+                          const char *stanza_type,
+                          const char *key_name);
+gint match_name_type(gconstpointer list_data, gconstpointer user_data);
+void setErrorMessage(ZMapConfigIniContext context,char *error_message);
+void context_update_style(ZMapFeatureTypeStyle style, gpointer data);
+
+
+} // Unnamed namespace
 
 
 
 /*
  *                  External Interface functions
  */
-
-
-
-/* WHAT ON EARTH IS THIS ABOUT...??????? */
-void zMapConfigIniGetStanza(ZMapConfigIni config, const char *stanza_name)
-{
-  return ;
-}
 
 
 ZMapConfigIniContext zMapConfigIniContextCreate(const char *config_file)
@@ -208,18 +224,6 @@ gchar *zMapConfigIniContextErrorMessage(ZMapConfigIniContext context)
   e = context->error_message ;
 
   return e ;
-}
-
-static void setErrorMessage(ZMapConfigIniContext context,char *error_message)
-{
-  zMapReturnIfFail(context) ;
-
-  if (context->error_message)
-    g_free(context->error_message);
-
-  context->error_message = error_message;
-
-  return ;
 }
 
 gchar *zMapConfigIniContextKeyFileErrorMessage(ZMapConfigIniContext context)
@@ -641,6 +645,134 @@ gboolean zMapConfigIniContextSetValue(ZMapConfigIniContext context,
 }
 
 
+/*
+ * Write a named stanza from values in a hash table
+ * NOTE: this function operates differently from normal ConfigIni in that we do not know
+ *  the names of the keys in the stanza and cannot create a struct to hold these and thier values
+ * So instead we have to use GLib directly.
+ * This is a simple generic table of quark->quark
+ * used for [featureset_styles] [GFF_source] and [column_styles]
+ */
+void zMapConfigIniSetQQHash(ZMapConfigIniContext context, ZMapConfigIniFileType file_type, 
+                            const char *stanza, GHashTable *ghash)
+{
+  zMapReturnIfFail(context && context->config) ;
+
+  GKeyFile *gkf = context->config->key_file[file_type] ;
+
+  if (gkf)
+    {
+      /* Loop through all entries in the hash table */
+      GList *iter = NULL ;
+      gpointer key = NULL,value = NULL;
+
+      zMap_g_hash_table_iter_init(&iter, ghash) ;
+
+      while(zMap_g_hash_table_iter_next(&iter, &key, &value))
+        {
+          if (key && value)
+            {
+              const char *key_str = g_quark_to_string(GPOINTER_TO_INT(key)) ;
+              const char *value_str = g_quark_to_string(GPOINTER_TO_INT(value)) ;
+
+              g_key_file_set_string(gkf, stanza, key_str, value_str) ;
+            }
+        }
+    }
+}
+
+
+GKeyFile *zMapConfigIniGetKeyFile(ZMapConfigIniContext context,
+                                  ZMapConfigIniFileType file_type)
+{
+  GKeyFile *result = NULL ;
+
+  if (context && context->config)
+    result = context->config->key_file[file_type] ;
+
+  return result ;
+}
+
+
+/* Given two lists of column names, merge the src list into the dest list. Any items that are not
+ * in dest list are added as close to a known position as possible based on adjacent items'
+ * positions. If unique is true, the dest_list must be a list of unique ids and the result will 
+ * be a list of unique ids; otherwise, original ids are used */
+list<GQuark> zMapConfigIniMergeColumnsLists(list<GQuark> &src_list, 
+                                            list<GQuark> &dest_list,
+                                            const bool unique)
+{
+  if (dest_list.size() < 1)
+    {
+      // Just use the src list
+      if (unique)
+        {
+          // convert to unique ids
+          for (auto src_iter = src_list.begin(); src_iter != src_list.end(); ++src_iter)
+            {
+              /* Convert src id to a unique id */
+              GQuark src = zMapStyleCreateID(g_quark_to_string(*src_iter)) ;
+              dest_list.push_back(src) ;
+            }
+        }
+      else
+        {
+          dest_list = src_list ;
+        }
+    }
+  else if (src_list.size() > 0)
+    {
+      // Merge src into dest. 
+
+      // Loop through all items in src list.
+      auto src_iter_prev = src_list.begin();
+      for (auto src_iter = src_list.begin(); src_iter != src_list.end(); ++src_iter)
+        {
+          /* Convert src id to a unique id */
+          GQuark src = unique ? zMapStyleCreateIDFromID(*src_iter) : *src_iter ;
+
+          // See if this item is already in the dest list
+          auto dest_iter = find_if(dest_list.begin(), dest_list.end(), GQuarkNCaseCmp(src)) ;
+
+          if (dest_iter == dest_list.end())
+            {
+              // It's not in the dest list so we need to add it. Add it into dest_list just after
+              // the previous item from src_list to try to keep things grouped together.
+
+              // If the prev item is the same as the current item that means it's the first in the
+              // list. 
+              if (src_iter_prev == src_iter)
+                {
+                  // There is no previous item. Add the src item to the start of the dest_list.
+                  dest_list.push_front(src) ;
+                }
+              else
+                {
+                  // Find the previous src item in the dest list (it should be there because we
+                  // have processed it already).
+                  dest_iter = find(dest_list.begin(), dest_list.end(), *src_iter_prev) ;
+
+                  // Add the src item just after the prev item.
+                  if (dest_iter != dest_list.end())
+                    {
+                      ++dest_iter ;
+                      dest_list.insert(dest_iter, src);
+                    }
+                }
+            }
+          else
+            {
+              // It's already in the dest list so we don't need to add it. However, if the case is
+              // different then use the case from the src
+              *dest_iter = src ;
+            }
+
+          src_iter_prev = src_iter ;
+        }
+    }
+
+  return dest_list;
+}
 
 
 
@@ -649,8 +781,23 @@ gboolean zMapConfigIniContextSetValue(ZMapConfigIniContext context,
  *                   Internal functions
  */
 
+// Unnamed namespace
+namespace
+{
 
-static void check_required(gpointer list_data, gpointer user_data)
+void setErrorMessage(ZMapConfigIniContext context,char *error_message)
+{
+  zMapReturnIfFail(context) ;
+
+  if (context->error_message)
+    g_free(context->error_message);
+
+  context->error_message = error_message;
+
+  return ;
+}
+
+void check_required(gpointer list_data, gpointer user_data)
 {
   CheckRequiredKeys checking_data = (CheckRequiredKeys)user_data;
   ZMapConfigIniContextKeyEntry key = (ZMapConfigIniContextKeyEntry)list_data;
@@ -685,7 +832,7 @@ static void check_required(gpointer list_data, gpointer user_data)
   return ;
 }
 
-static gboolean check_required_keys(ZMapConfigIniContext context, ZMapConfigIniContextStanzaEntry stanza)
+gboolean check_required_keys(ZMapConfigIniContext context, ZMapConfigIniContextStanzaEntry stanza)
 {
   CheckRequiredKeysStruct checking_data = {};
 
@@ -702,7 +849,7 @@ static gboolean check_required_keys(ZMapConfigIniContext context, ZMapConfigIniC
 
 /* here we want to prefer exact matches of name and type */
 /* then we'll only match types with a name == * already in the list */
-static gint match_name_type(gconstpointer list_data, gconstpointer user_data)
+gint match_name_type(gconstpointer list_data, gconstpointer user_data)
 {
   ZMapConfigIniContextStanzaEntry query = (ZMapConfigIniContextStanzaEntry)user_data;
   ZMapConfigIniContextStanzaEntry list_entry = (ZMapConfigIniContextStanzaEntry)list_data;
@@ -743,7 +890,7 @@ static gint match_name_type(gconstpointer list_data, gconstpointer user_data)
 
 
 
-static gint match_key(gconstpointer list_data, gconstpointer user_data)
+gint match_key(gconstpointer list_data, gconstpointer user_data)
 {
   ZMapConfigIniContextKeyEntry query = (ZMapConfigIniContextKeyEntry)user_data;
   ZMapConfigIniContextKeyEntry list_key = (ZMapConfigIniContextKeyEntry)list_data;
@@ -759,7 +906,7 @@ static gint match_key(gconstpointer list_data, gconstpointer user_data)
 }
 
 
-static GType get_stanza_key_type(ZMapConfigIniContext context,
+GType get_stanza_key_type(ZMapConfigIniContext context,
                                  const char *stanza_name,
                                  const char *stanza_type,
                                  const char *key_name)
@@ -785,7 +932,7 @@ static GType get_stanza_key_type(ZMapConfigIniContext context,
   return type;
 }
 
-static GList *copy_keys(ZMapConfigIniContextKeyEntryStruct *keys)
+GList *copy_keys(ZMapConfigIniContextKeyEntryStruct *keys)
 {
   GList *new_keys = NULL;
 
@@ -813,7 +960,7 @@ static GList *copy_keys(ZMapConfigIniContextKeyEntryStruct *keys)
  * true if there are differences. It may update the value pointer to a new string if there are
  * partial differences, e.g. if some colours in a colours string but others do not then it will
  * only return the differing colours. */
-static gboolean param_value_diffs(char **value, const char *parent_value, const char *param_name)
+gboolean param_value_diffs(char **value, const char *parent_value, const char *param_name)
 {
   gboolean diffs = TRUE ;
   
@@ -834,7 +981,7 @@ static gboolean param_value_diffs(char **value, const char *parent_value, const 
             {
               /* Separate value into a list colour strings and search for each individual colour
                * string (i.e. "normal border black") in the parent value */
-              GList *list = zMapConfigString2QuarkList(*value, FALSE);
+              GList *list = zMapConfigString2QuarkGList(*value, FALSE);
               GString *diffs_string = NULL ;
               
               for (GList *item = list ; item ; item = item->next)
@@ -873,7 +1020,7 @@ static gboolean param_value_diffs(char **value, const char *parent_value, const 
 
 /* Update the context given in the user data with the style given in the value. This loops
  * through all the parameters that are set in the style and updates them in the context's  */
-static void context_update_style(ZMapFeatureTypeStyle style, gpointer data)
+void context_update_style(ZMapFeatureTypeStyle style, gpointer data)
 {
   UpdateStyleData update_data = (UpdateStyleData)data ;
 
@@ -950,50 +1097,4 @@ static void context_update_style(ZMapFeatureTypeStyle style, gpointer data)
 }
 
 
-/*
- * Write a named stanza from values in a hash table
- * NOTE: this function operates differently from normal ConfigIni in that we do not know
- *  the names of the keys in the stanza and cannot create a struct to hold these and thier values
- * So instead we have to use GLib directly.
- * This is a simple generic table of quark->quark
- * used for [featureset_styles] [GFF_source] and [column_styles]
- */
-void zMapConfigIniSetQQHash(ZMapConfigIniContext context, ZMapConfigIniFileType file_type, 
-                            const char *stanza, GHashTable *ghash)
-{
-  zMapReturnIfFail(context && context->config) ;
-
-  GKeyFile *gkf = context->config->key_file[file_type] ;
-
-  if (gkf)
-    {
-      /* Loop through all entries in the hash table */
-      GList *iter = NULL ;
-      gpointer key = NULL,value = NULL;
-
-      zMap_g_hash_table_iter_init(&iter, ghash) ;
-
-      while(zMap_g_hash_table_iter_next(&iter, &key, &value))
-        {
-          if (key && value)
-            {
-              const char *key_str = g_quark_to_string(GPOINTER_TO_INT(key)) ;
-              const char *value_str = g_quark_to_string(GPOINTER_TO_INT(value)) ;
-
-              g_key_file_set_string(gkf, stanza, key_str, value_str) ;
-            }
-        }
-    }
-}
-
-
-GKeyFile *zMapConfigIniGetKeyFile(ZMapConfigIniContext context,
-                                  ZMapConfigIniFileType file_type)
-{
-  GKeyFile *result = NULL ;
-
-  if (context && context->config)
-    result = context->config->key_file[file_type] ;
-
-  return result ;
-}
+} // Unnamed namespace

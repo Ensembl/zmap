@@ -302,12 +302,16 @@ typedef struct ZMapWindowFeaturesetItemStructType
 
   gboolean re_bin ;					    /* re-calculate bins/ features according to zoom */
   GList *display ;					    /* features for display */
+
   /* NOTE normally features are indexed into display_index
    * coverage data gets re-binned and new features stored in display which is then indexed
    * if we add new features then we re-create the index - new features are added to features
    * if display is not NULL then we have to free both lists on destroy
    */
   ZMapSkipList display_index ;
+
+  // Used to cursor through canvasfeatures in the skiplist, reset to NULL when the skiplist is deleted.
+  ZMapSkipList curr_item ;
 
 
   int set_index ;			/* for staggered columns (heatmaps) */
