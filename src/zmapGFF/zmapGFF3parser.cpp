@@ -2917,7 +2917,7 @@ static ZMapFeature makeFeatureTranscript(ZMapGFF3Parser const pParser,
       if (g_error)
         {
           if (zMapFeatureErrorIsFatal(&g_error))
-            pParser->state = ZMAPGFF_PARSER_ERR ;
+            pParser->stop_on_error = TRUE ;
 
           zMapLogWarning("Error creating feature: %s", g_error->message) ;
           g_error_free(g_error) ;
@@ -3111,7 +3111,7 @@ static ZMapFeature makeFeatureTranscript(ZMapGFF3Parser const pParser,
       if (g_error)
         {
           if (zMapFeatureErrorIsFatal(&g_error))
-            pParser->state = ZMAPGFF_PARSER_ERR ;
+            pParser->stop_on_error = TRUE ;
 
           zMapCritical("Error creating feature: %s", g_error->message) ;
           g_error_free(g_error) ;
@@ -3239,7 +3239,7 @@ gboolean makeFeatureLocus(ZMapGFFParser pParser, ZMapGFFFeatureData pFeatureData
           if (g_error)
             {
               if (zMapFeatureErrorIsFatal(&g_error))
-                pParser->state = ZMAPGFF_PARSER_ERR ;
+                pParser->stop_on_error = TRUE ;
 
               *psError = g_strdup_printf("makeFeatureLocus(); could not create feature with name_id = '%s' and name = '%s': %s",
                                          sNameID, sName, g_error->message) ;
@@ -3459,7 +3459,7 @@ static ZMapFeature makeFeatureAlignment(ZMapGFF3Parser const pParser,
           if (g_error)
             {
               if (zMapFeatureErrorIsFatal(&g_error))
-                pParser->state = ZMAPGFF_PARSER_ERR ;
+                pParser->stop_on_error = TRUE ;
 
               *psError = g_strdup_printf("makeFeatureAlignment(); could not create new feature object: %s ",
                                          g_error->message);
@@ -3674,7 +3674,7 @@ static ZMapFeature makeFeatureDefault(ZMapGFF3Parser const pParser, ZMapGFFFeatu
       if (g_error)
         {
           if (zMapFeatureErrorIsFatal(&g_error))
-            pParser->state = ZMAPGFF_PARSER_ERR ;
+            pParser->stop_on_error = TRUE ;
 
           *psError = g_strdup_printf("makeFeatureDefault(); could not create new feature object: %s ", g_error->message);
           g_error_free(g_error) ;
