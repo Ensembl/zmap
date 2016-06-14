@@ -58,7 +58,7 @@ AX_CXX_COMPILE_STDCXX_0X()
 AX_CHECK_OPENSSL()
 
 AC_CHECK_HEADERS([openssl.h], [HAVE_OPENSSL_HEADER=1])
-AM_CONDITIONAL([HAVE_SSL], [ test -n "$HAVE_OPENSSL_HEADER" ])
+AM_CONDITIONAL([HAVE_SSL], [ test -n "$HAVE_OPENSSL_HEADER" || test -n "$OPENSSL_INCLUDES" ])
 
 AM_COND_IF([HAVE_SSL], 
            [ echo 'openssl is available!' ])
