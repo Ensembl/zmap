@@ -87,7 +87,7 @@ typedef struct GetFeaturesDataStructType
 
 static gboolean globalInit(void) ;
 static gboolean createConnection(void **server_out,
-                                 char *config_file, ZMapURL url, char *format,
+                                 GQuark source_name, char *config_file, ZMapURL url, char *format,
                                  char *version_str, int timeout,
                                  pthread_mutex_t *mutex) ;
 static ZMapServerResponseType openConnection(void *server, ZMapServerReqOpen req_open) ;
@@ -219,7 +219,7 @@ static gboolean globalInit(void)
  *
  */
 static gboolean createConnection(void **server_out,
-                                 char *config_file, ZMapURL url, char *format,
+                                 GQuark source_name, char *config_file, ZMapURL url, char *format,
                                  char *version_str, int timeout_unused,
                                  pthread_mutex_t *mutex_unused)
 {

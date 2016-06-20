@@ -1349,12 +1349,11 @@ static void importFileCB(gpointer cb_data)
 
       if (server)
         {
-          GList *req_featuresets = NULL ;
-          
-          if (zMapViewRequestServer(view, NULL, req_featuresets, NULL, (gpointer)server, req_start, req_end, FALSE, TRUE, TRUE))
-            zMapViewShowLoadStatus(view);
-          else
-            zMapWarning("Request to server failed for %s",file_txt);
+          GError *g_error = NULL ;
+          zMapViewSetUpServerConnection(view, server, req_start, req_end, false, &g_error) ;
+
+          if (g_error)
+            zMapWarning("Failed to set up server connection for file '%s': %s", file_txt, err_msg.c_str()) ;
         }
       else
         {

@@ -163,6 +163,7 @@ typedef struct _LoadedPageDataStruct
   GtkTreeModel *tree_filtered ;
   GtkEntry *search_entry ;
   GtkEntry *filter_entry ;
+  GtkLabel *selection_feedback ;
 
   ColConfigure configure_data ;
 
@@ -2043,6 +2044,27 @@ static void loaded_cols_panel_create_column(LoadedPageData page_data,
   createTreeViewColumn(GTK_TREE_VIEW(tree), col_name, tree_col_id, renderer, "active", FALSE) ;
 }
 
+/* Called after the tree selection has changed. Updates info about the selected tracks in the
+ * selection_feedback label. */
+void tree_selection_changed_cb(GtkTreeSelection *selection, gpointer user_data)
+{
+  LoadedPageData page_data = (LoadedPageData)user_data ;
+  zMapReturnIfFail(page_data && page_data->selection_feedback) ;
+
+  int num_selected = gtk_tree_selection_count_selected_rows(selection) ;
+
+  stringstream ss ;
+
+  if (num_selected < 1)
+    ss << "No tracks selected" ;
+  else if (num_selected == 1)
+    ss << num_selected << " track selected" ;
+  else
+    ss << num_selected << " tracks selected" ;
+
+  gtk_label_set_text(page_data->selection_feedback, ss.str().c_str()) ;
+}
+
 
 /* Callback called when the user clicks a row, before the selection is changed. Returns true
  * if it's ok to change the selection, false otherwise. This is used to disable changing the
@@ -2225,6 +2247,7 @@ static GtkWidget* loaded_cols_panel_create_tree_view(LoadedPageData page_data,
   GtkTreeSelection *tree_selection = gtk_tree_view_get_selection(tree_view) ;
   gtk_tree_selection_set_mode(tree_selection, GTK_SELECTION_MULTIPLE);
   gtk_tree_selection_set_select_function(tree_selection, tree_select_function_cb, page_data, NULL) ;
+  g_signal_connect(G_OBJECT(tree_selection), "changed", G_CALLBACK(tree_selection_changed_cb), page_data) ;
 
   /* Create the name column */
   GtkCellRenderer *text_renderer = gtk_cell_renderer_text_new();
@@ -2521,7 +2544,45 @@ static void select_all_button_cb(GtkButton *button, gpointer user_data)
   GtkTreeSelection *selection = gtk_tree_view_get_selection(page_data->tree_view) ;
 
   if (selection)
-    gtk_tree_selection_select_all(selection) ;
+    {
+      gtk_tree_selection_select_all(selection) ;
+    }
+}
+
+/* Called when the user hits the select-none button. */
+static void select_none_button_cb(GtkButton *button, gpointer user_data)
+{
+  LoadedPageData page_data = (LoadedPageData)user_data ;
+  zMapReturnIfFail(page_data && page_data->tree_model && page_data->window) ;
+
+  GtkTreeSelection *selection = gtk_tree_view_get_selection(page_data->tree_view) ;
+
+  if (selection)
+    {
+      gtk_tree_selection_unselect_all(selection) ;
+    }
+}
+
+/* Called when the user hits the invert-selection button. */
+static void select_invert_button_cb(GtkButton *button, gpointer user_data)
+{
+  LoadedPageData page_data = (LoadedPageData)user_data ;
+  zMapReturnIfFail(page_data && page_data->tree_model && page_data->window) ;
+
+  GtkTreeSelection *selection = gtk_tree_view_get_selection(page_data->tree_view) ;
+
+  // Loop through all rows in the tree model and toggle the selection status
+  GtkTreeIter iter ;
+
+  for (GtkTreePath *path = gtk_tree_path_new_first(); 
+       gtk_tree_model_get_iter(page_data->tree_model, &iter, path);
+       gtk_tree_path_next(path))
+    {
+      if (gtk_tree_selection_path_is_selected(selection, path))
+        gtk_tree_selection_unselect_path(selection, path) ;
+      else
+        gtk_tree_selection_select_path(selection, path) ;
+    }
 }
 
 
@@ -2602,6 +2663,62 @@ static void set_column_group(LoadedPageData page_data,
                          GROUP_COLUMN, NULL,
                          -1) ;
     }
+}
+
+
+/* Set the visibility of the selected tracks to the given state */
+static void selected_tracks_set_visibility(LoadedPageData page_data,
+                                           ZMapStyleColumnDisplayState col_state)
+{
+  zMapReturnIfFail(page_data && page_data->tree_view) ;
+
+  GtkTreeSelection *selection = gtk_tree_view_get_selection(page_data->tree_view) ;
+
+  if (selection)
+    {
+      /* Loop through all selected rows and update the visibility */
+      GtkTreeModel *model = NULL ;
+      GList *rows = gtk_tree_selection_get_selected_rows(selection, &model) ;
+      GtkListStore *store = GTK_LIST_STORE(model) ;
+          
+      for (GList *item = rows; item; item = item->next)
+        {
+          GtkTreePath *path = (GtkTreePath*)(item->data) ;
+          GtkTreeIter iter ;
+          gtk_tree_model_get_iter(model, &iter, path) ;
+
+          /* Set the visibility of both strands */
+          set_tree_store_value_from_state(col_state, store, &iter, TRUE) ;
+          set_tree_store_value_from_state(col_state, store, &iter, FALSE) ;
+        }
+    }
+}
+
+/* Called when the user hits the button to show sleected tracks. */
+static void show_cb(GtkButton *button, gpointer user_data)
+{
+  LoadedPageData page_data = (LoadedPageData)user_data ;
+  zMapReturnIfFail(page_data && page_data->tree_view) ;
+
+  selected_tracks_set_visibility(page_data, ZMAPSTYLE_COLDISPLAY_SHOW) ;
+}
+
+/* Called when the user hits the button to Auto-show selected tracks. */
+static void auto_cb(GtkButton *button, gpointer user_data)
+{
+  LoadedPageData page_data = (LoadedPageData)user_data ;
+  zMapReturnIfFail(page_data && page_data->tree_view) ;
+
+  selected_tracks_set_visibility(page_data, ZMAPSTYLE_COLDISPLAY_SHOW_HIDE) ;
+}
+
+/* Called when the user hits the button to hide sleected tracks. */
+static void hide_cb(GtkButton *button, gpointer user_data)
+{
+  LoadedPageData page_data = (LoadedPageData)user_data ;
+  zMapReturnIfFail(page_data && page_data->tree_view) ;
+
+  selected_tracks_set_visibility(page_data, ZMAPSTYLE_COLDISPLAY_HIDE) ;
 }
 
 
@@ -2707,13 +2824,52 @@ static GtkWidget* loaded_cols_panel_create_buttons(LoadedPageData page_data)
 
   GtkWidget *hbox = gtk_hbox_new(FALSE, XPAD) ;
   gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0) ;
-  gtk_box_pack_start(GTK_BOX(hbox), gtk_label_new("Selection:"), FALSE, FALSE, 0) ;
+  gtk_box_pack_start(GTK_BOX(hbox), gtk_label_new("Select:"), FALSE, FALSE, 0) ;
 
   /* Add a button to select all the visible rows */
-  GtkWidget *button = gtk_button_new_with_mnemonic("S_elect All") ;
+  GtkWidget *button = gtk_button_new_with_mnemonic("Al_l") ;
   gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
   g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(select_all_button_cb), page_data) ;
   gtk_widget_set_tooltip_text(button, "Select all visible tracks") ;
+
+  /* Add a button to unselect all visible rows */
+  button = gtk_button_new_with_mnemonic("_None") ;
+  gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
+  g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(select_none_button_cb), page_data) ;
+  gtk_widget_set_tooltip_text(button, "Deselect all visible tracks") ;
+
+  /* Add a button to invert the current selection */
+  button = gtk_button_new_with_mnemonic("_Invert") ;
+  gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
+  g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(select_invert_button_cb), page_data) ;
+  gtk_widget_set_tooltip_text(button, "Invert the current selection") ;
+
+  /* Add a text box to show info about the selection */
+  page_data->selection_feedback = GTK_LABEL(gtk_label_new("")) ;
+  gtk_box_pack_start(GTK_BOX(hbox), GTK_WIDGET(page_data->selection_feedback), FALSE, FALSE, 0) ;
+
+
+  hbox = gtk_hbox_new(FALSE, XPAD) ;
+  gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0) ;
+  gtk_box_pack_start(GTK_BOX(hbox), gtk_label_new("Action:"), FALSE, FALSE, 0) ;
+
+  /* Add a button to Show all selected columns */
+  button = gtk_button_new_with_mnemonic("Sho_w") ;
+  gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
+  g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(show_cb), page_data) ;
+  gtk_widget_set_tooltip_text(button, "Set the visibility of all selected tracks to Show") ;
+
+  /* Add a button to Auto all selected columns */
+  button = gtk_button_new_with_mnemonic("_Auto") ;
+  gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
+  g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(auto_cb), page_data) ;
+  gtk_widget_set_tooltip_text(button, "Set visibility of all selected tracks to Auto") ;
+
+  /* Add a button to Hide all selected columns */
+  button = gtk_button_new_with_mnemonic("_Hide") ;
+  gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
+  g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(hide_cb), page_data) ;
+  gtk_widget_set_tooltip_text(button, "Set visibility of all selected tracks to Hide") ;
 
   /* Add a button to set a group for the selected columns */
   button = gtk_button_new_with_mnemonic("Assign _Group") ;
