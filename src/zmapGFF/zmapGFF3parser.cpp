@@ -2618,12 +2618,18 @@ static gboolean parseBodyLine_V3(ZMapGFFParser pParserBase, const char * const s
           g_error_free(pParser->error) ;
           pParser->error = NULL ;
         }
-      pParser->error = g_error_new(pParser->error_domain, ZMAPGFF_ERROR_BODY,
-                                   "GFF line %d. ERROR: %s (\"%s\")",
-                                   zMapGFFGetLineNumber(pParserBase), sErrText, sLine) ;
-      g_free(sErrText) ;
-      sErrText = NULL ;
 
+      /* The error text may be null if we don't want to display the error (e.g. this may happen if
+       * we have lots of repetetive errors about the same thing such as hitting the feature limit). */
+      if (sErrText)
+        {
+          pParser->error = g_error_new(pParser->error_domain, ZMAPGFF_ERROR_BODY,
+                                       "GFF line %d. ERROR: %s (\"%s\")",
+                                       zMapGFFGetLineNumber(pParserBase), sErrText, sLine) ;
+
+          g_free(sErrText) ;
+          sErrText = NULL ;
+        }
     }
 
 
@@ -2917,7 +2923,7 @@ static ZMapFeature makeFeatureTranscript(ZMapGFF3Parser const pParser,
       if (g_error)
         {
           if (zMapFeatureErrorIsFatal(&g_error))
-            pParser->stop_on_error = TRUE ;
+            pParser->state = ZMAPGFF_PARSER_ERR ;
 
           zMapLogWarning("Error creating feature: %s", g_error->message) ;
           g_error_free(g_error) ;
@@ -3111,7 +3117,7 @@ static ZMapFeature makeFeatureTranscript(ZMapGFF3Parser const pParser,
       if (g_error)
         {
           if (zMapFeatureErrorIsFatal(&g_error))
-            pParser->stop_on_error = TRUE ;
+            pParser->state = ZMAPGFF_PARSER_ERR ;
 
           zMapCritical("Error creating feature: %s", g_error->message) ;
           g_error_free(g_error) ;
@@ -3239,7 +3245,7 @@ gboolean makeFeatureLocus(ZMapGFFParser pParser, ZMapGFFFeatureData pFeatureData
           if (g_error)
             {
               if (zMapFeatureErrorIsFatal(&g_error))
-                pParser->stop_on_error = TRUE ;
+                pParser->state = ZMAPGFF_PARSER_ERR ;
 
               *psError = g_strdup_printf("makeFeatureLocus(); could not create feature with name_id = '%s' and name = '%s': %s",
                                          sNameID, sName, g_error->message) ;
@@ -3459,7 +3465,7 @@ static ZMapFeature makeFeatureAlignment(ZMapGFF3Parser const pParser,
           if (g_error)
             {
               if (zMapFeatureErrorIsFatal(&g_error))
-                pParser->stop_on_error = TRUE ;
+                pParser->state = ZMAPGFF_PARSER_ERR ;
 
               *psError = g_strdup_printf("makeFeatureAlignment(); could not create new feature object: %s ",
                                          g_error->message);
@@ -3674,7 +3680,7 @@ static ZMapFeature makeFeatureDefault(ZMapGFF3Parser const pParser, ZMapGFFFeatu
       if (g_error)
         {
           if (zMapFeatureErrorIsFatal(&g_error))
-            pParser->stop_on_error = TRUE ;
+            pParser->state = ZMAPGFF_PARSER_ERR ;
 
           *psError = g_strdup_printf("makeFeatureDefault(); could not create new feature object: %s ", g_error->message);
           g_error_free(g_error) ;
@@ -4143,7 +4149,7 @@ static gboolean makeNewFeature_V3(ZMapGFFParser pParserBase,
       /*
        * Now we deal with some extra attributes used locally.
        */
-      if (bIncludeFeature)
+      if (bIncludeFeature && bResult)
         {
 
           if(!zMapStyleGetGFFFeature(pFeatureSet->style))
