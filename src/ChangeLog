@@ -1,3 +1,46 @@
+2016-06-22  Gemma Guest  <gb10@sanger.ac.uk>
+ Increase feature limit - WIP
+ src/zmapFeature/zmapFeature.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+2016-06-22  Gemma Guest  <gb10@sanger.ac.uk>
+ Improve semaphore class - WIP
+ src/zmapServer/zmapDataSource.cpp | 101 ++++++++++++++++++++++++++++----------
+ 1 file changed, 76 insertions(+), 25 deletions(-)
+
+2016-06-22  Gemma Guest  <gb10@sanger.ac.uk>
+ Limit the number of GFF warnings logged - WIP
+ src/zmapServer/file/fileServer.cpp | 12 ++++++++++--
+ src/zmapServer/pipe/pipeServer.cpp | 13 ++++++++++++-
+ 2 files changed, 22 insertions(+), 3 deletions(-)
+
+2016-06-22  Gemma Guest  <gb10@sanger.ac.uk>
+ Add feature count stats - WIP
+ src/include/ZMap/zmapFeature.hpp   |  4 +++-
+ src/zmapFeature/zmapFeature.cpp    | 14 +++++++++++++-
+ src/zmapWindow/zmapWindowMenus.cpp |  4 ++++
+ 3 files changed, 20 insertions(+), 2 deletions(-)
+
+2016-06-22  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix error with logging too many warnings - WIP
+ src/include/ZMap/zmapFeature.hpp   |  1 -
+ src/zmapFeature/zmapFeature.cpp    | 20 +++++---------------
+ src/zmapGFF/zmapGFF3parser.cpp     | 28 +++++++++++++++++-----------
+ src/zmapServer/file/fileServer.cpp |  6 +++++-
+ 4 files changed, 27 insertions(+), 28 deletions(-)
+
+2016-06-22  Gemma Guest  <gb10@sanger.ac.uk>
+ Increase feature limit - WIP
+ src/zmapFeature/zmapFeature.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+2016-06-21  zmap  <zmap@sanger.ac.uk>
+ ZMap version 2.9.0-106-g7fac72d - Update RT and git commit reports
+ src/ChangeLog                                  | 699 +++++++++++++++++++++----
+ src/build/release_docs/GIT_COMMITS.txt         |   8 +-
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt |  34 +-
+ 3 files changed, 611 insertions(+), 130 deletions(-)
+
 2016-06-20  Gemma Guest  <gb10@sanger.ac.uk>
  Merge branch 'feature/trackhub' into develop
 2016-06-14  Gemma Guest  <gb10@sanger.ac.uk>
