@@ -1096,6 +1096,11 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
   /*
    * Read lines from the source. We assume that the first line has already been read.
    */
+  
+  /* Keep track of how many warnings we log so we don't fill the log file with millions */
+  int warning_count = 0;
+  const int max_warnings = 1000;
+
   do
     {
 
@@ -1103,7 +1108,14 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
         {
           GError *error ;
           error = zMapGFFGetError(parser) ;
-          ZMAPSERVER_LOG(Warning, PROTOCOL_NAME, server->path, "%s", error->message) ;
+
+          /* Only log a warning if an error was given (the error may be null if no warning is
+           * required and we need to be careful not to fill the log with millions of warnings) */
+          if (error && warning_count < max_warnings)
+            {
+              ZMAPSERVER_LOG(Warning, PROTOCOL_NAME, server->path, "%s", error->message) ;
+              ++warning_count ;
+            }
 
           if (zMapGFFTerminated(parser))
             {

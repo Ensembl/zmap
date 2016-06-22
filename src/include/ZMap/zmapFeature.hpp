@@ -1085,7 +1085,9 @@ public:
   void operator++() ;
   void operator--() ;
 
-  // Set/query the limit
+  // Set/query the limit and count
+  int getCount() const ;
+  int getLimit() const ;
   void setLimit(const int max_features) ;
   bool hitLimit(GError **error)  ;
 
@@ -1095,7 +1097,6 @@ private:
 
   int max_features_ ;     // max number of allowed features
   int loaded_features_ ;  // total features in memory
-  bool warn_exceed_max_ ; // true if we should warn the user when we hit the limit
   std::mutex mutex_ ;
 } ;
 

@@ -105,37 +105,88 @@ static const char * const ZMAP_BIGWIG_SO_TERM  = "score" ;
 
 /* Need a semaphore to limit the number of threads.
  * From http://stackoverflow.com/questions/4792449/c0x-has-no-semaphores-how-to-synchronize-threads */
-class Semaphore {
+
+class semaphore {
 public:
-  Semaphore (int count = 0)
-    : count_(count) {} ;
+    using native_handle_type = std::condition_variable::native_handle_type;
 
-  inline void release()
-  {
-    std::unique_lock<std::mutex> lock(mtx_);
-    count_++;
-    cv_.notify_one();
-  }
+    explicit semaphore(size_t n = 0);
+    semaphore(const semaphore&) = delete;
+    semaphore& operator=(const semaphore&) = delete;
 
-  inline void wait()
-  {
-    std::unique_lock<std::mutex> lock(mtx_);
+    void notify();
+    void wait();
+    bool try_wait();
+    template<class Rep, class Period>
+    bool wait_for(const std::chrono::duration<Rep, Period>& d);
+    template<class Clock, class Duration>
+    bool wait_until(const std::chrono::time_point<Clock, Duration>& t);
 
-    while(count_ == 0)
-      cv_.wait(lock);
-   
-    count_--;
-  }
+    native_handle_type native_handle();
 
 private:
-    std::mutex mtx_;
-    std::condition_variable cv_;
-    int count_;
+    size_t                  count;
+    std::mutex              mutex;
+    std::condition_variable cv;
 };
+
+inline semaphore::semaphore(size_t n) : count{n} {}
+
+inline void semaphore::notify() {
+    std::lock_guard<std::mutex> lock{mutex};
+    ++count;
+    cv.notify_one();
+}
+
+inline void semaphore::wait() {
+    std::unique_lock<std::mutex> lock{mutex};
+    cv.wait(lock, [&]{ return count > 0; });
+    --count;
+}
+
+inline bool semaphore::try_wait() {
+    std::lock_guard<std::mutex> lock{mutex};
+
+    if (count > 0) {
+        --count;
+        return true;
+    }
+
+    return false;
+}
+
+template<class Rep, class Period>
+bool semaphore::wait_for(const std::chrono::duration<Rep, Period>& d) {
+    std::unique_lock<std::mutex> lock{mutex};
+    auto finished = cv.wait_for(lock, d, [&]{ return count > 0; });
+
+    if (finished)
+        --count;
+
+    return finished;
+}
+
+template<class Clock, class Duration>
+bool semaphore::wait_until(const std::chrono::time_point<Clock, Duration>& t) {
+    std::unique_lock<std::mutex> lock{mutex};
+    auto finished = cv.wait_until(lock, t, [&]{ return count > 0; });
+
+    if (finished)
+        --count;
+
+    return finished;
+}
+
+inline semaphore::native_handle_type semaphore::native_handle() {
+    return cv.native_handle();
+}
+
+
+
 
 /* Keep track of how many files we've opened in different threads */
 #define MAX_FILE_THREADS 10
-static Semaphore semaphore_G(MAX_FILE_THREADS) ;
+static semaphore semaphore_G(MAX_FILE_THREADS) ;
 
 void createGFFLine(GString *pStr, 
                    const char *sequence,
@@ -465,7 +516,7 @@ ZMapDataSourceBCFStruct::ZMapDataSourceBCFStruct(const GQuark source_name,
 
 ZMapDataSourceStruct::~ZMapDataSourceStruct()
 {
-  semaphore_G.release() ;
+  semaphore_G.notify() ;
 
   if (sequence_)
     g_free(sequence_) ;

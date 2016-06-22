@@ -1398,6 +1398,10 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
       GError *gff_pipe_err = NULL ;
       gboolean first ;
 
+      /* Keep track of how many warnings we log so we don't fill the log file with millions */
+      int warning_count = 0;
+      const int max_warnings = 1000;
+
       /* The caller may only want a small part of the features in the stream so we set the
        * feature start/end from the block, not the gff stream start/end. */
       if (server->zmap_end)
@@ -1409,6 +1413,7 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
         }
 
       first = TRUE ;
+
       do
         {
           if (first)
@@ -1422,7 +1427,13 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
 
               error = zMapGFFGetError(parser) ;
 
-              ZMAPSERVER_LOG(Warning, server->protocol, server->script_path, "%s", error->message) ;
+              /* Only log a warning if an error was given (the error may be null if no warning is
+               * required and we need to be careful not to fill the log with millions of warnings) */
+              if (error && warning_count < max_warnings)
+                {
+                  ZMAPSERVER_LOG(Warning, server->protocol, server->script_path, "%s", error->message) ;
+                  ++warning_count ;
+                }
 
               /* If the error was serious we stop processing and return the error. */
               if (zMapGFFTerminated(parser))

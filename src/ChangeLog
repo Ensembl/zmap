@@ -1,117 +1,608 @@
-2016-05-20  Gemma Guest  <gb10@sanger.ac.uk>
- Merge branch 'production' into release/2.9.0
-2016-05-20  zmap  <zmap@sanger.ac.uk>
- ZMap version 2.7.1-68-g615c847 - Update RT and git commit reports
- src/ChangeLog | 6 ++++++
- 1 file changed, 6 insertions(+)
+2016-06-20  Gemma Guest  <gb10@sanger.ac.uk>
+ Merge branch 'feature/trackhub' into develop
+2016-06-14  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix error not quitting on fatal parsing error - WIP
+ src/zmapGFF/zmapGFF3parser.cpp | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
 
-2016-05-20  zmap  <zmap@sanger.ac.uk>
- ZMap version 2.7.1-67-gc40a574 - Update RT and git commit reports
- src/ChangeLog                                  | 12 ++++++++++++
- src/build/release_docs/RT_TICKETS_RESOLVED.txt |  2 +-
- 2 files changed, 13 insertions(+), 1 deletion(-)
-
-2016-05-19  Gemma Guest  <gb10@sanger.ac.uk>
- Update release notes - DOC
- docs/user/release_notes.shtml | 15 +++++++++++++++
- 1 file changed, 15 insertions(+)
-
-2016-05-19  zmap  <zmap@sanger.ac.uk>
- ZMap version 2.7.1-65-gcb6aa17 - Update RT and git commit reports
- src/ChangeLog                                  | 376 ++++++-------------------
- src/build/release_docs/GIT_COMMITS.txt         |  17 +-
- src/build/release_docs/RT_TICKETS_RESOLVED.txt |  92 ++----
- 3 files changed, 110 insertions(+), 375 deletions(-)
-
-2016-05-18  Gemma Guest  <gb10@sanger.ac.uk>
- Revert "ensc-core now uses autoconf - WIP"
- src/autogen.sh   | 13 -------------
- src/configure.ac |  6 +-----
- 2 files changed, 1 insertion(+), 18 deletions(-)
-
-2016-05-18  Gemma Guest  <gb10@sanger.ac.uk>
- Revert "Fixes for ensc-core autoconf stuff - BUILD"
- src/Makefile.am  | 6 +-----
+2016-06-14  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix autoconf error with openssl - BUILD
  src/configure.ac | 2 +-
- 2 files changed, 2 insertions(+), 6 deletions(-)
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-2016-05-18  Gemma Guest  <gb10@sanger.ac.uk>
- Fixes for ensc-core autoconf stuff - BUILD
+2016-06-13  Gemma Guest  <gb10@sanger.ac.uk>
+ Merge branch 'develop' into feature/trackhub
+2016-06-13  Gemma Guest  <gb10@sanger.ac.uk>
+ Improve feature limit - WIP
+ src/include/ZMap/zmapConfigStrings.hpp |   2 +-
+ src/include/ZMap/zmapFeature.hpp       |  36 ++++++++
+ src/zmapFeature/zmapFeature.cpp        | 149 ++++++++++++++++-----------------
+ 3 files changed, 108 insertions(+), 79 deletions(-)
+
+2016-06-13  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Add developer option to dump context. - TRIVIAL
+ src/zmapWindow/zmapWindowMenus.cpp | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+
+2016-06-13  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Fix bad formatting of feature part of dumping. - BUG FIX
+ src/zmapFeature/zmapFeatureOutput.cpp | 23 +++++++++++------------
+ 1 file changed, 11 insertions(+), 12 deletions(-)
+
+2016-06-10  Gemma Guest  <gb10@sanger.ac.uk>
+ Improvements to Columns dialog - NEW FEATURE 'columns dialog'
+ src/zmapWindow/zmapWindowColConfig.cpp | 162 ++++++++++++++++++++++++++++++++-
+ 1 file changed, 159 insertions(+), 3 deletions(-)
+
+2016-06-10  Gemma Guest  <gb10@sanger.ac.uk>
+ Limit number of features zmap will try to load - WIP
+ src/include/ZMap/zmapFeature.hpp                 |  10 +-
+ src/zmapFeature/zmapFeature.cpp                  | 138 ++++++----
+ src/zmapFeature/zmapFeature3FrameTranslation.cpp |  84 ++++--
+ src/zmapFeature/zmapFeatureDNA.cpp               |  24 +-
+ src/zmapFeature/zmapFeatureTranscript.cpp        |   4 +-
+ src/zmapGFF/zmapGFF2parser.cpp                   |  12 +-
+ src/zmapGFF/zmapGFF3parser.cpp                   | 319 ++++++++++++++---------
+ src/zmapGFF/zmapGFFGeneral.cpp                   |   1 -
+ src/zmapGFF/zmapGFF_P.hpp                        |   5 +-
+ src/zmapServer/ensembl/ensemblServer.cpp         | 266 +++++++++++++------
+ src/zmapView/zmapViewRemoteControl.cpp           |  70 +++--
+ src/zmapView/zmapViewScratch.cpp                 |  70 +++--
+ src/zmapWindow/zmapWindowDNA.cpp                 |  17 +-
+ src/zmapWindow/zmapWindowFeatureShow.cpp         |   9 +-
+ src/zmapWindow/zmapWindowMenus.cpp               |  10 +-
+ 15 files changed, 696 insertions(+), 343 deletions(-)
+
+2016-06-10  Gemma Guest  <gb10@sanger.ac.uk>
+ Add singleton class to limit num features - WIP
+ src/zmapFeature/zmapFeature.cpp | 92 +++++++++++++++++++++++++++++++++++++----
+ 1 file changed, 84 insertions(+), 8 deletions(-)
+
+2016-06-09  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix problem caused by loading too many files at once - WIP
+ src/zmapServer/zmapDataSource.cpp | 39 +++++++++++++++++++++++++++++++++++++++
+ src/zmapView/zmapView.cpp         |  6 +++++-
+ 2 files changed, 44 insertions(+), 1 deletion(-)
+
+2016-06-08  Gemma Guest  <gb10@sanger.ac.uk>
+ Remove warning dialogs when there can be many - WIP
+ src/zmapServer/zmapDataSource.cpp | 33 +++++++++++----------------------
+ 1 file changed, 11 insertions(+), 22 deletions(-)
+
+2016-06-08  Gemma Guest  <gb10@sanger.ac.uk>
+ Merge branch 'develop' into feature/trackhub
+2016-06-08  Gemma Guest  <gb10@sanger.ac.uk>
+ Another fix to previous - WIP
+ src/zmapAppServices/zmapAppSource.cpp | 452 ++++++++++++++++------------------
+ 1 file changed, 212 insertions(+), 240 deletions(-)
+
+2016-06-08  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix error with previous - REGRESSION FIX
+ src/zmapAppServices/zmapAppSource.cpp | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+2016-06-08  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix compilation problem if ensembl disabled - BUILD
+ src/zmapAppServices/zmapAppSource.cpp | 259 +++++++++++++++++-----------------
+ 1 file changed, 129 insertions(+), 130 deletions(-)
+
+2016-06-07  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Change all usage of coord transform calls to call fixed funciton. - RT532732
+ src/zmapWindow/zmapWindow.cpp            | 22 ++++++++++--------
+ src/zmapWindow/zmapWindowDNA.cpp         | 10 ++++----
+ src/zmapWindow/zmapWindowDNAChoose.cpp   | 14 +++++++----
+ src/zmapWindow/zmapWindowDisplayOps.cpp  | 40 +++++++++++++++++---------------
+ src/zmapWindow/zmapWindowFeatureList.cpp |  4 ++--
+ src/zmapWindow/zmapWindowFeatureShow.cpp | 10 ++++----
+ 6 files changed, 55 insertions(+), 45 deletions(-)
+
+2016-06-07  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Make coord translating handle slice and chromosome views. - RT532732
+ src/zmapWindow/zmapWindowUtils.cpp | 71 ++++++++++----------------------------
+ src/zmapWindow/zmapWindow_P.hpp    |  4 +--
+ 2 files changed, 21 insertions(+), 54 deletions(-)
+
+2016-06-07  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix autoconf problem with openssl - BUILD
+ src/configure.ac | 15 ++++++++++++---
+ 1 file changed, 12 insertions(+), 3 deletions(-)
+
+2016-06-03  Gemma Guest  <gb10@sanger.ac.uk>
+ Merge branch 'develop' into feature/trackhub
+2016-06-03  Gemma Guest  <gb10@sanger.ac.uk>
+ Merge branch 'production' into develop
+2016-06-01  Gemma Guest  <gb10@sanger.ac.uk>
+ Revert "Lock calls to bed/bigwig lib - doesn't seem to be thread safe - WIP"
+ src/zmapServer/zmapDataSource.cpp | 84 ---------------------------------------
+ 1 file changed, 84 deletions(-)
+
+2016-06-01  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix problem with invalid strand - WIP
+ src/zmapServer/zmapDataSource.cpp | 16 +++++++++++++++-
+ 1 file changed, 15 insertions(+), 1 deletion(-)
+
+2016-06-01  Gemma Guest  <gb10@sanger.ac.uk>
+ Lock calls to bed/bigwig lib - doesn't seem to be thread safe - WIP
+ src/zmapServer/zmapDataSource.cpp | 84 +++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 84 insertions(+)
+
+2016-06-01  Gemma Guest  <gb10@sanger.ac.uk>
+ Show registered hubs after registering a hub - WIP
+ src/zmapAppServices/zmapAppSource.cpp | 32 +++++++++++++++++++++++++++-----
+ 1 file changed, 27 insertions(+), 5 deletions(-)
+
+2016-06-01  Gemma Guest  <gb10@sanger.ac.uk>
+ autoconf improvements - BUILD
+ src/configure.ac                    | 15 +++++++++++----
+ src/include/ZMap/zmapUrl.hpp        |  4 ++++
+ src/include/ZMap/zmapUrlOptions.hpp |  4 ++++
+ src/zmapServer/Makefile.am          | 13 +++++++++++++
+ src/zmapServer/file/fileServer.cpp  |  4 ++++
+ 5 files changed, 36 insertions(+), 4 deletions(-)
+
+2016-06-01  Gemma Guest  <gb10@sanger.ac.uk>
+ Improve error messages - TRIVIAL
+ src/zmapServer/zmapDataSource.cpp | 21 ++++++++++++---------
+ 1 file changed, 12 insertions(+), 9 deletions(-)
+
+2016-05-27  Gemma Guest  <gb10@sanger.ac.uk>
+ Improve error handling with bed/bigbed/bigwig files - WIP
+ src/configure.ac                  |  4 +++
+ src/zmapServer/zmapDataSource.cpp | 55 ++++++++++++++++++++++++++++++---------
+ 2 files changed, 46 insertions(+), 13 deletions(-)
+
+2016-05-26  Gemma Guest  <gb10@sanger.ac.uk>
+ Merge branch 'develop' into feature/trackhub
+2016-05-25  Gemma Guest  <gb10@sanger.ac.uk>
+ Revert "Revert "Fixes for ensc-core autoconf stuff - BUILD""
  src/Makefile.am  | 6 +++++-
  src/configure.ac | 2 +-
  2 files changed, 6 insertions(+), 2 deletions(-)
 
-2016-05-17  Gemma Guest  <gb10@sanger.ac.uk>
- ensc-core now uses autoconf - WIP
+2016-05-25  Gemma Guest  <gb10@sanger.ac.uk>
+ Revert "Revert "ensc-core now uses autoconf - WIP""
  src/autogen.sh   | 13 +++++++++++++
  src/configure.ac |  6 +++++-
  2 files changed, 18 insertions(+), 1 deletion(-)
 
-2016-05-17  Ed Griffiths  <edgrif@sanger.ac.uk>
- Fix  but in start/end_not_found handling. - RT523445
- src/zmapGFF/zmapGFF3parser.cpp | 29 +++++++++++++++--------------
- 1 file changed, 15 insertions(+), 14 deletions(-)
+2016-05-25  Gemma Guest  <gb10@sanger.ac.uk>
+ Merge branch 'release/2.9.0' into develop
+2016-05-25  Gemma Guest  <gb10@sanger.ac.uk>
+ Merge branch 'production' into develop
+2016-05-18  Gemma Guest  <gb10@sanger.ac.uk>
+ Use gbtools namespace - TRIVIAL
+ src/zmapAppServices/zmapAppSource.cpp | 26 +++++++++++++-------------
+ 1 file changed, 13 insertions(+), 13 deletions(-)
 
-2016-05-17  Ed Griffiths  <edgrif@sanger.ac.uk>
- Remove start/end_not_found, wrong place. - RT523445
- src/include/ZMap/zmapFeature.hpp          |  3 +--
- src/zmapFeature/zmapFeatureTranscript.cpp | 13 +------------
- 2 files changed, 2 insertions(+), 14 deletions(-)
+2016-05-18  Gemma Guest  <gb10@sanger.ac.uk>
+ Move static functions to unnamed namespace - TRIVIAL
+ src/zmapAppServices/zmapAppSource.cpp | 457 +++++++++++++++++-----------------
+ 1 file changed, 231 insertions(+), 226 deletions(-)
 
-2016-05-12  Ed Griffiths  <edgrif@sanger.ac.uk>
- Make sure -std=c++0x is always set (for normal, full and dist builds) - BUILD
- src/Makefile.common | 2 +-
- src/runconfig       | 3 ++-
- 2 files changed, 3 insertions(+), 2 deletions(-)
+2016-05-18  Gemma Guest  <gb10@sanger.ac.uk>
+ Tidying - TRIVIAL
+ src/zmapAppServices/zmapAppSource.cpp | 18 +++++++++---------
+ 1 file changed, 9 insertions(+), 9 deletions(-)
 
-2016-05-12  Ed Griffiths  <edgrif@sanger.ac.uk>
- Small improvement to ignored files in ensc-core - BUILD
- src/.gitignore | 2 +-
+2016-05-18  Gemma Guest  <gb10@sanger.ac.uk>
+ Minor change to template args - TRIVIAL
+ src/zmapAppServices/zmapAppSource.cpp | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+
+2016-05-18  Gemma Guest  <gb10@sanger.ac.uk>
+ Merge branch 'develop' into feature/trackhub
+2016-05-17  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix bug with function args - WIP
+ src/zmapAppServices/zmapAppSource.cpp | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+2016-05-05  Gemma Guest  <gb10@sanger.ac.uk>
+ Move login button to create-source dialog - WIP
+ src/zmapAppServices/zmapAppSource.cpp | 312 +++++++++++++++++-----------------
+ 1 file changed, 153 insertions(+), 159 deletions(-)
+
+2016-05-04  Gemma Guest  <gb10@sanger.ac.uk>
+ Add delete button - WIP
+ src/zmapAppServices/zmapAppSource.cpp | 105 +++++++++++++++++++++++++++-------
+ 1 file changed, 84 insertions(+), 21 deletions(-)
+
+2016-05-04  Gemma Guest  <gb10@sanger.ac.uk>
+ Minor update to tooltips - WIP
+ src/zmapAppServices/zmapAppSource.cpp | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+2016-05-04  Gemma Guest  <gb10@sanger.ac.uk>
+ Report errors to user - WIP
+ src/zmapAppServices/zmapAppSource.cpp | 36 +++++++++++++++++------------------
+ 1 file changed, 18 insertions(+), 18 deletions(-)
+
+2016-05-04  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix crash constructing url - WIP
+ src/zmapAppServices/zmapAppSource.cpp | 24 ++++++++++++++++++++++--
+ 1 file changed, 22 insertions(+), 2 deletions(-)
+
+2016-05-04  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix crash with list dialog - WIP
+ src/zmapAppServices/zmapAppSource.cpp | 68 ++++++++++++++++++++++-------------
+ 1 file changed, 44 insertions(+), 24 deletions(-)
+
+2016-04-26  Gemma Guest  <gb10@sanger.ac.uk>
+ Add error checking for trackhub api calls - WIP
+ src/zmapAppServices/zmapAppSource.cpp | 123 ++++++++++++++++++++++------------
+ src/zmapView/zmapView.cpp             |  26 ++++---
+ 2 files changed, 97 insertions(+), 52 deletions(-)
+
+2016-04-26  Gemma Guest  <gb10@sanger.ac.uk>
+ Minor change - WIP
+ src/zmapAppServices/zmapAppSource.cpp | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+2016-04-26  Gemma Guest  <gb10@sanger.ac.uk>
+ Always use trackdb name  - WIP
+ src/zmapAppServices/zmapAppSource.cpp | 7 ++-----
+ 1 file changed, 2 insertions(+), 5 deletions(-)
+
+2016-04-26  Gemma Guest  <gb10@sanger.ac.uk>
+ Minor tooltip change - WIP
+ src/zmapAppServices/zmapAppSource.cpp | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-2016-05-09  Ed Griffiths  <edgrif@sanger.ac.uk>
- Revert "Revert "Fix long standing irritation over compiledata file reported as missing on first compile. - BUILD""
- src/zmapUtils/Makefile.am | 25 ++++++++++++-------------
- 1 file changed, 12 insertions(+), 13 deletions(-)
+2016-04-26  Gemma Guest  <gb10@sanger.ac.uk>
+ Update source name from trackdb - WIP
+ src/zmapAppServices/zmapAppSource.cpp | 12 +++++++++---
+ 1 file changed, 9 insertions(+), 3 deletions(-)
 
-2016-05-06  Gemma Guest  <gb10@sanger.ac.uk>
- Revert "Fix long standing irritation over compiledata file reported as missing on first compile. - BUILD"
- src/zmapUtils/Makefile.am | 25 +++++++++++++------------
- 1 file changed, 13 insertions(+), 12 deletions(-)
+2016-04-26  Gemma Guest  <gb10@sanger.ac.uk>
+ Show details about the trackdb - WIP
+ src/zmapAppServices/zmapAppSource.cpp | 60 +++++++++++++++++++++++++++++------
+ 1 file changed, 51 insertions(+), 9 deletions(-)
 
-2016-04-28  Ed Griffiths  <edgrif@sanger.ac.uk>
- Fix long standing irritation over compiledata file reported as missing on first compile. - BUILD
- src/zmapUtils/Makefile.am | 25 ++++++++++++-------------
- 1 file changed, 12 insertions(+), 13 deletions(-)
+2016-04-26  Gemma Guest  <gb10@sanger.ac.uk>
+ Log in before register - WIP
+ src/zmapAppServices/zmapAppSource.cpp | 227 +++++++++++++++++++---------------
+ 1 file changed, 126 insertions(+), 101 deletions(-)
 
-2016-04-27  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add back in routine that logs the command line blixem was called with. - REGRESSION FIX
- src/zmapView/zmapViewCallBlixem.cpp | 29 ++++++++++++++++++++++++++++-
- 1 file changed, 28 insertions(+), 1 deletion(-)
+2016-04-26  Gemma Guest  <gb10@sanger.ac.uk>
+ Finish register dialog - WIP
+ src/zmapAppServices/zmapAppSource.cpp | 68 ++++++++++++++++++++++-------------
+ 1 file changed, 43 insertions(+), 25 deletions(-)
 
-2016-04-21  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add proper detection of unset build vars to handle our build_config.sh stuff. - BUILD
- src/runconfig | 121 +++++++++++++++++-----------------------------------------
- 1 file changed, 34 insertions(+), 87 deletions(-)
+2016-04-26  Gemma Guest  <gb10@sanger.ac.uk>
+ Minor rename - WIP
+ src/zmapAppServices/zmapAppSource.cpp | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
 
-2016-04-21  Ed Griffiths  <edgrif@sanger.ac.uk>
- Fix my bug but also a long standing duplication of the install dir in arg parsing. - BUILD
- src/runconfig | 24 ++++++++++++++++++------
- 1 file changed, 18 insertions(+), 6 deletions(-)
+2016-04-26  Gemma Guest  <gb10@sanger.ac.uk>
+ Remove unnecessary pointers - WIP
+ src/include/ZMap/zmapEnsemblUtils.hpp   | 34 ++++++++---------
+ src/zmapAppServices/zmapAppSource.cpp   | 66 ++++++++++++++++-----------------
+ src/zmapServer/ensembl/ensemblUtils.cpp | 60 +++++++++++++++---------------
+ 3 files changed, 77 insertions(+), 83 deletions(-)
 
-2016-04-20  Ed Griffiths  <edgrif@sanger.ac.uk>
- Fix up install dir....need to add --prefix in this script now. - BUILD
- src/runconfig | 10 +++++++++-
- 1 file changed, 9 insertions(+), 1 deletion(-)
+2016-04-26  Gemma Guest  <gb10@sanger.ac.uk>
+ Refresh trackdb list after login - WIP
+ src/zmapAppServices/zmapAppSource.cpp | 153 +++++++++++++++++++++++-----------
+ 1 file changed, 105 insertions(+), 48 deletions(-)
 
-2016-04-20  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add code to support runconfig supplying optimising or debugging flags to configure. - BUILD
- src/Makefile.common |   9 ++-
- src/configure.ac    |   9 ++-
- src/runconfig       | 215 ++++++++++++++++++++++++++++++++++++++++++++++------
- 3 files changed, 205 insertions(+), 28 deletions(-)
+2016-04-26  Gemma Guest  <gb10@sanger.ac.uk>
+ Minor fix - WIP
+ src/zmapAppServices/zmapAppSource.cpp | 24 ++++++++++++++++++++----
+ 1 file changed, 20 insertions(+), 4 deletions(-)
 
-2016-04-20  Ed Griffiths  <edgrif@sanger.ac.uk>
- Add code to switch _off_ -Werror flag in zeromq build so we can turn on max. warnings. - BUILD
- src/autogen.sh | 35 ++++++++++++++++-------------------
- 1 file changed, 16 insertions(+), 19 deletions(-)
+2016-04-26  Gemma Guest  <gb10@sanger.ac.uk>
+ Add search filter options - WIP
+ src/zmapAppServices/zmapAppSource.cpp | 43 +++++++++++++++++++++++++----------
+ 1 file changed, 31 insertions(+), 12 deletions(-)
+
+2016-04-25  Gemma Guest  <gb10@sanger.ac.uk>
+ Catch errors from blatSrc library - WIP
+ src/zmapServer/zmapDataSource.cpp   | 246 +++++++++++++++++++++++++-----------
+ src/zmapServer/zmapDataSource_P.hpp |   8 +-
+ 2 files changed, 175 insertions(+), 79 deletions(-)
+
+2016-04-25  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix errors reading bed - WIP
+ src/zmapServer/zmapDataSource.cpp | 100 +++++++++++++++++++++++---------------
+ 1 file changed, 62 insertions(+), 38 deletions(-)
+
+2016-04-22  Gemma Guest  <gb10@sanger.ac.uk>
+ WIP to add register function - WIP
+ src/zmapAppServices/zmapAppSource.cpp | 61 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 61 insertions(+)
+
+2016-04-22  Gemma Guest  <gb10@sanger.ac.uk>
+ Add browse button - WIP
+ src/zmapAppServices/zmapAppSource.cpp | 243 ++++++++++++++++++++++++++++------
+ 1 file changed, 202 insertions(+), 41 deletions(-)
+
+2016-04-22  Gemma Guest  <gb10@sanger.ac.uk>
+ Improve list headers - WIP
+ src/zmapAppServices/zmapAppSource.cpp | 11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
+
+2016-04-22  Gemma Guest  <gb10@sanger.ac.uk>
+ Filter now works on all columns - WIP
+ src/zmapAppServices/zmapAppSource.cpp | 104 ++++++++++++++++++++++++++--------
+ 1 file changed, 79 insertions(+), 25 deletions(-)
+
+2016-04-22  Gemma Guest  <gb10@sanger.ac.uk>
+ Trackhub search results include species, assembly etc. - WIP
+ src/zmapAppServices/zmapAppSource.cpp | 174 ++++++++++++++++++++++++++--------
+ 1 file changed, 133 insertions(+), 41 deletions(-)
+
+2016-04-22  Gemma Guest  <gb10@sanger.ac.uk>
+ Use TrackDb class for search results - WIP
+ src/zmapView/zmapView.cpp | 92 +++++++++++++++++++++++++++++++++++++----------
+ 1 file changed, 73 insertions(+), 19 deletions(-)
+
+2016-04-21  Gemma Guest  <gb10@sanger.ac.uk>
+ Add dialog to search for trackhubs - WIP
+ src/zmapAppServices/zmapAppSource.cpp | 85 ++++++++++++++++++++++++++++++-----
+ src/zmapServer/zmapDataSource.cpp     | 30 +++++++++----
+ 2 files changed, 97 insertions(+), 18 deletions(-)
+
+2016-04-21  Gemma Guest  <gb10@sanger.ac.uk>
+ Add class for VCF support - WIP
+ src/zmapServer/file/fileServer.cpp  |   8 +-
+ src/zmapServer/zmapDataSource.cpp   | 220 +++++++++++++++++++++++++++++++++++-
+ src/zmapServer/zmapDataSource.hpp   |   9 +-
+ src/zmapServer/zmapDataSource_P.hpp |  29 ++++-
+ 4 files changed, 254 insertions(+), 12 deletions(-)
+
+2016-04-21  Gemma Guest  <gb10@sanger.ac.uk>
+ Remove unused code - FORMATTING ONLY
+ src/zmapServer/zmapDataSource_P.hpp | 20 --------------------
+ 1 file changed, 20 deletions(-)
+
+2016-04-21  Gemma Guest  <gb10@sanger.ac.uk>
+ Tidying - FORMATTING ONLY
+ src/zmapServer/zmapDataSource.cpp   | 16 +++++++++-------
+ src/zmapServer/zmapDataSource_P.hpp |  8 ++++----
+ 2 files changed, 13 insertions(+), 11 deletions(-)
+
+2016-04-20  Gemma Guest  <gb10@sanger.ac.uk>
+ Minor fix - WIP
+ src/zmapServer/zmapDataSource.cpp | 12 +++++++++---
+ 1 file changed, 9 insertions(+), 3 deletions(-)
+
+2016-04-20  Gemma Guest  <gb10@sanger.ac.uk>
+ Add bigwig - WIP
+ src/zmapServer/zmapDataSource.cpp   | 93 +++++++++++++++++++++++++++++++------
+ src/zmapServer/zmapDataSource_P.hpp |  4 +-
+ 2 files changed, 81 insertions(+), 16 deletions(-)
+
+2016-04-20  Gemma Guest  <gb10@sanger.ac.uk>
+ Fixes for bigbed - WIP
+ src/zmapServer/file/fileServer.cpp  |  2 ++
+ src/zmapServer/zmapDataSource.cpp   | 67 +++++++++++++++++++++++++++++++------
+ src/zmapServer/zmapDataSource.hpp   |  4 ++-
+ src/zmapServer/zmapDataSource_P.hpp | 19 +++++++++--
+ 4 files changed, 79 insertions(+), 13 deletions(-)
+
+2016-04-20  Gemma Guest  <gb10@sanger.ac.uk>
+ Tidying - WIP
+ src/zmapServer/zmapDataSource.cpp | 159 +++++++++++++++++++-------------------
+ 1 file changed, 80 insertions(+), 79 deletions(-)
+
+2016-04-20  Gemma Guest  <gb10@sanger.ac.uk>
+ Add checkHeader function for bigbed - WIP
+ src/zmapServer/file/fileServer.cpp  | 119 +++++----------------------------
+ src/zmapServer/zmapDataSource.cpp   | 127 ++++++++++++++++++++++++------------
+ src/zmapServer/zmapDataSource.hpp   |   2 +-
+ src/zmapServer/zmapDataSource_P.hpp |  25 ++++---
+ 4 files changed, 119 insertions(+), 154 deletions(-)
+
+2016-04-20  Gemma Guest  <gb10@sanger.ac.uk>
+ Add function to open bigbed file - WIP
+ src/zmapServer/zmapDataSource.cpp   | 27 +++++++++++++++++++++++++--
+ src/zmapServer/zmapDataSource_P.hpp |  3 +++
+ 2 files changed, 28 insertions(+), 2 deletions(-)
+
+2016-04-20  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix crash if unsupported file type - WIP
+ src/zmapServer/zmapDataSource.cpp | 62 +++++++++++++++++++++++----------------
+ 1 file changed, 37 insertions(+), 25 deletions(-)
+
+2016-04-20  Gemma Guest  <gb10@sanger.ac.uk>
+ Make gff version function virtual - WIP
+ src/zmapServer/zmapDataSource.cpp   | 85 ++++++++++++++++++++-----------------
+ src/zmapServer/zmapDataSource_P.hpp |  5 +++
+ 2 files changed, 52 insertions(+), 38 deletions(-)
+
+2016-04-20  Gemma Guest  <gb10@sanger.ac.uk>
+ Pass source name through to file server - WIP
+ src/include/ZMap/zmapConfigIni.hpp           |  2 +-
+ src/include/ZMap/zmapConfigStanzaStructs.hpp |  1 +
+ src/include/ZMap/zmapServerProtocol.hpp      |  1 +
+ src/zmapConfig/zmapConfigLoader.cpp          | 14 ++++---
+ src/zmapFeature/zmapFeatureLoadDisplay.cpp   |  5 ++-
+ src/zmapServer/acedb/acedbServer.cpp         |  4 +-
+ src/zmapServer/ensembl/ensemblServer.cpp     |  4 +-
+ src/zmapServer/file/fileServer.cpp           |  6 ++-
+ src/zmapServer/file/fileServer_P.hpp         |  1 +
+ src/zmapServer/pipe/pipeServer.cpp           |  4 +-
+ src/zmapServer/zmapDataSource.cpp            | 56 ++++++++++++++++------------
+ src/zmapServer/zmapDataSource.hpp            |  2 +-
+ src/zmapServer/zmapDataSource_P.hpp          | 14 +++----
+ src/zmapServer/zmapServer.cpp                |  3 +-
+ src/zmapServer/zmapServer.hpp                |  2 +-
+ src/zmapServer/zmapServerProtocolHandler.cpp |  3 +-
+ src/zmapServer/zmapServerPrototype.hpp       |  1 +
+ src/zmapView/zmapView.cpp                    | 27 +++++++-------
+ 18 files changed, 86 insertions(+), 64 deletions(-)
+
+2016-04-20  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix missing target attribute - WIP
+ src/zmapServer/zmapDataSource.cpp | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+2016-04-20  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix incorrect return value when reading bed - WIP
+ src/zmapServer/zmapDataSource.cpp | 31 ++++++++++++++++++-------------
+ 1 file changed, 18 insertions(+), 13 deletions(-)
+
+2016-04-20  Gemma Guest  <gb10@sanger.ac.uk>
+ Add constructors - WIP
+ src/zmapServer/zmapDataSource.cpp   | 556 ++++++++++++++++++------------------
+ src/zmapServer/zmapDataSource.hpp   |   1 -
+ src/zmapServer/zmapDataSource_P.hpp |  25 +-
+ 3 files changed, 301 insertions(+), 281 deletions(-)
+
+2016-04-20  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix corruption caused by g_new - WIP
+ src/zmapServer/zmapDataSource.cpp | 71 ++++++++++++++++++---------------------
+ 1 file changed, 33 insertions(+), 38 deletions(-)
+
+2016-04-19  Gemma Guest  <gb10@sanger.ac.uk>
+ Add readLine for BED - WIP
+ src/zmapServer/zmapDataSource.cpp   | 209 +++++++++++++++++++++++++++++-------
+ src/zmapServer/zmapDataSource_P.hpp |   7 ++
+ 2 files changed, 177 insertions(+), 39 deletions(-)
+
+2016-04-19  Gemma Guest  <gb10@sanger.ac.uk>
+ Add header for bed conversion - WIP
+ src/zmapServer/file/fileServer.cpp | 56 ++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 56 insertions(+)
+
+2016-04-19  Gemma Guest  <gb10@sanger.ac.uk>
+ Add virtual destructor - WIP
+ src/zmapServer/zmapDataSource.cpp   | 105 +++++++++++++++++++-----------------
+ src/zmapServer/zmapDataSource.hpp   |   2 +-
+ src/zmapServer/zmapDataSource_P.hpp |   6 +++
+ 3 files changed, 62 insertions(+), 51 deletions(-)
+
+2016-04-19  Gemma Guest  <gb10@sanger.ac.uk>
+ Make zMapDataSourceIsOpen virtual - WIP
+ src/zmapServer/zmapDataSource.cpp   | 73 ++++++++++++++++++++++++++-----------
+ src/zmapServer/zmapDataSource.hpp   |  2 +-
+ src/zmapServer/zmapDataSource_P.hpp | 13 ++++++-
+ 3 files changed, 65 insertions(+), 23 deletions(-)
+
+2016-04-19  Gemma Guest  <gb10@sanger.ac.uk>
+ Add bed parser - WIP
+ src/zmapServer/zmapDataSource.cpp   | 21 +++++++++++++++++++--
+ src/zmapServer/zmapDataSource_P.hpp |  4 ++++
+ 2 files changed, 23 insertions(+), 2 deletions(-)
+
+2016-04-19  Gemma Guest  <gb10@sanger.ac.uk>
+ Change struct to class - WIP
+ src/zmapServer/zmapDataSource.cpp   |  5 +++
+ src/zmapServer/zmapDataSource.hpp   |  8 +---
+ src/zmapServer/zmapDataSource_P.hpp | 79 ++++++++++++++++++++++---------------
+ 3 files changed, 54 insertions(+), 38 deletions(-)
+
+2016-04-19  Gemma Guest  <gb10@sanger.ac.uk>
+ Add bed/bigbed/bigwig types - WIP
+ src/zmapServer/zmapDataSource.cpp   | 46 +++++++++++++++++++++++++++++++++----
+ src/zmapServer/zmapDataSource.hpp   |  4 ++--
+ src/zmapServer/zmapDataSource_P.hpp | 15 ++++++++++++
+ 3 files changed, 59 insertions(+), 6 deletions(-)
+
+2016-04-18  Gemma Guest  <gb10@sanger.ac.uk>
+ Extract trackdb when editing trackhub source - WIP
+ src/zmapAppServices/zmapAppSource.cpp | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+2016-04-18  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix error parsing trackhub url - WIP
+ src/zmapAppServices/zmapAppSource.cpp |  6 +++---
+ src/zmapUtils/zmapUrl.cpp             |  5 +++--
+ src/zmapView/zmapView.cpp             | 10 ++++++----
+ 3 files changed, 12 insertions(+), 9 deletions(-)
+
+2016-04-18  Gemma Guest  <gb10@sanger.ac.uk>
+ Remove invalid entry point to set up server request - WIP
+ src/include/ZMap/zmapView.hpp             |  7 +--
+ src/zmapControl/zmapControlImportFile.cpp | 11 ++--
+ src/zmapView/zmapView.cpp                 | 86 ++++++++++++++++++-------------
+ src/zmapView/zmapViewRemoteControl.cpp    |  2 +-
+ src/zmapView/zmapView_P.hpp               | 12 ++---
+ 5 files changed, 62 insertions(+), 56 deletions(-)
+
+2016-04-18  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix typo causing normal sources to fail - WIP
+ src/zmapView/zmapView.cpp | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+2016-04-15  Gemma Guest  <gb10@sanger.ac.uk>
+ Remove trackhub server - WIP
+ src/configure.ac                             |   1 -
+ src/zmapServer/Makefile.am                   |   3 +-
+ src/zmapServer/trackhub/Makefile.am          |  18 --
+ src/zmapServer/trackhub/trackhubServer.cpp   | 415 ---------------------------
+ src/zmapServer/trackhub/trackhubServer_P.hpp |  61 ----
+ src/zmapServer/zmapServer.cpp                |   4 -
+ src/zmapServer/zmapServer_P.hpp              |   1 -
+ 7 files changed, 1 insertion(+), 502 deletions(-)
+
+2016-04-15  Gemma Guest  <gb10@sanger.ac.uk>
+ set up child servers for each track in trackDb - WIP
+ src/zmapView/zmapView.cpp | 81 ++++++++++++++++++++++++++++++++++++++++++-----
+ 1 file changed, 73 insertions(+), 8 deletions(-)
+
+2016-04-15  Gemma Guest  <gb10@sanger.ac.uk>
+ Tidying - WIP
+ src/include/ZMap/zmapView.hpp             |  2 +-
+ src/zmapControl/zmapControlImportFile.cpp |  2 +-
+ src/zmapView/zmapView.cpp                 | 14 +++++---------
+ src/zmapView/zmapView_P.hpp               |  2 +-
+ 4 files changed, 8 insertions(+), 12 deletions(-)
+
+2016-04-15  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix errors creating trackhub server - WIP
+ src/zmapServer/Makefile.am                 | 1 +
+ src/zmapServer/trackhub/trackhubServer.cpp | 6 ++++--
+ 2 files changed, 5 insertions(+), 2 deletions(-)
+
+2016-04-14  Gemma Guest  <gb10@sanger.ac.uk>
+ More work to add trackhub module - WIP
+ src/build/macosx/.gitignore                  |   4 -
+ src/configure.ac                             |   1 +
+ src/zmapServer/Makefile.am                   |   2 +-
+ src/zmapServer/trackhub/Makefile.am          |  18 +
+ src/zmapServer/trackhub/trackhubServer.cpp   | 579 ++-------------------------
+ src/zmapServer/trackhub/trackhubServer_P.hpp |   4 +-
+ src/zmapServer/zmapServer.cpp                |   2 +-
+ src/zmapServer/zmapServer_P.hpp              |   1 +
+ 8 files changed, 61 insertions(+), 550 deletions(-)
+
+2016-04-14  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix missing scheme reference - WIP
+ src/include/ZMap/zmapUrl.hpp | 1 +
+ src/zmapUtils/zmapUrl.cpp    | 2 ++
+ 2 files changed, 3 insertions(+)
+
+2016-04-14  Gemma Guest  <gb10@sanger.ac.uk>
+ Add trackhub server - WIP
+ src/zmapServer/trackhub/trackhubServer.cpp   | 920 +++++++++++++++++++++++++++
+ src/zmapServer/trackhub/trackhubServer_P.hpp |  59 ++
+ 2 files changed, 979 insertions(+)
+
+2016-04-14  Gemma Guest  <gb10@sanger.ac.uk>
+ Construct trackhub:// url - WIP
+ src/zmapAppServices/zmapAppSource.cpp | 43 ++++++++++++-----------------------
+ 1 file changed, 14 insertions(+), 29 deletions(-)
+
+2016-04-14  Gemma Guest  <gb10@sanger.ac.uk>
+ Add more trackhub widgets to create-source dialog - WIP
+ src/zmapAppServices/zmapAppSource.cpp | 99 +++++++++++++++++++++++++++++------
+ 1 file changed, 83 insertions(+), 16 deletions(-)
+
+2016-04-14  Gemma Guest  <gb10@sanger.ac.uk>
+ Tidying - WIP
+ src/zmapAppServices/zmapAppSource.cpp | 75 +++++++++++++++++++----------------
+ 1 file changed, 41 insertions(+), 34 deletions(-)
+
+2016-04-14  Gemma Guest  <gb10@sanger.ac.uk>
+ Add trackhub scheme - WIP
+ src/include/ZMap/zmapUrl.hpp          |   1 +
+ src/zmapAppServices/zmapAppSource.cpp | 202 ++++++++++++++++++++--------------
+ src/zmapServer/zmapServer.cpp         |   5 +
+ src/zmapView/zmapViewUtils.cpp        |  20 ++++
+ src/zmapView/zmapView_P.hpp           |   5 +
+ 5 files changed, 151 insertions(+), 82 deletions(-)
+
+2016-04-14  Gemma Guest  <gb10@sanger.ac.uk>
+ Start adding trackhub widgets - WIP
+ src/zmapAppServices/zmapAppSource.cpp | 58 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 58 insertions(+)
