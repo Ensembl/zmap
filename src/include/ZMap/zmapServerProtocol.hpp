@@ -117,7 +117,6 @@ typedef struct ZMapServerReqCreateStructType
   ZMapServerReqType type ;
   ZMapServerResponseType response ;
 
-  GQuark source_name ;
   char *config_file ;
 
   ZMapURL url ;

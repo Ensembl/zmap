@@ -4369,8 +4369,7 @@ static gboolean exportFeatures(ZMapWindow window, gboolean all_features, ZMapSpa
       temp_feature = feature ;
 
       /* create a copy and update the name to that in the attributes */
-      GError *g_error = NULL ;
-      feature = (ZMapFeatureAny)zMapFeatureTranscriptShallowCopy((ZMapFeature)temp_feature, &g_error) ;
+      feature = (ZMapFeatureAny)zMapFeatureTranscriptShallowCopy((ZMapFeature)temp_feature) ;
 
       if (feature)
         {
@@ -4421,13 +4420,8 @@ static gboolean exportFeatures(ZMapWindow window, gboolean all_features, ZMapSpa
       else
         {
           ok = FALSE ;
+          zMapCritical("%s", "Failed to export feature") ;
           feature = temp_feature ;
-
-          if (g_error)
-            {
-              zMapCritical("Failed to export feature: %s", g_error->message) ;
-              g_error_free(g_error) ;
-            }
         }
     }
 

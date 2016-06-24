@@ -580,63 +580,43 @@ static ZMapFeature createLocusFeature(ZMapFeatureContext context, ZMapFeature fe
       zMapLogMessage("loci '%s' & '%s' don't match will delete '%s'",
                      old_locus_name, new_locus_name, old_locus_name);
 
-      GError *g_error = NULL ;
-
       tmp_locus_feature = zMapFeatureCreateFromStandardData(old_locus_name,
                                                             NULL, "",
                                                             ZMAPSTYLE_MODE_BASIC, locus_style,
                                                             start, end, FALSE, 0.0,
-                                                            ZMAPSTRAND_NONE,
-                                                            &g_error) ;
+                                                            ZMAPSTRAND_NONE) ;
 
-      if (tmp_locus_feature)
+      zMapFeatureSetAddFeature(locus_feature_set, tmp_locus_feature);
+
+      if ((old_locus_feature
+           = zMapFeatureContextFindFeatureFromFeature(context,
+                                                      (ZMapFeatureAny)tmp_locus_feature)))
         {
-          zMapFeatureSetAddFeature(locus_feature_set, tmp_locus_feature);
-
-          if ((old_locus_feature
-               = zMapFeatureContextFindFeatureFromFeature(context,
-                                                          (ZMapFeatureAny)tmp_locus_feature)))
-            {
-              zMapLogMessage("Found old locus '%s', deleting.", old_locus_name);
-              locus_feature = (ZMapFeature)zMapFeatureAnyCopy(old_locus_feature);
-            }
-          else
-            {
-              zMapLogMessage("Failed to find old locus '%s' during delete.", old_locus_name);
-              /* make the locus feature itself. */
-              locus_feature = zMapFeatureCreateFromStandardData(old_locus_name,
-                                                                NULL, "",
-                                                                ZMAPSTYLE_MODE_BASIC, locus_style,
-                                                                start, end, FALSE, 0.0,
-                                                                ZMAPSTRAND_NONE,
-                                                                &g_error) ;
-            }
-
-          zMapFeatureDestroy(tmp_locus_feature);
+          zMapLogMessage("Found old locus '%s', deleting.", old_locus_name);
+          locus_feature = (ZMapFeature)zMapFeatureAnyCopy(old_locus_feature);
+        }
+      else
+        {
+          zMapLogMessage("Failed to find old locus '%s' during delete.", old_locus_name);
+          /* make the locus feature itself. */
+          locus_feature = zMapFeatureCreateFromStandardData(old_locus_name,
+                                                            NULL, "",
+                                                            ZMAPSTYLE_MODE_BASIC, locus_style,
+                                                            start, end, FALSE, 0.0,
+                                                            ZMAPSTRAND_NONE) ;
         }
 
-      if (g_error)
-        {
-          zMapCritical("Error creating locus feature", g_error->message) ;
-          g_error_free(g_error) ;
-        }
+      zMapFeatureDestroy(tmp_locus_feature);
     }
   else
     {
       /* make the locus feature itself. */
-      GError *g_error = NULL ;
-
       locus_feature = zMapFeatureCreateFromStandardData(new_locus_name,
                                                         NULL, "",
                                                         ZMAPSTYLE_MODE_BASIC, locus_style,
                                                         start, end, FALSE, 0.0,
-                                                        ZMAPSTRAND_NONE,
-                                                        &g_error) ;
-      if (g_error)
-        {
-          zMapCritical("Error creating locus feature", g_error->message) ;
-          g_error_free(g_error) ;
-        }
+                                                        ZMAPSTRAND_NONE) ;
+
     }
 
   return locus_feature ;
@@ -1008,7 +988,7 @@ static void loadFeatures(ZMapView view, RequestData request_data)
 
   if (request_data->command_rc == REMOTE_COMMAND_RC_OK)
     zmapViewLoadFeatures(view, request_data->edit_block, request_data->feature_sets, NULL,
-                         NULL, start, end, view->thread_fail_silent,
+                         NULL, start, end,
                          SOURCE_GROUP_DELAYED, TRUE, TRUE) ;
 
   return ;
@@ -1983,14 +1963,12 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
               end_not_found = zMapXMLAttributeValueToBool(attr);
             }
 
-          GError *g_error = NULL ;
           if (result
               && (feature = zMapFeatureCreateFromStandardData(feature_name, NULL, "",
                                                               mode,
                                                               &(request_data->style),
                                                               start, end, has_score,
-                                                              score, strand,
-                                                              &g_error)))
+                                                              score, strand)))
             {
               /* taken from the "ontology" property */
               feature->SO_accession = feature_term ;
@@ -2077,12 +2055,6 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
                   request_data->replace_feature_list = g_list_prepend(request_data->replace_feature_list,
                                                                       feature_any) ;
                 }
-            }
-
-          if (g_error)
-            {
-              zMapCritical("Error creating feature", g_error->message) ;
-              g_error_free(g_error) ;
             }
 
         }

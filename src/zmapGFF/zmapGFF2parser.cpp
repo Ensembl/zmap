@@ -1438,18 +1438,8 @@ static gboolean makeNewFeature(ZMapGFFParser parser_base, const char *line, Name
 
       if (parser->parse_only || !feature)
         {
-          GError *g_error = NULL ;
           new_feature = zMapFeatureCreateEmpty() ;
           zMapGFFParserIncrementNumFeatures(parser_base);
-
-          if (g_error)
-            {
-              if (zMapFeatureErrorIsFatal(&g_error))
-                parser_base->state = ZMAPGFF_PARSER_ERR ;
-
-              zMapCritical("Error creating feature: %s", g_error->message) ;
-              g_error_free(g_error) ;
-            }
         }
 
 
@@ -1473,7 +1463,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser_base, const char *line, Name
            * our set of such features. There are arcane/adhoc rules in action here, any features
            * that do not have their own feature_name  _cannot_  be multiline features as such features
            * can _only_ be identified if they do have their own name. */
-          if (feature && feature_has_name && (feature_type == ZMAPSTYLE_MODE_TRANSCRIPT))
+          if (feature_has_name && (feature_type == ZMAPSTYLE_MODE_TRANSCRIPT))
             {
               g_datalist_set_data(&(parser_feature_set->multiline_features), feature_name, feature) ;
             }

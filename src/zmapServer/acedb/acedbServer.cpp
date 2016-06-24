@@ -151,7 +151,7 @@ typedef gboolean (*ParseMethodNamesFunc)(AcedbServer server, char *method_str_in
  * shouldn't change these prototypes without changing all the other server prototypes..... */
 static gboolean globalInit(void) ;
 static gboolean createConnection(void **server_out,
-				 GQuark source_name, char *config_file, ZMapURL url, char *format,
+				 char *config_file, ZMapURL url, char *format,
                                  char *version_str, int timeout,
                                  pthread_mutex_t *mutex) ;
 static ZMapServerResponseType openConnection(void *server, ZMapServerReqOpen req_open) ;
@@ -299,7 +299,7 @@ static gboolean globalInit(void)
 }
 
 static gboolean createConnection(void **server_out,
-				 GQuark source_name, char *config_file, ZMapURL url, char *format,
+				 char *config_file, ZMapURL url, char *format,
                                  char *version_str, int timeout,
                                  pthread_mutex_t *mutex_unused)
 {
