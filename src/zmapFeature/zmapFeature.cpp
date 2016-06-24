@@ -111,7 +111,8 @@ typedef struct
 // Constructor
 ZMapFeatureCount::ZMapFeatureCount()
   : max_features_(ZMAP_MAX_FEATURES_HARD_LIMIT),
-    loaded_features_(0)
+    loaded_features_(0),
+    warn_exceed_max_(true)
 {
 }
 
@@ -127,6 +128,7 @@ void ZMapFeatureCount::operator--()
 {
   mutex_.lock() ;
   --loaded_features_ ;
+  warn_exceed_max_ = true ; // so we will warn again next time limit is reached
   mutex_.unlock() ;
 }
 
@@ -146,11 +148,19 @@ bool ZMapFeatureCount::hitLimit(GError **error)
   mutex_.lock() ;
   result = loaded_features_ >= max_features_ ;
 
-  if (result && error)
+  if (result)
     {
-      g_set_error(error, ZMAP_FEATURE_ERROR, ZMAPFEATURE_ERROR_FEATURE_LIMIT,
-                  "Exceeded maximum number of features (%d)! Further features will not be loaded until some are removed first.", 
-                  max_features_) ;
+      // Issue a warning to the user if this is the first time we've hit the
+      // limit. We will only warn again if the user first removes features
+      // and then we hit the limit again.
+      if (warn_exceed_max_ && error)
+        {
+          g_set_error(error, ZMAP_FEATURE_ERROR, ZMAPFEATURE_ERROR_FEATURE_LIMIT,
+                      "Exceeded maximum number of features (%d)! Further features will not be loaded until some are removed first.", 
+                      max_features_) ;
+        }
+      
+      warn_exceed_max_ = false ;
     }
 
   mutex_.unlock() ;
