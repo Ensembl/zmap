@@ -52,7 +52,7 @@
 
 // Limit the maximum number of features zmap attempts to load. It's not good that we have to do
 // this but otherwise at the moment zmap will continue loading features until it falls over.
-#define ZMAP_MAX_FEATURES_HARD_LIMIT 5000000
+#define ZMAP_MAX_FEATURES_HARD_LIMIT 1000000000
 
 
 /*
@@ -130,18 +130,6 @@ void ZMapFeatureCount::operator--()
   mutex_.unlock() ;
 }
 
-
-// Get the number of loaded features
-int ZMapFeatureCount::getCount() const
-{
-  return loaded_features_ ;
-}
-
-// Get the limit
-int ZMapFeatureCount::getLimit() const
-{
-  return max_features_ ;
-}
 
 // Set the limit
 void ZMapFeatureCount::setLimit(const int max_features)

@@ -3074,10 +3074,6 @@ static void developerMenuCB(int menu_item_id, gpointer callback_data)
         g_string_append(session_text, "Window Statistics\n") ;
         zMapWindowStats(menu_data->window, session_text) ;
 
-        g_string_append(session_text, "\nFeature Statistics\n") ;
-        g_string_append_printf(session_text, "Total features: %d\n", ZMapFeatureCount::instance().getCount()) ;
-        g_string_append_printf(session_text, "Max features: %d\n", ZMapFeatureCount::instance().getLimit()) ;
-
         title = zMapGUIMakeTitleString(NULL, "Session Statistics") ;
         zMapGUIShowText(title, session_text->str, FALSE) ;
         g_free(title) ;
