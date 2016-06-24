@@ -52,7 +52,7 @@
 
 // Limit the maximum number of features zmap attempts to load. It's not good that we have to do
 // this but otherwise at the moment zmap will continue loading features until it falls over.
-#define ZMAP_MAX_FEATURES_HARD_LIMIT 1000000000
+#define ZMAP_MAX_FEATURES_HARD_LIMIT 100000
 
 
 /*
