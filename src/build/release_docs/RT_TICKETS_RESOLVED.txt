@@ -1,5 +1,5 @@
 
-Request Tracker Tickets Resolved from 18/05/2016 to 22/06/2016
+Request Tracker Tickets Resolved from 18/05/2016 to 24/06/2016
 
 ticket/526970
 id: ticket/526970

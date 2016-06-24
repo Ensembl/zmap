@@ -1,3 +1,96 @@
+2016-06-24  Gemma Barson  <gb10@sanger.ac.uk>
+ Revert "Merge branch 'feature/trackhub' into develop"
+ src/build/macosx/.gitignore                      |    4 +
+ src/configure.ac                                 |   20 -
+ src/include/ZMap/zmapConfigIni.hpp               |    2 +-
+ src/include/ZMap/zmapConfigStanzaStructs.hpp     |    1 -
+ src/include/ZMap/zmapConfigStrings.hpp           |    2 +-
+ src/include/ZMap/zmapEnsemblUtils.hpp            |   34 +-
+ src/include/ZMap/zmapFeature.hpp                 |   46 +-
+ src/include/ZMap/zmapServerProtocol.hpp          |    1 -
+ src/include/ZMap/zmapUrl.hpp                     |    6 -
+ src/include/ZMap/zmapUrlOptions.hpp              |    4 -
+ src/include/ZMap/zmapView.hpp                    |    7 +-
+ src/zmapAppServices/zmapAppSource.cpp            | 1896 ++++++----------------
+ src/zmapConfig/zmapConfigLoader.cpp              |   14 +-
+ src/zmapControl/zmapControlImportFile.cpp        |   11 +-
+ src/zmapFeature/zmapFeature.cpp                  |  193 +--
+ src/zmapFeature/zmapFeature3FrameTranslation.cpp |   84 +-
+ src/zmapFeature/zmapFeatureDNA.cpp               |   24 +-
+ src/zmapFeature/zmapFeatureLoadDisplay.cpp       |    5 +-
+ src/zmapFeature/zmapFeatureTranscript.cpp        |    4 +-
+ src/zmapGFF/zmapGFF2parser.cpp                   |   12 +-
+ src/zmapGFF/zmapGFF3parser.cpp                   |  319 ++--
+ src/zmapGFF/zmapGFFGeneral.cpp                   |    1 +
+ src/zmapGFF/zmapGFF_P.hpp                        |    5 +-
+ src/zmapServer/Makefile.am                       |   13 -
+ src/zmapServer/acedb/acedbServer.cpp             |    4 +-
+ src/zmapServer/ensembl/ensemblServer.cpp         |  270 +--
+ src/zmapServer/ensembl/ensemblUtils.cpp          |   60 +-
+ src/zmapServer/file/fileServer.cpp               |   79 +-
+ src/zmapServer/file/fileServer_P.hpp             |    1 -
+ src/zmapServer/pipe/pipeServer.cpp               |    4 +-
+ src/zmapServer/zmapDataSource.cpp                | 1409 ++++------------
+ src/zmapServer/zmapDataSource.hpp                |   28 +-
+ src/zmapServer/zmapDataSource_P.hpp              |  194 +--
+ src/zmapServer/zmapServer.cpp                    |    4 +-
+ src/zmapServer/zmapServer.hpp                    |    2 +-
+ src/zmapServer/zmapServerProtocolHandler.cpp     |    3 +-
+ src/zmapServer/zmapServerPrototype.hpp           |    1 -
+ src/zmapUtils/zmapUrl.cpp                        |    7 +-
+ src/zmapView/zmapView.cpp                        |  268 +--
+ src/zmapView/zmapViewRemoteControl.cpp           |   72 +-
+ src/zmapView/zmapViewScratch.cpp                 |   70 +-
+ src/zmapView/zmapViewUtils.cpp                   |   20 -
+ src/zmapView/zmapView_P.hpp                      |   17 +-
+ src/zmapWindow/zmapWindowColConfig.cpp           |  162 +-
+ src/zmapWindow/zmapWindowDNA.cpp                 |   17 +-
+ src/zmapWindow/zmapWindowFeatureShow.cpp         |    9 +-
+ src/zmapWindow/zmapWindowMenus.cpp               |   10 +-
+ 47 files changed, 1358 insertions(+), 4061 deletions(-)
+
+2016-06-24  Gemma Barson  <gb10@sanger.ac.uk>
+ Revert "Increase feature limit - WIP"
+ src/zmapFeature/zmapFeature.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+2016-06-24  Gemma Barson  <gb10@sanger.ac.uk>
+ Revert "Fix error with logging too many warnings - WIP"
+ src/include/ZMap/zmapFeature.hpp   |  1 +
+ src/zmapFeature/zmapFeature.cpp    | 20 +++++++++++++++-----
+ src/zmapGFF/zmapGFF3parser.cpp     | 28 +++++++++++-----------------
+ src/zmapServer/file/fileServer.cpp |  6 +-----
+ 4 files changed, 28 insertions(+), 27 deletions(-)
+
+2016-06-24  Gemma Barson  <gb10@sanger.ac.uk>
+ Revert "Add feature count stats - WIP"
+ src/include/ZMap/zmapFeature.hpp   |  4 +---
+ src/zmapFeature/zmapFeature.cpp    | 14 +-------------
+ src/zmapWindow/zmapWindowMenus.cpp |  4 ----
+ 3 files changed, 2 insertions(+), 20 deletions(-)
+
+2016-06-24  Gemma Barson  <gb10@sanger.ac.uk>
+ Revert "Limit the number of GFF warnings logged - WIP"
+ src/zmapServer/file/fileServer.cpp | 12 ++----------
+ src/zmapServer/pipe/pipeServer.cpp | 13 +------------
+ 2 files changed, 3 insertions(+), 22 deletions(-)
+
+2016-06-24  Gemma Barson  <gb10@sanger.ac.uk>
+ Revert "Improve semaphore class - WIP"
+ src/zmapServer/zmapDataSource.cpp | 101 ++++++++++----------------------------
+ 1 file changed, 25 insertions(+), 76 deletions(-)
+
+2016-06-24  Gemma Barson  <gb10@sanger.ac.uk>
+ Revert "Increase feature limit - WIP"
+ src/zmapFeature/zmapFeature.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+2016-06-22  zmap  <zmap@sanger.ac.uk>
+ ZMap version 2.9.0-113-g2ace287 - Update RT and git commit reports
+ src/ChangeLog                                  | 43 ++++++++++++++++++++++++++
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt | 12 ++++++-
+ 2 files changed, 54 insertions(+), 1 deletion(-)
+
 2016-06-22  Gemma Guest  <gb10@sanger.ac.uk>
  Increase feature limit - WIP
  src/zmapFeature/zmapFeature.cpp | 2 +-
