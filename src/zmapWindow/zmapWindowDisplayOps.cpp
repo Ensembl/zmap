@@ -586,10 +586,18 @@ static void makeSelectionString(ZMapWindow window, ZMapWindowDisplayStyle displa
   char *chromosome ;
   ZMapWindowDisplayCoordinates display_coords ;
 
-  if (display_style->coord_frame == ZMAPWINDOW_COORD_ONE_BASED)
-    display_coords = ZMAP_WINDOW_DISPLAY_SLICE ;
+
+  if (display_style->paste_style == ZMAPWINDOW_PASTE_FORMAT_OTTERLACE)
+    {
+      display_coords = ZMAP_WINDOW_DISPLAY_SLICE ;
+    }
   else
-    display_coords = ZMAP_WINDOW_DISPLAY_CHROM ;
+    {
+      if (display_style->coord_frame == ZMAPWINDOW_COORD_ONE_BASED)
+        display_coords = ZMAP_WINDOW_DISPLAY_SLICE ;
+      else
+        display_coords = ZMAP_WINDOW_DISPLAY_CHROM ;
+    }
 
 
   align = window->feature_context->master_align ;
