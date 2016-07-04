@@ -1085,7 +1085,9 @@ public:
   void operator++() ;
   void operator--() ;
 
-  // Set/query the limit
+  // Set/query the limit and count
+  int getCount() const ;
+  int getLimit() const ;
   void setLimit(const int max_features) ;
   bool hitLimit(GError **error)  ;
 
