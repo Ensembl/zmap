@@ -1921,12 +1921,12 @@ void zMapFeatureTranscriptSetVariations(ZMapFeature feature, GList *variations)
 
 /* Make a shallow copy of the given feature. The caller should free the returned ZMapFeature
  * struct but none of the members, which remain owned by src. */
-ZMapFeature zMapFeatureTranscriptShallowCopy(ZMapFeature src, GError **error)
+ZMapFeature zMapFeatureTranscriptShallowCopy(ZMapFeature src)
 {
   ZMapFeature dest = NULL;
   zMapReturnValIfFail(src && src->mode == ZMAPSTYLE_MODE_TRANSCRIPT, dest) ;
 
-  dest = zMapFeatureShallowCopy(src, error) ;
+  dest = zMapFeatureShallowCopy(src) ;
 
   if (dest)
     {

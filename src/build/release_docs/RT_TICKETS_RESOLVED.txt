@@ -1,33 +1,33 @@
 
-Request Tracker Tickets Resolved from 15/04/2016 to 20/05/2016
+Request Tracker Tickets Resolved from 18/05/2016 to 24/06/2016
 
-ticket/523445
-id: ticket/523445
+ticket/526970
+id: ticket/526970
 Queue: zmap
-Subject: protein translation in zmap with 'p' shortcut
-Requestors: sb7@sanger.ac.uk, th2@sanger.ac.uk
-Owner: mg13
-Resolved: Tue May 17 16:41:31 2016
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/523795
-id: ticket/523795
-Queue: zmap
-Subject: Problem compiling ZMap from git
+Subject: Enesmbl C API
 Requestors: thibaut@ebi.ac.uk
 Owner: edgrif
-Resolved: Tue May 17 14:16:26 2016
+Resolved: Wed Jun 22 16:13:23 2016
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
-ticket/524700
-id: ticket/524700
+ticket/531776
+id: ticket/531776
 Queue: zmap
-Subject: Zmap map is not loading transcript anymore
-Requestors: thibaut@ebi.ac.uk
-Owner: gb10
-Resolved: Fri Apr 15 10:47:49 2016
+Subject: otter-103-06: Cannot bump featureset "0x104014980_psl_ucsc_est_+0" - too many features to fit into the window
+Requestors: mms@sanger.ac.uk
+Owner: sm23
+Resolved: Tue May 31 16:03:46 2016
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
+ticket/532732
+id: ticket/532732
+Queue: zmap
+Subject: coordinate transforms
+Requestors: edgrif@sanger.ac.uk
+Owner: edgrif
+Resolved: Tue Jun 07 16:42:56 2016
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 

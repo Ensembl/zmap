@@ -232,7 +232,7 @@
 
 #define ZMAPSTANZA_PEER_TIMEOUT_LIST     "timeout-list"     /* e.g. timeout-list=333,1000,3000,9000 */
 
-#define ZMAPSTANZA_APP_MAX_FEATURES      5000000
+
 
 
 

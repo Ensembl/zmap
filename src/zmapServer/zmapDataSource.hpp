@@ -35,14 +35,18 @@
 /*
  * Forward declaration of general source type.
  */
-class ZMapDataSourceStruct ;
-typedef ZMapDataSourceStruct *ZMapDataSource ;
+typedef struct ZMapDataSourceStruct_ *ZMapDataSource ;
 
 /*
  * Enumeration to represent different source types.
  */
-enum class ZMapDataSourceType {GIO, HTS, BCF, BED, BIGBED, BIGWIG, UNK} ;
+enum class ZMapDataSourceType {GIO, HTS, UNK} ;
 
+
+typedef struct ZMapDataSourceStruct_
+  {
+    ZMapDataSourceType type ;
+  } ZMapDataSourceStruct ;
 
 
 
@@ -50,21 +54,17 @@ enum class ZMapDataSourceType {GIO, HTS, BCF, BED, BIGBED, BIGWIG, UNK} ;
 /*
  * The rationale for this is that previously we were reading GFF data
  * only, always through a GIOChannel. Thus the abstraction of ZMapDataSource,
- * which has several types
+ * which has two types
  *
  *            ZMapDataSourceGIO       GIOChannel, synchronous OR asynchronous
- *            ZMapDataSourceHTS       HTS bam/sam/cram file, synchronous only
- *            ZMapDataSourceBCF       HTS bcf/vcf file, synchronous only
- *            ZMapDataSourceBED       blatSrc Bed file, synchronous only
- *            ZMapDataSourcenBIGBED   blatSrc bigBed file, synchronous only
- *            ZMapDataSourceBIGWIG    blatSrc bigWig file, synchronous only
+ *            ZMapDataSourceHTS       HTS file, synchronous only
  */
-ZMapDataSource zMapDataSourceCreate(const GQuark source_name, const char * const file_name, 
-                                    const char *sequence, const int start, const int end, 
-                                    GError **error_out = NULL) ;
-bool zMapDataSourceIsOpen(ZMapDataSource const source) ;
-bool zMapDataSourceDestroy( ZMapDataSource *source) ;
+ZMapDataSource zMapDataSourceCreate(const char * const file_name, GError **error_out = NULL) ;
+ZMapDataSource zMapDataSourceCreateFromGIO(GIOChannel * const io_channel) ;
+gboolean zMapDataSourceIsOpen(ZMapDataSource const source) ;
+gboolean zMapDataSourceDestroy( ZMapDataSource *source) ;
 ZMapDataSourceType zMapDataSourceGetType(ZMapDataSource source ) ;
+gboolean zMapDataSourceReadHTSHeader(ZMapDataSource source, const char *sequence) ;
 gboolean zMapDataSourceReadLine (ZMapDataSource const data_pipe , GString * const str) ;
 gboolean zMapDataSourceGetGFFVersion(ZMapDataSource const source, int * const out_val) ;
 ZMapDataSourceType zMapDataSourceTypeFromFilename(const char * const, GError **error_out = NULL) ;
