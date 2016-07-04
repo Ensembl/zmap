@@ -1103,7 +1103,11 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
         {
           GError *error ;
           error = zMapGFFGetError(parser) ;
-          ZMAPSERVER_LOG(Warning, PROTOCOL_NAME, server->path, "%s", error->message) ;
+
+          /* Only log a warning if an error was given (the error may be null if no warning is
+           * required and we need to be careful not to fill the log with millions of warnings) */
+          if (error)
+            ZMAPSERVER_LOG(Warning, PROTOCOL_NAME, server->path, "%s", error->message) ;
 
           if (zMapGFFTerminated(parser))
             {

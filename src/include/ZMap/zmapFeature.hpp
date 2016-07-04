@@ -1095,7 +1095,6 @@ private:
 
   int max_features_ ;     // max number of allowed features
   int loaded_features_ ;  // total features in memory
-  bool warn_exceed_max_ ; // true if we should warn the user when we hit the limit
   std::mutex mutex_ ;
 } ;
 
