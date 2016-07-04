@@ -1,6 +1,7 @@
 
 Git commits for  from commit "production" until commit "release/2.10.0"
 
+92041a7 2016-06-24 Revert "Merge branch 'feature/trackhub' into develop"
 7fac72d 2016-06-20 Merge branch 'feature/trackhub' into develop
 85b58fe 2016-06-07 Change all usage of coord transform calls to call fixed funciton. - RT532732
 e54430c 2016-06-07 Make coord translating handle slice and chromosome views. - RT532732

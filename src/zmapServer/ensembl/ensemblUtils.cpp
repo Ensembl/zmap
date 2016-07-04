@@ -68,15 +68,15 @@ typedef enum
 
 
 
-list<string> ensemblGetList(const char *host,
-                            const int port,
-                            const char *user,
-                            const char *passwd,
-                            const char *dbname,
-                            const string &query,
-                            GError **error)
+list<string>* ensemblGetList(const char *host,
+                             const int port,
+                             const char *user,
+                             const char *passwd,
+                             const char *dbname,
+                             const string &query,
+                             GError **error)
 {
-  list<string> result ;
+  list<string> *result = NULL ;
   zMapReturnValIfFail(host, result) ;
 
   pthread_mutex_t mutex ;
@@ -110,12 +110,14 @@ list<string> ensemblGetList(const char *host,
 
       if (mysql_results)
         {
+          result = new list<string> ;
+
           MYSQL_ROW mysql_row = mysql_fetch_row(mysql_results) ;
 
           while (mysql_row)
             {
               string string_val(mysql_row[0]) ;
-              result.push_back(string_val) ;
+              result->push_back(string_val) ;
 
               mysql_row = mysql_fetch_row(mysql_results) ;
             }
@@ -146,13 +148,13 @@ list<string> ensemblGetList(const char *host,
 
 
 
-list<string> zMapEnsemblGetDatabaseList(const char *host, 
-                                        const int port,
-                                        const char *user,
-                                        const char *passwd,
-                                        GError **error)
+list<string>* zMapEnsemblGetDatabaseList(const char *host, 
+                                         const int port,
+                                         const char *user,
+                                         const char *passwd,
+                                         GError **error)
 {
-  list<string> result ;
+  list<string> *result = NULL ;
 
   string query("SHOW DATABASES") ;
 
@@ -162,14 +164,14 @@ list<string> zMapEnsemblGetDatabaseList(const char *host,
 }
 
 
-list<string> zMapEnsemblGetFeaturesetsList(const char *host, 
-                                           const int port,
-                                           const char *user,
-                                           const char *passwd,
-                                           const char *dbname,
-                                           GError **error)
+list<string>* zMapEnsemblGetFeaturesetsList(const char *host, 
+                                            const int port,
+                                            const char *user,
+                                            const char *passwd,
+                                            const char *dbname,
+                                            GError **error)
 {
-  list<string> result ;
+  list<string> *result = NULL ;
 
   string query("SELECT logic_name FROM analysis") ;
 
@@ -179,14 +181,14 @@ list<string> zMapEnsemblGetFeaturesetsList(const char *host,
 }
 
 
-list<string> zMapEnsemblGetBiotypesList(const char *host, 
-                                        const int port,
-                                        const char *user,
-                                        const char *passwd,
-                                        const char *dbname,
-                                        GError **error)
+list<string>* zMapEnsemblGetBiotypesList(const char *host, 
+                                         const int port,
+                                         const char *user,
+                                         const char *passwd,
+                                         const char *dbname,
+                                         GError **error)
 {
-  list<string> result ;
+  list<string> *result = NULL ;
 
   string query("SELECT biotype FROM gene GROUP BY biotype") ;
 

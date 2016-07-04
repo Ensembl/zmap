@@ -3074,10 +3074,6 @@ static void developerMenuCB(int menu_item_id, gpointer callback_data)
         g_string_append(session_text, "Window Statistics\n") ;
         zMapWindowStats(menu_data->window, session_text) ;
 
-        g_string_append(session_text, "\nFeature Statistics\n") ;
-        g_string_append_printf(session_text, "Total features: %d\n", ZMapFeatureCount::instance().getCount()) ;
-        g_string_append_printf(session_text, "Max features: %d\n", ZMapFeatureCount::instance().getLimit()) ;
-
         title = zMapGUIMakeTitleString(NULL, "Session Statistics") ;
         zMapGUIShowText(title, session_text->str, FALSE) ;
         g_free(title) ;
@@ -4373,8 +4369,7 @@ static gboolean exportFeatures(ZMapWindow window, gboolean all_features, ZMapSpa
       temp_feature = feature ;
 
       /* create a copy and update the name to that in the attributes */
-      GError *g_error = NULL ;
-      feature = (ZMapFeatureAny)zMapFeatureTranscriptShallowCopy((ZMapFeature)temp_feature, &g_error) ;
+      feature = (ZMapFeatureAny)zMapFeatureTranscriptShallowCopy((ZMapFeature)temp_feature) ;
 
       if (feature)
         {
@@ -4425,13 +4420,8 @@ static gboolean exportFeatures(ZMapWindow window, gboolean all_features, ZMapSpa
       else
         {
           ok = FALSE ;
+          zMapCritical("%s", "Failed to export feature") ;
           feature = temp_feature ;
-
-          if (g_error)
-            {
-              zMapCritical("Failed to export feature: %s", g_error->message) ;
-              g_error_free(g_error) ;
-            }
         }
     }
 

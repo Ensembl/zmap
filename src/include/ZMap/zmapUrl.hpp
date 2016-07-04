@@ -33,10 +33,6 @@
 #define ZMAPURL_H
 
 #include <glib.h>
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif 
-
 
 /* Default port definitions */
 #define DEFAULT_HTTP_PORT 80
@@ -47,7 +43,6 @@
 #define DEFAULT_MYSQL_PORT 3306
 #define DEFAULT_HTTPS_PORT 443
 #define DEFAULT_ENSEMBL_PORT 5306
-#define DEFAULT_TRACKHUB_PORT 0
 
 
 
@@ -65,7 +60,6 @@ typedef enum {
   SCHEME_PIPE,
   SCHEME_MYSQL,
   SCHEME_ENSEMBL,
-  SCHEME_TRACKHUB,
   SCHEME_INVALID
 } ZMapURLScheme;
 

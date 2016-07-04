@@ -111,11 +111,6 @@ typedef struct ZMapViewSessionServerStructName
       char *host ;
       int port ;
     } ensembl ;
-
-    struct
-    {
-      char *trackdb_id ;
-    } trackhub ;
   } scheme_data ;
 
 } ZMapViewSessionServerStruct, *ZMapViewSessionServer ;
@@ -473,6 +468,12 @@ void zmapViewSessionAddServer(ZMapViewSessionServer session_data, ZMapURL url, c
 void zmapViewSessionAddServerInfo(ZMapViewSessionServer session_data, ZMapServerReqGetServerInfo session) ;
 void zmapViewSessionFreeServer(ZMapViewSessionServer session_data) ;
 
+ZMapViewConnection zmapViewRequestServer(ZMapView view, ZMapViewConnection view_conn,
+					 ZMapFeatureBlock block_orig, GList *req_featuresets, GList *req_biotypes,
+					 gpointer server, /* ZMapConfigSource */
+					 int req_start, int req__end,
+					 gboolean dna_requested, gboolean terminate, gboolean show_warning) ;
+
 ZMapViewConnectionStepList zmapViewStepListCreate(StepListDispatchCB dispatch_func,
 						  StepListProcessDataCB request_func,
 						  StepListFreeDataCB free_func) ;
@@ -497,9 +498,9 @@ void zmapViewStepDestroy(gpointer data, gpointer user_data) ;
 void zmapViewStepListDestroy(ZMapViewConnectionStepList step_list) ;
 
 void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req_featuresets, GList *req_biotypes,
-                          ZMapConfigSource server,
-                          int features_start, int features_end, const bool thread_fail_silent,
-                          gboolean group, gboolean make_new_connection, gboolean terminate) ;
+			  ZMapConfigSource server,
+			  int features_start, int features_end,
+			  gboolean group, gboolean make_new_connection, gboolean terminate) ;
 
 GQuark zmapViewSrc2FSetGetID(GHashTable *source_2_featureset, char *source_name) ;
 GList *zmapViewSrc2FSetGetList(GHashTable *source_2_featureset, GList *source_list) ;

@@ -48,7 +48,6 @@ typedef struct FileServerStruct_
   ZMapFeatureContext req_context ;
   ZMapFeatureSequenceMap sequence_map ;
 
-  GQuark source_name ;
   char *config_file ;
   char *url ;                          /* Full url string. */
   char *path ;                         /* Filename out of the URL  */

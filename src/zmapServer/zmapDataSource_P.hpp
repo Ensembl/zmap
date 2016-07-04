@@ -39,178 +39,70 @@
 #ifdef USE_HTSLIB
 
 /*
- * HTS header
+ * HTS header. Temporary location.
  */
+/* #include "/nfs/users/nfs_s/sm23/Work/htslib-develop/htslib/hts.h"
+#include "/nfs/users/nfs_s/sm23/Work/htslib-develop/htslib/sam.h" */
 #include <htslib/hts.h>
 #include <htslib/sam.h>
-#include <htslib/vcf.h>
 
 #endif
 
 
-struct bed ;
-struct errCatch ;
-
-
-/*
- * General source type
- */
-class ZMapDataSourceStruct
-{
-public:
-  ZMapDataSourceStruct(const GQuark source_name, const char *sequence) ;
-  virtual ~ZMapDataSourceStruct() ;
-
-  virtual bool isOpen() = 0 ;
-  virtual bool checkHeader() = 0 ;
-  virtual bool readLine(GString * const pStr) = 0 ;
-  virtual bool gffVersion(int * const p_out_val) ;
-
-  GError* error() ;
-
-  ZMapDataSourceType type ;
-
-protected:
-  GQuark source_name_ ;
-  char *sequence_ ;
-  GError *error_ ;
-} ;
 
 /*
  *  Full declarations of concrete types to represent the GIO channel and
  *  HTS file data sources.
  */
-class ZMapDataSourceGIOStruct : public ZMapDataSourceStruct
-{
-public:
-  ZMapDataSourceGIOStruct(const GQuark source_name, const char *file_name, const char *open_mode, const char *sequence) ;
-  ~ZMapDataSourceGIOStruct() ;
-
-  bool isOpen() ;
-  bool checkHeader() ;
-  bool readLine(GString * const pStr) ;
-  bool gffVersion(int * const p_out_val) ;
-
-  GIOChannel *io_channel ;
-} ;
-
-class ZMapDataSourceBEDStruct : public ZMapDataSourceStruct
-{
-public:
-  ZMapDataSourceBEDStruct(const GQuark source_name, const char *file_name, const char *open_mode, const char *sequence) ;
-  ~ZMapDataSourceBEDStruct() ;
-
-  bool isOpen() ;
-  bool checkHeader() ;
-  bool readLine(GString * const pStr) ;
-
-private:
-  struct errCatch *err_catch_ ;
-  struct bed* bed_features_ ;
-  struct bed* cur_feature_ ;
-} ;
-
-class ZMapDataSourceBIGBEDStruct : public ZMapDataSourceStruct
-{
-public:
-  ZMapDataSourceBIGBEDStruct(const GQuark source_name, const char *file_name, const char *open_mode, 
-                             const char *sequence, const int start, const int end) ;
-  ~ZMapDataSourceBIGBEDStruct() ;
-
-  bool isOpen() ;
-  bool checkHeader() ;
-  bool readLine(GString * const pStr) ;
-
-private:
-  struct errCatch *err_catch_ ;
-  int start_ ; // sequence region start
-  int end_ ;   // sequence region end
-  struct bbiFile *bbi_file_ ;
-  struct lm *lm_; // Memory pool to hold returned list from bbi file
-  struct bigBedInterval *list_ ;
-  struct bigBedInterval *cur_interval_ ; // current item from list_
-} ;
-
-class ZMapDataSourceBIGWIGStruct : public ZMapDataSourceStruct
-{
-public:
-  ZMapDataSourceBIGWIGStruct(const GQuark source_name, const char *file_name, const char *open_mode, 
-                             const char *sequence, const int start, const int end) ;
-  ~ZMapDataSourceBIGWIGStruct() ;
-
-  bool isOpen() ;
-  bool checkHeader() ;
-  bool readLine(GString * const pStr) ;
-
-private:
-  struct errCatch *err_catch_ ;
-  int start_ ; // sequence region start
-  int end_ ;   // sequence region end
-  struct bbiFile *bbi_file_ ;
-  struct lm *lm_; // Memory pool to hold returned list from bbi file
-  struct bbiInterval *list_ ;
-  struct bbiInterval *cur_interval_ ; // current item from list_
-} ;
+typedef struct ZMapDataSourceGIOStruct_
+  {
+    ZMapDataSourceType type ;
+    GIOChannel *io_channel ;
+  } ZMapDataSourceGIOStruct , *ZMapDataSourceGIO  ;
 
 
 #ifdef USE_HTSLIB
 
-class ZMapDataSourceHTSStruct : public ZMapDataSourceStruct
-{
-public:
-  ZMapDataSourceHTSStruct(const GQuark source_name, const char *file_name, const char *open_mode, const char *sequence) ;
-  ~ZMapDataSourceHTSStruct() ;
-  bool isOpen() ;
-  bool checkHeader() ;
-  bool readLine(GString * const pStr) ;
+typedef struct ZMapDataSourceHTSFileStruct_
+  {
+    ZMapDataSourceType type ;
+    htsFile *hts_file ;
+    /* bam header and record object */
+    bam_hdr_t *hts_hdr ;
+    bam1_t *hts_rec ;
 
-  htsFile *hts_file ;
-  /* bam header and record object */
-  bam_hdr_t *hts_hdr ;
-  bam1_t *hts_rec ;
-
-  /*
-   * Data that we need to store
-   */
-  char *so_type ;
-} ;
-
-class ZMapDataSourceBCFStruct : public ZMapDataSourceStruct
-{
-public:
-  ZMapDataSourceBCFStruct(const GQuark source_name, const char *file_name, const char *open_mode, const char *sequence) ;
-  ~ZMapDataSourceBCFStruct() ;
-  bool isOpen() ;
-  bool checkHeader() ;
-  bool readLine(GString * const pStr) ;
-
-  htsFile *hts_file ;
-  /* bam header and record object */
-  bcf_hdr_t *hts_hdr ;
-  bcf1_t *hts_rec ;
-
-  /*
-   * Data that we need to store
-   */
-  char *so_type ;
-
-private:
-  int rid_ ; // stores the ref sequence id value used by bcf parser for our required sequence_
-} ;
+    /*
+     * Data that we need to store
+     */
+    char * sequence,
+         * source,
+         * so_type ;
+  } ZMapDataSourceHTSFileStruct , *ZMapDataSourceHTSFile;
 
 #endif
 
 
-typedef ZMapDataSourceGIOStruct *ZMapDataSourceGIO ;
-typedef ZMapDataSourceBEDStruct *ZMapDataSourceBED ;
-typedef ZMapDataSourceBIGBEDStruct *ZMapDataSourceBIGBED ;
-typedef ZMapDataSourceBIGWIGStruct *ZMapDataSourceBIGWIG ;
-#ifdef USE_HTSLIB
-typedef ZMapDataSourceHTSStruct *ZMapDataSourceHTS ;
-typedef ZMapDataSourceBCFStruct *ZMapDataSourceBCF ;
-#endif
 
+/*
+ * This is for temporary data that need to be stored while
+ * records are being read from a file. At the moment this is used
+ * only for HTS data sources, since we need a struct allocated to
+ * read records into.
+ */
+typedef struct ZMapDataSourceTempStorageStruct_
+  {
+    ZMapDataSourceType type ;
+  } ZMapDataSourceTempStorageStruct, *ZMapDataSourceTempStorage ;
 
+typedef struct ZMapDataSourceTempStorageStructGIO_
+  {
+    ZMapDataSourceType type ;
+  } ZMapDataSourceTempStorageStructGIO, *ZMapDataSourceTempStorageGIO ;
+
+typedef struct ZMapDataSourceTempStorageStructHTS_
+  {
+    ZMapDataSourceType type ;
+  } ZMapDataSourceTempStorageStructHTS, *ZMapDataSourceTempStorageHTS ;
 
 
 #endif

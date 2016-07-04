@@ -35,7 +35,6 @@
 /* We should convert this to use the same calls/mechanism as the keyvalue stuff below. */
 typedef struct _ZMapConfigSourceStruct
 {
-  GQuark name_ ;
   char *url ;
   char *version ;
   char *featuresets; //, *navigatorsets ;

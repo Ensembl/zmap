@@ -39,25 +39,25 @@
 #include <list>
 #include <string>
 
-std::list<std::string> zMapEnsemblGetDatabaseList(const char *host, 
-                                                  const int port,
-                                                  const char *user,
-                                                  const char *pass,
-                                                  GError **error) ;
+std::list<std::string> *zMapEnsemblGetDatabaseList(const char *host, 
+                                                   const int port,
+                                                   const char *user,
+                                                   const char *pass,
+                                                   GError **error) ;
 
-std::list<std::string> zMapEnsemblGetFeaturesetsList(const char *host, 
-                                                     const int port,
-                                                     const char *user,
-                                                     const char *pass,
-                                                     const char *dbname,
-                                                     GError **error) ;
+std::list<std::string> *zMapEnsemblGetFeaturesetsList(const char *host, 
+                                                      const int port,
+                                                      const char *user,
+                                                      const char *pass,
+                                                      const char *dbname,
+                                                      GError **error) ;
 
-std::list<std::string> zMapEnsemblGetBiotypesList(const char *host, 
-                                                  const int port,
-                                                  const char *user,
-                                                  const char *pass,
-                                                  const char *dbname,
-                                                  GError **error) ;
+std::list<std::string> *zMapEnsemblGetBiotypesList(const char *host, 
+                                                   const int port,
+                                                   const char *user,
+                                                   const char *pass,
+                                                   const char *dbname,
+                                                   GError **error) ;
 
 
 #endif /* USE_ENSEMBL */

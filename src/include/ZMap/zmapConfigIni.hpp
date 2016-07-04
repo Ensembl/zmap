@@ -62,7 +62,7 @@ typedef enum
   } ZMapConfigIniFileType ;
 
 
-typedef gpointer (*ZMapConfigIniUserDataCreateFunc)(gpointer data);
+typedef gpointer (*ZMapConfigIniUserDataCreateFunc)(void);
 typedef void (*ZMapConfigIniSetPropertyFunc)(char *current_stanza_name, const char *key, GType type,
 					     gpointer parent_data, GValue *property_value);
 

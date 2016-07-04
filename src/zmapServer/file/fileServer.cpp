@@ -45,10 +45,6 @@
 
 #include <fileServer_P.hpp>
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif 
-
 
 typedef struct GetFeaturesDataStruct_
 {
@@ -67,7 +63,7 @@ static const char *PROTOCOL_NAME = "FileServer" ;
  */
 static gboolean globalInit(void) ;
 static gboolean createConnection(void **server_out,
-                                 GQuark source_name, char *config_file, ZMapURL url, char *format,
+                                 char *config_file, ZMapURL url, char *format,
                                  char *version_str, int timeout,
                                  pthread_mutex_t *mutex) ;
 static ZMapServerResponseType openConnection(void *server, ZMapServerReqOpen req_open) ;
@@ -107,6 +103,9 @@ static ZMapServerResponseType destroyConnection(void *server) ;
  */
 static ZMapServerResponseType fileGetHeader(FileServer server);
 static ZMapServerResponseType fileGetHeader_GIO(FileServer server) ;
+#ifdef USE_HTSLIB
+static ZMapServerResponseType fileGetHeader_HTS(FileServer server) ;
+#endif
 static ZMapServerResponseType fileGetSequence(FileServer server);
 
 static void getConfiguration(FileServer server) ;
@@ -184,7 +183,6 @@ static gboolean isRemoteFileScheme(const ZMapURLScheme scheme)
 
 
 static gboolean createConnection(void **server_out,
-                                 GQuark source_name,
                                  char *config_file,
                                  ZMapURL url,
                                  char *format,
@@ -198,7 +196,6 @@ static gboolean createConnection(void **server_out,
   server = (FileServer) g_new0(FileServerStruct, 1) ;
   zMapReturnValIfFail(server, result) ;
 
-  server->source_name = source_name ;
   server->config_file = NULL ;
   server->url = NULL ;
   server->scheme = SCHEME_INVALID ;
@@ -334,13 +331,7 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
   /*
    * Create data source object (file or GIOChannel)
    */
-  server->data_source = zMapDataSourceCreate(server->source_name, 
-                                             server->path, 
-                                             (server->sequence_map ? server->sequence_map->sequence : NULL), 
-                                             server->zmap_start,
-                                             server->zmap_end,
-                                             &error) ;
-
+  server->data_source = zMapDataSourceCreate(server->path, &error) ;
   if (server->data_source != NULL )
     status = TRUE ;
 
@@ -905,14 +896,51 @@ static ZMapServerResponseType fileGetHeader_GIO(FileServer server)
 }
 
 
+#ifdef USE_HTSLIB
+/*
+ * Header for a HTS file. The server calling code expects the server->buffer_line
+ * to contain a non-zero length string in order for it to decide that the source
+ * contains some data. In order to satisfy that, we have to give it a fake header
+ * line, as shown below.
+ */
+static ZMapServerResponseType fileGetHeader_HTS(FileServer server)
+{
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
+  zMapReturnValIfFail(server->data_source->type == ZMapDataSourceType::HTS, result) ;
+
+  /*
+   * Attempt to read HTS header and then...
+   */
+  if (zMapDataSourceReadHTSHeader(server->data_source, server->sequence_map->sequence))
+    {
+      if (((ZMapDataSourceHTSFile) server->data_source)->sequence)
+        {
+          /*
+           *  (i) Put in a fake header line to make it look to ZMap like something
+           *      has really been read from a GFF stream.
+           * (ii) Then what? Possibly check that the sequence is the same as what's
+           *      held by the server, and maybe set up a flag somewhere to require
+           *      remapping if it is not?
+           */
+          g_string_erase(server->buffer_line, 0, -1) ;
+          g_string_insert(server->buffer_line, 0, "##source-version ZMap-HTS-to-GFF-conversion") ;
+          result = ZMAP_SERVERRESPONSE_OK ;
+        }
+
+    }
+
+  return result ;
+}
+#endif
+
+
+
 /*
  * read the header data and exit when we get DNA or features or anything else.
  */
 static ZMapServerResponseType fileGetHeader(FileServer server)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
-  zMapReturnValIfFail(server && server->data_source, result) ;
-
   ZMapDataSourceType data_source_type = ZMapDataSourceType::UNK ;
 
   /*
@@ -929,23 +957,12 @@ static ZMapServerResponseType fileGetHeader(FileServer server)
     {
       result = fileGetHeader_GIO(server) ;
     }
-  else if (server->data_source->checkHeader())
+#ifdef USE_HTSLIB
+  else if (data_source_type ==   ZMapDataSourceType::HTS)
     {
-      /*
-       *  (i) Put in a fake header line to make it look to ZMap like something
-       *      has really been read from a GFF stream.
-       * (ii) Then what? Possibly check that the sequence is the same as what's
-       *      held by the server, and maybe set up a flag somewhere to require
-       *      remapping if it is not?
-       */
-      g_string_erase(server->buffer_line, 0, -1) ;
-      g_string_insert(server->buffer_line, 0, "##source-version ZMap-GFF-conversion") ;
-      result = ZMAP_SERVERRESPONSE_OK ;
+      result = fileGetHeader_HTS(server) ;
     }
-  else if (server->data_source->error())
-    {
-      setErrMsg(server, server->data_source->error()->message) ;
-    }
+#endif
 
   return result ;
 }
@@ -1096,11 +1113,6 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
   /*
    * Read lines from the source. We assume that the first line has already been read.
    */
-  
-  /* Keep track of how many warnings we log so we don't fill the log file with millions */
-  int warning_count = 0;
-  const int max_warnings = 1000;
-
   do
     {
 
@@ -1108,14 +1120,7 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
         {
           GError *error ;
           error = zMapGFFGetError(parser) ;
-
-          /* Only log a warning if an error was given (the error may be null if no warning is
-           * required and we need to be careful not to fill the log with millions of warnings) */
-          if (error && warning_count < max_warnings)
-            {
-              ZMAPSERVER_LOG(Warning, PROTOCOL_NAME, server->path, "%s", error->message) ;
-              ++warning_count ;
-            }
+          ZMAPSERVER_LOG(Warning, PROTOCOL_NAME, server->path, "%s", error->message) ;
 
           if (zMapGFFTerminated(parser))
             {
