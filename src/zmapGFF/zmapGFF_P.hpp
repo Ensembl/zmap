@@ -249,7 +249,7 @@ typedef struct ZMapGFFParserFeatureSetStruct_
                                                 free_on_destroy,                                     \
                                                 stop_on_error,                                       \
                                                 default_to_basic,                                    \
-                                                SO_compliant ;                                       \
+                                                SO_compliant;                                        \
                                                                                                      \
                                               GString *raw_line_data ;                               \
                                                                                                      \
@@ -264,7 +264,8 @@ typedef struct ZMapGFFParserFeatureSetStruct_
                                                                                                      \
                                               GError *error ;                                        \
                                                                                                      \
-                                              GList *src_feature_sets;
+                                              GList *src_feature_sets;                               
+ 
 
 
 

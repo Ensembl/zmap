@@ -183,16 +183,26 @@ void zMapFeatureORFSetCreateFeatures(ZMapFeatureSet feature_set, ZMapFeatureType
                           const int end = ((i - 1) * 3) + 2;
 
                           /* Create the ORF feature */
-                          ZMapFeature orf_feature = zMapFeatureCreateEmpty() ;
-                          char *feature_name = g_strdup_printf("ORF %d %d", start + 1, end + 1); /* display coords are 1-based */
+                          GError *g_error = NULL ;
+                          ZMapFeature orf_feature = zMapFeatureCreateEmpty(&g_error) ;
 
-                          zMapFeatureAddStandardData(orf_feature, feature_name, feature_name,
-                                                     NULL, NULL,
-                                                     ZMAPSTYLE_MODE_BASIC, &feature_set->style,
-                                                     start + translation->x1, end + translation->x1, FALSE, 0.0, (ZMapStrand)strand);
+                          if (orf_feature)
+                            {
+                              char *feature_name = g_strdup_printf("ORF %d %d", start + 1, end + 1); /* display coords are 1-based */
+                              zMapFeatureAddStandardData(orf_feature, feature_name, feature_name,
+                                                         NULL, NULL,
+                                                         ZMAPSTYLE_MODE_BASIC, &feature_set->style,
+                                                         start + translation->x1, end + translation->x1, FALSE, 0.0, (ZMapStrand)strand);
 
-                          zMapFeatureSetAddFeature(feature_set, orf_feature);
-                       }
+                              zMapFeatureSetAddFeature(feature_set, orf_feature);
+                            }
+                          
+                          if (g_error)
+                            {
+                              zMapCritical("Error creating ORF %d %d: %s", start + 1, end + 1, g_error->message) ;
+                              g_error_free(g_error) ;
+                            }
+                        }
 
                       prev = i + 1;
                     }
@@ -423,18 +433,30 @@ static void translation_set_populate(ZMapFeatureBlock feature_block,
           x1 = block_position ;
           x2 = x1 + zMapPeptideFullSourceCodonLength(pep) - 1 ;
 
-          translation = zMapFeatureCreateEmpty() ;
           if(!feature_set->style)
             feature_set->style = style;
-          zMapFeatureAddStandardData(translation, feature_name, feature_name,
-                                     seq_name, "sequence",
-                                     ZMAPSTYLE_MODE_SEQUENCE, &feature_set->style,
-                                     x1, x2, FALSE, 0.0,
-                                     ZMAPSTRAND_NONE) ;
 
-          zMapFeatureSequenceSetType(translation, ZMAPSEQUENCE_PEPTIDE) ;
+          GError *g_error = NULL ;
+          translation = zMapFeatureCreateEmpty(&g_error) ;
 
-          zMapFeatureSetAddFeature(feature_set, translation) ;
+          if (translation)
+            {
+              zMapFeatureAddStandardData(translation, feature_name, feature_name,
+                                         seq_name, "sequence",
+                                         ZMAPSTYLE_MODE_SEQUENCE, &feature_set->style,
+                                         x1, x2, FALSE, 0.0,
+                                         ZMAPSTRAND_NONE) ;
+
+              zMapFeatureSequenceSetType(translation, ZMAPSEQUENCE_PEPTIDE) ;
+
+              zMapFeatureSetAddFeature(feature_set, translation) ;
+            }
+          
+          if (g_error)
+            {
+              zMapCritical("Error creating translation for frame %d: %s", i, g_error->message) ;
+              g_error_free(g_error) ;
+            }
         }
 
       peptide_str = zMapPeptideSequence(pep) ;
@@ -559,17 +581,27 @@ static void translationPopulate(ZMapFeatureBlock feature_block,
       if(!feature_set->style)
         feature_set->style = style;
 
-      translation = zMapFeatureCreateEmpty() ;
+      GError *g_error = NULL ;
+      translation = zMapFeatureCreateEmpty(&g_error) ;
 
-      zMapFeatureAddStandardData(translation, feature_name, feature_name,
-                                 seq_name, "sequence",
-                                 ZMAPSTYLE_MODE_SEQUENCE, &feature_set->style,
-                                 x1, x2, FALSE, 0.0,
-                                 ZMAPSTRAND_NONE) ;
+      if (translation)
+        {
+          zMapFeatureAddStandardData(translation, feature_name, feature_name,
+                                     seq_name, "sequence",
+                                     ZMAPSTYLE_MODE_SEQUENCE, &feature_set->style,
+                                     x1, x2, FALSE, 0.0,
+                                     ZMAPSTRAND_NONE) ;
 
-      zMapFeatureSequenceSetType(translation, ZMAPSEQUENCE_PEPTIDE) ;
+          zMapFeatureSequenceSetType(translation, ZMAPSEQUENCE_PEPTIDE) ;
 
-      zMapFeatureSetAddFeature(feature_set, translation) ;
+          zMapFeatureSetAddFeature(feature_set, translation) ;
+        }
+      
+      if (g_error)
+        {
+          zMapCritical("Error creating translation: %s", g_error->message) ;
+          g_error_free(g_error) ;
+        }
     }
 
 

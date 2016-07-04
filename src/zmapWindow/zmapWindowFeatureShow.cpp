@@ -2772,10 +2772,15 @@ static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_f
                                                   0,     /* end */
                                                   FALSE, /* has score */
                                                   0.0,   /* score */
-                                                  ZMAPSTRAND_FORWARD);
+                                                  ZMAPSTRAND_FORWARD,
+                                                  &error);
 
-      feature->parent = (ZMapFeatureAny)feature_set ;
+      if (feature)
+        feature->parent = (ZMapFeatureAny)feature_set ;
     }
+
+  if (!feature)
+    ok  = FALSE ;
 
   if (ok)
     {

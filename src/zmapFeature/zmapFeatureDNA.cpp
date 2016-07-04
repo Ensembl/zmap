@@ -591,6 +591,7 @@ ZMapFeature zMapFeatureDNACreateFeature(ZMapFeatureBlock block, ZMapFeatureTypeS
 
           dna_feature_set->style = style;
 
+          GError *g_error = NULL ;
           dna_feature = zMapFeatureCreateFromStandardData(feature_name,
                                                           sequence,
                                                           ontology,
@@ -599,17 +600,26 @@ ZMapFeature zMapFeatureDNACreateFeature(ZMapFeatureBlock block, ZMapFeatureTypeS
                                                           block_start,
                                                           block_end,
                                                           FALSE, 0.0,
-                                                          strand) ;
+                                                          strand,
+                                                          &g_error) ;
 
-          zMapFeatureSequenceSetType(dna_feature, ZMAPSEQUENCE_DNA) ;
-          zMapFeatureDNAAddSequenceData(dna_feature, dna_str, sequence_length);
+          if (dna_feature)
+            {
+              zMapFeatureSequenceSetType(dna_feature, ZMAPSEQUENCE_DNA) ;
+              zMapFeatureDNAAddSequenceData(dna_feature, dna_str, sequence_length);
 
-          zMapFeatureSetAddFeature(dna_feature_set, dna_feature);
+              zMapFeatureSetAddFeature(dna_feature_set, dna_feature);
 
-          block->sequence.sequence = dna_feature->feature.sequence.sequence;
-          block->sequence.type     = dna_feature->feature.sequence.type;
-          block->sequence.length   = dna_feature->feature.sequence.length;
+              block->sequence.sequence = dna_feature->feature.sequence.sequence;
+              block->sequence.type     = dna_feature->feature.sequence.type;
+              block->sequence.length   = dna_feature->feature.sequence.length;
+            }
 
+          if (g_error)
+            {
+              zMapCritical("Error creating DNA feature", g_error->message) ;
+              g_error_free(g_error) ;
+            }
         }
 
       if(feature_name)

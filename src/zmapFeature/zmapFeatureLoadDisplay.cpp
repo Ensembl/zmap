@@ -512,7 +512,8 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::createSource(const char *sour
 
   GError *tmp_error = NULL ;
   source = g_new0(ZMapConfigSourceStruct, 1) ;
-     
+
+  source->name_ = g_quark_from_string(source_name) ;
   source->url = g_strdup(url) ;
       
   if (featuresets && *featuresets)
@@ -603,6 +604,7 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::createFileSource(const char *
   /* Create the new source */
   src = g_new0(ZMapConfigSourceStruct, 1) ;
 
+  src->name_ = g_quark_from_string(source_name_in) ;
   src->group = SOURCE_GROUP_START ;        // default_value
   src->featuresets = g_strdup(ZMAP_DEFAULT_FEATURESETS) ;
 
@@ -639,6 +641,7 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::createPipeSource(const char *
   /* Create the new source */
   src = g_new0(ZMapConfigSourceStruct, 1) ;
 
+  src->name_ = g_quark_from_string(source_name_in) ;
   src->group = SOURCE_GROUP_START ;        // default_value
   src->featuresets = g_strdup(ZMAP_DEFAULT_FEATURESETS) ;
 

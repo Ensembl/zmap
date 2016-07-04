@@ -613,7 +613,6 @@ void zMapGFFSetStopOnError(ZMapGFFParser parser, gboolean stop_on_error)
 
 
 
-
 /*
  * Used by both versions.
  *

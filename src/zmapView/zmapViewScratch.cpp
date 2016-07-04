@@ -1018,6 +1018,8 @@ static ZMapFeature scratchCreateNewFeature(ZMapView zmap_view)
   ZMapStrand strand = ZMAPSTRAND_FORWARD ;
 
   /* Create the feature with default values */
+  GError *g_error = NULL ;
+
   ZMapFeature feature = zMapFeatureCreateFromStandardData(SCRATCH_FEATURE_NAME,
                                                           NULL,
                                                           "transcript",
@@ -1027,22 +1029,32 @@ static ZMapFeature scratchCreateNewFeature(ZMapView zmap_view)
                                                           0,
                                                           FALSE,
                                                           0.0,
-                                                          strand);
+                                                          strand,
+                                                          &g_error);
 
-  zMapFeatureTranscriptInit(feature);
-  zMapFeatureAddTranscriptStartEnd(feature, FALSE, 0, FALSE);
-  //zMapFeatureAddTranscriptCDS(feature, TRUE, cds_start, cds_end);
+  if (feature)
+    {
+      zMapFeatureTranscriptInit(feature);
+      zMapFeatureAddTranscriptStartEnd(feature, FALSE, 0, FALSE);
+      //zMapFeatureAddTranscriptCDS(feature, TRUE, cds_start, cds_end);
 
-  /* Create the exons */
-  scratchFeatureRecreateExons(zmap_view, feature) ;
+      /* Create the exons */
+      scratchFeatureRecreateExons(zmap_view, feature) ;
 
-  /* Update the feature ID because the coords may have changed */
-  feature->unique_id = zMapFeatureCreateID(feature->mode,
-                                           (char *)g_quark_to_string(feature->original_id),
-                                           feature->strand,
-                                           feature->x1,
-                                           feature->x2,
-                                           0, 0);
+      /* Update the feature ID because the coords may have changed */
+      feature->unique_id = zMapFeatureCreateID(feature->mode,
+                                               (char *)g_quark_to_string(feature->original_id),
+                                               feature->strand,
+                                               feature->x1,
+                                               feature->x2,
+                                               0, 0);
+    }
+
+  if (g_error)
+    {
+      zMapCritical("Error creating temp feature for Annotation column", g_error->message) ;
+      g_error_free(g_error) ;
+    }
 
   return feature ;
 }
@@ -1339,21 +1351,31 @@ void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, ZM
         }
 
       /* Create the empty feature */
+      GError *g_error = NULL ;
       ZMapFeature new_feature = zMapFeatureCreateEmpty() ;
 
-      zMapFeatureAddStandardData(new_feature, "temp_feature", SCRATCH_FEATURE_NAME,
-                                 NULL, "transcript",
-                                 ZMAPSTYLE_MODE_TRANSCRIPT, &scratch_featureset->style,
-                                 0, 0, FALSE, 0.0,
-                                 ZMAPSTRAND_FORWARD);
+      if (new_feature)
+        {
+          zMapFeatureAddStandardData(new_feature, "temp_feature", SCRATCH_FEATURE_NAME,
+                                     NULL, "transcript",
+                                     ZMAPSTYLE_MODE_TRANSCRIPT, &scratch_featureset->style,
+                                     0, 0, FALSE, 0.0,
+                                     ZMAPSTRAND_FORWARD);
 
-      zMapFeatureTranscriptInit(new_feature);
-      zMapFeatureAddTranscriptStartEnd(new_feature, FALSE, 0, FALSE);
+          zMapFeatureTranscriptInit(new_feature);
+          zMapFeatureAddTranscriptStartEnd(new_feature, FALSE, 0, FALSE);
 
-      //zMapFeatureSequenceSetType(feature, ZMAPSEQUENCE_PEPTIDE);
-      //zMapFeatureAddFrame(feature, ZMAPFRAME_NONE);
+          //zMapFeatureSequenceSetType(feature, ZMAPSEQUENCE_PEPTIDE);
+          //zMapFeatureAddFrame(feature, ZMAPFRAME_NONE);
 
-      zMapFeatureSetAddFeature(scratch_featureset, new_feature);
+          zMapFeatureSetAddFeature(scratch_featureset, new_feature);
+        }
+
+      if (g_error)
+        {
+          zMapCritical("Error creating feature: %s", g_error->message) ;
+          g_error_free(g_error) ;
+        }
     }
 
   /* Also initialise the "hand_built" column. xace puts newly created
