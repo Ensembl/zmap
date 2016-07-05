@@ -1,3 +1,31 @@
+2016-07-05  zmap  <zmap@sanger.ac.uk>
+ ZMap version 2.9.0-127-gd413c4c - Update RT and git commit reports
+ src/ChangeLog                                  | 21 +++++++++++++++++++++
+ src/build/release_docs/GIT_COMMITS.txt         |  3 +++
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt |  2 +-
+ 3 files changed, 25 insertions(+), 1 deletion(-)
+
+2016-07-01  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Fix bug in paste coords, need to 1-based for otter. - RT '536300'
+ src/zmapWindow/zmapWindowDisplayOps.cpp | 14 +++++++++++---
+ 1 file changed, 11 insertions(+), 3 deletions(-)
+
+2016-07-01  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Fix bug in basic coord mapping func. - RT '536300'
+ src/zmapWindow/zmapWindowUtils.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+2016-06-30  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Update to release docs. - DOC
+ docs/user/release_notes.shtml | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+2016-06-29  zmap  <zmap@sanger.ac.uk>
+ ZMap version 2.9.0-123-g840dff8 - Update RT and git commit reports
+ src/ChangeLog                                  | 6 ++++++
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt | 2 +-
+ 2 files changed, 7 insertions(+), 1 deletion(-)
+
 2016-06-27  zmap  <zmap@sanger.ac.uk>
  ZMap version 2.9.0-122-gc38f2fa - Update RT and git commit reports
  src/ChangeLog                                  | 7 +++++++
