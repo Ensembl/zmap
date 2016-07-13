@@ -233,7 +233,7 @@ typedef struct ZMapServerReqNewContextStructType
 
 
 
-/* Get features from a server. */
+/* Get features or context sequence from a server. */
 typedef struct ZMapServerReqGetFeaturesStructType
 {
   ZMapServerReqType type ;
@@ -316,9 +316,14 @@ typedef struct _ZMapServerStruct *ZMapServer ;
 
 /* Enum -> String function decs: const char *zMapXXXX2ExactStr(ZMapXXXXX type);  */
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zMapServerReqType2ExactStr, ZMapServerReqType) ;
+ZMAP_ENUM_AS_EXACT_STRING_DEC(zMapServerResponseType2ExactStr, ZMapServerResponseType) ;
 
 ZMapServerReqAny zMapServerRequestCreate(ZMapServerReqType request_type, ...) ;
 void zMapServerRequestDestroy(ZMapServerReqAny request) ;
+
+
+ZMapServerResponseType zMapServerRequest(ZMapServer *server_inout, ZMapServerReqAny request, char **err_msg_out) ;
+
 
 
 /* Debug flags. */
