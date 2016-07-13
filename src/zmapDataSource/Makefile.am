@@ -5,14 +5,14 @@ SUBDIRS = .
 
 noinst_LTLIBRARIES = libZMapDataSource.la
 
-# not doing this one any more....
-#zmapDataSourceRequest.cpp
-
 libZMapDataSource_la_SOURCES = \
+zmapDataSlave.cpp \
 zmapDataSource.cpp \
-zmapDataSourceServer.cpp \
-zmapDataSourceServer_P.hpp \
-zmapDataSourceStepList.cpp \
+zmapDataSourceSlaveHandler.cpp \
+zmapDataSource_P.hpp \
+zmapOldSlaveHandler.cpp \
+zmapOldSourceServer.cpp \
+zmapOldStepList.cpp \
 $(NULL)
 
 libZMapDataSource_la_CFLAGS = $(INCLUDE_COMMON)

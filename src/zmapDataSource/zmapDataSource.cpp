@@ -31,11 +31,16 @@
  *-------------------------------------------------------------------
  */
 
+#include <iostream>
 #include <sstream>
 #include <stdexcept>
 
+#include <ZMap/zmapThreadsLib.hpp>
 #include <ZMap/zmapServerProtocol.hpp>
-#include <ZMap/zmapDataSource.hpp>
+#include <ZMap/zmapDataSlave.hpp>
+
+#include <zmapDataSource_P.hpp>
+
 
 using namespace std ;
 
@@ -46,47 +51,57 @@ namespace ZMapDataSource
 {
 
 
-  static void replyFunc(void *func_data) ;
-
-
 
   //
   //                 External routines
   //
 
 
+  // Base DataSource class
+  //
+
   // Note that for  url_ string it has to be () and not {}...I can't remember the exact reason but
   // there's some stupidity in C++ about this...it's in Scott Meyers book about C11/C14....
-  DataSource::DataSource(ZMapServerReqType type, 
+  DataSource::DataSource(DataSourceRequestType request, 
                          ZMapFeatureSequenceMap sequence_map, int start, int end,
                          const string &url, const string &config_file, const string &version)
-    : thread_{NULL}, slave_poller_data_{NULL}, user_func_{NULL}, user_data_{NULL},
-    type_{type}, response_{ZMAP_SERVERRESPONSE_INVALID}, exit_code_{0}, stderr_out_{},
+    : reply_{DataSourceReplyType::INVALID}, state_{DataSourceState::INVALID},
+    thread_{NULL}, slave_poller_data_{NULL}, user_func_{NULL}, user_data_{NULL},
+    request_{request}, 
     sequence_map_{sequence_map}, start_{start}, end_{end},
     url_(url), config_file_(config_file), version_(version),
-    url_obj_{NULL}, protocol_{""}, format_{""}, scheme_{SCHEME_INVALID}
+    url_obj_{NULL}
 {
-  // NEED SOME WORK ON THIS CHECKING NOW I'M MERGING THESE OBJS....
+  ZMapSlaveRequestHandlerFunc req_handler_func = NULL ;
+  ZMapSlaveTerminateHandlerFunc terminate_handler_func = NULL ;
+  ZMapSlaveDestroyHandlerFunc destroy_handler_func = NULL ;
+  int url_parse_error ;
 
-  if (!(url_.length()))
+  if (request != DataSourceRequestType::GET_FEATURES && request != DataSourceRequestType::GET_SEQUENCE)
+    {
+      throw invalid_argument("Bad request type.") ;
+    }
+  else if (!sequence_map)
+    {
+      throw invalid_argument("Missing sequence map.") ;
+    }
+  else if (!start || !end || start > end)
+    {
+      throw invalid_argument("Invalid start/end.") ;
+    }
+  else if (!(url_.length()))
     {
       throw invalid_argument("Missing server url.") ;
     }
-  else
+  else if (!(url_obj_ = url_parse(url_.c_str(), &url_parse_error)))
     {
-      int url_parse_error ;
-
-      /* Parse the url and create connection. */
-      if (!(url_obj_ = url_parse(url_.c_str(), &url_parse_error)))
-        {
-          zMapLogWarning("GUI: url %s did not parse. Parse error < %s >",
-                         url_.c_str(), url_error(url_parse_error)) ;
-
-          throw invalid_argument("Bad url.") ;
-        }
+      throw invalid_argument("Bad url.") ;
     }
 
-  if (!(thread_ = zMapThreadCreate(true)))
+  // Set up the thread.
+  zmapDataSourceGetSlaveHandlerFuncs(&req_handler_func, &terminate_handler_func, &destroy_handler_func) ;
+
+  if (!(thread_ = zMapThreadStart(true, req_handler_func, terminate_handler_func, destroy_handler_func)))
     {
       throw runtime_error("Cannot create thread.") ;
     }
@@ -95,15 +110,37 @@ namespace ZMapDataSource
   // Start polling, if this means we do too much polling we can have a function to start or do it
   // as part of the SendRequest....though that might induce some timing problems.
   //
-  slave_poller_data_ = zMapThreadPollSlaveStart(thread_, replyFunc, this) ;
+  slave_poller_data_ = zMapThreadPollSlaveStart(thread_, ReplyCallbackFunc, this) ;
 
+  state_ = DataSourceState::INIT ;
 
   return ;
 }
 
-  ZMapServerReqType DataSource::GetRequestType()
+
+  bool DataSource::SendRequest(UserBaseCallBackFunc user_func, void *user_data)
   {
-    return type_ ;
+    bool result = false ;
+
+    if (state_ == DataSourceState::INIT)
+      {
+        user_func_ = user_func ;
+        user_data_ = user_data ;
+
+        zMapThreadRequest(thread_, this) ;
+
+        state_ = DataSourceState::WAITING ;
+
+        result = true ;
+      }
+
+    return result ;
+  }
+
+
+  DataSourceRequestType DataSource::GetRequestType()
+  {
+    return request_ ;
   }
 
 
@@ -120,199 +157,103 @@ namespace ZMapDataSource
     return result ;
   }
 
-
-  bool DataSource::SendRequest(UserBaseCallBackFunc user_func, void *user_data)
+  bool DataSource::GetServerInfo(char **config_file_out, ZMapURL *url_obj_out, char **version_str_out)
   {
-    bool result = false ;
+    bool result = TRUE ;
 
-    user_func_ = user_func ;
-    user_data_ = user_data ;
+    *config_file_out = (char *)config_file_.c_str() ;
 
-    zMapThreadRequest(thread_, this) ;
+    *url_obj_out = url_obj_ ;
 
-    result = true ;
+    *version_str_out = (char *)version_.c_str() ;
 
     return result ;
   }
 
-  void DataSource::GetUserCallback(UserBaseCallBackFunc *user_func, void **user_data)
+
+  // This should never be called....
+  bool DataSource::SetError(const char *stderr)
   {
-    *user_func = user_func_ ;
-    *user_data = user_data_ ;
+    bool result = false ;
+
+    cout << "in the base class SetError()" << endl ;
+
+
+    return result ;
+  }
+
+
+
+  // NOTES:
+  //
+  // This is a static class function so that it does not have a "this" pointer argument and hence
+  // can be used directly as a zmapThread callback function.
+  //
+  // The user callback called from this function may well delete the source object
+  // passed in to the function so this function should not use the object after calling
+  // the user function.
+  //
+  // This function should ONLY be called when a reply has been received from the source thread
+  // object. This is fundamental to how this all works.
+  //
+  // There is some subterfuge here: this function gets passed a pointer to an object that might be
+  // any of the ZMapDataSource classes. This function then retrieves the users callback function from
+  // the passed in object and this user callback function will be expecting to be passed an object
+  // of that class, i.e. if the passed in object is of class DataSourceFeatures then the user
+  // callback function will be expecting to receive an object of that class.
+  //
+  void DataSource::ReplyCallbackFunc(void *func_data)
+  {
+    DataSource *source = static_cast<DataSource *>(func_data) ;
+
+    // Reports an error if the passed in object is in wrong state, this should never happen.
+    zMapReturnIfFail(source->state_ == DataSourceState::GOT_REPLY || source->state_ == DataSourceState::GOT_ERROR) ;
+
+    // source may be deleted by user_callback so do not use it after this call.
+    (source->user_func_)(source, source->user_data_) ;
 
     return ;
   }
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  // The threads stuff is quite messy so this routine trys to present a cleaner interface.
-  DataSourceReplyState DataSource::GetReply(void **reply_out, char **err_msg_out)
+  DataSource::~DataSource()
   {
-    DataSourceReplyState result = DataSourceReplyState::ERROR ;
-    ZMapThreadReply reply_state = ZMAPTHREAD_REPLY_INVALID ;
-    void *reply = NULL ;
-    char *err_msg = NULL ;
+    cout << "in base destructor" << endl ;
 
-    if (!zMapThreadGetReplyWithData(thread_, &reply_state, &reply, &err_msg))
-      {
-        result = DataSourceReplyState::WAITING ;
-      }
-    else
-      {
-        if (reply_state == ZMAPTHREAD_REPLY_GOTDATA)
-          {
-            *reply_out = reply ;
+    // Clear up the thread.
+    zMapThreadPollSlaveStop(slave_poller_data_) ;
 
-            result = DataSourceReplyState::GOT_DATA ;
-          }
-        else if (reply_state == ZMAPTHREAD_REPLY_WAIT)
-          {
-            result = DataSourceReplyState::WAITING ;
-          }
-        else
-          {
-            *err_msg_out = err_msg ;
+    zMapThreadDestroy(thread_) ;
+    thread_ = NULL ;
 
-            result = DataSourceReplyState::ERROR ;
-          }
-      }
+    url_free(url_obj_) ;
+    url_obj_ = NULL ;
 
-    return result ;
+    state_ = DataSourceState::INVALID ;
+
+    return ;
   }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  const string &DataSource::GetURL()
-  {
-    const string &url_ptr = url_ ;
-
-    return url_ptr ;
-  }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-
-
-
-bool DataSource::GetServerInfo(char **config_file_out, ZMapURL *url_obj_out, char **version_str_out)
-{
-  bool result = TRUE ;
-
-  *config_file_out = (char *)config_file_.c_str() ;
-
-  *url_obj_out = url_obj_ ;
-
-  *version_str_out = (char *)version_.c_str() ;
-
-  return result ;
-}
-
-
-
-void DataSource::SetReply(ZMapServerResponseType response, gint exit_code, const char *stderr)
-{
-  response_ = response ;
-  exit_code_ = exit_code ;
-  if (stderr && *stderr)
-    stderr_out_ = stderr ;
-
-  return ;
-}
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-void DataSource::Session2Str(string &session_str_out)
-{
-  const string unavailable_txt("<< not available yet >>") ;
-  ostringstream format_str ;
-
-  format_str << "Server\n" ;
-
-  format_str << "\tURL: " << url_ << "\n\n" ;
-
-  format_str << "\tFormat: " << (format_.length() ? format_ : unavailable_txt) << "\n\n" ;
-			 
-
-  switch(scheme_)
-    {
-    case SCHEME_ACEDB:
-      {
-	format_str << "\tServer: " << scheme_data_.acedb.host << "\n\n" ;
-	format_str << "\tPort: " << scheme_data_.acedb.port << "\n\n" ;
-	format_str << "\tDatabase: "
-                   << (scheme_data_.acedb.database
-                       ? scheme_data_.acedb.database : unavailable_txt) << "\n\n" ;
-	break ;
-      }
-    case SCHEME_FILE:
-      {
-	format_str << "\tFile: " << scheme_data_.file.path << "\n\n" ;
-	break ;
-      }
-    case SCHEME_PIPE:
-      {
-	format_str << "\tScript: " << scheme_data_.pipe.path << "\n\n" ;
-	format_str << "\tQuery: " << scheme_data_.pipe.query << "\n\n" ;
-	break ;
-      }
-    case SCHEME_ENSEMBL:
-      {
-        format_str << "\tServer: " << scheme_data_.ensembl.host << "\n\n" ;
-        format_str << "\tPort: " << scheme_data_.ensembl.port << "\n\n" ;
-        break ;
-      }
-    default:
-      {
-	format_str << "\tUnsupported server type !" ;
-	break ;
-      }
-    }
-
-
-  session_str_out = format_str.str() ;
-
-
-  return ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-DataSource::~DataSource()
-{
-  // Clear up the thread.
-  zMapThreadPollSlaveStop(slave_poller_data_) ;
-
-  zMapThreadDestroy(thread_) ;
-  thread_ = NULL ;
-
-  url_free(url_obj_) ;
-  url_obj_ = NULL ;
-
-
-  return ;
-}
 
 
 
 
   // Features subclass
+  //
 
   DataSourceFeatures::DataSourceFeatures(ZMapFeatureSequenceMap sequence_map, int start, int end,
-                                           const string &config_file, const string &url, const string &server_version,
-                                           ZMapFeatureContext context_inout, ZMapStyleTree *styles)
-    : DataSource{ZMAP_SERVERREQ_FEATURES, sequence_map, start, end, config_file, url, server_version},
-    styles_{styles}, context_{context_inout}
+                                         const string &config_file, const string &url, const string &server_version,
+                                         ZMapFeatureContext context_inout, ZMapStyleTree *styles)
+    : DataSource{DataSourceRequestType::GET_FEATURES, sequence_map, start, end, config_file, url, server_version},
+    styles_{styles}, context_{context_inout}, err_msg_{}, exit_code_{0}
 {
-  if (!styles_)
+  if (!context_inout)
+    {
+      throw invalid_argument("Missing feature context argument to constructor.") ;
+    }
+  else if (!styles_)
     {
       throw invalid_argument("Missing styles argument to constructor.") ;
     }
-
 
   return ;
 }
@@ -329,67 +270,319 @@ DataSource::~DataSource()
   }
 
 
+  bool DataSourceFeatures::GetRequestParams(ZMapFeatureContext *context_out, ZMapStyleTree **styles_out)
+  {
+    bool result = false ;
+
+    if (state_ != DataSourceState::GOT_ERROR && state_ != DataSourceState::FINISHED)
+      {
+        *context_out = context_ ;
+        *styles_out = styles_ ;
+
+        result = TRUE ;
+      }
+
+    return result ;
+  }
 
 
-bool DataSourceFeatures::GetRequestData(ZMapFeatureContext *context_out, ZMapStyleTree **styles_out)
+
+  // Looks odd because we aren't setting anything but everything we are passed in is a pointer to
+  // a struct that gets filled in, maybe we should null the struct and then accept it back....?
+  bool DataSourceFeatures::SetReply(ZMapFeatureContext context, ZMapStyleTree *styles)
+  {
+    bool result = false ;
+
+    if (DataSource::state_ == DataSourceState::WAITING)
+      {
+        context_ = context ;
+        styles_ = styles ;
+
+        DataSource::state_ = DataSourceState::GOT_REPLY ;
+
+        result = true ;
+      }
+
+    return result ;
+  }
+
+
+  bool DataSourceFeatures::SetError(const char *stderr)
+  {
+    bool result = false ;
+
+    if (DataSource::state_ == DataSourceState::WAITING)
+      {
+        if (stderr && *stderr)
+          err_msg_ = stderr ;
+
+        DataSource::state_ = DataSourceState::GOT_ERROR ;
+
+        result = true ;
+      }
+
+    return result ;
+  }
+
+  bool DataSourceFeatures::SetError(gint exit_code, const char *stderr)
+  {
+    bool result = false ;
+
+    cout << "in the features class SetError()" << endl ;
+
+    if (DataSource::state_ == DataSourceState::WAITING)
+      {
+        exit_code_ = exit_code ;
+
+        if (stderr && *stderr)
+          err_msg_ = stderr ;
+
+        DataSource::state_ = DataSourceState::GOT_ERROR ;
+
+        cout << "in the features class SetError() and have set error state" << endl ;
+
+        result = true ;
+      }
+
+    return result ;
+  }
+
+  DataSourceReplyType DataSourceFeatures::GetReply(ZMapFeatureContext *context_out, ZMapStyleTree **styles_out)
+  {
+    DataSourceReplyType result = DataSourceReplyType::FAILED ;
+
+    if (DataSource::state_ == DataSourceState::GOT_REPLY)
+      {
+        *context_out = context_ ;
+        context_ = NULL ;
+
+        *styles_out = styles_ ;
+        styles_ = NULL ;
+
+        DataSource::state_ = DataSourceState::FINISHED ;
+
+        result = DataSourceReplyType::GOT_DATA ;
+      }
+    else if (DataSource::state_ == DataSourceState::GOT_ERROR)
+      {
+        DataSource::state_ = DataSourceState::FINISHED ;
+
+        result = DataSourceReplyType::GOT_ERROR ;
+      }
+    else if (DataSource::state_ == DataSourceState::WAITING)
+      {
+        result = DataSourceReplyType::WAITING ;
+      }
+
+    return result ;
+  }
+
+
+  bool DataSourceFeatures::GetError(const char **errmsg_out, gint *exit_code_out)
+  {
+    bool result = false ;
+
+    if (DataSource::state_ == DataSourceState::GOT_ERROR)
+      {
+        *errmsg_out = err_msg_.c_str() ;
+
+        *exit_code_out = exit_code_ ;
+
+        result = true ;
+      }
+
+    return result ;
+  }
+
+
+  DataSourceFeatures::~DataSourceFeatures()
+  {
+    cout << "in feature destructor" << endl ;
+
+
+    return ;
+  }
+
+
+
+  // Sequence subclass
+  //
+
+  DataSourceSequence::DataSourceSequence(ZMapFeatureSequenceMap sequence_map, int start, int end,
+                                         const string &config_file, const string &url, const string &server_version,
+                                         ZMapFeatureContext context_inout, ZMapStyleTree *styles)
+    : DataSource{DataSourceRequestType::GET_SEQUENCE, sequence_map, start, end, config_file, url, server_version},
+    styles_{styles}, context_{context_inout}, err_msg_{}, exit_code_{0}
 {
-  bool result = TRUE ;
-
-  *context_out = context_ ;
-
-  *styles_out = styles_ ;
-
-  return result ;
-}
-
-
-
-DataSourceFeatures::~DataSourceFeatures()
-{
-  if (context_)
+  if (!context_inout)
     {
-      // need to destroy context...
-      zMapFeatureContextDestroy(context_, TRUE) ;
-
-      context_ = NULL ;
+      throw invalid_argument("Missing feature context argument to constructor.") ;
+    }
+  else if (!styles_)
+    {
+      throw invalid_argument("Missing styles argument to constructor.") ;
     }
 
   return ;
 }
 
+  // Send seems to repeat a lot but I guess that's just coincidence.....
+  bool DataSourceSequence::SendRequest(UserSequenceCallBackFunc user_func, void *user_data)
+  {
+    bool result = TRUE ;
+    UserBaseCallBackFunc base_func = (UserBaseCallBackFunc)(user_func) ;
+
+    result = DataSource::SendRequest(base_func, user_data) ;
+
+    return result ;
+  }
 
 
-  // Sequence subclass.
+  bool DataSourceSequence::GetRequestParams(ZMapFeatureContext *context_out, ZMapStyleTree **styles_out)
+  {
+    bool result = false ;
 
-  DataSourceSequence::DataSourceSequence(ZMapFeatureSequenceMap sequence_map, int start, int end,
-                                           const string &config_file, const string &url, const string &server_version)
-    : DataSource{ZMAP_SERVERREQ_SEQUENCE, sequence_map, start, end, config_file, url, server_version}, sequences_(NULL)
-{
+    if (state_ != DataSourceState::GOT_ERROR && state_ != DataSourceState::FINISHED)
+      {
+        *context_out = context_ ;
+        *styles_out = styles_ ;
 
+        result = TRUE ;
+      }
 
-  return ;
-}
-
-
-DataSourceSequence::~DataSourceSequence()
-{
-  if (sequences_)
-    delete sequences_ ;
-
-
-  return ;
-}
-
-
-
-
-
-//
-//                 Package routines
-//
+    return result ;
+  }
 
 
 
+  // Need to set sequence here.....check how this is done.....
+  bool DataSourceSequence::SetReply(ZMapFeatureContext context, ZMapStyleTree *styles)
+  {
+    bool result = false ;
+
+    if (DataSource::state_ == DataSourceState::WAITING)
+      {
+        context_ = context ;
+        styles_ = styles ;
+
+        DataSource::state_ = DataSourceState::GOT_REPLY ;
+
+        result = true ;
+      }
+
+    return result ;
+  }
+
+
+  bool DataSourceSequence::SetError(const char *stderr)
+  {
+    bool result = false ;
+
+    cout << "in the sequence class SetError()" << endl ;
+
+    if (DataSource::state_ == DataSourceState::WAITING)
+      {
+        if (stderr && *stderr)
+          err_msg_ = stderr ;
+
+        DataSource::state_ = DataSourceState::GOT_ERROR ;
+
+        cout << "in the sequence class SetError() and have set error state" << endl ;
+
+        result = true ;
+      }
+
+    return result ;
+  }
+
+
+  bool DataSourceSequence::SetError(gint exit_code, const char *stderr)
+  {
+    bool result = false ;
+
+    if (DataSource::state_ == DataSourceState::WAITING)
+      {
+        exit_code_ = exit_code ;
+
+        if (stderr && *stderr)
+          err_msg_ = stderr ;
+
+        DataSource::state_ = DataSourceState::GOT_ERROR ;
+
+        result = true ;
+      }
+
+    return result ;
+  }
+
+
+  // here we return the sequence I think ?? not the features etc.....check is stylestree is
+  // altered, is it altered when we get features ??
+
+  DataSourceReplyType DataSourceSequence::GetReply(ZMapFeatureContext *context_out, ZMapStyleTree **styles_out)
+  {
+    DataSourceReplyType result = DataSourceReplyType::FAILED ;
+
+    if (DataSource::state_ == DataSourceState::GOT_REPLY)
+      {
+        *context_out = context_ ;
+        context_ = NULL ;
+
+        *styles_out = styles_ ;
+        styles_ = NULL ;
+
+        DataSource::state_ = DataSourceState::FINISHED ;
+
+        result = DataSourceReplyType::GOT_DATA ;
+      }
+    else if (DataSource::state_ == DataSourceState::GOT_ERROR)
+      {
+        DataSource::state_ = DataSourceState::FINISHED ;
+
+        result = DataSourceReplyType::GOT_ERROR ;
+      }
+    else if (DataSource::state_ == DataSourceState::WAITING)
+      {
+        result = DataSourceReplyType::WAITING ;
+      }
+
+    return result ;
+  }
+
+
+  bool DataSourceSequence::GetError(const char **errmsg_out, gint *exit_code_out)
+  {
+    bool result = false ;
+
+    if (DataSource::state_ == DataSourceState::GOT_ERROR)
+      {
+        *errmsg_out = err_msg_.c_str() ;
+
+        *exit_code_out = exit_code_ ;
+
+        result = true ;
+      }
+
+    return result ;
+  }
+
+
+  DataSourceSequence::~DataSourceSequence()
+  {
+    cout << "in sequence destructor" << endl ;
+
+
+
+    return ;
+  }
+
+
+
+
+
+  //
+  //                 Package routines
+  //
 
 
 
@@ -397,31 +590,12 @@ DataSourceSequence::~DataSourceSequence()
 
 
 
-
-//
-//                 Internal routines
-//
-
+  //
+  //                 Internal routines
+  //
 
 
-// NOTE, this function is not part of the class and this is deliberate. The user_callback will
-// probably delete the source object so this function must not use it after it has called the
-// user_callback function.
-//
-static void replyFunc(void *func_data)
-{
-  DataSource *source = static_cast<DataSource *>(func_data) ;
-  DataSource::UserBaseCallBackFunc user_callback = NULL ;
-  void *user_data = NULL ;
 
-  source->GetUserCallback(&user_callback, &user_data) ;
-
-  // source may be deleted by user_callback so do not use it after this call.
-  user_callback(source, user_data) ;
-
-
-  return ;
-}
 
 
 

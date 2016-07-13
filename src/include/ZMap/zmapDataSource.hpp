@@ -24,7 +24,8 @@
  *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk,
  *      Gemma Barson (Sanger Institute, UK) gb10@sanger.ac.uk
  *
- * Description: Interface to data sources.
+ * Description: Interface to data sources, allows the application to
+ *              launch a thread and get data back from a data source.
  *
  *-------------------------------------------------------------------
  */
@@ -34,7 +35,9 @@
 #include <string>
 #include <vector>
 
-#include <ZMap/zmapServerProtocol.hpp>
+#include <ZMap/zmapUrl.hpp>
+#include <ZMap/zmapFeature.hpp>
+#include <ZMap/zmapFeatureLoadDisplay.hpp>
 #include <ZMap/zmapThreads.hpp>
 
 
@@ -43,16 +46,44 @@
 namespace ZMapDataSource
 {
 
+  // convert to our enum system and add a macro to our enum system to support this c++ type of
+  // enum, i.e. needs to add "class" and do away with typedef....
+  //
+  enum class DataSourceRequestType {INVALID, GET_FEATURES, GET_SEQUENCE} ;
 
-  enum class DataSourceReplyState {INVALID, WAITING, GOT_DATA, ERROR} ;
+  enum class DataSourceReplyType {INVALID, FAILED, WAITING, GOT_DATA, GOT_ERROR} ;
 
 
-  // Abstract base class.
+
+  // Abstract base class - currently no public operations.
   class DataSource
   {
+    friend class DataSlave ;
+
+
   public:
 
-  typedef void (*UserBaseCallBackFunc)(DataSource *data_source, void *user_data) ;
+
+  protected:
+
+    typedef void (*UserBaseCallBackFunc)(DataSource *data_source, void *user_data) ;
+
+    enum class DataSourceState {INVALID, INIT, WAITING, GOT_REPLY, GOT_ERROR, FINISHED} ;
+
+    DataSource(DataSourceRequestType request, 
+               ZMapFeatureSequenceMap sequence_map, int start, int end,
+               const std::string &url, const std::string &config_file, const std::string &version) ;
+
+    bool SendRequest(UserBaseCallBackFunc user_func, void *user_data) ;
+
+    virtual ~DataSource() ;
+
+    DataSourceReplyType reply_ ;
+
+    DataSourceState state_ ;
+
+
+  private:
 
     // No default constructor.
     DataSource() = delete ;
@@ -65,41 +96,16 @@ namespace ZMapDataSource
     DataSource(DataSource&&) = delete ;
     DataSource& operator=(DataSource&&) = delete ;
 
-    ZMapServerReqType GetRequestType() ;
-
     bool GetSequenceData(ZMapFeatureSequenceMap *sequence_map_out, int *start_out, int *end_out) ;
 
     bool GetServerInfo(char **config_file_out, ZMapURL *url_obj_out, char **version_str_out) ;
 
-    void GetUserCallback(UserBaseCallBackFunc *user_func, void **user_data) ;
+    DataSourceRequestType GetRequestType() ;
 
-    void SetReply(ZMapServerResponseType response, gint exit_code, const char *stderr) ;
+    virtual bool SetError(const char *err_msg) = 0 ;
 
+    static void ReplyCallbackFunc(void *func_data) ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-    DataSourceReplyState GetReply(void **reply_out, char **err_msg_out) ;
-
-
-
-    const std::string &GetConfigFile() ;
-
-    void Session2Str(std::string &session_str_out) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-    ~DataSource() ;
-
-
-  protected:
-
-    DataSource(ZMapServerReqType type, 
-               ZMapFeatureSequenceMap sequence_map, int start, int end,
-               const std::string &url, const std::string &config_file, const std::string &version) ;
-
-    bool SendRequest(UserBaseCallBackFunc user_func, void *user_data) ;
-
-
-  private:
 
 
     ZMapThread thread_ ;
@@ -108,10 +114,8 @@ namespace ZMapDataSource
     UserBaseCallBackFunc user_func_ ;
     void *user_data_ ;
 
-    ZMapServerReqType type_ ;
-    ZMapServerResponseType response_ ;
-    gint exit_code_ ;
-    std::string stderr_out_ ;
+    DataSourceRequestType request_ ;
+
 
     ZMapFeatureSequenceMap sequence_map_ ;
     int start_, end_ ;
@@ -124,50 +128,15 @@ namespace ZMapDataSource
 
     ZMapURL url_obj_ ;
 
-    std::string protocol_ ;
-
-    std::string format_ ;
-
-
-    // not sure if this is all needed ??
-    ZMapURLScheme scheme_ ;
-
-    // Connection data, keyed by scheme field.
-    union							    /* Keyed by scheme field above. */
-    {
-      struct
-      {
-        char *host ;
-        int port ;
-        char *database ;
-      } acedb ;
-
-      struct
-      {
-        char *path ;
-      } file ;
-
-      struct
-      {
-        char *path ;
-        char *query ;
-      } pipe ;
-
-      struct
-      {
-        char *host ;
-        int port ;
-      } ensembl ;
-    } scheme_data_ ;
-
-
   } ;
 
 
-  // Features request class.
+  // Features request class - get features back from a data source.
   //
   class DataSourceFeatures: public DataSource
   {
+    friend class DataSlave ;
+
   public:
 
   typedef void (*UserFeaturesCallBackFunc)(DataSourceFeatures *data_source, void *user_data) ;
@@ -177,8 +146,10 @@ namespace ZMapDataSource
                        ZMapFeatureContext context_inout, ZMapStyleTree *styles) ;
 
     bool SendRequest(UserFeaturesCallBackFunc user_func, void *user_data) ;
-    
-    bool GetRequestData(ZMapFeatureContext *context_out, ZMapStyleTree **styles_out) ;
+
+    DataSourceReplyType GetReply(ZMapFeatureContext *context_out, ZMapStyleTree **styles_out) ;
+
+    bool GetError(const char **errmsg_out, gint *exit_code_out) ;
 
     ~DataSourceFeatures() ;
 
@@ -189,6 +160,14 @@ namespace ZMapDataSource
 
   private:
 
+    bool GetRequestParams(ZMapFeatureContext *context_out, ZMapStyleTree **styles_out) ;
+
+    bool SetReply(ZMapFeatureContext context_inout, ZMapStyleTree *styles) ;
+
+    virtual bool SetError(const char *err_msg) ;
+    bool SetError(gint exit_code, const char *stderr) ;
+
+
     UserFeaturesCallBackFunc user_func_ ;
     void *user_data_ ;
 
@@ -197,21 +176,33 @@ namespace ZMapDataSource
 
     ZMapFeatureContext context_ ;                           /* Returned feature sets. */
 
+    std::string err_msg_ ;
+    gint exit_code_ ;
+
+
   } ;
 
 
-  // Sequence request class.
+  // Sequence request class, currently very like the features class but this is likely to
+  // change.
   //
   class DataSourceSequence: public DataSource
   {
+    friend class DataSlave ;
+
   public:
 
   typedef void (*UserSequenceCallBackFunc)(DataSourceSequence *data_source, void *user_data) ;
 
     DataSourceSequence(ZMapFeatureSequenceMap sequence_map, int start, int end,
-                       const std::string &config_file, const std::string &url, const std::string &server_version) ;
+                       const std::string &config_file, const std::string &url, const std::string &server_version,
+                       ZMapFeatureContext context_inout, ZMapStyleTree *styles) ;
 
     bool SendRequest(UserSequenceCallBackFunc user_func, void *user_data) ;
+
+    DataSourceReplyType GetReply(ZMapFeatureContext *context_out, ZMapStyleTree **styles_out) ;
+
+    bool GetError(const char **errmsg_out, gint *exit_code_out) ;
 
     ~DataSourceSequence() ;
 
@@ -222,10 +213,23 @@ namespace ZMapDataSource
 
   private:
 
+    bool GetRequestParams(ZMapFeatureContext *context_out, ZMapStyleTree **styles_out) ;
+
+    bool SetReply(ZMapFeatureContext context_inout, ZMapStyleTree *styles) ;
+
+    virtual bool SetError(const char *err_msg) ;
+    bool SetError(gint exit_code, const char *stderr) ;
+
     UserSequenceCallBackFunc user_func_ ;
     void *user_data_ ;
 
-    std::vector <ZMapSequenceStruct> *sequences_ ;
+    ZMapStyleTree *styles_ ;				    /* Needed for some features to control
+							       how they are fetched. */
+
+    ZMapFeatureContext context_ ;                           /* Returned feature sets. */
+
+    std::string err_msg_ ;
+    gint exit_code_ ;
 
   } ;
 
