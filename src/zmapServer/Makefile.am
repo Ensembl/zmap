@@ -19,11 +19,8 @@ zmapServer.cpp \
 zmapServer.hpp \
 zmapServerPrototype.hpp \
 zmapServerRequestHandler.cpp \
-zmapServerRequestHandler.hpp \
 zmapServer_P.hpp \
-zmapSlaveHandler.cpp \
-zmapSlaveHandlerOld.cpp \
-$(NULL)
+]$(NULL)
 
 libZMapServer_la_LIBADD  = 
 libZMapServer_la_CFLAGS  = $(INCLUDE_COMMON)
