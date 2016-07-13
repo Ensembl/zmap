@@ -23,7 +23,7 @@
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description: Interface to sub threads of the ZMap GUI thread.
+ * Description: Interface to running data source threads.
  *
  *-------------------------------------------------------------------
  */
@@ -32,54 +32,15 @@
 
 #include <config.h>
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-// WHAT ON EARTH IS THIS ABOUT, WE SHOULDN'T NEED THIS HERE........
-
-#if defined DARWIN
-#include <pthread.h>
-#endif
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 #include <glib.h>
 
 #include <ZMap/zmapEnum.hpp>
 
 
 
-/* The calls need changing to handle a more general
- * mechanism of requests etc.....this interface should not need to know the requests it is
- * servicing.....all the server stuff needs to be removed from the conncreate and these
- * routines should be renamed to  zMapThreadNNNN */
+/* The thread, one per connection, an opaque private type. */
+typedef struct _ZMapThreadStruct *ZMapThread ;
 
-
-/* We should have a function to access this global.... */
-/* debugging messages, TRUE for on... */
-extern gboolean zmap_thread_debug_G ;
-
-
-/* Requests to a slave thread. */
-#define ZMAP_THREAD_REQUEST_LIST(_)             \
-_(ZMAPTHREAD_REQUEST_INVALID,         , "invalid",    "invalid request. ", "")   \
-_(ZMAPTHREAD_REQUEST_WAIT,            , "wait",       "Wait for next request. ", "")	\
-_(ZMAPTHREAD_REQUEST_TIMED_OUT,       , "timed_out",  "You have timed out. ", "")	\
-_(ZMAPTHREAD_REQUEST_EXECUTE,         , "execute",    "Execute request. ", "")
-
-ZMAP_DEFINE_ENUM(ZMapThreadRequest, ZMAP_THREAD_REQUEST_LIST) ;
-
-
-/* Replies from a slave thread. */
-#define ZMAP_THREAD_REPLY_LIST(_)             \
-_(ZMAPTHREAD_REPLY_INVALID,           , "invalid",          "Invalid reply. ", "") \
-_(ZMAPTHREAD_REPLY_WAIT,              , "waiting",          "Thread waiting. ", "") \
-_(ZMAPTHREAD_REPLY_GOTDATA,           , "got_data",         "Thread returning data. ", "") \
-_(ZMAPTHREAD_REPLY_REQERROR,          , "request_error",    "Thread received bad request. ", "") \
-_(ZMAPTHREAD_REPLY_SOURCEEMPTY,       , "source_empty",     "Thread processed empty source. ", "") \
-_(ZMAPTHREAD_REPLY_DIED,              , "have_died",        "Thread has died unexpectedly. ", "") \
-_(ZMAPTHREAD_REPLY_CANCELLED,         , "thread_cancelled", "Thread has been cancelled. ", "") \
-_(ZMAPTHREAD_REPLY_QUIT,              , "quit",             "Thread has terminated normally. ", "")
-
-ZMAP_DEFINE_ENUM(ZMapThreadReply, ZMAP_THREAD_REPLY_LIST) ;
 
 
 /* Return codes from the handler function called by the slave thread to service a request. */
@@ -97,8 +58,10 @@ ZMAP_DEFINE_ENUM(ZMapThreadReturnCode, ZMAP_THREAD_RETURNCODE_LIST) ;
 
 
 
-/* The thread, one per connection, an opaque private type. */
-typedef struct _ZMapThreadStruct *ZMapThread ;
+typedef void *(*ZMapThreadCreateFunc)(void *func_data) ;
+typedef ZMapThreadReturnCode (*ZMapSlaveRequestHandlerFunc)(void **slave_data, void *request_in, char **err_msg_out) ;
+typedef ZMapThreadReturnCode (*ZMapSlaveTerminateHandlerFunc)(void **slave_data, char **err_msg_out) ;
+typedef ZMapThreadReturnCode (*ZMapSlaveDestroyHandlerFunc)(void **slave_data) ;
 
 
 // Opaque pointer to thread handler data needed in thread polling functions.
@@ -111,42 +74,18 @@ typedef void (*ZMapThreadPollSlaveUserReplyFunc)(void *func_data) ;
 
 
 
-// bool "new_interface" is TEMP NEW/OLD INTERFACE WHILE I SET UP THE NEW THREADS STUFF....
-// true means use new interface, false the old/existing interface.
-ZMapThread zMapThreadCreate(bool new_interface) ;
-
-
+ZMapThread zMapThreadStart(bool new_interface,
+                           ZMapSlaveRequestHandlerFunc req_handler_func,
+                           ZMapSlaveTerminateHandlerFunc terminate_handler_func,
+                           ZMapSlaveDestroyHandlerFunc destroy_handler_func) ;
 ZMapThreadPollSlaveCallbackData zMapThreadPollSlaveStart(ZMapThread thread,
                                                          ZMapThreadPollSlaveUserReplyFunc user_reply_func,
                                                          void *user_reply_func_data) ;
 void zMapThreadPollSlaveStop(ZMapThreadPollSlaveCallbackData poll_cb_data) ;
 
 
-void zMapThreadRequest(ZMapThread thread, void *request) ;
-gboolean zMapThreadGetReply(ZMapThread thread, ZMapThreadReply *state) ;
-void zMapThreadSetReply(ZMapThread thread, ZMapThreadReply state) ;
-gboolean zMapThreadGetReplyWithData(ZMapThread thread, ZMapThreadReply *state,
-				    void **data, char **err_msg) ;
-char *zMapThreadGetThreadID(ZMapThread thread) ;
-char *zMapThreadGetRequestString(ZMapThreadRequest signalled_state) ;
-char *zMapThreadGetReplyString(ZMapThreadReply signalled_state) ;
-void zMapThreadKill(ZMapThread thread) ;
-gboolean zMapThreadExists(ZMapThread thread);
-void zMapThreadDestroy(ZMapThread thread) ;
 
-ZMAP_ENUM_AS_EXACT_STRING_DEC(zMapThreadRequest2ExactStr, ZMapThreadRequest) ;
-ZMAP_ENUM_AS_EXACT_STRING_DEC(zMapThreadReply2ExactStr, ZMapThreadReply) ;
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zMapThreadReturnCode2ExactStr, ZMapThreadReturnCode) ;
-
-
-
-
-
-
-// THESE SHOULD NOT BE HERE.... MOVE TO ZMAPUTILS WHERE THEY BELONG...THEY ARE NOTHING TO DO WITH
-// THIS THREADING INTERFACE.......
-void zMapThreadForkLock(void) ;
-void zMapThreadForkUnlock(void) ;
 
 
 
