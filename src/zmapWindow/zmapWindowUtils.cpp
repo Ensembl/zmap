@@ -73,7 +73,7 @@ int zmapWindowCoordToDisplay(ZMapWindow window, ZMapWindowDisplayCoordinates dis
    * window->sequence->start is fwd strand
    * but note that max_coord has been incremented to cover beyond the last base
    */
-  if (window->display_coordinates == ZMAP_WINDOW_DISPLAY_SLICE)
+  if (display_mode == ZMAP_WINDOW_DISPLAY_SLICE)
     coord = coord - window->min_coord + 1 ;
 
   if (zMapWindowGetFlag(window, ZMAPFLAG_REVCOMPED_FEATURES))
