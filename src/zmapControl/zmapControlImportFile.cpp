@@ -39,6 +39,7 @@
 
 #include <ZMap/zmap.hpp>
 
+#include <iostream>
 #include <string.h>
 
 #include <ZMap/zmapString.hpp>    /* testing only. */
@@ -133,6 +134,7 @@ static void ImportFile(MainFrame main_frame) ;
 static void importNewDialogResponseCB(GtkDialog *dialog, gint response_id, gpointer data) ;
 static void newImportFile(MainFrame main_frame) ;
 static void newCallBackFunc(DataSourceFeatures *features_source, void *user_data) ;
+static void newSequenceCallBackFunc(DataSourceSequence *features_source, void *user_data) ;
 
 
 
@@ -179,6 +181,8 @@ void zmapControlImportFile(ZMap zmap,
   gtk_signal_connect(GTK_OBJECT(toplevel), "destroy",
                      GTK_SIGNAL_FUNC(toplevelDestroyCB), main_frame) ;
 
+  gtk_widget_set_size_request(toplevel, 500, -1) ;
+
   gtk_widget_show_all(toplevel) ;
 
   return ;
@@ -213,6 +217,8 @@ void zmapControlNewImportFile(ZMap zmap,
 
   gtk_signal_connect(GTK_OBJECT(toplevel), "destroy",
                      GTK_SIGNAL_FUNC(toplevelDestroyCB), main_frame) ;
+
+  gtk_widget_set_size_request(toplevel, 500, -1) ;
 
   gtk_widget_show_all(toplevel) ;
 
@@ -616,12 +622,14 @@ static void importDialogResponseCB(GtkDialog *dialog, gint response_id, gpointer
     case GTK_RESPONSE_CANCEL:
     case GTK_RESPONSE_CLOSE:
     case GTK_RESPONSE_REJECT:
-      closeDialog(main_frame) ;
       break;
 
     default:
       break;
   };
+
+  // Always close dialog, see if users ok with that.
+  closeDialog(main_frame) ;
 
   return ;
 }
@@ -644,12 +652,19 @@ static void importNewDialogResponseCB(GtkDialog *dialog, gint response_id, gpoin
     case GTK_RESPONSE_CANCEL:
     case GTK_RESPONSE_CLOSE:
     case GTK_RESPONSE_REJECT:
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       closeDialog(main_frame) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
       break;
 
     default:
       break;
   };
+
+  // Try this here....
+  closeDialog(main_frame) ;
 
   return ;
 }
@@ -1437,6 +1452,8 @@ static void newImportFile(MainFrame main_frame)
           const string version = string("") ;
           ZMapFeatureContext context ;
 
+
+          // Try a feature request
           context_map = zMapViewGetContextMap(view) ;
           context = zMapViewCreateContext(view, req_featuresets, NULL) ;
 
@@ -1450,6 +1467,32 @@ static void newImportFile(MainFrame main_frame)
 
               delete my_feature_request ;
             }
+
+
+
+          // Try a sequence request
+          GList *dna_req_featuresets = NULL ;
+          GQuark dna_id = g_quark_from_string("dna") ;
+
+          dna_req_featuresets = g_list_append(dna_req_featuresets, GINT_TO_POINTER(dna_id)) ;
+
+          context_map = zMapViewGetContextMap(view) ;
+          context = zMapViewCreateContext(view, dna_req_featuresets, NULL) ;
+
+          const string acedb_url("acedb://any:any@gen1b:20000?use_methods=false&gff_version=2") ;
+
+          DataSourceSequence *my_sequence_request = new DataSourceSequence(sequence_map, req_start, req_end,
+                                                                           acedb_url, config_file, version,
+                                                                           context, &(context_map->styles)) ;
+
+          if (!(my_sequence_request->SendRequest(newSequenceCallBackFunc, my_sequence_request)))
+            {
+              // Really need to be able to get some error state here....should throw from the obj ?
+
+              delete my_sequence_request ;
+            }
+
+
         }
       else
         {
@@ -1473,17 +1516,64 @@ static void newCallBackFunc(DataSourceFeatures *features_source, void *user_data
 {
   ZMapFeatureContext context ;
   ZMapStyleTree *styles ;
+  int error_rc = 0 ;
+  const char *err_msg = NULL ;
+  DataSourceReplyType reply ;
 
+  cout << "in features app callback" << endl ;
 
   // Get the reply data......
-  if (features_source->GetRequestData(&context, &styles))
+  if ((reply = features_source->GetReply(&context, &styles)) == DataSourceReplyType::GOT_DATA)
     {
       GError *error = NULL ;
 
       zMapFeatureDumpStdOutFeatures(context, styles, &error) ;
     }
+  else if (reply == DataSourceReplyType::GOT_ERROR)
+    {
+      if (features_source->GetError(&err_msg, &error_rc))
+        zMapWarning("Source failed to get features with: \"%s\"", err_msg) ;
+    }
+  else if (reply == DataSourceReplyType::WAITING)
+    {
+      zMapWarning("%s", "We are waiting...") ;
+    }
 
   delete features_source ;
+
+  return ;
+}
+
+
+static void newSequenceCallBackFunc(DataSourceSequence *sequence_source, void *user_data)
+{
+  ZMapFeatureContext context ;
+  ZMapStyleTree *styles ;
+  int error_rc = 0 ;
+  const char *err_msg = NULL ;
+  DataSourceReplyType reply ;
+
+  cout << "in sequence app callback" << endl ;
+
+
+  // Get the reply data......
+  if ((reply = sequence_source->GetReply(&context, &styles)) == DataSourceReplyType::GOT_DATA)
+    {
+      GError *error = NULL ;
+
+      zMapFeatureDumpStdOutFeatures(context, styles, &error) ;
+    }
+  else if (reply == DataSourceReplyType::GOT_ERROR)
+    {
+      if (sequence_source->GetError(&err_msg, &error_rc))
+        zMapWarning("Source failed to get features with: \"%s\"", err_msg) ;
+    }
+  else if (reply == DataSourceReplyType::WAITING)
+    {
+      zMapWarning("%s", "We are waiting...") ;
+    }
+
+  delete sequence_source ;
 
   return ;
 }
