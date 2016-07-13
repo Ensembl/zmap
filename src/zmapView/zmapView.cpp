@@ -55,7 +55,7 @@
 #include <ZMap/zmapConfigStanzaStructs.hpp>
 #include <ZMap/zmapCmdLineArgs.hpp>
 #include <ZMap/zmapUrlUtils.hpp>
-#include <ZMap/zmapDataSourceServer.hpp>
+#include <ZMap/zmapOldSourceServer.hpp>
 #include <zmapView_P.hpp>
 
 

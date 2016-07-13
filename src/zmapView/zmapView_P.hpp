@@ -37,8 +37,8 @@
 #include <ZMap/zmapView.hpp>
 #include <ZMap/zmapWindow.hpp>
 #include <ZMap/zmapWindowNavigator.hpp>
-#include <ZMap/zmapDataSourceServer.hpp>
-#include <ZMap/zmapDataSourceStepList.hpp>
+#include <ZMap/zmapOldSourceServer.hpp>
+#include <ZMap/zmapOldStepList.hpp>
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #include <zmapViewServer.hpp>
