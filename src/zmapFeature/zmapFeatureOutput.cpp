@@ -329,11 +329,11 @@ gboolean zMapFeatureListDumpToFileOrBuffer(GList                     *feature_li
  * and this code calls the callback to do the output of the feature in the appropriate
  * form. */
 gboolean zMapFeatureContextDumpToFile(ZMapFeatureAny             dump_set,
-      ZMapStyleTree *styles,
-      ZMapFeatureDumpFeatureFunc dump_func,
-      gpointer                   dump_user_data,
-      GIOChannel                *dump_file,
-      GError                   **dump_error_out)
+                                      ZMapStyleTree *styles,
+                                      ZMapFeatureDumpFeatureFunc dump_func,
+                                      gpointer                   dump_user_data,
+                                      GIOChannel                *dump_file,
+                                      GError                   **dump_error_out)
 {
   gboolean result = FALSE ;
   DumpFeaturesToFileStruct dump_data = {FALSE};
@@ -361,7 +361,7 @@ gboolean zMapFeatureContextDumpToFile(ZMapFeatureAny             dump_set,
   dump_data.dump_string = g_string_sized_new(2000);
 
   zMapFeatureContextExecuteSubset(dump_set, ZMAPFEATURE_STRUCT_FEATURE,
-  dump_features_cb, &dump_data);
+                                  dump_features_cb, &dump_data);
 
 
   g_string_free(dump_data.dump_string, TRUE);
@@ -443,16 +443,18 @@ GQuark zMapFeatureContextDumpErrorDomain(void)
 
 
 
-static ZMapFeatureContextExecuteStatus dump_features_cb(GQuark   key,
-gpointer data,
-gpointer user_data,
-char   **err_out)
+static ZMapFeatureContextExecuteStatus dump_features_cb(GQuark key,
+                                                        gpointer data,
+                                                        gpointer user_data,
+                                                        char **err_out)
 {
-  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_ERROR;
-  ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
+  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_ERROR ;
+  ZMapFeatureAny feature_any = (ZMapFeatureAny)data ;
   DumpFeaturesToFile dump_data = (DumpFeaturesToFile)user_data ;
+
   if (!feature_any || !dump_data)
     return status ;
+
   status = ZMAP_CONTEXT_EXEC_STATUS_OK ;
 
   switch(feature_any->struct_type)
@@ -480,8 +482,10 @@ char   **err_out)
                                                        "No function.");
               }
           }
+
+        break;
       }
-      break;
+
     default:
       /* Unknown feature type. */
       if(dump_data->status)
@@ -491,8 +495,9 @@ char   **err_out)
                                                  ZMAPFEATURE_DUMP_UNKNOWN_FEATURE_TYPE,
                                                  "Unknown Feature struct type '%d'.",
                                                  feature_any->struct_type);
+
+          break;
         }
-      break;
     }
 
   if(dump_data->status && dump_data->dump_string->len > 0)
@@ -651,13 +656,33 @@ static gboolean simple_context_print_cb(ZMapFeatureAny feature_any,
       }
     case ZMAPFEATURE_STRUCT_BLOCK:
       {
-        ZMapFeatureBlock feature_block;
+        enum {MAX_DNA_LEN = 20} ;
+        ZMapFeatureBlock feature_block ;
+
         feature_block = (ZMapFeatureBlock)feature_any;
         g_string_append_printf(dump_string_in_out,
                                "    Block:\t%s\t%d\t%d\n",
                                g_quark_to_string(feature_block->unique_id),
                                feature_block->block_to_sequence.parent.x1,
                                feature_block->block_to_sequence.parent.x2) ;
+
+        if (feature_block->sequence.length > 0)
+          {
+            char *dna ;
+
+            dna = g_strndup(feature_block->sequence.sequence,
+                            (feature_block->sequence.length > MAX_DNA_LEN
+                             ? MAX_DNA_LEN : feature_block->sequence.length)) ;
+
+            g_string_append_printf(dump_string_in_out,
+                                   "          \t\"%s%s\"\n",
+                                   dna,
+                                   (feature_block->sequence.length > MAX_DNA_LEN ? "..." : "")) ;
+
+            g_free(dna) ;
+          }
+
+
         break;
       }
     case ZMAPFEATURE_STRUCT_FEATURESET:
