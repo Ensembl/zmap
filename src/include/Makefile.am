@@ -19,9 +19,8 @@ ZMap/zmapConfigStyleDefaults.hpp \
 ZMap/zmapControl.hpp \
 ZMap/zmapDAS.hpp \
 ZMap/zmapDNA.hpp \
+ZMap/zmapDataSlave.hpp \
 ZMap/zmapDataSource.hpp \
-ZMap/zmapDataSourceServer.hpp \
-ZMap/zmapDataSourceStepList.hpp \
 ZMap/zmapDraw.hpp \
 ZMap/zmapEnsemblUtils.hpp \
 ZMap/zmapEnum.hpp \
@@ -35,6 +34,8 @@ ZMap/zmapGUITreeView.hpp \
 ZMap/zmapIO.hpp \
 ZMap/zmapMLF.hpp \
 ZMap/zmapNavigatorStippleG.xbm \
+ZMap/zmapOldSourceServer.hpp \
+ZMap/zmapOldStepList.hpp \
 ZMap/zmapPeptide.hpp \
 ZMap/zmapReadLine.hpp \
 ZMap/zmapRemoteCommand.hpp \
@@ -46,7 +47,6 @@ ZMap/zmapServerProtocol.hpp \
 ZMap/zmapSO.hpp \
 ZMap/zmapSOParser.hpp \
 ZMap/zmapSkipList.hpp\
-ZMap/zmapSlaveHandler.hpp \
 ZMap/zmapString.hpp \
 ZMap/zmapStyle.hpp \
 ZMap/zmapStyleTree.hpp \
