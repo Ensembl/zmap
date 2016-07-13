@@ -526,6 +526,7 @@ zmapGFF \
 zmapRemoteControl \
 zmapRemoteControl/remotetest \
 zmapServer \
+zmapThreadsLib \
 zmapThreads \
 zmapUtils \
 zmapView \
@@ -569,6 +570,7 @@ zmapServer/datastream/Makefile
 zmapServer/ensembl/Makefile
 zmapServer/file/Makefile
 zmapServer/pipe/Makefile
+zmapThreadsLib/Makefile
 zmapThreads/Makefile
 zmapUtils/Makefile
 zmapUtils/tests/Makefile

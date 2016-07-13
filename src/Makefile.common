@@ -69,6 +69,8 @@ LIBS_ZMAP = $(top_builddir)/.libs/libZMapApp.a \
 	$(top_builddir)/.libs/libZMapDataSource.la \
 	$(top_builddir)/.libs/libZMapThreads.a \
 	$(top_builddir)/.libs/libZMapThreads.la \
+	$(top_builddir)/.libs/libZMapThreadsLib.a \
+	$(top_builddir)/.libs/libZMapThreadsLib.la \
 	$(top_builddir)/.libs/libZMapRemoteControl.a \
 	$(top_builddir)/.libs/libZMapRemoteControl.la \
 	$(top_builddir)/.libs/libZMapXML.a \
