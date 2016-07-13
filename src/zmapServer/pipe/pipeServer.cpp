@@ -53,7 +53,7 @@
 #include <ZMap/zmapGFF.hpp>
 #include <ZMap/zmapServerProtocol.hpp>
 
-#include <ZMap/zmapThreads.hpp>                             // for threadforklock/unlock which
+#include <ZMap/zmapThreadsLib.hpp>                             // for threadforklock/unlock which
                                                             // shouldn't be in here....
 
 #include <pipeServer_P.hpp>

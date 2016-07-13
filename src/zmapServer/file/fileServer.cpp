@@ -379,31 +379,23 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
   server->sequence_server = req_open->sequence_server ;
 
   /* Get the GFF version */
-  int parser_version = zMapGFFGetVersion(server->parser) ;
-  if (!parser_version)
+  int gff_version = ZMAPGFF_VERSION_UNKNOWN ;
+
+  if (!zMapDataStreamGetGFFVersion(server->data_stream, &gff_version ))
     {
-      int gff_version = ZMAPGFF_VERSION_UNKNOWN ;
-      if (!zMapDataStreamGetGFFVersion(server->data_stream, &gff_version ))
-        {
-          /* sourceempty error */
-          server->last_err_msg = g_strdup("No data returned from file.") ;
-          result = ZMAP_SERVERRESPONSE_SOURCEEMPTY ;
-        }
-      else
-        {
-          server->gff_version = gff_version ;
-        }
+      /* sourceempty error */
+      server->last_err_msg = g_strdup("No data returned from file.") ;
+      result = ZMAP_SERVERRESPONSE_SOURCEEMPTY ;
     }
   else
-    server->gff_version = parser_version ;
-
-  if (!server->parser)
     {
-      server->parser = zMapGFFCreateParser(server->gff_version,
-                                           server->sequence_map->sequence,
-                                           server->zmap_start,
-                                           server->zmap_end) ;
+      server->gff_version = gff_version ;
     }
+
+  server->parser = zMapGFFCreateParser(server->gff_version,
+                                       server->sequence_map->sequence,
+                                       server->zmap_start,
+                                       server->zmap_end) ;
 
   /*
    * Set size for a buffer line.

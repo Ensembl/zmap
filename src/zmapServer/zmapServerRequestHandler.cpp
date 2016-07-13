@@ -628,13 +628,22 @@ ZMapServerResponseType zMapServerRequest(ZMapServer *server_inout, ZMapServerReq
       }
     case ZMAP_SERVERREQ_TERMINATE:
       {
-        request->response = zMapServerCloseConnection(server);
-        *err_msg_out = g_strdup(zMapServerLastErrorMsg(server)) ; /* get error msg here because next call destroys the struct */
+        // this function should log and free the server whatever happens....not just leave it....
 
-        if (request->response == ZMAP_SERVERRESPONSE_OK)
+        if ((request->response = zMapServerCloseConnection(server)) != ZMAP_SERVERRESPONSE_OK)
           {
-            request->response = zMapServerFreeConnection(server) ;
-            server = NULL;
+            *err_msg_out = g_strdup(zMapServerLastErrorMsg(server)) ; /* get error msg here because next call destroys the struct */
+          }
+        else
+          {
+            if ((request->response = zMapServerFreeConnection(server)) != ZMAP_SERVERRESPONSE_OK)
+              {
+                *err_msg_out = g_strdup("FreeConnectin of server failed.") ;
+              }
+
+            // Can no longer be sure of server struct state so don't reference it any more.
+            server = NULL ;
+            *server_inout = NULL ;
           }
 
         break ;
@@ -733,6 +742,7 @@ static gboolean protocolGlobalInitFunc(ZMapProtocolInitList protocols, ZMapURL u
  *
  *  */
 ZMAP_ENUM_AS_EXACT_STRING_FUNC(zMapServerReqType2ExactStr, ZMapServerReqType, ZMAP_SERVER_REQ_LIST) ;
+ZMAP_ENUM_AS_EXACT_STRING_FUNC(zMapServerResponseType2ExactStr, ZMapServerResponseType, ZMAP_SERVER_RESPONSE_LIST) ;
 
 
 
