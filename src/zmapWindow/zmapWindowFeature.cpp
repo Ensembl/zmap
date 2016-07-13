@@ -48,7 +48,7 @@
 #include <zmapWindowContainerFeatureSet_I.hpp>
 
 
-#include <ZMap/zmapThreads.hpp> // for ForkLock functions
+#include <ZMap/zmapThreadsLib.hpp> // for ForkLock functions
 
 
 using namespace gbtools ;
