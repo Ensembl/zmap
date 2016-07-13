@@ -36,17 +36,15 @@
 
 #include <stdio.h>
 #include <string.h>
-
-/* YOU SHOULD BE AWARE THAT ON SOME PLATFORMS (E.G. ALPHAS) THERE SEEMS TO BE SOME INTERACTION
- * BETWEEN pthread.h AND gtk.h SUCH THAT IF pthread.h COMES FIRST THEN gtk.h INCLUDES GET MESSED
- * UP AND THIS FILE WILL NOT COMPILE.... */
 #include <pthread.h>
 
 #include <ZMap/zmapUtils.hpp>
 
 /* With some additional calls in the zmapConn code I could get rid of the need for
  * the private header here......check this out... */
-#include <zmapThreads_P.hpp>
+#include <zmapThreadsLib/zmapThreads_P.hpp>
+
+
 #include <zmapSlave_P.hpp>
 
 
@@ -54,6 +52,9 @@ enum {ZMAPTHREAD_SLAVE_REQ_BUFSIZE = 512} ;
 
 
 static void cleanUpThread(void *thread_args) ;
+
+
+ZMAP_ENUM_AS_EXACT_STRING_FUNC(zMapThreadReturnCode2ExactStr, ZMapThreadReturnCode, ZMAP_THREAD_RETURNCODE_LIST) ;
 
 
 /* This is the routine that is called by the pthread_create() function, in effect
@@ -88,15 +89,14 @@ void *zmapNewThread(void *thread_args)
 
   pthread_cleanup_push(cleanUpThread, (void *)thread_cb) ;
 
+
   // Set up either new or old slave handlers and exit policy.
   if (thread->new_interface)
     {
-      zMapSlaveHandlerInit(&(thread_cb->handler_func), &(thread_cb->terminate_func), &(thread_cb->destroy_func)) ;
       exit_on_fail = true ;
     }
   else
     {
-      zMapSlaveHandlerInitOld(&(thread_cb->handler_func), &(thread_cb->terminate_func), &(thread_cb->destroy_func)) ;
       exit_on_fail = false ;
     }
 
@@ -143,7 +143,7 @@ void *zmapNewThread(void *thread_args)
           zMapPrintTimer(NULL, "In thread, calling handler function") ;
 
           /* Call the registered slave handler function. */
-          slave_response = (*(thread_cb->handler_func))(&(thread_cb->slave_data), request, &slave_error) ;
+          slave_response = (*(thread->req_handler_func))(&(thread_cb->slave_data), request, &slave_error) ;
 
           zMapPrintTimer(NULL, "In thread, returned from handler function") ;
 
@@ -353,6 +353,10 @@ void *zmapNewThread(void *thread_args)
   pthread_cleanup_pop(call_clean) ;     /* 1 => always call clean up routine */
 
 
+  // Clean up.
+  g_free(thread_cb) ;
+
+
   return thread_args ;
 }
 
@@ -371,6 +375,8 @@ static void cleanUpThread(void *thread_args)
 {
   zmapThreadCB thread_cb = (zmapThreadCB)thread_args ;
   ZMapThread thread = thread_cb->thread ;
+  ZMapThreadReply reply ;
+  gchar *error_msg = NULL ;
 
   ZMAPTHREAD_DEBUG(thread, "%s", "thread clean-up routine: starting....") ;
 
@@ -387,19 +393,25 @@ static void cleanUpThread(void *thread_args)
       zMapLogCritical("%s", err_msg) ;
 
       g_free(err_msg) ;
+
+      reply = ZMAPTHREAD_REPLY_DIED ;
+
+      if (thread_cb->initial_error)
+        error_msg = g_strdup(thread_cb->initial_error) ;
     }
   else
     {
       ZMAPTHREAD_DEBUG(thread, "%s", "thread clean-up routine: thread has been cancelled...") ;
 
+      reply = ZMAPTHREAD_REPLY_CANCELLED ;
+
       /* If thread was cancelled we need to ensure it is terminated correctly. */
       if (thread_cb->slave_data)
         {
           ZMapThreadReturnCode slave_response ;
-          char *error_msg = NULL ;
 
           /* Call the registered slave handler function. */
-          if ((slave_response = (*(thread_cb->terminate_func))(&(thread_cb->slave_data), &error_msg))
+          if ((slave_response = (*(thread->terminate_handler_func))(&(thread_cb->slave_data), &error_msg))
               != ZMAPTHREAD_RETURNCODE_OK)
             {
               char *err_msg ;
@@ -411,8 +423,6 @@ static void cleanUpThread(void *thread_args)
               ZMAPTHREAD_DEBUG(thread, "%s", err_msg) ;
 
               zMapLogCritical("%s", err_msg) ;
-
-              g_free(error_msg) ;
 
               g_free(err_msg) ;
             }
@@ -427,7 +437,7 @@ static void cleanUpThread(void *thread_args)
       ZMAPTHREAD_DEBUG(thread, "%s", "thread clean-up routine: calling slave terminate function...") ;
 
       /* Call the registered slave handler function. */
-      if ((slave_response = (*(thread_cb->destroy_func))(&(thread_cb->slave_data)))!= ZMAPTHREAD_RETURNCODE_OK)
+      if ((slave_response = (*(thread->destroy_handler_func))(&(thread_cb->slave_data)))!= ZMAPTHREAD_RETURNCODE_OK)
         {
           ZMAPTHREAD_DEBUG(thread, "%s", "thread clean-up routine: Unable to destroy connection") ;
 
@@ -435,7 +445,26 @@ static void cleanUpThread(void *thread_args)
         }
     }
 
-  g_free(thread_cb) ;
+
+
+
+  // Old part needs this otherwise clearing up of threads is not reported properly.
+  if (!(thread_cb->thread->new_interface))
+    {
+      /* And report what happened..... */
+      if (!error_msg)
+        {
+          ZMAPTHREAD_DEBUG(thread, "%s", "thread clean-up routine: no errors") ;
+
+          zmapVarSetValue(&(thread->reply), reply) ;
+        }
+      else
+        {
+          ZMAPTHREAD_DEBUG(thread, "%s", "thread clean-up routine: error: %s") ;
+
+          zmapVarSetValueWithError(&(thread->reply), reply, error_msg) ;
+        }
+    }
 
 
   ZMAPTHREAD_DEBUG(thread, "%s", "thread clean-up routine exiting....") ;

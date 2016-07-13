@@ -29,14 +29,7 @@
 #ifndef ZMAP_SLAVE_P_H
 #define ZMAP_SLAVE_P_H
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-#include <glib.h>
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 #include <ZMap/zmapThreads.hpp>
-#include <ZMap/zmapSlaveHandler.hpp>
 
 
 typedef struct
@@ -69,6 +62,8 @@ typedef struct
 #define ZMAPTHREAD_SLAVECONTEXT "Thread create context failed"
 #define ZMAPTHREAD_SLAVEREQUEST "Thread request failed"
 
+
+void *zmapNewThread(void *thread_args) ;
 
 
 

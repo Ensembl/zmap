@@ -9,9 +9,6 @@ libZMapThreads_la_SOURCES = \
 zmapMaster.cpp \
 zmapSlave.cpp \
 zmapSlave_P.hpp \
-zmapThreads.cpp \
-zmapThreadsUtils.cpp \
-zmapThreads_P.hpp \
 $(NULL)
 
 libZMapThreads_la_LIBADD  = 
