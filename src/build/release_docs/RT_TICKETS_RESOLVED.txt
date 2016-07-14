@@ -1,6 +1,7 @@
 
-Request Tracker Tickets Resolved from 18/05/2016 to 07/07/2016
+Request Tracker Tickets Resolved from 18/05/2016 to 14/07/2016
 
+[tviewsrv get_rt_tickets.sh (12:14:06)]  /software/bin/rt is there !!
 ticket/526970
 id: ticket/526970
 Queue: zmap
