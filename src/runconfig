@@ -181,6 +181,14 @@ zmap_message_out "Running in $INITIAL_DIR on $(hostname) under $(uname)"
 
 
 
+# Is this ever used.....I don't think so....
+if [ -n "$1" ] ; then
+  INSTALL_DIR="--prefix=$1"
+
+  zmap_message_out "Install dir has been set to: $INSTALL_DIR"
+fi
+
+
 zmap_message_out "     CXX_args after cmdline opts set to: $CXX_args"
 zmap_message_out "CXXFLAGS_args after cmdline opts set to: $CXXFLAGS_args"
 zmap_message_out " LDFLAGS_args after cmdline opts set to: $LDFLAGS_args"
@@ -301,10 +309,9 @@ zmap_message_out "PKG_CONFIG_PATH is set to: $PKG_CONFIG_PATH"
 
 zmap_message_out "Running configure as:  " \
     $BASE_DIR/configure \
-    $* \
     $COMMON_CONFIGURE_ARGS \
     $SPECIFIC_CONFIGURE_ARGS \
-    "\"$CC_param\"" "\"$CFLAGS_param\"" "\"$CXX_param\"" "\"$CXXFLAGS_param\"" "\"$LDFLAGS_param\""
+    $CC_param $CFLAGS_param $CXX_param $CXXFLAGS_param $LDFLAGS_param $INSTALL_DIR
 
 zmap_message_out "=========================================================================="
 
@@ -313,10 +320,9 @@ zmap_message_out "==============================================================
 # blanks in CXX_param etc are not lost.
 #
 $BASE_DIR/configure \
-$* \
 $COMMON_CONFIGURE_ARGS \
 $SPECIFIC_CONFIGURE_ARGS \
-"$CC_param" "$CFLAGS_param" "$CXX_param" "$CXXFLAGS_param" "$LDFLAGS_param" || zmap_message_exit "configure script failed."
+"$CC_param" "$CFLAGS_param" "$CXX_param" "$CXXFLAGS_param" "$LDFLAGS_param" "$INSTALL_DIR" || zmap_message_exit "configure script failed."
 
 
 exit 0
