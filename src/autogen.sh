@@ -75,6 +75,39 @@ function fetch_lib
 }
 
 
+# Attempts to check out the relevant commit of a lib for the current zmap commit.
+# Takes a single argument which is the lib subdirectory to cd into (should be the root
+# of the lib's git repo). This should be called from the zmap src directory which contains
+# the lib subdirectory.
+# Only does anything if checkout_old_commits is 'yes' (from -o arg).
+#
+function lib_checkout_old_commit
+{
+  if [ -e "./$1" ] ; then
+    if [[ "$checkout_old_commits" == "yes" ]] ; then
+      zmap_commit=`git log -1 --pretty='format:%h'`
+      zmap_commit_date=`git show --name-only --raw --pretty='format:%ci' | head -n 1`
+      echo "zmap commit '$zmap_commit' has date '$zmap_commit_date'"
+
+      cd ./$1
+
+      lib_commit=`git log -1 --pretty='format:%h' --before="$zmap_commit_date"`
+      lib_commit_date=`git show --name-only --raw --pretty='format:%ci' | head -n 1`
+
+      echo "Latest $1 commit before '$zmap_commit_date' is commit '$lib_commit' with date '$lib_commit_date'"
+
+      if [ -n "$lib_commit" ] ; then
+        echo "Checking out $lib_commit"
+        git checkout $lib_commit
+      else
+        echo "Error finding lib commit !"
+      fi
+
+      cd ..
+    fi
+  fi
+}
+
 # Usage: config_set_ZMAP_ARCH <machine_name>
 # Sets ZMAP_ARCH for the zmap naming conventions for architecture for the given machine 
 # e.g. Linux_i686 (lucid 32-bit), Linux_x86_64 (lucid 64-bit), precise_x86_64 (precise 64-bit) etc.
@@ -120,6 +153,7 @@ run_autoupdate=''					    # don't run autoupdate by default.
 install_missing='-i'
 verbose=''
 version_arg=''
+checkout_old_commits='no'
 
 # Base location of our git repositories
 git_host='git.internal.sanger.ac.uk'
@@ -190,7 +224,7 @@ if [[ -f $ensembl_file ]] ; then
 fi
 
 
-while getopts ":adefghinuvz" opt ; do
+while getopts ":adefghinouvz" opt ; do
     case $opt in
 	a  ) install[$aceconn_key]='yes' ;;
 	d  ) touch $ensembl_file
@@ -198,6 +232,7 @@ while getopts ":adefghinuvz" opt ; do
 	e  ) install[$ensc_core_key]='yes' ;;
 	f  ) force_remake_all='-f' ;;
 	g  ) install[$gb_tools_key]='yes' ;;
+	o  ) checkout_old_commits='yes' ;;
 	h  ) zmap_message_exit "$usage" ;;
 	i  ) install_missing='-i' ;;
 	n  ) install[$gb_tools_key]='no' ;;
@@ -273,6 +308,9 @@ for i in "${!install[@]}"
         if [ -e "./${dir[$i]}/autogen.sh" ] ; then
 
           cur_dir=`pwd`
+
+          lib_checkout_old_commit ${dir[$i]}
+
           cd ./${dir[$i]}
           ./autogen.sh
           cd $cur_dir
@@ -286,6 +324,9 @@ for i in "${!install[@]}"
         if [ -e "./${dir[$i]}/src/autogen.sh" ] ; then
 
           cur_dir=`pwd`
+
+          lib_checkout_old_commit ${dir[$i]}
+
           cd ./${dir[$i]}/src
           ./autogen.sh
           cd $cur_dir
