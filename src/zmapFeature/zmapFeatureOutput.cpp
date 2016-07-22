@@ -126,7 +126,7 @@ gboolean zMapFeatureContextDump(ZMapFeatureContext feature_context,
                                 GIOChannel *file, 
                                 GError **error_out)
 {
-  gboolean result = FALSE;
+  gboolean result = FALSE ;
 
   result = zMapFeatureContextDumpToFile((ZMapFeatureAny)feature_context, 
                                         styles,
@@ -617,7 +617,7 @@ static gboolean simple_context_print_cb(ZMapFeatureAny feature_any,
                                         GError       **error,
                                         gpointer       user_data)
 {
-  gboolean result = TRUE;
+  gboolean result = TRUE ;
 
   switch(feature_any->struct_type)
     {
@@ -642,7 +642,7 @@ static gboolean simple_context_print_cb(ZMapFeatureAny feature_any,
 
         feature_align = (ZMapFeatureAlignment)feature_any;
         g_string_append_printf(dump_string_in_out,
-                               "\tAlignment:\t%s\t%d\t%d\n",
+                               "  Alignment:\t%s\t%d\t%d\n",
                                g_quark_to_string(feature_align->unique_id),
                                feature_align->sequence_span.x1,
                                feature_align->sequence_span.x2);
@@ -654,7 +654,7 @@ static gboolean simple_context_print_cb(ZMapFeatureAny feature_any,
         ZMapFeatureBlock feature_block;
         feature_block = (ZMapFeatureBlock)feature_any;
         g_string_append_printf(dump_string_in_out,
-                               "\tBlock:\t%s\t%d\t%d\n",
+                               "    Block:\t%s\t%d\t%d\n",
                                g_quark_to_string(feature_block->unique_id),
                                feature_block->block_to_sequence.parent.x1,
                                feature_block->block_to_sequence.parent.x2) ;
@@ -665,7 +665,7 @@ static gboolean simple_context_print_cb(ZMapFeatureAny feature_any,
         ZMapFeatureSet feature_set;
         feature_set = (ZMapFeatureSet)feature_any;
         g_string_append_printf(dump_string_in_out,
-                               "\tFeature Set:\t%s\t%s\n",
+                               "      Feature Set:\t%s\t%s\n",
                                g_quark_to_string(feature_set->unique_id),
                                (char *)g_quark_to_string(feature_set->original_id)) ;
         break;
@@ -675,9 +675,7 @@ static gboolean simple_context_print_cb(ZMapFeatureAny feature_any,
         ZMapFeature feature;
         feature = (ZMapFeature)feature_any;
 
-        g_string_append(dump_string_in_out, "\t\t") ;
         dump_string_in_out = feature2Text(dump_string_in_out, feature) ;
-        g_string_append_c(dump_string_in_out, '\n') ;
 
         break;
       }
@@ -698,18 +696,18 @@ GString *feature2Text(GString *feature_str, ZMapFeature feature)
   GString *result = feature_str ;
   char *feature_mode, *style_mode ;
   const char *strand ;
-  const char *indent = "" ;
+  const char *indent = "        " ;
   gsize str_len ;
 
   /* Title */
-  g_string_append_printf(result, "%sZMapFeature %p, \"%s\" (unique id = \"%s\")\n",
+  g_string_append_printf(result, "%sFeature %p, \"%s\" (unique id = \"%s\")\n",
                          indent,
                          feature,
                          (char *)g_quark_to_string(feature->original_id),
                          (char *)g_quark_to_string(feature->unique_id)) ;
 
   /* Common feature parts */
-  indent = "  " ;
+  indent = "          " ;
 
   feature_mode = (char *)zMapStyleMode2ExactStr(feature->mode) ;
   style_mode = (char *)zMapStyleMode2ExactStr(zMapStyleGetMode(*feature->style)) ;
@@ -740,12 +738,12 @@ GString *feature2Text(GString *feature_str, ZMapFeature feature)
 
 
   /* Now print the subpart details. */
-  indent = "    " ;
+  indent = "            " ;
   g_string_append_printf(result, "\n%s%s subparts:\n", indent, zMapStyleMode2ExactStr(feature->mode)) ;
 
   str_len = result->len ;                                   /* Used to detect if there any subparts. */
 
-  indent = "      " ;
+  indent = "              " ;
   switch (feature->mode)
     {
     case ZMAPSTYLE_MODE_BASIC:
@@ -791,6 +789,7 @@ GString *feature2Text(GString *feature_str, ZMapFeature feature)
   if (str_len == result->len)
     g_string_append_printf(result, "%s<None>\n" , indent) ;
 
+  g_string_append_c(result, '\n') ;
 
   return result ;
 }

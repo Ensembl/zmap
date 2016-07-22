@@ -195,7 +195,8 @@ void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feat
       search_data->search_end    = block->block_to_sequence.block.x2 ;
 
       /* Get block coords in screen coords, saving for min & max of spin buttons */
-      zmapWindowCoordPairToDisplay(window, search_data->search_start, search_data->search_end,
+      zmapWindowCoordPairToDisplay(window, window->display_coordinates,
+                                   search_data->search_start, search_data->search_end,
                                    &screen_search_start, &screen_search_end) ;
 
 
@@ -210,7 +211,7 @@ void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feat
                                          &(search_data->screen_search_start),
                                          &(search_data->screen_search_end));
 
-          zmapWindowCoordPairToDisplay(window,
+          zmapWindowCoordPairToDisplay(window, window->display_coordinates,
                                        search_data->screen_search_start,
                                        search_data->screen_search_end,
                                        &(search_data->screen_search_start),
@@ -983,8 +984,9 @@ static void remapCoords(gpointer data, gpointer user_data)
 
   zMapBlock2FeatureCoords(block, &(match_data->ref_start), &(match_data->ref_end)) ;
 
-  zmapWindowCoordPairToDisplay(search_data->window, match_data->ref_start, match_data->ref_end,
-       &(match_data->screen_start), &(match_data->screen_end)) ;
+  zmapWindowCoordPairToDisplay(search_data->window, search_data->window->display_coordinates,
+                               match_data->ref_start, match_data->ref_end,
+                               &(match_data->screen_start), &(match_data->screen_end)) ;
 
   if (search_data->window && zMapWindowGetFlag(search_data->window, ZMAPFLAG_REVCOMPED_FEATURES))
     {

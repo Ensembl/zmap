@@ -416,7 +416,7 @@ static void feature_start_to_value(GValue *value, gpointer feature_data)
       {
       case ZMAPFEATURE_STRUCT_FEATURE:
         if(window)
-          g_value_set_int(value, zmapWindowCoordToDisplay(window, feature->x1));
+          g_value_set_int(value, zmapWindowCoordToDisplay(window, window->display_coordinates, feature->x1));
         else
           g_value_set_int(value, feature->x1);
         break;
@@ -451,7 +451,7 @@ static void feature_end_to_value(GValue *value, gpointer feature_data)
       {
       case ZMAPFEATURE_STRUCT_FEATURE:
         if(window)
-          g_value_set_int(value, zmapWindowCoordToDisplay(window, feature->x2));
+          g_value_set_int(value, zmapWindowCoordToDisplay(window, window->display_coordinates, feature->x2));
         else
           g_value_set_int(value, feature->x2);
         break;

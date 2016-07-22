@@ -162,8 +162,10 @@ char *zmapWindowDNAChoose(ZMapWindow window, FooCanvasItem *feature_item, ZMapWi
   else
     dna_data->revcomp = FALSE ;
 
-  zmapWindowCoordPairToDisplay(window, block_start, block_end, &block_start, &block_end) ;
-  zmapWindowCoordPairToDisplay(window, dna_data->dna_start, dna_data->dna_end,
+  zmapWindowCoordPairToDisplay(window, window->display_coordinates,
+                               block_start, block_end, &block_start, &block_end) ;
+  zmapWindowCoordPairToDisplay(window, window->display_coordinates,
+                               dna_data->dna_start, dna_data->dna_end,
                                &(dna_data->dna_start), &(dna_data->dna_end)) ;
 
 
@@ -386,7 +388,8 @@ static gboolean checkCoords(DNASearchData dna_data)
   block_start = dna_data->block->block_to_sequence.block.x1;
   block_end   = dna_data->block->block_to_sequence.block.x2;
 
-  zmapWindowCoordPairToDisplay(dna_data->window, block_start, block_end, &block_start, &block_end) ;
+  zmapWindowCoordPairToDisplay(dna_data->window, dna_data->window->display_coordinates,
+                               block_start, block_end, &block_start, &block_end) ;
 
   if ((start <= end)
       && ((start >= block_start) && (start <= block_end))
@@ -410,7 +413,7 @@ static void getDNA(DNASearchData dna_data)
       block_start = dna_data->block->block_to_sequence.block.x1 ;
 
       if (dna_data->window->display_forward_coords)
-        block_start = zmapWindowCoordToDisplay(dna_data->window, block_start) ;
+        block_start = zmapWindowCoordToDisplay(dna_data->window, dna_data->window->display_coordinates, block_start) ;
 
       /* Convert to relative coords.... */
       start = dna_data->dna_start ;
@@ -635,7 +638,8 @@ static void updateSpinners(DNASearchData dna_data)
   min_start =  dna_data->block->block_to_sequence.block.x1;
   max_end   =  dna_data->block->block_to_sequence.block.x2;
 
-  zmapWindowCoordPairToDisplay(dna_data->window, min_start, max_end, &min_start, &max_end) ;
+  zmapWindowCoordPairToDisplay(dna_data->window, dna_data->window->display_coordinates,
+                               min_start, max_end, &min_start, &max_end) ;
 
   /* Set the ranges for all spin buttons according to current values, this causes the spinners
    * to reset any wayward values entered by the user. */
