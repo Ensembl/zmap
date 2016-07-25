@@ -132,9 +132,23 @@ void *zmapNewThread(void *thread_args)
 
           continue ;
         }
+      else if (signalled_state == ZMAPTHREAD_REQUEST_TERMINATE)
+        {
+          // We've been told to terminate no matter what the state of our data source....
+
+          // Don't try to clear up the data source.
+          call_clean = 0 ;
+
+          zmapVarSetValue(&(thread->reply), ZMAPTHREAD_REPLY_QUIT) ;
+
+          // Faked this up to ensure we quit the loop.....
+          slave_response = ZMAPTHREAD_RETURNCODE_QUIT ;
+
+        }
       else if (signalled_state == ZMAPTHREAD_REQUEST_EXECUTE)
         {
           char *slave_error = NULL ;
+
           bool found_error = FALSE ;
 
 
@@ -267,10 +281,14 @@ void *zmapNewThread(void *thread_args)
                 g_free(error_msg) ;
                 error_msg = g_strdup_printf("%s", slave_error) ;
 
+
+
+                // THIS SHOULD BE A GOT_DATA.....
                 /* must continue on to getStatus if it's in the step list
                  * zmapServer functions will not run if status is DIED
                  */
                 zmapVarSetValueWithError(&(thread->reply), ZMAPTHREAD_REPLY_DIED, error_msg) ;
+
 
                 g_free(error_msg) ;
                 error_msg = NULL ;
@@ -326,7 +344,7 @@ void *zmapNewThread(void *thread_args)
             }
 
 
-          // for the new slave handling we quit if there was a problem.          
+          // for the new slave handling we quit the loop if there was a problem.          
           if (found_error)
             break ;
         }
@@ -353,7 +371,7 @@ void *zmapNewThread(void *thread_args)
   pthread_cleanup_pop(call_clean) ;     /* 1 => always call clean up routine */
 
 
-  // Clean up.
+  // Clean up......
   g_free(thread_cb) ;
 
 
