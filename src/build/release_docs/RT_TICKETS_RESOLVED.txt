@@ -1,6 +1,7 @@
 
-Request Tracker Tickets Resolved from 18/05/2016 to 05/07/2016
+Request Tracker Tickets Resolved from 18/05/2016 to 21/07/2016
 
+[tviewsrv get_rt_tickets.sh (08:41:28)]  /software/bin/rt is there !!
 ticket/526970
 id: ticket/526970
 Queue: zmap
@@ -28,6 +29,16 @@ Subject: coordinate transforms
 Requestors: edgrif@sanger.ac.uk
 Owner: edgrif
 Resolved: Tue Jun 07 16:42:56 2016
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
+ticket/538309
+id: ticket/538309
+Queue: zmap
+Subject: Ensc-core check
+Requestors: thibaut@ebi.ac.uk
+Owner: gb10
+Resolved: Thu Jul 14 17:26:01 2016
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 

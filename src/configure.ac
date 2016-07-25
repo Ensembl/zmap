@@ -87,7 +87,7 @@ AM_COND_IF([HAVE_MYSQL_LIB], [AC_SUBST([HAVE_MYSQL_LIB], ['mysql lib is availabl
 
 # Also need to check for headers - need mysql include directory in cflags or AC_CHECK_HEADERS
 # fails
-AM_COND_IF([HAVE_MYSQL_LIB], [[ CFLAGS="$CFLAGS $MYSQL_CFLAGS" ]])
+AM_COND_IF([HAVE_MYSQL_LIB], [[ CFLAGS="$MYSQL_CFLAGS $CFLAGS" ]])
 AC_CHECK_HEADERS([mysql.h], [HAVE_MYSQL_HEADER=1])
 
 AM_CONDITIONAL([HAVE_MYSQL], [ test -n "$HAVE_MYSQL_HEADER" && test -n "$HAVE_MYSQL_LIB" ])
