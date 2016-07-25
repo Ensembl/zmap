@@ -46,25 +46,25 @@ extern gboolean zmap_thread_debug_G ;
 
 
 /* Requests to a slave thread. */
-#define ZMAP_THREAD_REQUEST_LIST(_)             \
-_(ZMAPTHREAD_REQUEST_INVALID,         , "invalid",    "invalid request. ", "")   \
-_(ZMAPTHREAD_REQUEST_WAIT,            , "wait",       "Wait for next request. ", "")	\
-_(ZMAPTHREAD_REQUEST_TIMED_OUT,       , "timed_out",  "You have timed out. ", "")	\
-_(ZMAPTHREAD_REQUEST_EXECUTE,         , "execute",    "Execute request. ", "")
+#define ZMAP_THREAD_REQUEST_LIST(_)                                             \
+_(ZMAPTHREAD_REQUEST_INVALID,    , "invalid",    "invalid request. ",       "") \
+_(ZMAPTHREAD_REQUEST_WAIT,       , "wait",       "Wait for next request. ", "")	\
+_(ZMAPTHREAD_REQUEST_TIMED_OUT,  , "timed_out",  "You have timed out. ",    "")	\
+_(ZMAPTHREAD_REQUEST_EXECUTE,    , "execute",    "Execute request. ",       "") \
+_(ZMAPTHREAD_REQUEST_TERMINATE,  , "terminate",  "Terminate and return.",   "")
 
 ZMAP_DEFINE_ENUM(ZMapThreadRequest, ZMAP_THREAD_REQUEST_LIST) ;
 
 
 /* Replies from a slave thread. */
 #define ZMAP_THREAD_REPLY_LIST(_)             \
-_(ZMAPTHREAD_REPLY_INVALID,           , "invalid",          "Invalid reply. ", "") \
-_(ZMAPTHREAD_REPLY_WAIT,              , "waiting",          "Thread waiting. ", "") \
-_(ZMAPTHREAD_REPLY_GOTDATA,           , "got_data",         "Thread returning data. ", "") \
-_(ZMAPTHREAD_REPLY_REQERROR,          , "request_error",    "Thread received bad request. ", "") \
-_(ZMAPTHREAD_REPLY_SOURCEEMPTY,       , "source_empty",     "Thread processed empty source. ", "") \
-_(ZMAPTHREAD_REPLY_DIED,              , "have_died",        "Thread has died unexpectedly. ", "") \
-_(ZMAPTHREAD_REPLY_CANCELLED,         , "thread_cancelled", "Thread has been cancelled. ", "") \
-_(ZMAPTHREAD_REPLY_QUIT,              , "quit",             "Thread has terminated normally. ", "")
+_(ZMAPTHREAD_REPLY_INVALID,    , "invalid",          "Invalid reply. ", "") \
+_(ZMAPTHREAD_REPLY_WAIT,       , "waiting",          "Thread waiting. ", "") \
+_(ZMAPTHREAD_REPLY_GOTDATA,    , "got_data",         "Thread returning data. ", "") \
+_(ZMAPTHREAD_REPLY_REQERROR,   , "request_error",    "Thread received bad request. ",    "") \
+_(ZMAPTHREAD_REPLY_DIED,       , "have_died",        "Thread has died unexpectedly. ",   "") \
+_(ZMAPTHREAD_REPLY_CANCELLED,  , "thread_cancelled", "Thread has been cancelled. ",      "") \
+_(ZMAPTHREAD_REPLY_QUIT,       , "quit",             "Thread has terminated normally. ", "")
 
 ZMAP_DEFINE_ENUM(ZMapThreadReply, ZMAP_THREAD_REPLY_LIST) ;
 
