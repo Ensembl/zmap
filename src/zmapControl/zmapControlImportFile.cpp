@@ -1461,13 +1461,12 @@ static void newImportFile(MainFrame main_frame)
                                                                           url, config_file, version,
                                                                           context, &(context_map->styles)) ;
 
-          if (!(my_feature_request->SendRequest(newCallBackFunc, my_feature_request)))
+          if (!(my_feature_request->SendRequest(newCallBackFunc, view)))
             {
               // Really need to be able to get some error state here....should throw from the obj ?
 
               delete my_feature_request ;
             }
-
 
 
           // Try a sequence request
@@ -1514,6 +1513,7 @@ static void newImportFile(MainFrame main_frame)
 
 static void newCallBackFunc(DataSourceFeatures *features_source, void *user_data)
 {
+  ZMapView view = (ZMapView)user_data ;
   ZMapFeatureContext context ;
   ZMapStyleTree *styles ;
   int error_rc = 0 ;
@@ -1525,9 +1525,44 @@ static void newCallBackFunc(DataSourceFeatures *features_source, void *user_data
   // Get the reply data......
   if ((reply = features_source->GetReply(&context, &styles)) == DataSourceReplyType::GOT_DATA)
     {
-      GError *error = NULL ;
 
-      zMapFeatureDumpStdOutFeatures(context, styles, &error) ;
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      // GError *error = NULL ;
+      ZMapFeatureContextMergeStats merge_stats = NULL ;
+      bool acedb_source = false ;
+      GList *masked = NULL ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+      // zMapFeatureDumpStdOutFeatures(context, styles, &error) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      ZMapFeatureContextMergeCode merge_results = ZMAPFEATURE_CONTEXT_ERROR ;
+              
+      merge_results = zmapJustMergeContext(view,
+                                           &context, &merge_stats,
+                                           &masked, acedb_source, TRUE) ;
+
+      // Do something with merge stats ??
+
+      g_free(merge_stats) ;
+
+      if (merge_results == ZMAPFEATURE_CONTEXT_OK)
+        {
+          diff_context = context ;
+
+          zmapJustDrawContext(view, diff_context, masked, NULL, NULL) ;
+
+          result = TRUE ;
+        }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+      ZMapFeatureContextMergeCode merge_results ;
+
+      merge_results = zMapViewContextMerge(view, context) ;
+
     }
   else if (reply == DataSourceReplyType::GOT_ERROR)
     {
