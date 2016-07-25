@@ -194,7 +194,11 @@ char *zMapViewGetLoadStatusStr(ZMapView view,
                                char **loading_sources_out, char **empty_sources_out, char **failed_sources_out) ;
 GtkWidget *zMapViewGetXremote(ZMapView view) ;
 gboolean zMapViewGetFeaturesSpan(ZMapView zmap_view, int *start, int *end) ;
+
 ZMapFeatureContext zMapViewCreateContext(ZMapView view, GList *feature_set_names, ZMapFeatureSet feature_set) ;
+ZMapFeatureContextMergeCode zMapViewContextMerge(ZMapView view, ZMapFeatureContext new_context) ;
+
+
 ZMapFeatureContextMap zMapViewGetContextMap(ZMapView view) ;
 ZMapWindow zMapViewGetWindow(ZMapViewWindow view_window) ;
 ZMapFeatureContext zMapViewGetContext(ZMapViewWindow view_window) ;
