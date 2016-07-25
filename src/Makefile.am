@@ -377,7 +377,7 @@ maintainer-clean-local:
 	@echo 'maintainer-clean-local: Finished removing all external library files....'
 
 
-
+# not needed now ?
 ZMAP_BUILD_FILES = $(top_builddir)/zmapApp/*.o $(top_builddir)/zmapAppServices/*.o $(top_builddir)/zmapConfig/*.o \
 $(top_builddir)/zmapControl/*.o $(top_builddir)/zmapDataSource/*.o $(top_builddir)/zmapDraw/*.o \
 $(top_builddir)/zmapFeature/*.o \
@@ -386,14 +386,11 @@ $(top_builddir)/zmapServer/*.o $(top_builddir)/zmapThreadsLib/*.o $(top_builddir
 $(top_builddir)/zmapView/*.o $(top_builddir)/zmapWindow/*.o $(top_builddir)/zmapXML/*.o
 
 zmap-clean:
-	@echo 'clean-zmap: cleaning up all generated zmap files....'
-	rm -f $(top_builddir)/.libs/libZMap*.a
-	rm -f $(top_builddir)/libZMap*.la
-	rm -f $(top_builddir)/zmap $(top_builddir)/remotecontrol
-	rm -f $(top_builddir)/zmap-zmapAppmain_c.o $(top_builddir)/remotecontrol-remotecontroltest.o $(top_builddir)/zmap.pc
-	rm -f $(top_builddir)/zmap*/lib* rm -rf $(top_builddir)/zmap*/.libs
-	rm -rf $(ZMAP_BUILD_FILES)
-	@echo 'clean-zmap: Finished cleaning up all generated zmap files.'
+	@echo 'clean-zmap: starting cleaning up all zmap build files....'
+	@for i in `ls -d ./zmap*` ; \
+	do { if [ -d $i ] ; then ( cd $i ; echo make clean $i ) fi ; } \
+	done
+	@echo 'clean-zmap: finished cleaning up all zmap build files.'
 
 
 
