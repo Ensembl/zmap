@@ -102,6 +102,11 @@ static void invoke_merge_in_names(gpointer list_data, gpointer user_data) ;
 ZMAP_ENUM_AS_EXACT_STRING_FUNC(zMapViewThreadStatus2ExactStr, ZMapViewThreadStatus, ZMAP_VIEW_THREAD_STATE_LIST) ;
 
 
+
+//  Some context functions....
+//
+
+
 // Simply cover function for internal version.
 ZMapFeatureContext zMapViewCreateContext(ZMapView view, GList *feature_set_names, ZMapFeatureSet feature_set)
 {
@@ -112,6 +117,44 @@ ZMapFeatureContext zMapViewCreateContext(ZMapView view, GList *feature_set_names
   return context ;
 }
 
+
+
+// Do a merge and draw of a new context into an existing one in view.
+ZMapFeatureContextMergeCode zMapViewContextMerge(ZMapView view, ZMapFeatureContext new_context)
+{
+  ZMapFeatureContextMergeCode result = ZMAPFEATURE_CONTEXT_ERROR ;
+  ZMapFeatureContextMergeStats merge_stats = NULL ;
+  bool acedb_source = false ;
+  GList *masked = NULL ;
+
+
+  result = zmapJustMergeContext(view,
+                                &new_context, &merge_stats,
+                                &masked, acedb_source, TRUE) ;
+
+  // do something with merge stats ?
+  g_free(merge_stats) ;
+
+
+  if (result == ZMAPFEATURE_CONTEXT_OK)
+    {
+      // why no return code ??
+      zmapJustDrawContext(view, new_context, masked, NULL, NULL) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      result = TRUE ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+    }
+
+  return result ;
+}
+
+
+
+// Some utilities for views, visibility etc.
+// 
 
 
 gpointer zMapViewFindView(ZMapView view_in, gpointer view_id)
