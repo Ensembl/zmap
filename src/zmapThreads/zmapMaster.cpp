@@ -188,6 +188,24 @@ void zMapThreadPollSlaveStop(ZMapThreadPollSlaveCallbackData cb_data)
 }
 
 
+// AMAZINGLY THIS WAS MISSING....BUT IS NEEDED, WE DON'T WANT TO JUST CANCEL OUT OF A THREAD....
+//
+// Stop the thread and destroy it.
+//
+void zMapThreadStop(ZMapThread thread)
+{
+
+
+
+
+
+
+
+  return ;
+}
+
+
+
 
 
 
