@@ -403,11 +403,7 @@ gboolean zMapFeatureAddDescription(ZMapFeature feature, char *data )
 {
   gboolean result = FALSE ;
 
-  // I'VE SEEN LARGE NUMBERS OF THESE ASSERTS FAILING IN THE OTTER LOGS, BUT IT'S NOT OBVIOUS TO
-  //  ME FROM TRACING THE CODE HOW THIS IS HAPPENING SO I'M ADDING SOME EXTRA DEBUG INFO AND
-  //  THEN WE CAN TRACE IT THROUGH....
-  //  zMapReturnValIfFail(feature && data && *data, result ) ;
-  zMapReturnValIfFail(feature, FALSE) ;
+  zMapReturnValIfFail(feature && data && *data, result ) ;
 
   if (!data || !(*data))
     {
