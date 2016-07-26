@@ -403,7 +403,25 @@ gboolean zMapFeatureAddDescription(ZMapFeature feature, char *data )
 {
   gboolean result = FALSE ;
 
-  zMapReturnValIfFail(feature && data && *data, result ) ;
+  // I'VE SEEN LARGE NUMBERS OF THESE ASSERTS FAILING IN THE OTTER LOGS, BUT IT'S NOT OBVIOUS TO
+  //  ME FROM TRACING THE CODE HOW THIS IS HAPPENING SO I'M ADDING SOME EXTRA DEBUG INFO AND
+  //  THEN WE CAN TRACE IT THROUGH....
+  //  zMapReturnValIfFail(feature && data && *data, result ) ;
+  zMapReturnValIfFail(feature, FALSE) ;
+
+  if (!data || !(*data))
+    {
+      char *feature_name ;
+      char *featureset_name ;
+
+      feature_name = zMapFeatureName((ZMapFeatureAny)feature) ;
+      featureset_name = zMapFeatureName(feature->parent) ;
+
+      zMapLogWarning("zMapFeatureAddDescription() failed, featureset: \"%s\", feature: \"%s\" with %s string",
+                     featureset_name, feature_name,
+                     (!data ? "NULL description" : "empty description")) ;
+      return FALSE ;
+    }
 
   if (feature->description)
     g_free(feature->description) ;
