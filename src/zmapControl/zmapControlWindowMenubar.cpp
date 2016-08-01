@@ -655,7 +655,7 @@ static void copyPasteCB(gpointer cb_data, guint callback_action, GtkWidget *w)
         if (action == EDIT_COPY_CHR)
           display_style.paste_style = ZMAPWINDOW_PASTE_FORMAT_BROWSER_CHR ;
 
-        if ((selection_text = zMapWindowGetSelectionText(curr_window, &display_style)))
+        if ((selection_text = zMapWindowGetSelectionText(curr_window, &display_style, TRUE)))
           {
             /* Set on both common X clipboards. */
             zMapGUISetClipboard(zmap->toplevel, GDK_SELECTION_PRIMARY, selection_text) ;

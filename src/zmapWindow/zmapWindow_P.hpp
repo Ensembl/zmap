@@ -1274,8 +1274,8 @@ gboolean zmapWindowZoomFromClipboard(ZMapWindow window, double curr_world_x, dou
 char *zmapWindowMakeColumnSelectionText(ZMapWindow window, double wx, double wy, ZMapWindowDisplayStyle display_style,
                                         ZMapWindowContainerFeatureSet selected_column) ;
 char *zmapWindowMakeFeatureSelectionTextFromFeature(ZMapWindow window,
-                                                    ZMapWindowDisplayStyle display_style, ZMapFeature feature) ;
-char *zmapWindowMakeFeatureSelectionTextFromSelection(ZMapWindow window, ZMapWindowDisplayStyle display_style) ;
+                                                    ZMapWindowDisplayStyle display_style, ZMapFeature feature, const gboolean expand_children = FALSE) ;
+char *zmapWindowMakeFeatureSelectionTextFromSelection(ZMapWindow window, ZMapWindowDisplayStyle display_style, const gboolean expand_children = FALSE) ;
 
 void zmapWindowGetMaxBoundsItems(ZMapWindow window, GList *items,
 				 double *rootx1, double *rooty1, double *rootx2, double *rooty2) ;

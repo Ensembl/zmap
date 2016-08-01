@@ -89,12 +89,12 @@ gboolean zMapWindowZoomFromClipboard(ZMapWindow window)
  * then returns the name of any selected column, failing that returns the empty string.
  *
  * ALL returned strings should be g_free'd when no longer wanted. */
-char *zMapWindowGetSelectionText(ZMapWindow window, ZMapWindowDisplayStyle display_style)
+char *zMapWindowGetSelectionText(ZMapWindow window, ZMapWindowDisplayStyle display_style, const gboolean expand_children)
 {
   char *selection_txt = NULL ;
 
   /* find out if there is a feature selected or column selected and return their data. */
-  if (!(selection_txt = zmapWindowMakeFeatureSelectionTextFromSelection(window, display_style))
+  if (!(selection_txt = zmapWindowMakeFeatureSelectionTextFromSelection(window, display_style, expand_children))
       && !(selection_txt = zmapWindowMakeColumnSelectionText(window, 0, 0, display_style, NULL)))
     selection_txt = g_strdup("") ;
 
@@ -256,13 +256,16 @@ char *zmapWindowMakeColumnSelectionText(ZMapWindow window, double wx, double wy,
 }
 
 
-static void makeFeatureSelectionTextFromFeature(ZMapWindow window,
-                                                ZMapWindowDisplayStyle display_style,
-                                                GArray *feature_coords,
-                                                ZMapFeature feature,
-                                                ZMapFeatureSubPart sub_part,
-                                                const gboolean support_mark)
+static void doMakeFeatureSelectionTextFromFeature(ZMapWindow window,
+                                                  ZMapWindowDisplayStyle display_style,
+                                                  GArray *feature_coords,
+                                                  ZMapFeature feature,
+                                                  ZMapFeatureSubPart sub_part,
+                                                  const gboolean support_mark,
+                                                  const gboolean expand_children)
 {
+  zMapReturnIfFail(feature) ;
+
   if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
     {
       gboolean revcomped = zMapWindowGetFlag(window, ZMAPFLAG_REVCOMPED_FEATURES) ;
@@ -298,13 +301,44 @@ static void makeFeatureSelectionTextFromFeature(ZMapWindow window,
 }
 
 
+static void makeFeatureSelectionTextFromFeature(ZMapWindow window,
+                                                ZMapWindowDisplayStyle display_style,
+                                                GArray *feature_coords,
+                                                ZMapFeature feature,
+                                                ZMapFeatureSubPart sub_part,
+                                                const gboolean support_mark,
+                                                const gboolean expand_children)
+{
+  zMapReturnIfFail(feature) ;
+
+  if (expand_children && feature->children)
+    {
+      for (GList *item = feature->children; item; item = item->next)
+        {
+          ZMapFeature child = (ZMapFeature)(item->data) ;
+
+          doMakeFeatureSelectionTextFromFeature(window, display_style, feature_coords,
+                                                child, sub_part, FALSE, FALSE) ;
+        }
+    }
+  else
+    {
+      doMakeFeatureSelectionTextFromFeature(window, display_style, feature_coords,
+                                            feature, sub_part, support_mark, FALSE) ;
+    }
+}
+
+
+
 /* Makes text for posting to clipboard from the supplied feature.
  *
  * ZMapWindowPasteFeatureType of display_style cannot be ZMAPWINDOW_PASTE_TYPE_SELECTED.
  *
  */
 char *zmapWindowMakeFeatureSelectionTextFromFeature(ZMapWindow window,
-                                                    ZMapWindowDisplayStyle display_style, ZMapFeature feature)
+                                                    ZMapWindowDisplayStyle display_style, 
+                                                    ZMapFeature feature,
+                                                    const gboolean expand_children)
 {
   char *selection = NULL ;
   GString *text ;
@@ -317,7 +351,7 @@ char *zmapWindowMakeFeatureSelectionTextFromFeature(ZMapWindow window,
   text = g_string_sized_new(512) ;
   feature_coords = g_array_new(FALSE, FALSE, sizeof(FeatureCoordStruct)) ;
 
-  makeFeatureSelectionTextFromFeature(window, display_style, feature_coords, feature, NULL, TRUE) ;
+  makeFeatureSelectionTextFromFeature(window, display_style, feature_coords, feature, NULL, TRUE, expand_children) ;
 
   makeSelectionString(window, display_style, text, feature_coords) ;
 
@@ -341,7 +375,8 @@ static void makeFeatureSelectionTextFromSelectionPart(ZMapWindow window,
                                                       GList *selected,
                                                       const gboolean single_in,
                                                       ZMapWindowDisplayStyle display_style,
-                                                      GArray *feature_coords)
+                                                      GArray *feature_coords,
+                                                      const gboolean expand_children)
 {
   ZMapWindowFocusItem focus_item = NULL ;
   ZMapFeature feature = NULL ;
@@ -368,7 +403,7 @@ static void makeFeatureSelectionTextFromSelectionPart(ZMapWindow window,
       display_style->paste_feature = ZMAPWINDOW_PASTE_TYPE_EXTENT ;
     }
 
-  makeFeatureSelectionTextFromFeature(window, display_style, feature_coords, feature, sub_part, single) ;
+  makeFeatureSelectionTextFromFeature(window, display_style, feature_coords, feature, sub_part, single, expand_children) ;
 }
 
 
@@ -377,7 +412,9 @@ static void makeFeatureSelectionTextFromSelectionPart(ZMapWindow window,
  *
  * ZMapWindowPasteFeatureType of display_style must be ZMAPWINDOW_PASTE_TYPE_SELECTED.
  */
-char *zmapWindowMakeFeatureSelectionTextFromSelection(ZMapWindow window, ZMapWindowDisplayStyle display_style)
+char *zmapWindowMakeFeatureSelectionTextFromSelection(ZMapWindow window,
+                                                      ZMapWindowDisplayStyle display_style,
+                                                      const gboolean expand_children)
 {
   char *selection = NULL ;
   GList *selected ;
@@ -402,7 +439,7 @@ char *zmapWindowMakeFeatureSelectionTextFromSelection(ZMapWindow window, ZMapWin
 
       while (selected)
         {
-          makeFeatureSelectionTextFromSelectionPart(window, selected, single, display_style, feature_coords) ;
+          makeFeatureSelectionTextFromSelectionPart(window, selected, single, display_style, feature_coords, expand_children) ;
           selected = selected->next ;
         }
 
