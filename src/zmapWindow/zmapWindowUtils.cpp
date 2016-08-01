@@ -78,7 +78,7 @@ int zmapWindowCoordToDisplay(ZMapWindow window, ZMapWindowDisplayCoordinates dis
 
   if (zMapWindowGetFlag(window, ZMAPFLAG_REVCOMPED_FEATURES))
     {
-      if (window->display_coordinates == ZMAP_WINDOW_DISPLAY_SLICE)
+      if (display_mode == ZMAP_WINDOW_DISPLAY_SLICE)
         {
           coord -= window->sequence->end - window->sequence->start + 2 ;
         }
