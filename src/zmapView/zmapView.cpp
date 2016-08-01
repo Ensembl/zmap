@@ -2053,15 +2053,18 @@ static void setUpServerConnectionByScheme(ZMapView zmap_view,
 {
   ZMapURL zmap_url = url_parse(current_server->url, NULL);
   terminate = FALSE ;
+  bool done_server = FALSE ;
 
   if (zmap_url)
     {
       if (zmap_url->scheme == SCHEME_PIPE)
         {
           terminate = TRUE ;
+
         }
       else if (zmap_url->scheme == SCHEME_TRACKHUB)
         {
+          done_server = TRUE ; // special treatment for adding trackhub server to list
           const char *trackdb_id = zmap_url->file ;
 
           if (trackdb_id)
@@ -2095,15 +2098,16 @@ static void setUpServerConnectionByScheme(ZMapView zmap_view,
                           "Error getting trackDb from URL: %s", current_server->url) ;
             }
         }
-      else
-        {
-          servers_inout.push_back(current_server) ;
-        }
     }
   else
     {
       g_set_error(error, ZMAP_VIEW_ERROR, ZMAPVIEW_ERROR_CONNECT,
                   "Error parsing server URL: %s", current_server->url) ;
+    }
+
+  if (!done_server)
+    {
+      servers_inout.push_back(current_server) ;
     }
 }
 
