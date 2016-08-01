@@ -256,6 +256,48 @@ char *zmapWindowMakeColumnSelectionText(ZMapWindow window, double wx, double wy,
 }
 
 
+static void makeFeatureSelectionTextFromFeature(ZMapWindow window,
+                                                ZMapWindowDisplayStyle display_style,
+                                                GArray *feature_coords,
+                                                ZMapFeature feature,
+                                                ZMapFeatureSubPart sub_part,
+                                                const gboolean support_mark)
+{
+  if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
+    {
+      gboolean revcomped = zMapWindowGetFlag(window, ZMAPFLAG_REVCOMPED_FEATURES) ;
+
+      int mark_x = 0, mark_y = 0 ;
+      gboolean use_mark = FALSE ;
+
+      /* Not supporting mark for multiple features at the moment.... */
+      if (support_mark)
+        {
+          /* If the mark is set then any exons not wholly inside the mark are not added
+           * to the selection text. */
+          if (zmapWindowMarkIsSet(window->mark)
+              && zmapWindowMarkGetSequenceRange(window->mark, &mark_x, &mark_y))
+            {
+              if (mark_x && mark_y
+                  && ((mark_x >= feature->x1 && mark_x <= feature->x2)
+                      || (mark_y >= feature->x1 && mark_y <= feature->x2)))
+                {
+                  use_mark = TRUE ;
+                }
+            }
+        }
+
+      setUpFeatureTranscript(revcomped, display_style,
+                             use_mark, mark_x, mark_y,
+                             feature, sub_part, feature_coords) ;
+    }
+  else
+    {
+      setUpFeatureOther(display_style, feature, feature_coords) ;
+    }
+}
+
+
 /* Makes text for posting to clipboard from the supplied feature.
  *
  * ZMapWindowPasteFeatureType of display_style cannot be ZMAPWINDOW_PASTE_TYPE_SELECTED.
@@ -268,41 +310,16 @@ char *zmapWindowMakeFeatureSelectionTextFromFeature(ZMapWindow window,
   GString *text ;
   gboolean free_text ;
   GArray *feature_coords ;
-  gboolean revcomped ;
 
   zMapReturnValIfFailSafe((window && display_style->paste_feature != ZMAPWINDOW_PASTE_TYPE_SELECTED && feature),
                           NULL) ;
 
   text = g_string_sized_new(512) ;
   feature_coords = g_array_new(FALSE, FALSE, sizeof(FeatureCoordStruct)) ;
-  revcomped = zMapWindowGetFlag(window, ZMAPFLAG_REVCOMPED_FEATURES) ;
 
-  if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
-    {
-      int mark_x = 0, mark_y = 0 ;
-      gboolean use_mark = FALSE ;
+  makeFeatureSelectionTextFromFeature(window, display_style, feature_coords, feature, NULL, TRUE) ;
 
-      if (zmapWindowMarkIsSet(window->mark)
-          && zmapWindowMarkGetSequenceRange(window->mark, &mark_x, &mark_y))
-        {
-          if (mark_x && mark_y
-              && ((mark_x >= feature->x1 && mark_x <= feature->x2)
-                  || (mark_y >= feature->x1 && mark_y <= feature->x2)))
-          use_mark = TRUE ;
-        }
-
-      setUpFeatureTranscript(revcomped, display_style,
-                             use_mark, mark_x, mark_y,
-                             feature, NULL, feature_coords) ;
-
-      makeSelectionString(window, display_style, text, feature_coords) ;
-    }
-  else
-    {
-      setUpFeatureOther(display_style, feature, feature_coords) ;
-
-      makeSelectionString(window, display_style, text, feature_coords) ;
-    }
+  makeSelectionString(window, display_style, text, feature_coords) ;
 
   g_array_free(feature_coords, TRUE) ;
 
@@ -317,137 +334,79 @@ char *zmapWindowMakeFeatureSelectionTextFromFeature(ZMapWindow window,
 }
 
 
+/* Called by zmapWindowMakeFeatureSelectionTextFromSelection for each selected feature. 
+ * single_in is true if there was only 1 item in the original selection list. Note however
+ * that if this is a composite feature then it will be treated like a multiple selection. */
+static void makeFeatureSelectionTextFromSelectionPart(ZMapWindow window, 
+                                                      GList *selected,
+                                                      const gboolean single_in,
+                                                      ZMapWindowDisplayStyle display_style,
+                                                      GArray *feature_coords)
+{
+  ZMapWindowFocusItem focus_item = NULL ;
+  ZMapFeature feature = NULL ;
+  ZMapFeatureSubPart sub_part = NULL ;
+  gboolean single = single_in ;
+
+  focus_item = (ZMapWindowFocusItem)selected->data ;
+  feature = focus_item->feature ;
+
+  if (focus_item->sub_part.subpart != ZMAPFEATURE_SUBPART_INVALID)
+    sub_part = &(focus_item->sub_part) ;
+
+  if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
+    {
+      if (sub_part)
+        display_style->paste_feature = ZMAPWINDOW_PASTE_TYPE_SUBPART ;
+      else if (single)
+        display_style->paste_feature = ZMAPWINDOW_PASTE_TYPE_ALLSUBPARTS ;
+      else
+        display_style->paste_feature = ZMAPWINDOW_PASTE_TYPE_EXTENT ;
+    }
+  else
+    {
+      display_style->paste_feature = ZMAPWINDOW_PASTE_TYPE_EXTENT ;
+    }
+
+  makeFeatureSelectionTextFromFeature(window, display_style, feature_coords, feature, sub_part, single) ;
+}
+
+
 /* Makes text for posting to clipboard for any selected features, returns NULL
  * if there are none.
  *
  * ZMapWindowPasteFeatureType of display_style must be ZMAPWINDOW_PASTE_TYPE_SELECTED.
  */
-char *zmapWindowMakeFeatureSelectionTextFromSelection(ZMapWindow window, ZMapWindowDisplayStyle display_style_in)
+char *zmapWindowMakeFeatureSelectionTextFromSelection(ZMapWindow window, ZMapWindowDisplayStyle display_style)
 {
   char *selection = NULL ;
   GList *selected ;
   GString *text ;
   gboolean free_text ;
   GArray *feature_coords ;
-  gboolean revcomped ;
-  ZMapWindowDisplayStyleStruct display_style = *(display_style_in) ;
+
+  text = g_string_sized_new(512) ;
 
 
   /*zMapReturnValIfFailSafe((window && display_style_in->paste_feature == ZMAPWINDOW_PASTE_TYPE_SELECTED), NULL) ;*/
-
-  text = g_string_sized_new(512) ;
   feature_coords = g_array_new(FALSE, FALSE, sizeof(FeatureCoordStruct)) ;
-  revcomped = zMapWindowGetFlag(window, ZMAPFLAG_REVCOMPED_FEATURES) ;
 
   /* If there are any focus items then make a selection string of their coords. */
   if ((selected = zmapWindowFocusGetFocusItems(window->focus)))
     {
       /* Construction of the string is different according whether a single selection or
-       * multiple selections were made. */
+       * multiple selections were made. Note that even if we only have 1 item in the list
+       * here the feature may have children and this will be treated like a multiple
+       * selection in the function that does the work. */
+      const gboolean single = g_list_length(selected) == 1 ;
 
-      if (g_list_length(selected) == 1)
+      while (selected)
         {
-          ZMapWindowFocusItem focus_item ;
-          FooCanvasItem *item ;
-          ZMapFeature feature ;
-          ZMapFeatureSubPart sub_part = NULL ;
-          char *name ;
-
-          focus_item = (ZMapWindowFocusItem)selected->data ;
-          item = FOO_CANVAS_ITEM(focus_item->item) ;
-          feature = focus_item->feature ;
-
-          if (focus_item->sub_part.subpart != ZMAPFEATURE_SUBPART_INVALID)
-            sub_part = &(focus_item->sub_part) ;
-
-          name = (char *)g_quark_to_string(feature->original_id) ;
-
-          if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
-            {
-              int mark_x = 0, mark_y = 0 ;
-              gboolean use_mark = FALSE ;
-
-              if (sub_part)
-                display_style.paste_feature = ZMAPWINDOW_PASTE_TYPE_SUBPART ;
-              else
-                display_style.paste_feature = ZMAPWINDOW_PASTE_TYPE_ALLSUBPARTS ;
-
-              /* If the mark is set then any exons not wholly inside the mark are not added
-               * to the selection text. */
-              if (zmapWindowMarkIsSet(window->mark)
-                  && zmapWindowMarkGetSequenceRange(window->mark, &mark_x, &mark_y))
-                {
-                  if (mark_x && mark_y
-                      && ((mark_x >= feature->x1 && mark_x <= feature->x2)
-                          || (mark_y >= feature->x1 && mark_y <= feature->x2)))
-                    use_mark = TRUE ;
-                }
-
-              setUpFeatureTranscript(revcomped, &display_style,
-                                     use_mark, mark_x, mark_y,
-                                     feature, sub_part, feature_coords) ;
-
-              makeSelectionString(window, &display_style, text, feature_coords) ;
-            }
-          else
-            {
-              display_style.paste_feature = ZMAPWINDOW_PASTE_TYPE_EXTENT ;
-
-              setUpFeatureOther(&display_style, feature, feature_coords) ;
-
-              makeSelectionString(window, &display_style, text, feature_coords) ;
-            }
-        }
-      else
-        {
-          while (selected)
-            {
-              ZMapWindowFocusItem focus_item ;
-              FooCanvasItem *item ;
-              ZMapFeature feature ;
-              ZMapFeatureSubPart sub_part = NULL ;
-              char *name ;
-
-              /* Not supporting mark for multiple features at the moment.... */
-              int mark_x = 0, mark_y = 0 ;
-              gboolean use_mark = FALSE ;
-
-              focus_item = (ZMapWindowFocusItem)selected->data ;
-
-              item = FOO_CANVAS_ITEM(focus_item->item) ;
-
-              feature = focus_item->feature ;
-
-              if (focus_item->sub_part.subpart != ZMAPFEATURE_SUBPART_INVALID)
-                sub_part = &(focus_item->sub_part) ;
-
-              name = (char *)g_quark_to_string(feature->original_id) ;
-
-              /* For transcript subparts put the subpart in the selection, not the whole transcript. */
-              if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
-                {
-                  if (sub_part)
-                    display_style.paste_feature = ZMAPWINDOW_PASTE_TYPE_SUBPART ;
-                  else
-                    display_style.paste_feature = ZMAPWINDOW_PASTE_TYPE_EXTENT ;
-
-                  setUpFeatureTranscript(revcomped, &display_style,
-                                         use_mark, mark_x, mark_y,
-                                         feature, sub_part, feature_coords) ;
-                }
-              else
-                {
-                  display_style.paste_feature = ZMAPWINDOW_PASTE_TYPE_EXTENT ;
-
-                  setUpFeatureOther(&display_style, feature, feature_coords) ;
-                }
-
-              selected = selected->next ;
-            }
-
-          makeSelectionString(window, &display_style, text, feature_coords) ;
+          makeFeatureSelectionTextFromSelectionPart(window, selected, single, display_style, feature_coords) ;
+          selected = selected->next ;
         }
 
+      makeSelectionString(window, display_style, text, feature_coords) ;
 
       selected = g_list_first(selected) ;
       g_list_free(selected) ;
