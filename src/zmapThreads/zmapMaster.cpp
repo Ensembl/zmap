@@ -35,13 +35,21 @@
 
 #include <glib.h>
 #include <gtk/gtk.h>
+#include <string>
 
-#include <ZMap/zmapThreadsLib.hpp>
+#include <ZMap/zmapThreads.hpp>
 #include <ZMap/zmapUtilsDebug.hpp>
 
 #include <zmapSlave_P.hpp>
 
 
+using namespace std ;
+
+
+
+
+namespace ZMapThreadSource
+{
 
 
 
@@ -91,22 +99,8 @@
 
 
 
-typedef unsigned int ZMapPollSlaveID ;
-
-
-typedef struct ZMapThreadPollSlaveCallbackDataStructType
-{
-  ZMapPollSlaveID poll_id ;
-  ZMapThread thread ;
-  ZMapThreadPollSlaveUserReplyFunc user_reply_func ;
-  void *user_reply_func_data ;
-
-} ZMapThreadPollSlaveCallbackDataStruct ;
-
-
 
 static gint sourceCheckCB(gpointer cb_data) ;
-static bool sourceCheck(gpointer cb_data) ;
 
 
 
@@ -128,23 +122,35 @@ static bool thread_debug_G = false ;
 //
 
 
-ZMapThread zMapThreadStart(bool new_interface,
-                           ZMapSlaveRequestHandlerFunc req_handler_func,
-                           ZMapSlaveTerminateHandlerFunc terminate_handler_func,
-                           ZMapSlaveDestroyHandlerFunc destroy_handler_func)
+  ThreadSource::ThreadSource(ZMapSlaveRequestHandlerFunc req_handler_func,
+                 ZMapSlaveTerminateHandlerFunc terminate_handler_func,
+                 ZMapSlaveDestroyHandlerFunc destroy_handler_func)
 {
-  ZMapThread new_thread = NULL ;
-
-  zMapReturnValIfFail((req_handler_func && terminate_handler_func && destroy_handler_func), NULL) ;
+  // Add checking of args to this function, throw if not provided....
 
 
-  new_thread = zMapThreadCreate(new_interface, zmapNewThread,
+  thread_ = zMapThreadCreate(TRUE, zmapNewThread,
                                 req_handler_func, terminate_handler_func, destroy_handler_func) ;
 
 
-  return new_thread ;
+  return ;
 }
 
+
+  ThreadSource::ThreadSource(bool new_interface,
+                 ZMapSlaveRequestHandlerFunc req_handler_func,
+                 ZMapSlaveTerminateHandlerFunc terminate_handler_func,
+                 ZMapSlaveDestroyHandlerFunc destroy_handler_func)
+{
+  // Add checking of args to this function, throw if not provided....
+
+
+  thread_ = zMapThreadCreate(new_interface, zmapNewThread,
+                             req_handler_func, terminate_handler_func, destroy_handler_func) ;
+
+
+  return ;
+}
 
 
 
@@ -158,31 +164,46 @@ ZMapThread zMapThreadStart(bool new_interface,
 // the time that zmap is not doing anything which is unnecessary and makes it look
 // like zmap is looping using 100% CPU.)
 //
-ZMapThreadPollSlaveCallbackData zMapThreadPollSlaveStart(ZMapThread thread,
-                                                         ZMapThreadPollSlaveUserReplyFunc user_reply_func,
-                                                         void *user_reply_func_data)
+void ThreadSource::SlaveStartPoll(ZMapThreadPollSlaveUserReplyFunc user_reply_func,
+                            void *user_reply_func_data)
 {
-  ZMapThreadPollSlaveCallbackData cb_data = NULL ;
-
-  cb_data = g_new0(ZMapThreadPollSlaveCallbackDataStruct, 1) ;
-  cb_data->thread = thread ;
-  cb_data->user_reply_func = user_reply_func ;
-  cb_data->user_reply_func_data = user_reply_func_data ;
+  user_reply_func_ = user_reply_func ;
+  user_reply_func_data_ = user_reply_func_data ;
 
   // WARNING: gtk_timeout_add is deprecated and should not be used in newly-written code. Use g_timeout_add() instead.
-  cb_data->poll_id = gtk_timeout_add(source_check_interval_G, sourceCheckCB, cb_data) ;
+  poll_id_ = gtk_timeout_add(source_check_interval_G, sourceCheckCB, this) ;
 
-  return cb_data ;
+  return ;
 }
+
+
+void ThreadSource::SendThreadRequest(void *request)
+{
+
+  zMapThreadRequest(thread_, request) ;
+
+  return ;
+}
+
+  ZMapThread  ThreadSource::GetThread()
+  {
+    return thread_ ;
+  }
+  
+
+
 
 
 // Stop the GTK timer function checking for a reply from the source thread.
 //
-void zMapThreadPollSlaveStop(ZMapThreadPollSlaveCallbackData cb_data)
+void ThreadSource::SlaveStopPoll()
 {
-  gtk_timeout_remove(cb_data->poll_id) ;
+  if (poll_id_)
+    {
+      gtk_timeout_remove(poll_id_) ;
 
-  g_free(cb_data) ;
+      poll_id_ = 0 ;
+    }
 
   return ;
 }
@@ -192,12 +213,11 @@ void zMapThreadPollSlaveStop(ZMapThreadPollSlaveCallbackData cb_data)
 //
 // Stop the thread and destroy it.
 //
-void zMapThreadStop(ZMapThread thread)
+ ThreadSource::~ThreadSource()
 {
 
 
-
-
+  // stop polling if not already stopped....
 
 
 
@@ -229,10 +249,12 @@ void zMapThreadStop(ZMapThread thread)
 static gint sourceCheckCB(gpointer cb_data)
 {
   gint call_again = 0 ;
+  ThreadSource *thread = (ThreadSource *)cb_data ;
+
 
   /* Returning a value > 0 tells gtk to call sourceCheckCB again, so if sourceCheck() returns
    * TRUE we ask to be called again. */
-  if (sourceCheck(cb_data))
+  if (ThreadSource::sourceCheck(*thread))
     call_again = 1 ;
 
   return call_again ;
@@ -251,26 +273,24 @@ static gint sourceCheckCB(gpointer cb_data)
  *  */
 
 
-static bool sourceCheck(gpointer cb_data)
+bool ThreadSource::sourceCheck(ThreadSource &thread_source)
 {
   gboolean call_again = TRUE ;                                    /* Normally we want to be called continuously. */
-  ZMapThreadPollSlaveCallbackData poll_data = (ZMapThreadPollSlaveCallbackData)cb_data ;
-  ZMapThread thread = poll_data->thread ;
   ZMapThreadReply reply = ZMAPTHREAD_REPLY_INVALID ;
   void *data = NULL ;
   char *err_msg = NULL ;
 
 
-  if (!(zMapThreadGetReplyWithData(thread, &reply, &data, &err_msg)))
+  if (!(zMapThreadGetReplyWithData(thread_source.thread_, &reply, &data, &err_msg)))
     {
       // something bad has happened if we can't get a reply so kill the thread.
 
-      THREAD_DEBUG_MSG(thread, "cannot access reply from child, error was  \"%s\"", err_msg) ;
+      THREAD_DEBUG_MSG(thread_source.thread_, "cannot access reply from child, error was  \"%s\"", err_msg) ;
 
       zMapLogCritical("Thread %p will be killed as cannot access reply from child, error was  \"%s\"",
-                      thread, err_msg) ;
+                      thread_source.thread_, err_msg) ;
 
-      zMapThreadKill(thread) ;
+      zMapThreadKill(thread_source.thread_) ;
       
       // signal that we are finished.
       call_again = FALSE ;
@@ -284,13 +304,13 @@ static bool sourceCheck(gpointer cb_data)
           if (reply != ZMAPTHREAD_REPLY_QUIT)
             {
               zMapLogWarning("Thread %p failed with \"%s\" so will be killed.",
-                             thread, zMapThreadReply2ExactStr(reply)) ;
+                             thread_source.thread_, zMapThreadReply2ExactStr(reply)) ;
 
-              zMapThreadKill(thread) ;
+              zMapThreadKill(thread_source.thread_) ;
             }
 
           // Call the user callback and tell them what happened.
-          (poll_data->user_reply_func)(poll_data->user_reply_func_data) ;
+          (thread_source.user_reply_func_)(thread_source.user_reply_func_data_) ;
 
           // signal that we are finished.
           call_again = FALSE ;
@@ -303,6 +323,5 @@ static bool sourceCheck(gpointer cb_data)
 
 
 
-
-
+} // End of ZMapThread namespace
 
