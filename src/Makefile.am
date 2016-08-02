@@ -376,23 +376,14 @@ maintainer-clean-local:
 	git checkout $(EXTERNAL_PLACEHOLDERS)
 	@echo 'maintainer-clean-local: Finished removing all external library files....'
 
-
-# not needed now ?
-ZMAP_BUILD_FILES = $(top_builddir)/zmapApp/*.o $(top_builddir)/zmapAppServices/*.o $(top_builddir)/zmapConfig/*.o \
-$(top_builddir)/zmapControl/*.o $(top_builddir)/zmapDataSource/*.o $(top_builddir)/zmapDraw/*.o \
-$(top_builddir)/zmapFeature/*.o \
-$(top_builddir)/zmapGFF/*.o $(top_builddir)/zmapManager/*.o $(top_builddir)/zmapRemoteControl/*.o \
-$(top_builddir)/zmapServer/*.o $(top_builddir)/zmapThreadsLib/*.o $(top_builddir)/zmapThreads/*.o $(top_builddir)/zmapUtils/*.o \
-$(top_builddir)/zmapView/*.o $(top_builddir)/zmapWindow/*.o $(top_builddir)/zmapXML/*.o
-
+# Removes all build files in the zmapXXX sub-directories in the build directory which
+# will result in zmap being rebuilt.
 zmap-clean:
-	@echo 'clean-zmap: starting cleaning up all zmap build files....'
-	@for i in `ls -d ./zmap*` ; \
-	do { if [ -d $i ] ; then ( cd $i ; echo make clean $i ) fi ; } \
+	@echo 'Starting cleaning up all zmap build files....'
+	@for i in `ls -d $(top_builddir)/zmap*` ; \
+	do { if [ -d $$i ] ; then ( cd $(top_builddir)/$$i ; make clean ) ; fi ; } \
 	done
-	@echo 'clean-zmap: finished cleaning up all zmap build files.'
-
-
+	@echo 'Finished cleaning up all zmap build files.'
 
 mkdocdir:
 	@if test ! -d docs ; then \
