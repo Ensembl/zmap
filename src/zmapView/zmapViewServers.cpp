@@ -633,7 +633,7 @@ ZMapNewDataSource zmapViewRequestServer(ZMapView view, ZMapNewDataSource view_co
       view->connection_list = g_list_append(view->connection_list, view_conn) ;
 
       // Now dispatch the first request......
-      zmapViewStepListIter(connect_data->step_list, view_conn->thread, view_conn) ;
+      zmapViewStepListIter(connect_data->step_list, view_conn->thread->GetThread(), view_conn) ;
 
 
 
