@@ -56,7 +56,13 @@
 #include <ZMap/zmapCmdLineArgs.hpp>
 #include <ZMap/zmapUrlUtils.hpp>
 #include <ZMap/zmapOldSourceServer.hpp>
+
 #include <zmapView_P.hpp>
+
+
+
+using namespace ZMapThreadSource ;
+
 
 
 /* Define thread debug messages, used in checkStateConnections() mostly. */
@@ -2853,7 +2859,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
           gboolean is_empty = FALSE ;
 
           view_con = (ZMapNewDataSource)(list_item->data) ;
-          thread = view_con->thread ;
+          thread = view_con->thread->GetThread() ;
 
           data = NULL ;
           err_msg = NULL ;
@@ -3262,8 +3268,8 @@ static gboolean checkStateConnections(ZMapView zmap_view)
                * step list or if we have finished then destroy step_list. */
               if (zmapViewStepListIsNext(step_list))
                 {
+                  zmapViewStepListIter(step_list, view_con->thread->GetThread(), view_con) ;
 
-                  zmapViewStepListIter(step_list, view_con->thread, view_con) ;
                   has_step_list++;
 
                   all_steps_finished = FALSE ;
@@ -3760,7 +3766,7 @@ static void killConnections(ZMapView zmap_view)
           ZMapThread thread ;
 
           view_con = (ZMapNewDataSource)(list_item->data) ;
-          thread = view_con->thread ;
+          thread = view_con->thread->GetThread() ;
 
           /* NOTE, we do a _kill_ here, not a destroy. This just signals the thread to die, it
            * will actually die sometime later. */
@@ -4482,10 +4488,7 @@ static void doBlixemCmd(ZMapView view, ZMapWindowCallbackCommandAlign align_cmd)
 
 
                   /* Start the step list. */
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-                  zmapViewStepListIter(view_con->step_list, view_con->thread, view_con) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-                  zmapViewStepListIter(connect_data->step_list, view_con->thread, view) ;
+                  zmapViewStepListIter(connect_data->step_list, view_con->thread->GetThread(), view) ;
                 }
             }
         }
