@@ -35,7 +35,7 @@
 #include <sstream>
 #include <stdexcept>
 
-#include <ZMap/zmapThreadsLib.hpp>
+#include <ZMap/zmapThreads.hpp>
 #include <ZMap/zmapServerProtocol.hpp>
 #include <ZMap/zmapDataSlave.hpp>
 
@@ -66,15 +66,14 @@ namespace ZMapDataSource
                          ZMapFeatureSequenceMap sequence_map, int start, int end,
                          const string &url, const string &config_file, const string &version)
     : reply_{DataSourceReplyType::INVALID}, state_{DataSourceState::INVALID},
-    thread_{NULL}, slave_poller_data_{NULL}, user_func_{NULL}, user_data_{NULL},
+    thread_(zmapDataSourceThreadRequestHandler,
+            zmapDataSourceThreadTerminateHandler, zmapDataSourceThreadDestroyHandler),
+    user_func_{NULL}, user_data_{NULL},
     request_{request}, 
     sequence_map_{sequence_map}, start_{start}, end_{end},
     url_(url), config_file_(config_file), version_(version),
     url_obj_{NULL}
 {
-  ZMapSlaveRequestHandlerFunc req_handler_func = NULL ;
-  ZMapSlaveTerminateHandlerFunc terminate_handler_func = NULL ;
-  ZMapSlaveDestroyHandlerFunc destroy_handler_func = NULL ;
   int url_parse_error ;
 
   if (request != DataSourceRequestType::GET_FEATURES && request != DataSourceRequestType::GET_SEQUENCE)
@@ -98,19 +97,10 @@ namespace ZMapDataSource
       throw invalid_argument("Bad url.") ;
     }
 
-  // Set up the thread.
-  zmapDataSourceGetSlaveHandlerFuncs(&req_handler_func, &terminate_handler_func, &destroy_handler_func) ;
-
-  if (!(thread_ = zMapThreadStart(true, req_handler_func, terminate_handler_func, destroy_handler_func)))
-    {
-      throw runtime_error("Cannot create thread.") ;
-    }
-
-
   // Start polling, if this means we do too much polling we can have a function to start or do it
   // as part of the SendRequest....though that might induce some timing problems.
   //
-  slave_poller_data_ = zMapThreadPollSlaveStart(thread_, ReplyCallbackFunc, this) ;
+  thread_.SlaveStartPoll(ReplyCallbackFunc, this) ;
 
   state_ = DataSourceState::INIT ;
 
@@ -127,7 +117,7 @@ namespace ZMapDataSource
         user_func_ = user_func ;
         user_data_ = user_data ;
 
-        zMapThreadRequest(thread_, this) ;
+        thread_.SendThreadRequest(this) ;
 
         state_ = DataSourceState::WAITING ;
 
@@ -184,6 +174,7 @@ namespace ZMapDataSource
 
 
 
+
   // NOTES:
   //
   // This is a static class function so that it does not have a "this" pointer argument and hence
@@ -221,10 +212,7 @@ namespace ZMapDataSource
     cout << "in base destructor" << endl ;
 
     // Clear up the thread.
-    zMapThreadPollSlaveStop(slave_poller_data_) ;
-
-    zMapThreadDestroy(thread_) ;
-    thread_ = NULL ;
+    thread_.SlaveStopPoll() ;
 
     url_free(url_obj_) ;
     url_obj_ = NULL ;
@@ -588,15 +576,9 @@ namespace ZMapDataSource
 
 
 
-
-
   //
   //                 Internal routines
   //
-
-
-
-
 
 
 

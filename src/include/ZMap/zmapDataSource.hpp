@@ -26,6 +26,10 @@
  *
  * Description: Interface to data sources, allows the application to
  *              launch a thread and get data back from a data source.
+ * 
+ *              See this google doc for more details:
+ * 
+ * https://docs.google.com/document/d/14tt5oHQDhQMmB5AW2ghBy9SEp9hFnvedreLU-dcKbsc/edit#heading=h.efixygk0ozge
  *
  *-------------------------------------------------------------------
  */
@@ -39,8 +43,6 @@
 #include <ZMap/zmapFeature.hpp>
 #include <ZMap/zmapFeatureLoadDisplay.hpp>
 #include <ZMap/zmapThreads.hpp>
-
-
 
 
 namespace ZMapDataSource
@@ -106,10 +108,7 @@ namespace ZMapDataSource
 
     static void ReplyCallbackFunc(void *func_data) ;
 
-
-
-    ZMapThread thread_ ;
-    ZMapThreadPollSlaveCallbackData slave_poller_data_ ;
+    ZMapThreadSource::ThreadSource thread_ ;
 
     UserBaseCallBackFunc user_func_ ;
     void *user_data_ ;

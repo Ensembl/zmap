@@ -33,11 +33,8 @@
 
 #include <ZMap/zmapDataSource.hpp>
 
-
-
-bool zmapDataSourceGetSlaveHandlerFuncs(ZMapSlaveRequestHandlerFunc *handler_func_out,
-                                        ZMapSlaveTerminateHandlerFunc *terminate_func_out,
-                                        ZMapSlaveDestroyHandlerFunc *destroy_func_out) ;
-
+ZMapThreadReturnCode zmapDataSourceThreadRequestHandler(void **slave_data, void *request_in, char **err_msg_out) ;
+ZMapThreadReturnCode zmapDataSourceThreadTerminateHandler(void **slave_data, char **err_msg_out) ;
+ZMapThreadReturnCode zmapDataSourceThreadDestroyHandler(void **slave_data) ;
 
 #endif /* ZMAPDATASOURCE_P_H */
