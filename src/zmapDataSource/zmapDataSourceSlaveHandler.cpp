@@ -35,15 +35,10 @@
 #include <ZMap/zmapServerProtocol.hpp>
 #include <ZMap/zmapDataSlave.hpp>
 
+
 using namespace ZMapDataSource ;
 
 
-
-
-
-static ZMapThreadReturnCode threadRequestHandler(void **slave_data, void *request_in, char **err_msg_out) ;
-static ZMapThreadReturnCode threadTerminateHandler(void **slave_data, char **err_msg_out) ;
-static ZMapThreadReturnCode threadDestroyHandler(void **slave_data) ;
 
 static ZMapThreadReturnCode terminateServer(ZMapServer *server, char **err_msg_out) ;
 static ZMapThreadReturnCode destroyServer(ZMapServer *server) ;
@@ -57,34 +52,18 @@ static ZMapServerReqType getNextRequest(ZMapServerReqType curr_request, DataSour
  *                           External Interface
  */
 
-bool zmapDataSourceGetSlaveHandlerFuncs(ZMapSlaveRequestHandlerFunc *handler_func_out,
-                                        ZMapSlaveTerminateHandlerFunc *terminate_func_out,
-                                        ZMapSlaveDestroyHandlerFunc *destroy_func_out)
-{
-  bool result = false ;
-  
-  *handler_func_out = threadRequestHandler ;
-  *terminate_func_out = threadTerminateHandler ;
-  *destroy_func_out = threadDestroyHandler ;
-
-  return result ;
-}
-
-
-
 
 
 
 /*
- *                     Internal routines
+ *                     Package routines
  */
-
 
 
 /* This routine sits in the slave thread and is called by the threading interface to
  * service a request from the master thread which includes decoding it, calling the appropriate server
  * routines and returning the answer to the master thread. */
-static ZMapThreadReturnCode threadRequestHandler(void **slave_data, void *request_in, char **err_msg_out)
+ZMapThreadReturnCode zmapDataSourceThreadRequestHandler(void **slave_data, void *request_in, char **err_msg_out)
 {
   ZMapThreadReturnCode thread_rc = ZMAPTHREAD_RETURNCODE_OK ;
   DataSource *source = static_cast<DataSource *>(request_in) ;
@@ -383,7 +362,7 @@ static ZMapThreadReturnCode threadRequestHandler(void **slave_data, void *reques
 
 
 /* This function is called if a thread terminates. */
-static ZMapThreadReturnCode threadTerminateHandler(void **slave_data, char **err_msg_out)
+ZMapThreadReturnCode zmapDataSourceThreadTerminateHandler(void **slave_data, char **err_msg_out)
 {
   ZMapThreadReturnCode thread_rc = ZMAPTHREAD_RETURNCODE_OK ;
 
@@ -403,7 +382,7 @@ static ZMapThreadReturnCode threadTerminateHandler(void **slave_data, char **err
 
 
 /* This function is called if a thread terminates. */
-static ZMapThreadReturnCode threadDestroyHandler(void **slave_data)
+ZMapThreadReturnCode zmapDataSourceThreadDestroyHandler(void **slave_data)
 {
   ZMapThreadReturnCode thread_rc = ZMAPTHREAD_RETURNCODE_OK ;
 
@@ -423,6 +402,10 @@ static ZMapThreadReturnCode threadDestroyHandler(void **slave_data)
 
 
 
+
+/*
+ *                     Internal routines
+ */
 
 
 static ZMapThreadReturnCode terminateServer(ZMapServer *server, char **err_msg_out)
@@ -464,10 +447,6 @@ static ZMapThreadReturnCode destroyServer(ZMapServer *server)
 
   return thread_rc ;
 }
-
-
-
-
 
 
 /* THIS NEEDS CLEANING UP AND WILL BE BY THE THREADS REWRITE... */
