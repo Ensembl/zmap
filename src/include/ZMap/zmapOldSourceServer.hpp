@@ -24,7 +24,8 @@
  *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
  *      Gemma Barson (Sanger Institute, UK) gb10@sanger.ac.uk
  *
- * Description: 
+ * Description: Represents an "old" data source, this will go as the
+ *              the new DataSource code is used.
  *
  *-------------------------------------------------------------------
  */
@@ -34,7 +35,7 @@
 
 #include <ZMap/zmapEnum.hpp>
 #include <ZMap/zmapUrl.hpp>
-#include <ZMap/zmapThreadsLib.hpp>
+#include <ZMap/zmapThreads.hpp>
 #include <ZMap/zmapServerProtocol.hpp>
 
 
@@ -58,21 +59,6 @@ ZMAP_DEFINE_ENUM(ZMapViewThreadStatus, ZMAP_VIEW_THREAD_STATE_LIST) ;
 typedef struct ZMapViewSessionServerStructType  *ZMapViewSessionServer ;
 
 
-
-
-/*
- *           Control of data request to connections
- *
- * Requests to servers are made as a series of steps specified using these structs.
- * Each step is executed before and the result tested, each connection and the whole
- * step list can be aborted.
- *
- */
-
-// USED IN MANY PLACES IN zmapView.c
-
-// THIS NEEDS TO GO INTO THE NEW DATASOURCE OBJECT....
-
 /* Represents a single connection to a data source.
  * We maintain state for our connections otherwise we will try to issue requests that
  * they may not see. curr_request flip-flops between ZMAP_REQUEST_GETDATA and ZMAP_REQUEST_WAIT */
@@ -83,8 +69,7 @@ typedef struct ZMapNewDataSourceStructType
 
   ZMapThreadRequest curr_request ;
 
-
-  ZMapThread thread ;
+  ZMapThreadSource::ThreadSource *thread ;
 
   gpointer request_data ;				    /* User data pointer, needed for step implementation. */
 
@@ -103,27 +88,10 @@ typedef struct ZMapNewDataSourceStructType
 
 
 
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-void zMapServerSetScheme(ZMapViewSessionServer server, ZMapURLScheme scheme) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-
-
-
 void zMapServerFormatSession(ZMapViewSessionServer server_data, GString *session_text) ;
 
 void zmapViewSessionAddServer(ZMapViewSessionServer session_data, ZMapURL url, char *format) ;
 void zmapViewSessionAddServerInfo(ZMapViewSessionServer session_data, ZMapServerReqGetServerInfo session) ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-void zmapViewSessionFreeServer(ZMapViewSessionServer session_data) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 
 
 
@@ -137,48 +105,6 @@ ZMapNewDataSource zMapServerCreateViewConnection(ZMapNewDataSource view_con,
                                                   char *url) ;
 void *zMapServerConnectionGetUserData(ZMapNewDataSource view_conn) ;
 void zMapServerDestroyViewConnection(ZMapNewDataSource view_conn) ;
-
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-ZMapViewConnectionStepList zmapViewStepListCreate(StepListDispatchCB dispatch_func,
-						  StepListProcessDataCB request_func,
-						  StepListFreeDataCB free_func) ;
-ZMapViewConnectionStepList zmapViewStepListCreateFull(StepListDispatchCB dispatch_func,
-                                                      StepListProcessDataCB process_func,
-                                                      StepListFreeDataCB free_func);
-void zmapViewStepListIter(ZMapViewConnectionStepList step_list, ZMapThread thread, gpointer connection_data) ;
-void zmapViewStepListStepProcessRequest(ZMapViewConnectionStepList step_list,
-                                        void *user_data, ZMapViewConnectionRequest request) ;
-ZMapViewConnectionStep zmapViewStepListGetCurrentStep(ZMapViewConnectionStepList step_list) ;
-void zmapViewStepListAddStep(ZMapViewConnectionStepList step_list, ZMapServerReqType request_type,
-			     StepListActionOnFailureType on_fail) ;
-ZMapViewConnectionRequest zmapViewStepListAddServerReq(ZMapViewConnectionStepList step_list,
-						       ZMapServerReqType request_type,
-						       gpointer request_data,
-                                                       StepListActionOnFailureType on_fail) ;
-ZMapViewConnectionRequest zmapViewStepListFindRequest(ZMapViewConnectionStepList step_list,
-						      ZMapServerReqType request_type, ZMapNewDataSource connection) ;
-gboolean zmapViewStepListAreConnections(ZMapViewConnectionStepList step_list) ;
-gboolean zmapViewStepListIsNext(ZMapViewConnectionStepList step_list) ;
-
-void zmapViewStepListStepConnectionDeleteAll(ZMapNewDataSource connection) ;
-void zmapViewStepListDestroy(ZMapViewConnectionStepList step_list) ;
-
-
-bool zMapConnectionIsFinished(ZMapViewConnectionRequest request) ;
-
-
-StepListActionOnFailureType zMapStepOnFailAction(ZMapViewConnectionStep step) ;
-void zMapStepSetState(ZMapViewConnectionStep step, StepListStepState state) ;
-ZMapServerReqType zMapStepGetRequest(ZMapViewConnectionStep step) ;
-
-// this seems appallingly named.....
-void zmapViewStepDestroy(gpointer data, gpointer user_data) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 
 
 
