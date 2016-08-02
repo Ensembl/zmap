@@ -240,12 +240,6 @@ char *zMapViewRemoteReceiveAccepts(ZMapView view);
 void zMapViewDestroy(ZMapView zmap_view) ;
 
 
-
-
-
-
-
-
 /* HACK! not really to be used... */
 ZMapFeatureContext zMapViewGetContextAsEmptyCopy(ZMapView do_not_use);
 
