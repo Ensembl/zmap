@@ -405,6 +405,20 @@ gboolean zMapFeatureAddDescription(ZMapFeature feature, char *data )
 
   zMapReturnValIfFail(feature && data && *data, result ) ;
 
+  if (!data || !(*data))
+    {
+      char *feature_name ;
+      char *featureset_name ;
+
+      feature_name = zMapFeatureName((ZMapFeatureAny)feature) ;
+      featureset_name = zMapFeatureName(feature->parent) ;
+
+      zMapLogWarning("zMapFeatureAddDescription() failed, featureset: \"%s\", feature: \"%s\" with %s string",
+                     featureset_name, feature_name,
+                     (!data ? "NULL description" : "empty description")) ;
+      return FALSE ;
+    }
+
   if (feature->description)
     g_free(feature->description) ;
   feature->description = g_strdup(data) ;

@@ -4068,7 +4068,7 @@ static gboolean makeNewFeature_V3(ZMapGFFParser pParserBase,
       /*
        * Now we deal with some extra attributes used locally.
        */
-      if (bIncludeFeature)
+      if (pFeature && bIncludeFeature)
         {
 
           if(!zMapStyleGetGFFFeature(pFeatureSet->style))
