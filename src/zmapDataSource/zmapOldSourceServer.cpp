@@ -38,9 +38,12 @@
 
 #include <ZMap/zmapGLibUtils.hpp>
 #include <ZMap/zmapServerProtocol.hpp>
+#include <ZMap/zmapThreads.hpp>
 
 #include <zmapOldSourceServer_P.hpp>
 
+
+using namespace ZMapThreadSource ;
 
 
 
@@ -179,76 +182,41 @@ THE COMMENTS ETC ETC....HORRIBLE, HORRIBLE, HORRIBLE......
   AND THE ORIGINAL "create" function.....
 #endif*/
 
-
-
 /* Allocate a connection and send over the request to get the sequence displayed. */
 /* NB: this is called from zmapViewLoadFeatures() and commandCB (for DNA only) */
 ZMapNewDataSource zMapServerCreateViewConnection(ZMapNewDataSource view_con,
-                                                  void *connect_data,
-                                                  char *server_url)
+                                                 void *connect_data,
+                                                 char *server_url)
 {
-
-  ZMapThread thread ;
-
-
-  // Logic all needs changing......
-
   if (!view_con)
     {
       /* Create the thread to service the connection requests, we give it a function that it will call
        * to decode the requests we send it and a terminate function. */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      if ((thread = zMapThreadCreate(zMapServerRequestHandler,
-                                     zMapServerTerminateHandler, zMapServerDestroyHandler)))
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-        if ((thread = zMapThreadCreate(false, zmapNewThread)))
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-          ZMapSlaveRequestHandlerFunc req_handler_func = NULL ;
+      ZMapSlaveRequestHandlerFunc req_handler_func = NULL ;
       ZMapSlaveTerminateHandlerFunc terminate_handler_func = NULL ;
       ZMapSlaveDestroyHandlerFunc destroy_handler_func = NULL ;
+      ThreadSource *new_thread = NULL ;
 
 
       zMapOldGetHandlers(&req_handler_func, &terminate_handler_func, &destroy_handler_func) ;
 
-          if ((thread = zMapThreadStart(false,
-                                        req_handler_func, terminate_handler_func, destroy_handler_func)))
-        {
-          /* Create the connection struct. */
-          view_con = g_new0(ZMapNewDataSourceStruct, 1) ;
 
-          view_con->thread = thread ;
+      new_thread = new ThreadSource(false, req_handler_func, terminate_handler_func, destroy_handler_func) ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-          view_con->url = g_strdup(server_url) ;
-          //printf("create thread for %s\n",view_con->url);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+      /* Create the connection struct. */
+      view_con = g_new0(ZMapNewDataSourceStruct, 1) ;
 
-          view_con->thread_status = THREAD_STATUS_PENDING;
+      view_con->thread = new_thread ;
 
-          view_con->server = g_new0(ZMapViewSessionServerStruct, 1) ;
+      view_con->thread_status = THREAD_STATUS_PENDING;
 
-          view_con->server->scheme = SCHEME_INVALID ;
+      view_con->server = g_new0(ZMapViewSessionServerStruct, 1) ;
 
-          // Hack for now.....to replace url....
-          view_con->server->url = g_strdup(server_url) ;
+      view_con->server->scheme = SCHEME_INVALID ;
 
+      // Hack for now.....to replace url....
+      view_con->server->url = g_strdup(server_url) ;
 
-
-        }
-      else
-        {
-          /* reporting an error here woudl be good
-           * but the thread interafce does not apper to return its error code
-           * and was written to exit zmap in case of failure
-           * we need to pop up a messgae if (!view->thread_fail_silent)
-           * and also reply to otterlace if active
-           */
-          return(NULL);
-        }
     }
 
 
@@ -271,6 +239,7 @@ ZMapNewDataSource zMapServerCreateViewConnection(ZMapNewDataSource view_con,
 
   return view_con ;
 }
+
 
 
 void *zMapServerConnectionGetUserData(ZMapNewDataSource view_conn)
