@@ -24,7 +24,10 @@
  *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
  *      Gemma Barson (Sanger Institute, UK) gb10@sanger.ac.uk
  *
- * Description: 
+ * Description: The "old" way of contacting a server, forces app to
+ *              to specify a series of steps that must be performed
+ *              to contact and use a server. Too complex. Is being
+ *              replaced by the DataSource object.
  *
  *-------------------------------------------------------------------
  */
