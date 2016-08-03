@@ -2293,6 +2293,20 @@ GtkWidget *zMapAppCreateSource(ZMapFeatureSequenceMap sequence_map,
 }
 
 
+/* As for zMapAppCreateSource() except that returns a GtkWidget that can be
+ * incorporated into a window. */
+GtkWidget *zMapAppCreateSourceWidg(ZMapFeatureSequenceMap sequence_map,
+                                   ZMapAppCreateSourceCB user_func,
+                                   gpointer user_data)
+{
+  GtkWidget *container = NULL ;
+
+  container = makePanel(NULL, NULL, sequence_map, user_func, user_data, NULL, NULL, NULL) ;
+
+  return container ;
+}
+
+
 /* Show a dialog to edit an existing source */
 GtkWidget *zMapAppEditSource(ZMapFeatureSequenceMap sequence_map,
                              ZMapConfigSource source,
