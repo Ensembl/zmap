@@ -104,6 +104,8 @@ typedef struct MainFrameStructName
   
   ZMapAppCreateSourceCB user_func ;
   gpointer user_data ;
+  ZMapAppClosedSequenceViewCB close_func ;
+  gpointer close_data ;
 
   // General
   GtkWidget *name_widg ;
@@ -183,6 +185,8 @@ GtkWidget *makePanel(GtkWidget *toplevel,
                      ZMapFeatureSequenceMap sequence_map,
                      ZMapAppCreateSourceCB user_func,
                      gpointer user_data,
+                     ZMapAppClosedSequenceViewCB close_func,
+                     gpointer close_data,
                      MainFrame *main_data) ;
 GtkWidget *makeButtonBox(MainFrame main_data) ;
 void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data) ;
@@ -225,6 +229,8 @@ GtkWidget *makePanel(GtkWidget *toplevel,
                      ZMapFeatureSequenceMap sequence_map,
                      ZMapAppCreateSourceCB user_func,
                      gpointer user_data,
+                     ZMapAppClosedSequenceViewCB close_func,
+                     gpointer close_data,
                      MainFrame *main_data_out)
 {
   GtkWidget *frame = NULL ;
@@ -236,6 +242,8 @@ GtkWidget *makePanel(GtkWidget *toplevel,
   main_data->sequence_map = sequence_map ;
   main_data->user_func = user_func ;
   main_data->user_data = user_data ;
+  main_data->close_func = close_func ;
+  main_data->close_data = close_data ;
 
   if (toplevel)
     {
@@ -1005,6 +1013,10 @@ GtkWidget *makeButtonBox(MainFrame main_data)
 void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data)
 {
   MainFrame main_data = (MainFrame)cb_data ;
+
+  /* Signal app we are going if we are a separate window. */
+  if (main_data->close_func)
+    (main_data->close_func)(main_data->toplevel, main_data->close_data) ;
 
   delete main_data ;
 
@@ -2239,7 +2251,9 @@ void trackhubRegisterCB(GtkWidget *widget, gpointer cb_data)
 /* Show a dialog to create a new source */
 GtkWidget *zMapAppCreateSource(ZMapFeatureSequenceMap sequence_map,
                                ZMapAppCreateSourceCB user_func,
-                               gpointer user_data)
+                               gpointer user_data,
+                               ZMapAppClosedSequenceViewCB close_func,
+                               gpointer close_data)
 {
   zMapReturnValIfFail(user_func, NULL) ;
 
@@ -2253,7 +2267,7 @@ GtkWidget *zMapAppCreateSource(ZMapFeatureSequenceMap sequence_map,
   gtk_container_border_width(GTK_CONTAINER(toplevel), 0) ;
 
   MainFrame main_data = NULL ;
-  container = makePanel(toplevel, &seq_data, sequence_map, user_func, user_data, &main_data) ;
+  container = makePanel(toplevel, &seq_data, sequence_map, user_func, user_data, close_func, close_data, &main_data) ;
 
   gtk_container_add(GTK_CONTAINER(toplevel), container) ;
   gtk_signal_connect(GTK_OBJECT(toplevel), "destroy",
@@ -2297,7 +2311,7 @@ GtkWidget *zMapAppEditSource(ZMapFeatureSequenceMap sequence_map,
   gtk_container_border_width(GTK_CONTAINER(toplevel), 0) ;
 
   MainFrame main_data = NULL ;
-  container = makePanel(toplevel, &seq_data, sequence_map, user_func, user_data, &main_data) ;
+  container = makePanel(toplevel, &seq_data, sequence_map, user_func, user_data, NULL, NULL, &main_data) ;
 
   gtk_container_add(GTK_CONTAINER(toplevel), container) ;
   gtk_signal_connect(GTK_OBJECT(toplevel), "destroy",

@@ -56,7 +56,8 @@ GtkWidget *zMapAppGetSequenceView(ZMapAppGetSequenceViewCB user_func, gpointer u
                                   ZMapAppClosedSequenceViewCB close_func, gpointer close_data,
                                   ZMapFeatureSequenceMap sequence_map, gboolean display_sequence) ;
 GtkWidget *zMapAppCreateSource(ZMapFeatureSequenceMap sequence_map, 
-                               ZMapAppCreateSourceCB user_func, gpointer user_data) ;
+                               ZMapAppCreateSourceCB user_func, gpointer user_data,
+                               ZMapAppClosedSequenceViewCB close_func, gpointer close_data) ;
 GtkWidget *zMapAppEditSource(ZMapFeatureSequenceMap sequence_map, ZMapConfigSource source,
                              ZMapAppCreateSourceCB user_func, gpointer user_data) ;
 GtkWidget *zMapCreateSequenceViewWidg(ZMapAppGetSequenceViewCB user_func, gpointer user_data,

@@ -637,7 +637,7 @@ static void createSourceCB(GtkWidget *widget, gpointer cb_data)
   MainFrame main_data = (MainFrame)cb_data ;
   zMapReturnIfFail(main_data) ;
 
-  zMapAppCreateSource(&main_data->sequence_map, createNewSourceCB, main_data) ;
+  zMapAppCreateSource(&main_data->sequence_map, createNewSourceCB, main_data, NULL, NULL) ;
 
   return ;
 }
