@@ -197,26 +197,31 @@ ZMapNewDataSource zMapServerCreateViewConnection(ZMapNewDataSource view_con,
       ZMapSlaveDestroyHandlerFunc destroy_handler_func = NULL ;
       ThreadSource *new_thread = NULL ;
 
-
+      // Create and start a new thread to fetch the data.
       zMapOldGetHandlers(&req_handler_func, &terminate_handler_func, &destroy_handler_func) ;
-
 
       new_thread = new ThreadSource(false, req_handler_func, terminate_handler_func, destroy_handler_func) ;
 
-      /* Create the connection struct. */
-      view_con = g_new0(ZMapNewDataSourceStruct, 1) ;
+      if (!(new_thread->SlaveStartPoll()))
+        {
+          delete new_thread ;
+        }
+      else
+        {
+          // Create a connection representing the new thread/server connection.
+          view_con = g_new0(ZMapNewDataSourceStruct, 1) ;
 
-      view_con->thread = new_thread ;
+          view_con->thread = new_thread ;
 
-      view_con->thread_status = THREAD_STATUS_PENDING;
+          view_con->thread_status = THREAD_STATUS_PENDING;
 
-      view_con->server = g_new0(ZMapViewSessionServerStruct, 1) ;
+          view_con->server = g_new0(ZMapViewSessionServerStruct, 1) ;
 
-      view_con->server->scheme = SCHEME_INVALID ;
+          view_con->server->scheme = SCHEME_INVALID ;
 
-      // Hack for now.....to replace url....
-      view_con->server->url = g_strdup(server_url) ;
-
+          // Hack for now.....to replace url....
+          view_con->server->url = g_strdup(server_url) ;
+        }
     }
 
 

@@ -48,11 +48,6 @@
 
 
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static ZMapThread createThread(ZMapThreadRequestHandlerFunc handler_func,
-			       ZMapThreadTerminateHandler terminate_func, ZMapThreadDestroyHandler destroy_func) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 static ZMapThread createThread() ;
 static void destroyThread(ZMapThread thread) ;
 
@@ -85,15 +80,19 @@ static pthread_mutex_t thread_fork_mutex_G = PTHREAD_MUTEX_INITIALIZER ;
  * handler_func   A function that the slave thread can call to handle all requests.
  * returns a thread object, all subsequent requests must be sent to this thread object.
  *  */
-ZMapThread zMapThreadCreate(bool new_interface, ZMapThreadCreateFunc create_func,
+ZMapThread zMapThreadCreate(bool new_interface,
                             ZMapSlaveRequestHandlerFunc req_handler_func,
                             ZMapSlaveTerminateHandlerFunc terminate_handler_func,
                             ZMapSlaveDestroyHandlerFunc destroy_handler_func)
 {
   ZMapThread thread = NULL ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   pthread_t thread_id ;
   pthread_attr_t thread_attr ;
   int status = 0 ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   thread = createThread() ;
 
@@ -113,6 +112,8 @@ ZMapThread zMapThreadCreate(bool new_interface, ZMapThreadCreateFunc create_func
   thread->reply.reply = NULL ;
   thread->reply.error_msg = NULL ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* Set the new threads attributes so it will run "detached", we do not want anything from them.
    * when they die, we want them to go away and release their resources. */
   if (status == 0
@@ -132,8 +133,8 @@ ZMapThread zMapThreadCreate(bool new_interface, ZMapThreadCreateFunc create_func
   if (status == 0
       && (status = pthread_create(&thread_id, &thread_attr, create_func, (void *)thread)) != 0)
     {
-//      zMapLogFatalSysErr(status, "%s", "Thread creation") ;
-	  zMapLogWarning("Failed to create thread: %s",g_strerror(status));	/* likely out of memory */
+      //      zMapLogFatalSysErr(status, "%s", "Thread creation") ;
+      zMapLogWarning("Failed to create thread: %s",g_strerror(status));	/* likely out of memory */
     }
 
   if (status == 0)
@@ -147,15 +148,66 @@ ZMapThread zMapThreadCreate(bool new_interface, ZMapThreadCreateFunc create_func
       destroyThread(thread) ;
       thread = NULL ;
     }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   return thread ;
+}
+
+// if returns false then thread could not be started so app should destroy thread
+// struct. 
+bool zMapThreadStart(ZMapThread thread, ZMapThreadCreateFunc create_func)
+{
+  bool result = FALSE ;
+  pthread_t thread_id ;
+  pthread_attr_t thread_attr ;
+  int status = 0 ;
+
+  /* Set the new threads attributes so it will run "detached", we do not want anything from them.
+   * when they die, we want them to go away and release their resources. */
+  if (status == 0)
+    {
+      if ((status = pthread_attr_init(&thread_attr)) != 0)
+        {
+          zMapLogCritical("Failed to create thread attibutes: %s", g_strerror(status)) ;
+        }
+    }
+
+  if (status == 0)
+    {
+      if ((status = pthread_attr_setdetachstate(&thread_attr, PTHREAD_CREATE_DETACHED)) != 0)
+        {
+          zMapLogCritical("Failed to set thread detached attibute: %s", g_strerror(status)) ;
+        }
+    }
+
+
+  /* Create the new thread. */
+  if (status == 0)
+    {
+      if ((status = pthread_create(&thread_id, &thread_attr, create_func, (void *)thread)) != 0)
+        {
+	  zMapLogCritical("Failed to create thread: %s", g_strerror(status));	/* likely out of memory */
+        }
+    }
+
+
+  if (status == 0)
+    {
+      thread->thread_id = thread_id ;
+
+      result = TRUE ;
+    }
+
+  return result ;
 }
 
 
 
 void zMapThreadRequest(ZMapThread thread, void *request)
 {
-  zmapCondVarSignal(&thread->request, ZMAPTHREAD_REQUEST_EXECUTE, request) ;
+  if (thread->thread_id)
+    zmapCondVarSignal(&thread->request, ZMAPTHREAD_REQUEST_EXECUTE, request) ;
 
   return ;
 }
@@ -163,7 +215,7 @@ void zMapThreadRequest(ZMapThread thread, void *request)
 
 gboolean zMapThreadGetReply(ZMapThread thread, ZMapThreadReply *state)
 {
-  gboolean got_value ;
+  gboolean got_value = FALSE ;
 
   got_value = zmapVarGetValue(&(thread->reply), state) ;
 
@@ -183,7 +235,7 @@ void zMapThreadSetReply(ZMapThread thread, ZMapThreadReply state)
 gboolean zMapThreadGetReplyWithData(ZMapThread thread, ZMapThreadReply *state,
                                     void **data, char **err_msg)
 {
-  gboolean got_value ;
+  gboolean got_value = FALSE ;
 
   got_value = zmapVarGetValueWithData(&(thread->reply), state, data, err_msg) ;
 
@@ -208,22 +260,40 @@ char *zMapThreadGetThreadID(ZMapThread thread)
   const  char *format = "%d" ;
 #endif
 
-  thread_id = g_strdup_printf(format, thread->thread_id) ;
+  if (thread->thread_id)
+    thread_id = g_strdup_printf(format, thread->thread_id) ;
 
   return thread_id ;
 }
 
 
 
-/* This wierd macro creates a function that will return string literals for each num in the ZMAP_XXXX_LIST's. */
-ZMAP_ENUM_AS_EXACT_STRING_FUNC(zMapThreadRequest2ExactStr, ZMapThreadRequest, ZMAP_THREAD_REQUEST_LIST) ;
-ZMAP_ENUM_AS_EXACT_STRING_FUNC(zMapThreadReply2ExactStr, ZMapThreadReply, ZMAP_THREAD_REPLY_LIST) ;
+gboolean zMapThreadExists(ZMapThread thread)
+{
+  gboolean exists = FALSE ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-ZMAP_ENUM_AS_EXACT_STRING_FUNC(zMapThreadReturnCode2ExactStr, ZMapThreadReturnCode, ZMAP_THREAD_RETURNCODE_LIST) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  if (thread->thread_id)
+    {
+      if (pthread_kill(thread->thread_id, 0) == 0)
+        exists = TRUE ;
+    }
+
+  return exists ;
+}
 
 
+bool zMapThreadStop(ZMapThread thread)
+{
+  bool result = false ;
+
+  if (thread->thread_id)
+    {
+      // WHAT WE NEED HERE IS CODE TO SEND A TERMINATE TO THE SLAVE THREAD.
+
+    }
+
+  return result ;
+}
 
 
 
@@ -240,26 +310,18 @@ void zMapThreadKill(ZMapThread thread)
    * deadlocks, think about this bit.. */
 
   /* Signal the thread to cancel it */
-  if ((status = pthread_cancel(thread->thread_id)) != 0)
+  if (thread->thread_id)
     {
-      zMapLogCritical("Cancel of thread %p failed: %s",
-                      thread->thread_id, g_strsignal(status)) ;
+      if ((status = pthread_cancel(thread->thread_id)) != 0)
+        {
+          zMapLogCritical("Cancel of thread %p failed: %s",
+                          thread->thread_id, g_strsignal(status)) ;
+        }
+
+      thread->thread_id = 0 ;
     }
 
-  thread->thread_id = 0 ;
-
   return ;
-}
-
-
-gboolean zMapThreadExists(ZMapThread thread)
-{
-  gboolean exists = FALSE ;
-
-  if (pthread_kill(thread->thread_id, 0) == 0)
-    exists = TRUE ;
-
-  return exists ;
 }
 
 
@@ -268,16 +330,20 @@ void zMapThreadDestroy(ZMapThread thread)
 {
   ZMAPTHREAD_DEBUG(thread, "Destroying control block/condvar for this thread (%s)", zMapThreadGetThreadID(thread)) ;
 
-  if (thread->thread_id && zMapThreadExists(thread))
-    zMapThreadKill(thread) ;
-
   zmapVarDestroy(&thread->reply) ;
   zmapCondVarDestroy(&(thread->request)) ;
 
-  g_free(thread) ;
+  destroyThread(thread) ;
 
   return ;
 }
+
+
+
+/* These wierd macros create functions that will return string literals for each enum. */
+ZMAP_ENUM_AS_EXACT_STRING_FUNC(zMapThreadRequest2ExactStr, ZMapThreadRequest, ZMAP_THREAD_REQUEST_LIST) ;
+ZMAP_ENUM_AS_EXACT_STRING_FUNC(zMapThreadReply2ExactStr, ZMapThreadReply, ZMAP_THREAD_REPLY_LIST) ;
+ZMAP_ENUM_AS_EXACT_STRING_FUNC(zMapThreadReturnCode2ExactStr, ZMapThreadReturnCode, ZMAP_THREAD_RETURNCODE_LIST) ;
 
 
 
@@ -375,10 +441,6 @@ void zMapThreadForkUnlock(void)
 
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static ZMapThread createThread(ZMapThreadRequestHandlerFunc handler_func,
-			       ZMapThreadTerminateHandler terminate_func, ZMapThreadDestroyHandler destroy_func)
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
   static ZMapThread createThread()
 {
   ZMapThread thread ;
@@ -392,16 +454,7 @@ static ZMapThread createThread(ZMapThreadRequestHandlerFunc handler_func,
       init = TRUE ;
     }
 
-
   thread = g_new0(ZMapThreadStruct, 1) ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  thread->handler_func = handler_func ;
-  thread->terminate_func = terminate_func ;
-  thread->destroy_func = destroy_func ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
   return thread ;
 }

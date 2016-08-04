@@ -79,10 +79,6 @@ _(ZMAPTHREAD_RETURNCODE_QUIT,         , "server_quit",    "Server has quit. ", "
 
 ZMAP_DEFINE_ENUM(ZMapThreadReturnCode, ZMAP_THREAD_RETURNCODE_LIST) ;
 
-ZMAP_ENUM_AS_EXACT_STRING_DEC(zMapThreadReturnCode2ExactStr, ZMapThreadReturnCode) ;
-
-
-
 
 /* The thread, one per connection, an opaque private type. */
 typedef struct _ZMapThreadStruct *ZMapThread ;
@@ -99,10 +95,12 @@ typedef ZMapThreadReturnCode (*ZMapSlaveDestroyHandlerFunc)(void **slave_data) ;
 // bool "new_interface" is TEMP NEW/OLD INTERFACE WHILE I SET UP THE NEW THREADS STUFF....
 // true means use new interface, false the old/existing interface.
 ZMapThread zMapThreadCreate(bool new_interface,
-                            ZMapThreadCreateFunc create_func,
                             ZMapSlaveRequestHandlerFunc req_handler_func,
                             ZMapSlaveTerminateHandlerFunc terminate_handler_func,
                             ZMapSlaveDestroyHandlerFunc destroy_handler_func) ;
+
+bool zMapThreadStart(ZMapThread thread, ZMapThreadCreateFunc create_func) ;
+
 void zMapThreadRequest(ZMapThread thread, void *request) ;
 gboolean zMapThreadGetReply(ZMapThread thread, ZMapThreadReply *state) ;
 void zMapThreadSetReply(ZMapThread thread, ZMapThreadReply state) ;
@@ -111,13 +109,17 @@ gboolean zMapThreadGetReplyWithData(ZMapThread thread, ZMapThreadReply *state,
 char *zMapThreadGetThreadID(ZMapThread thread) ;
 char *zMapThreadGetRequestString(ZMapThreadRequest signalled_state) ;
 char *zMapThreadGetReplyString(ZMapThreadReply signalled_state) ;
-void zMapThreadKill(ZMapThread thread) ;
 gboolean zMapThreadExists(ZMapThread thread);
+
+bool zMapThreadStop(ZMapThread thread) ;
+
+void zMapThreadKill(ZMapThread thread) ;
 void zMapThreadDestroy(ZMapThread thread) ;
+
 
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zMapThreadRequest2ExactStr, ZMapThreadRequest) ;
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zMapThreadReply2ExactStr, ZMapThreadReply) ;
-
+ZMAP_ENUM_AS_EXACT_STRING_DEC(zMapThreadReturnCode2ExactStr, ZMapThreadReturnCode) ;
 
 
 

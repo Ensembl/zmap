@@ -55,17 +55,9 @@ typedef void (*ZMapThreadPollSlaveUserReplyFunc)(void *func_data) ;
            ZMapSlaveTerminateHandlerFunc terminate_handler_func,
            ZMapSlaveDestroyHandlerFunc destroy_handler_func) ;
 
-
-    // Compatibility function for old threads, will go....
-    ThreadSource(bool new_interface,
-           ZMapSlaveRequestHandlerFunc req_handler_func,
-           ZMapSlaveTerminateHandlerFunc terminate_handler_func,
-           ZMapSlaveDestroyHandlerFunc destroy_handler_func) ;
-
     static bool sourceCheck(ThreadSource &thread_source) ;
 
-
-    void SlaveStartPoll(ZMapThreadPollSlaveUserReplyFunc user_reply_func,
+    bool SlaveStartPoll(ZMapThreadPollSlaveUserReplyFunc user_reply_func,
                         void *user_reply_func_data) ;
 
     void SendThreadRequest(void *request) ;
@@ -77,10 +69,24 @@ typedef void (*ZMapThreadPollSlaveUserReplyFunc)(void *func_data) ;
 
     ~ThreadSource() ;
 
+
+    // Compatibility functions for old threads, will go....
+    //
+    ThreadSource(bool new_interface,
+           ZMapSlaveRequestHandlerFunc req_handler_func,
+           ZMapSlaveTerminateHandlerFunc terminate_handler_func,
+           ZMapSlaveDestroyHandlerFunc destroy_handler_func) ;
+
+    bool SlaveStartPoll() ;
+
+
+
   protected:
 
 
   private:
+
+    typedef unsigned int ZMapPollSlaveID ;
 
     // No default constructor.
     ThreadSource() = delete ;
@@ -93,7 +99,9 @@ typedef void (*ZMapThreadPollSlaveUserReplyFunc)(void *func_data) ;
     ThreadSource(ThreadSource&&) = delete ;
     ThreadSource& operator=(ThreadSource&&) = delete ;
 
-    typedef unsigned int ZMapPollSlaveID ;
+    void StopPolling() ;
+
+    // Data
 
     ZMapThread thread_ ;
 

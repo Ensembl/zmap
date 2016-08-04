@@ -129,8 +129,8 @@ static bool thread_debug_G = false ;
   // Add checking of args to this function, throw if not provided....
 
 
-  thread_ = zMapThreadCreate(TRUE, zmapNewThread,
-                                req_handler_func, terminate_handler_func, destroy_handler_func) ;
+  thread_ = zMapThreadCreate(TRUE,
+                             req_handler_func, terminate_handler_func, destroy_handler_func) ;
 
 
   return ;
@@ -145,7 +145,7 @@ static bool thread_debug_G = false ;
   // Add checking of args to this function, throw if not provided....
 
 
-  thread_ = zMapThreadCreate(new_interface, zmapNewThread,
+  thread_ = zMapThreadCreate(new_interface,
                              req_handler_func, terminate_handler_func, destroy_handler_func) ;
 
 
@@ -164,16 +164,38 @@ static bool thread_debug_G = false ;
 // the time that zmap is not doing anything which is unnecessary and makes it look
 // like zmap is looping using 100% CPU.)
 //
-void ThreadSource::SlaveStartPoll(ZMapThreadPollSlaveUserReplyFunc user_reply_func,
-                            void *user_reply_func_data)
+bool ThreadSource::SlaveStartPoll(ZMapThreadPollSlaveUserReplyFunc user_reply_func,
+                                  void *user_reply_func_data)
 {
+  bool result = false ;
+
   user_reply_func_ = user_reply_func ;
   user_reply_func_data_ = user_reply_func_data ;
 
-  // WARNING: gtk_timeout_add is deprecated and should not be used in newly-written code. Use g_timeout_add() instead.
-  poll_id_ = gtk_timeout_add(source_check_interval_G, sourceCheckCB, this) ;
+  if (zMapThreadStart(thread_, zmapNewThread))
+    {
+      
+      // WARNING: gtk_timeout_add is deprecated and should not be used in newly-written code. Use g_timeout_add() instead.
+      poll_id_ = gtk_timeout_add(source_check_interval_G, sourceCheckCB, this) ;
 
-  return ;
+      result = true ;
+    }
+
+  return result ;
+}
+
+
+
+// Hack for old code.....which does it's own monitoring of thread value returns (in the huge
+// checkStateConnections() function in zmapView.cpp...which I'm not going to touch.
+//
+bool ThreadSource::SlaveStartPoll()
+{
+  bool result = false ;
+
+  result = zMapThreadStart(thread_, zmapNewThread) ;
+
+  return result ;
 }
 
 
@@ -185,50 +207,34 @@ void ThreadSource::SendThreadRequest(void *request)
   return ;
 }
 
+
   ZMapThread  ThreadSource::GetThread()
   {
     return thread_ ;
   }
-  
-
-
 
 
 // Stop the GTK timer function checking for a reply from the source thread.
 //
 void ThreadSource::SlaveStopPoll()
 {
-  if (poll_id_)
-    {
-      gtk_timeout_remove(poll_id_) ;
-
-      poll_id_ = 0 ;
-    }
+  StopPolling() ;
 
   return ;
 }
 
 
-// AMAZINGLY THIS WAS MISSING....BUT IS NEEDED, WE DON'T WANT TO JUST CANCEL OUT OF A THREAD....
-//
 // Stop the thread and destroy it.
 //
  ThreadSource::~ThreadSource()
 {
-
-
-  // stop polling if not already stopped....
-
-
+  StopPolling() ;
+  
+  zMapThreadDestroy(thread_) ;
+  thread_ = NULL ;                                          // Just to be sure.
 
   return ;
 }
-
-
-
-
-
-
 
 
 
@@ -236,13 +242,26 @@ void ThreadSource::SlaveStopPoll()
 //                     Internal routines
 //
 
+// Stop polling unless already stopped.
+  void ThreadSource::StopPolling()
+  {
+
+  if (poll_id_)
+    {
+      gtk_timeout_remove(poll_id_) ;
+
+      poll_id_ = 0 ;
+    }
+
+
+    return ;
+  }
 
 
 
-//
+
 //        Functions to check and control the connection to a source thread.
 //
-
 
 // Called every source_check_interval_G milliseconds to see if the source thread has replied.
 //
@@ -250,7 +269,6 @@ static gint sourceCheckCB(gpointer cb_data)
 {
   gint call_again = 0 ;
   ThreadSource *thread = (ThreadSource *)cb_data ;
-
 
   /* Returning a value > 0 tells gtk to call sourceCheckCB again, so if sourceCheck() returns
    * TRUE we ask to be called again. */
@@ -271,8 +289,6 @@ static gint sourceCheckCB(gpointer cb_data)
  * and this is possible because this routine is called from the idle function of the GUI.
  *
  *  */
-
-
 bool ThreadSource::sourceCheck(ThreadSource &thread_source)
 {
   gboolean call_again = TRUE ;                                    /* Normally we want to be called continuously. */
@@ -280,16 +296,17 @@ bool ThreadSource::sourceCheck(ThreadSource &thread_source)
   void *data = NULL ;
   char *err_msg = NULL ;
 
-
   if (!(zMapThreadGetReplyWithData(thread_source.thread_, &reply, &data, &err_msg)))
     {
       // something bad has happened if we can't get a reply so kill the thread.
+      // Note: we would like to throw an exception here but who would catch it ? !!
 
       THREAD_DEBUG_MSG(thread_source.thread_, "cannot access reply from child, error was  \"%s\"", err_msg) ;
 
       zMapLogCritical("Thread %p will be killed as cannot access reply from child, error was  \"%s\"",
                       thread_source.thread_, err_msg) ;
 
+      // This call will cancel the thread 
       zMapThreadKill(thread_source.thread_) ;
       
       // signal that we are finished.

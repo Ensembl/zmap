@@ -1469,6 +1469,8 @@ static void newImportFile(MainFrame main_frame)
             }
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
           // Try a sequence request
           GList *dna_req_featuresets = NULL ;
           GQuark dna_id = g_quark_from_string("dna") ;
@@ -1490,6 +1492,8 @@ static void newImportFile(MainFrame main_frame)
 
               delete my_sequence_request ;
             }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
         }

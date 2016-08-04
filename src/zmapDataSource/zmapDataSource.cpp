@@ -100,7 +100,8 @@ namespace ZMapDataSource
   // Start polling, if this means we do too much polling we can have a function to start or do it
   // as part of the SendRequest....though that might induce some timing problems.
   //
-  thread_.SlaveStartPoll(ReplyCallbackFunc, this) ;
+  if (!(thread_.SlaveStartPoll(ReplyCallbackFunc, this)))
+    throw runtime_error("Could not start slave polling.") ;
 
   state_ = DataSourceState::INIT ;
 

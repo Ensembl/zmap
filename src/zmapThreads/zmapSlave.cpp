@@ -54,7 +54,11 @@ enum {ZMAPTHREAD_SLAVE_REQ_BUFSIZE = 512} ;
 static void cleanUpThread(void *thread_args) ;
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 ZMAP_ENUM_AS_EXACT_STRING_FUNC(zMapThreadReturnCode2ExactStr, ZMapThreadReturnCode, ZMAP_THREAD_RETURNCODE_LIST) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 /* This is the routine that is called by the pthread_create() function, in effect
