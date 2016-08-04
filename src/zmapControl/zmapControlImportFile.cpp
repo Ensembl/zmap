@@ -384,7 +384,7 @@ static GtkWidget *makeOptionsBox(MainFrame main_frame, const char *req_sequence,
         end = g_strdup_printf("%d", req_end) ;
     }
 
-  frame = gtk_frame_new("Import data") ;
+  frame = gtk_frame_new("Import settings") ;
   gtk_container_border_width(GTK_CONTAINER(frame), 5) ;
 
   topbox = gtk_vbox_new(FALSE, 5) ;
@@ -399,18 +399,6 @@ static GtkWidget *makeOptionsBox(MainFrame main_frame, const char *req_sequence,
   /* Labels..... */
   labelbox = gtk_vbox_new(TRUE, 0) ;
   gtk_box_pack_start(GTK_BOX(hbox), labelbox, FALSE, FALSE, 0) ;
-
-  /*
-  label = gtk_label_new( "Script " ) ;
-  gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5);
-  gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
-  */
-
-  /*
-  label = gtk_label_new( "Extra Parameters " ) ;
-  gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5);
-  gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
-  */
 
   label = gtk_label_new( "Sequence " ) ;
   gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5);
@@ -450,21 +438,29 @@ static GtkWidget *makeOptionsBox(MainFrame main_frame, const char *req_sequence,
   gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE) ;
   gtk_entry_set_text(GTK_ENTRY(entry), sequence) ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, TRUE, 0) ;
+  gtk_widget_set_tooltip_text(main_frame->req_sequence_widg, 
+                              "The sequence name to look for in the source (if different to the name in ZMap)") ;
 
   main_frame->req_start_widg = entry = gtk_entry_new() ;
   gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE) ;
   gtk_entry_set_text(GTK_ENTRY(entry), (start ? start : "")) ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
+  gtk_widget_set_tooltip_text(main_frame->req_start_widg, 
+                              "The range to import data for (defaults to the mark, if set, or the full ZMap range if not)") ;
 
   main_frame->req_end_widg = entry = gtk_entry_new() ;
   gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE) ;
   gtk_entry_set_text(GTK_ENTRY(entry), (end ? end : "")) ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
+  gtk_widget_set_tooltip_text(main_frame->req_end_widg, 
+                              "The range to import data for (defaults to the mark, if set, or the full ZMap range if not)") ;
 
   main_frame->assembly_widg = entry = gtk_entry_new() ;
   gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE) ;
   gtk_entry_set_text(GTK_ENTRY(entry), "") ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, TRUE, 0) ;
+  gtk_widget_set_tooltip_text(main_frame->req_end_widg, 
+                              "The assembly that the input source is from. If given, ZMap will attempt to map data from this to the current assembly.") ;
 
   main_frame->source_widg = entry = gtk_entry_new() ;
   gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE) ;
