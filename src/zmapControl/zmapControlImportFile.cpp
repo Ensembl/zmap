@@ -108,13 +108,10 @@ static GtkWidget *makeOptionsBox(MainFrame main_frame, const char *seq, int star
 
 static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data) ;
 static void importFileCB(ZMapFeatureSequenceMap sequence_map, gpointer cb_data) ;
-static void closeCB(gpointer cb_data) ;
 
 #ifdef NOT_USED
 static void sequenceCB(GtkWidget *widget, gpointer cb_data) ;
 #endif
-
-static void fileChangedCB(GtkWidget *widget, gpointer user_data);
 
 
 
@@ -262,107 +259,6 @@ static MainFrame makePanel(GtkWidget *toplevel, gpointer *our_data,
   gtk_box_pack_start(GTK_BOX(vbox), options_box, TRUE, TRUE, 0) ;
 
   return main_data ;
-}
-
-
-
-
-/* Make the label/entry fields frame. */
-static GtkWidget *makeMainFrame(MainFrame main_frame, ZMapFeatureSequenceMap sequence_map)
-{
-  GtkWidget *frame ;
-  GtkWidget *topbox, *hbox, *entrybox, *labelbox, *entry, *label ;
-  const char *sequence = "", *dataset = "" ;
-  char *start = NULL, *end = NULL ;
-
-  if (sequence_map)
-    {
-      if (sequence_map->sequence)
-        sequence = sequence_map->sequence ;
-      if (sequence_map->dataset)
-        dataset = sequence_map->dataset ;
-      if (sequence_map->start)
-        start = g_strdup_printf("%d", sequence_map->start) ;
-      if (sequence_map->end)
-        end = g_strdup_printf("%d", sequence_map->end) ;
-    }
-
-  frame = gtk_frame_new( "ZMap Sequence: " );
-  gtk_container_border_width(GTK_CONTAINER(frame), 5);
-
-  topbox = gtk_vbox_new(FALSE, 5) ;
-  gtk_container_border_width(GTK_CONTAINER(topbox), 5) ;
-  gtk_container_add (GTK_CONTAINER (frame), topbox) ;
-
-  hbox = gtk_hbox_new(FALSE, 0) ;
-  gtk_container_border_width(GTK_CONTAINER(hbox), 0);
-  gtk_box_pack_start(GTK_BOX(topbox), hbox, TRUE, FALSE, 0) ;
-
-
-  /* Labels..... */
-  labelbox = gtk_vbox_new(TRUE, 0) ;
-  gtk_box_pack_start(GTK_BOX(hbox), labelbox, FALSE, FALSE, 0) ;
-
-  label = gtk_label_new( "Sequence " ) ;
-  gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5);
-  gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
-
-  label = gtk_label_new("Dataset ") ;
-  gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5) ;
-  gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
-
-  label = gtk_label_new( "Start " ) ;
-  gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
-  gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5);
-
-  label = gtk_label_new( "End " ) ;
-  gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5);
-  gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
-
-
-  /* Entries.... */
-  entrybox = gtk_vbox_new(TRUE, 0) ;
-  gtk_box_pack_start(GTK_BOX(hbox), entrybox, TRUE, TRUE, 0) ;
-
-  main_frame->sequence_widg = entry = gtk_entry_new() ;
-  gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE) ;
-  gtk_entry_set_text(GTK_ENTRY(entry), sequence) ;
-  //  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
-  gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, TRUE, 0) ;
-  gtk_widget_set_sensitive(GTK_WIDGET(entry),FALSE);
-
-  main_frame->dataset_widg = entry = gtk_entry_new() ;
-  gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE) ;
-  gtk_entry_set_text(GTK_ENTRY(entry), dataset) ;
-  //  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
-  gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, TRUE, 0) ;
-  gtk_widget_set_sensitive(GTK_WIDGET(entry),FALSE);
-
-  main_frame->start_widg = entry = gtk_entry_new() ;
-  gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE) ;
-  gtk_entry_set_text(GTK_ENTRY(entry), (start ? start : "")) ;
-  //  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
-  gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
-  gtk_widget_set_sensitive(GTK_WIDGET(entry),FALSE);
-
-  main_frame->end_widg = entry = gtk_entry_new() ;
-  gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE) ;
-  gtk_entry_set_text(GTK_ENTRY(entry), (end ? end : "")) ;
-  //  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
-  gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
-  gtk_widget_set_sensitive(GTK_WIDGET(entry),FALSE);
-
-  /* Free resources. */
-  if (sequence_map)
-    {
-      if (*start)
-        g_free(start) ;
-      if (*end)
-        g_free(end) ;
-    }
-
-
-  return frame ;
 }
 
 
