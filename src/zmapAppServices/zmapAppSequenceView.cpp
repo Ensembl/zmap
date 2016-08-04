@@ -487,8 +487,8 @@ static GtkWidget *makeButtonBox(MainFrame main_data)
       gtk_box_pack_start(GTK_BOX(button_box), close_button, FALSE, TRUE, 0) ;
     }
 
-  create_button = gtk_button_new_from_stock(GTK_STOCK_EXECUTE) ;
-  gtk_widget_set_tooltip_text(create_button, "Run ZMap on the given source/sequence") ;
+  create_button = gtk_button_new_from_stock(GTK_STOCK_OK) ;
+  gtk_widget_set_tooltip_text(create_button, "Load the specified region for the selected source(s)") ;
   gtk_signal_connect(GTK_OBJECT(create_button), "clicked",
                      GTK_SIGNAL_FUNC(createViewCB), (gpointer)main_data) ;
   gtk_box_pack_start(GTK_BOX(button_box), create_button, FALSE, TRUE, 0) ;
