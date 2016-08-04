@@ -124,7 +124,7 @@ GtkWidget *zMapAppGetSequenceView(ZMapAppGetSequenceViewCB user_func, gpointer u
 
   zMapReturnValIfFail(user_func, NULL) ; 
 
-  toplevel = zMapGUIToplevelNew(NULL, "Please specify sequence to be viewed.") ;
+  toplevel = zMapGUIToplevelNew(NULL, "Choose source(s) and sequence to load") ;
 
   gtk_window_set_policy(GTK_WINDOW(toplevel), FALSE, TRUE, FALSE ) ;
   gtk_container_border_width(GTK_CONTAINER(toplevel), 0) ;
@@ -1025,5 +1025,8 @@ static void configChangedCB(GtkWidget *widget, gpointer user_data)
   if (main_frame && main_frame->orig_sequence_map)
     {
       main_frame->orig_sequence_map->constructSources(filename, NULL, NULL) ;
+
+      /* Update the sources list */
+      updateSourcesList(main_frame, main_frame->orig_sequence_map) ;
     }
 }
