@@ -882,13 +882,13 @@ void makeTrackhubWidgets(MainFrame main_data,
 {
   /* Display the trackDb details */
   main_data->trackdb_id_widg = makeEntryWidget("ID :", NULL, "REQUIRED: The track database ID from the Ensembl Track Hub Registry. Click on the Search button to look up a track hub.",
-                                               table, &row, col, col + 2, TRUE, &main_data->trackhub_widgets);
+                                               table, &row, col, col + 6, TRUE, &main_data->trackhub_widgets);
   main_data->trackdb_name_widg = makeEntryWidget("Name :", NULL, "The hub name",
-                                                 table, &row, col, col + 2, FALSE, &main_data->trackhub_widgets);
+                                                 table, &row, col, col + 6, FALSE, &main_data->trackhub_widgets);
   main_data->trackdb_species_widg = makeEntryWidget("Species :", NULL, "The species this hub belongs to",
-                                                    table, &row, col, col + 2, FALSE, &main_data->trackhub_widgets);
+                                                    table, &row, col, col + 6, FALSE, &main_data->trackhub_widgets);
   main_data->trackdb_assembly_widg = makeEntryWidget("Assembly :", NULL, "The assembly this hub belongs to",
-                                                     table, &row, col, col + 2, FALSE, &main_data->trackhub_widgets);
+                                                     table, &row, col, col + 6, FALSE, &main_data->trackhub_widgets);
 
   /* Connect a signal to update the other details after the trackdb_id has changed */
   g_signal_connect(main_data->trackdb_id_widg, "changed", G_CALLBACK(onTrackDbIdChanged), main_data) ;
@@ -898,6 +898,8 @@ void makeTrackhubWidgets(MainFrame main_data,
   gtk_widget_set_sensitive(main_data->trackdb_species_widg, FALSE) ;
   gtk_widget_set_sensitive(main_data->trackdb_assembly_widg, FALSE) ;
 
+  col += 2;
+
   /* Search button */
   main_data->search_widg = makeButtonWidget(NULL, "Search", false, "Search for track hubs",
                                             GTK_SIGNAL_FUNC(trackhubSearchCB), main_data,
@@ -906,14 +908,14 @@ void makeTrackhubWidgets(MainFrame main_data,
   ++col;
 
   /* Register button */
-  main_data->register_widg = makeButtonWidget(NULL, "Register a hub", false, "Register a new track hub",
+  main_data->register_widg = makeButtonWidget(NULL, "Register", false, "Register a new track hub",
                                               GTK_SIGNAL_FUNC(trackhubRegisterCB), main_data,
                                               table, row, col,
                                               main_data->trackhub_widgets);
   ++col;
 
   /* View registered hubs button */
-  main_data->browse_widg = makeButtonWidget(NULL, "View registered hubs", false, "View all of your registered track hubs",
+  main_data->browse_widg = makeButtonWidget(NULL, "My hubs", false, "View all of your registered track hubs",
                                             GTK_SIGNAL_FUNC(trackhubBrowseCB), main_data,
                                             table, row, col,
                                             main_data->trackhub_widgets);
@@ -938,7 +940,7 @@ GtkWidget *makeMainFrame(MainFrame main_data,
   gtk_container_border_width(GTK_CONTAINER(frame), 5);
 
   const int rows = 7 ;
-  const int cols = 6 ;
+  const int cols = 7 ;
   GtkTable *table = GTK_TABLE(gtk_table_new(rows, cols, FALSE)) ;
   gtk_container_add (GTK_CONTAINER (frame), GTK_WIDGET(table)) ;
 
