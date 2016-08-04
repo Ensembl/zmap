@@ -105,7 +105,6 @@ static MainFrame makePanel(GtkWidget *toplevel, gpointer *seqdata_out,
                       ZMapFeatureSequenceMap sequence_map, int req_start, int req_end) ;
 static GtkWidget *makeMainFrame(MainFrame main_frame, ZMapFeatureSequenceMap sequence_map) ;
 static GtkWidget *makeOptionsBox(MainFrame main_frame, const char *seq, int start, int end);
-static void makeButtonBox(GtkWidget *toplevel, MainFrame main_frame) ;
 
 static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data) ;
 static void importFileCB(ZMapFeatureSequenceMap sequence_map, gpointer cb_data) ;
@@ -509,124 +508,6 @@ static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data)
 }
 
 
-/* Kill the dialog. */
-static void closeCB(gpointer cb_data)
-{
-  MainFrame main_frame = (MainFrame)cb_data ;
-
-  gtk_widget_destroy(main_frame->toplevel) ;
-
-  return ;
-}
-
-
-
-/*
- * Special cases:
- *
- * (1) Require strand if wre have a bigwig file
- * (2) Do _not_ specify source if we have a GFF file
- */
-static void enable_widgets(MainFrame main_frame)
-{
-  if (!main_frame)
-    return ;
-
-  gboolean is_gff = main_frame->file_type == ZMAPSOURCE_FILE_GFF,
-    is_bam = main_frame->file_type == ZMAPSOURCE_FILE_BAM,
-    is_big = main_frame->file_type == ZMAPSOURCE_FILE_BIGWIG,
-    is_otter = main_frame->is_otter ;
-
-  /*
-   * We only allow some of the widgets to be set under the
-   * following conditions.
-   */
-  gtk_widget_set_sensitive(main_frame->strand_widg, is_big );
-  gtk_widget_set_sensitive(main_frame->source_widg, !is_gff ) ;
-  gtk_widget_set_sensitive(main_frame->assembly_widg, !is_gff && is_otter ) ;
-  gtk_widget_set_sensitive(main_frame->map_widg, (is_bam || is_big) && is_otter) ;
-}
-
-
-/*
- * Callback for when the "file" text is changed.
- */
-static void fileChangedCB(GtkWidget *widget, gpointer user_data)
-{
-  MainFrame main_frame = (MainFrame) user_data ;
-  char *filename ;
-  char *extent;
-  ZMapSourceFileType file_type = ZMAPSOURCE_FILE_NONE ;
-  char *source_txt = NULL;
-
-  /*
-   * Inspect the file extension to determine type.
-   * Case is ignored.
-   */
-  filename = (char *) gtk_entry_get_text(GTK_ENTRY(widget)) ;
-  extent = filename + strlen(filename);
-
-  while(*extent != '.' && extent > filename)
-    extent--;
-  if (!g_ascii_strcasecmp(extent,".gff"))
-    file_type = ZMAPSOURCE_FILE_GFF ;
-  else if (!g_ascii_strcasecmp(extent,".bam"))
-    file_type = ZMAPSOURCE_FILE_BAM ;
-  else if (!g_ascii_strcasecmp(extent,".sam"))
-    file_type = ZMAPSOURCE_FILE_BAM ;
-  else if(!g_ascii_strcasecmp(extent,".bigwig"))
-    file_type = ZMAPSOURCE_FILE_BIGWIG ;
-
-  /*
-   * Set the file type in the struct.
-   */
-  main_frame->file_type = file_type;
-
-  gtk_entry_set_text(GTK_ENTRY(main_frame->strand_widg), "")  ;
-  gtk_entry_set_text(GTK_ENTRY(main_frame->source_widg), "")  ;
-  gtk_entry_set_text(GTK_ENTRY(main_frame->assembly_widg), "")  ;
-
-  /* Make the default remap setting true if we're hooked up to otterlace (which does the
-   * remapping), false otherwise. */
-  gtk_toggle_button_set_active((GtkToggleButton*)main_frame->map_widg, main_frame->is_otter) ;
-
-  /*
-   *Try to get a source name for non-GFF types.
-   */
-  if (main_frame->file_type == ZMAPSOURCE_FILE_GFF)
-    {
-      gtk_entry_set_text(GTK_ENTRY(main_frame->source_widg), "") ;
-    }
-  else
-    {
-      char *name = extent;
-      while(name > filename && *name != '/')
-        name--;
-      if(*name == '/')
-        name++;
-      source_txt = g_strdup_printf("%.*s", (int)(extent - name), name) ;
-      gtk_entry_set_text(GTK_ENTRY(main_frame->source_widg), source_txt) ;
-    }
-
-  /*
-   * Have a go at extracting the strand from the file name
-   * in the case of bigwig type.
-   */
-  if(main_frame->file_type == ZMAPSOURCE_FILE_BIGWIG)
-    {
-      /*GQuark f_id;*/
-      const char * strand_txt = NULL ;
-
-      strand_txt = g_strstr_len(filename,-1,"inus") ? "-" : "+";
-      gtk_entry_set_text(GTK_ENTRY(main_frame->strand_widg), strand_txt) ;
-
-    }
-
-  enable_widgets(main_frame);
-
-  return ;
-}
-
 
 /* Get the script to use for the given file type. This should not be hard-coded really but long
  * term we will hopefully not need these scripts when zmap can do the remapping itself. Returns
@@ -855,8 +736,6 @@ static void importFileCB(ZMapFeatureSequenceMap sequence_map, gpointer cb_data)
   std::string err_msg("") ;
   char *sequence_txt = NULL ;
   const char *dataset_txt = NULL ;
-  const char *start_txt = NULL ;
-  const char *end_txt = NULL ;
   const char *file_txt = NULL ;
   const char *req_start_txt= NULL ;
   const char *req_end_txt = NULL ;
@@ -865,7 +744,6 @@ static void importFileCB(ZMapFeatureSequenceMap sequence_map, gpointer cb_data)
   const char *assembly_txt = NULL ;
   const char *req_sequence_txt = NULL ;
   int start = 0 ;
-  int end = 0 ;
   int req_start = 0 ;
   int req_end = 0 ;
   int strand = 0 ;
