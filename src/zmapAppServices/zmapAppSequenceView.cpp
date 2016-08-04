@@ -111,6 +111,13 @@ static void saveSourcesToConfig(ZMapFeatureSequenceMap sequence_map,
                                 GError **error) ;
 static void configChangedCB(GtkWidget *widget, gpointer user_data) ;
 
+static list<ZMapConfigSource> getSelectedSources(GtkTreeView *sources_tree,
+                                                 ZMapFeatureSequenceMap sequence_map,
+                                                 const char *err_msg) ;
+static list<GQuark> getSelectedSourceNames(GtkTreeView *sources_tree,
+                                           const char *err_msg) ;
+
+
 
 
 /*
@@ -681,47 +688,21 @@ static void editSourceCB(GtkWidget *widget, gpointer cb_data)
   MainFrame main_data = (MainFrame)cb_data ;
   zMapReturnIfFail(main_data) ;
 
-  GtkTreeSelection *selection = gtk_tree_view_get_selection(main_data->sources_tree) ;
-  ZMapFeatureSequenceMap sequence_map = main_data->orig_sequence_map ;
+  const char *err_msg = NULL;
 
-  if (!selection)
-    {
-      zMapCritical("%s", "No source selected") ;
-    }
+  list<ZMapConfigSource> sources = getSelectedSources(main_data->sources_tree, 
+                                                      main_data->orig_sequence_map,
+                                                      err_msg) ;
+
+  if (sources.size() == 1)
+    zMapAppEditSource(main_data->orig_sequence_map, sources.front(), editSourceCB, main_data) ;
+  else if (sources.size() > 1)
+    zMapCritical("%s", "Please only select one source") ;
+  else if (err_msg)
+    zMapCritical("%s", err_msg) ;
   else
-    {
-      GtkTreeModel *model = NULL ; 
-      GList *rows = gtk_tree_selection_get_selected_rows(selection, &model) ;
-
-      if (g_list_length(rows) < 1)
-        {
-          zMapCritical("%s", "Please select a source") ;
-        }
-      else if (g_list_length(rows) > 1)
-        {
-          zMapCritical("%s", "Please only select one source") ;
-        }
-      else
-        {
-          GtkTreePath *path = (GtkTreePath*)(rows->data) ;
-          GtkTreeIter iter ;
-          gtk_tree_model_get_iter(model, &iter, path) ;
-
-          char *source_name = NULL ;
-          gtk_tree_model_get(model, &iter, SourceColumn::NAME, &source_name, -1) ;
-
-          if (source_name)
-            {
-              ZMapConfigSource source = sequence_map->getSource(source_name) ;
-              zMapAppEditSource(main_data->orig_sequence_map, source, editSourceCB, main_data) ;
-            }
-          else
-            {
-              zMapCritical("%s", "Program error: failed to get source name") ;
-            }
-        }
-    }
-
+    zMapCritical("%s", "Program error: failed to get sources") ;
+    
   return ;
 }
 
@@ -732,45 +713,37 @@ static void removeSourceCB(GtkWidget *widget, gpointer cb_data)
   MainFrame main_data = (MainFrame)cb_data ;
   zMapReturnIfFail(main_data && main_data->sources_tree && main_data->orig_sequence_map) ;
 
-  GtkTreeSelection *selection = gtk_tree_view_get_selection(main_data->sources_tree) ;
-  ZMapFeatureSequenceMap sequence_map = main_data->orig_sequence_map ;
+  const char *err_msg = NULL;
 
-  if (!selection)
+  list<GQuark> source_names = getSelectedSourceNames(main_data->sources_tree, 
+                                                     err_msg) ;
+  
+  if (source_names.size() > 0)
     {
-      zMapCritical("%s", "No source selected") ;
-    }
-  else
-    {
-      GtkTreeModel *model = NULL ; 
-      GList *rows = gtk_tree_selection_get_selected_rows(selection, &model) ;
-
-      /* Loop through all selected sources */
-      for (GList *row = rows; row; row = g_list_next(row))
+      for (auto source_name : source_names)
         {
-          GtkTreePath *path = (GtkTreePath*)(row->data) ;
-          GtkTreeIter iter ;
-          gtk_tree_model_get_iter(model, &iter, path) ;
+          GError *error = NULL ;
+          main_data->orig_sequence_map->removeSource(g_quark_to_string(source_name), &error) ;
 
-          char *source_name = NULL ;
-          gtk_tree_model_get(model, &iter, SourceColumn::NAME, &source_name, -1) ;
-
-          if (source_name)
+          if (error)
             {
-              GError *error = NULL ;
-              sequence_map->removeSource(source_name, &error) ;
-              
-              if (error)
-                {
-                  zMapLogWarning("Error removing source '%s': %s", source_name, error->message) ;
-                  g_error_free(error) ;
-                  error = NULL ;
-                }
+              zMapLogWarning("Error removing source '%s': %s", source_name, error->message) ;
+              g_error_free(error) ;
+              error = NULL ;
             }
         }
 
       /* Update the list widget */
-      updateSourcesList(main_data, sequence_map) ;
-      sequence_map->setFlag(ZMAPFLAG_SAVE_SOURCES, TRUE) ;
+      updateSourcesList(main_data, main_data->orig_sequence_map) ;
+      main_data->orig_sequence_map->setFlag(ZMAPFLAG_SAVE_SOURCES, TRUE) ;
+    }
+  else if (err_msg)
+    {
+      zMapCritical("%s", err_msg) ;
+    }
+  else
+    {
+      zMapCritical("%s", "Program error: failed to get sources") ;
     }
 
   return ;
@@ -851,134 +824,143 @@ static void setSequenceEntries(MainFrame main_data)
 static void applyCB(GtkWidget *widget, gpointer cb_data)
 {
   MainFrame main_data = (MainFrame)cb_data ;
-  gboolean status = TRUE ;
-  const char *err_msg = NULL ;
-  const char *sequence = "", *start_txt, *end_txt, *config_txt ;
-  int start = 1, end = 0 ;
-  GError *tmp_error = NULL ;
 
-
-  /* Note gtk_entry returns the empty string "" _not_ NULL when there is no text. */
-  sequence = (char *)gtk_entry_get_text(GTK_ENTRY(main_data->sequence_widg)) ;
-  start_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_data->start_widg)) ;
-  end_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_data->end_widg)) ;
-  config_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_data->config_widg)) ;
-
-
-  if (!(*sequence) && !(*start_txt) && !(*end_txt) && *config_txt)
+  if (!main_data->sequence_editable)
     {
-      /* Just a config file specified, try that. */
-      status = TRUE ;
-    }
-  else if (!(*sequence) && !(*start_txt) && !(*end_txt))
-    {
-      status = FALSE ;
-      err_msg = "Please enter the sequence name and coordinates" ;
-    }
-  else if (!(*sequence))
-    {
-      status = FALSE ;
-      err_msg = "Please enter the sequence name" ;
-    }
-  else if (!(*start_txt) || !(*end_txt))
-    {
-      status = FALSE ;
-      err_msg = "Please enter the start and end coordinates" ;
-    }
-  else if (*sequence && *start_txt && *end_txt)
-    {
-      if (status)
-        {
-          if (!(*start_txt) || !zMapStr2Int(start_txt, &start) || start < 1)
-            {
-              status = FALSE ;
-              err_msg = "Invalid start specified." ;
-            }
-        }
-
-      if (status)
-        {
-          if (!(*end_txt) || !zMapStr2Int(end_txt, &end) || end <= start)
-            {
-              status = FALSE ;
-              err_msg = "Invalid end specified." ;
-            }
-        }
-
-      if (status)
-        {
-          if (!(*config_txt))
-            config_txt = NULL ;    /* No file specified. */
-        }
+      /* Just call user callback with original sequence map. */
+      (main_data->user_func)(main_data->orig_sequence_map, main_data->user_data) ;
     }
   else
     {
-      status = FALSE ;
-      err_msg = "Please enter the sequence name and coordinates,\n"
-        "OR a config file containing these details (but not both)." ;
-    }
-
-
-  if (!status)
-    {
-      zMapWarning("%s", err_msg) ;
-    }
-  else
-    {
-      /* when we get here we should either have only a config file specified or
-       * a sequence/start/end and optionally a config file. */
-      ZMapFeatureSequenceMap seq_map ;
-      gboolean sequence_ok = FALSE ;
+      gboolean status = TRUE ;
       const char *err_msg = NULL ;
+      const char *sequence = "", *start_txt, *end_txt, *config_txt ;
+      int start = 1, end = 0 ;
+      GError *tmp_error = NULL ;
 
-      seq_map = g_new0(ZMapFeatureSequenceMapStruct,1) ;
 
-      seq_map->config_file = g_strdup(config_txt) ;
+      /* Note gtk_entry returns the empty string "" _not_ NULL when there is no text. */
+      sequence = (char *)gtk_entry_get_text(GTK_ENTRY(main_data->sequence_widg)) ;
+      start_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_data->start_widg)) ;
+      end_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_data->end_widg)) ;
+      config_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_data->config_widg)) ;
 
-      if (main_data->orig_sequence_map)
-        seq_map->sources = main_data->orig_sequence_map->sources ;
 
-      if (*sequence)
+      if (!(*sequence) && !(*start_txt) && !(*end_txt) && *config_txt)
         {
-          sequence_ok = TRUE ;
-          seq_map->sequence = g_strdup(sequence) ;
-          seq_map->start = start ;
-          seq_map->end = end ;
+          /* Just a config file specified, try that. */
+          status = TRUE ;
+        }
+      else if (!(*sequence) && !(*start_txt) && !(*end_txt))
+        {
+          status = FALSE ;
+          err_msg = "Please enter the sequence name and coordinates" ;
+        }
+      else if (!(*sequence))
+        {
+          status = FALSE ;
+          err_msg = "Please enter the sequence name" ;
+        }
+      else if (!(*start_txt) || !(*end_txt))
+        {
+          status = FALSE ;
+          err_msg = "Please enter the start and end coordinates" ;
+        }
+      else if (*sequence && *start_txt && *end_txt)
+        {
+          if (status)
+            {
+              if (!(*start_txt) || !zMapStr2Int(start_txt, &start) || start < 1)
+                {
+                  status = FALSE ;
+                  err_msg = "Invalid start specified." ;
+                }
+            }
+
+          if (status)
+            {
+              if (!(*end_txt) || !zMapStr2Int(end_txt, &end) || end <= start)
+                {
+                  status = FALSE ;
+                  err_msg = "Invalid end specified." ;
+                }
+            }
+
+          if (status)
+            {
+              if (!(*config_txt))
+                config_txt = NULL ;    /* No file specified. */
+            }
         }
       else
         {
-          zMapAppGetSequenceConfig(seq_map, &tmp_error);
-                  
-          if (tmp_error)
+          status = FALSE ;
+          err_msg = "Please enter the sequence name and coordinates,\n"
+            "OR a config file containing these details (but not both)." ;
+        }
+
+
+      if (!status)
+        {
+          zMapWarning("%s", err_msg) ;
+        }
+      else
+        {
+          /* when we get here we should either have only a config file specified or
+           * a sequence/start/end and optionally a config file. */
+          ZMapFeatureSequenceMap seq_map ;
+          gboolean sequence_ok = FALSE ;
+          const char *err_msg = NULL ;
+
+          seq_map = g_new0(ZMapFeatureSequenceMapStruct,1) ;
+
+          seq_map->config_file = g_strdup(config_txt) ;
+
+          if (main_data->orig_sequence_map)
+            seq_map->sources = main_data->orig_sequence_map->sources ;
+
+          if (*sequence)
             {
-              sequence_ok = FALSE ;
-              err_msg = tmp_error->message ;
-            }
-          else if (!seq_map->sequence || !seq_map->start || !seq_map->end)
-            {
-              err_msg = "Cannot load sequence from config file, check sequence, start and end specified." ;
-              sequence_ok = FALSE ;
+              sequence_ok = TRUE ;
+              seq_map->sequence = g_strdup(sequence) ;
+              seq_map->start = start ;
+              seq_map->end = end ;
             }
           else
             {
-              sequence_ok = TRUE ;
+              zMapAppGetSequenceConfig(seq_map, &tmp_error);
+                  
+              if (tmp_error)
+                {
+                  sequence_ok = FALSE ;
+                  err_msg = tmp_error->message ;
+                }
+              else if (!seq_map->sequence || !seq_map->start || !seq_map->end)
+                {
+                  err_msg = "Cannot load sequence from config file, check sequence, start and end specified." ;
+                  sequence_ok = FALSE ;
+                }
+              else
+                {
+                  sequence_ok = TRUE ;
+                }
+            }
+
+          if (!sequence_ok)
+            {
+              zMapWarning("%s", err_msg) ;
+              g_free(seq_map) ;
+            }
+          else
+            {
+              /* Call back with users parameters for new sequence display. */
+              (main_data->user_func)(seq_map, main_data->user_data) ;
             }
         }
 
-      if (!sequence_ok)
-        {
-          zMapWarning("%s", err_msg) ;
-          g_free(seq_map) ;
-        }
-      else
-        {
-          /* Call back with users parameters for new sequence display. */
-          (main_data->user_func)(seq_map, main_data->user_data) ;
-        }
+      if (tmp_error)
+        g_error_free(tmp_error) ;
     }
-
-  if (tmp_error)
-    g_error_free(tmp_error) ;
 
   return ;
 }
@@ -1076,4 +1058,110 @@ static void configChangedCB(GtkWidget *widget, gpointer user_data)
       /* Update the sources list */
       updateSourcesList(main_frame, main_frame->orig_sequence_map) ;
     }
+}
+
+
+/* Utility to get the sources that are selected in the list box */
+static list<ZMapConfigSource> getSelectedSources(GtkTreeView *sources_tree,
+                                                 ZMapFeatureSequenceMap sequence_map,
+                                                 const char *err_msg)
+{
+  list<ZMapConfigSource> result ;
+
+  zMapReturnValIfFail(sources_tree && sequence_map, result) ;
+
+  GtkTreeSelection *selection = gtk_tree_view_get_selection(sources_tree) ;
+
+  if (!selection)
+    {
+      err_msg = "No source selected" ;
+    }
+  else
+    {
+      GtkTreeModel *model = NULL ; 
+      GList *rows = gtk_tree_selection_get_selected_rows(selection, &model) ;
+
+      if (g_list_length(rows) < 1)
+        {
+          err_msg = "No source selected" ;
+        }
+      else
+        {
+          for (GList *row_item = rows; row_item; row_item = row_item->next)
+            {
+              GtkTreePath *path = (GtkTreePath*)(row_item->data) ;
+              GtkTreeIter iter ;
+              gtk_tree_model_get_iter(model, &iter, path) ;
+
+              char *source_name = NULL ;
+              gtk_tree_model_get(model, &iter, SourceColumn::NAME, &source_name, -1) ;
+
+              if (source_name)
+                {
+                  ZMapConfigSource source = sequence_map->getSource(source_name) ;
+                  result.push_back(source) ;
+                  g_free(source_name) ;
+                }
+              else
+                {
+                  err_msg = "Program error: failed to get source name" ;
+                  break ;
+                }
+            }
+        }
+    }
+
+  return result ;
+}
+
+
+/* Utility to get the sources that are selected in the list box */
+static list<GQuark> getSelectedSourceNames(GtkTreeView *sources_tree,
+                                           const char *err_msg)
+{
+  list<GQuark> result ;
+
+  zMapReturnValIfFail(sources_tree, result) ;
+
+  GtkTreeSelection *selection = gtk_tree_view_get_selection(sources_tree) ;
+
+  if (!selection)
+    {
+      err_msg = "No source selected" ;
+    }
+  else
+    {
+      GtkTreeModel *model = NULL ; 
+      GList *rows = gtk_tree_selection_get_selected_rows(selection, &model) ;
+
+      if (g_list_length(rows) < 1)
+        {
+          err_msg = "No source selected" ;
+        }
+      else
+        {
+          for (GList *row_item = rows; row_item; row_item = row_item->next)
+            {
+              GtkTreePath *path = (GtkTreePath*)(row_item->data) ;
+              GtkTreeIter iter ;
+              gtk_tree_model_get_iter(model, &iter, path) ;
+
+              char *source_name = NULL ;
+              gtk_tree_model_get(model, &iter, SourceColumn::NAME, &source_name, -1) ;
+
+              if (source_name)
+                {
+                  result.push_back(g_quark_from_string(source_name)) ;
+                  g_free(source_name) ;
+                }
+              else
+                {
+                  err_msg = "Program error: failed to get source name" ;
+                  break ;
+                }
+            }
+        }
+    }
+
+  return result ;
 }
