@@ -827,8 +827,13 @@ static void applyCB(GtkWidget *widget, gpointer cb_data)
 
   if (!main_data->sequence_editable)
     {
+      const char *err_msg = NULL;
+      list<ZMapConfigSource> selected_sources = getSelectedSources(main_data->sources_tree,
+                                                                   main_data->orig_sequence_map,
+                                                                   err_msg) ;
+
       /* Just call user callback with original sequence map. */
-      (main_data->user_func)(main_data->orig_sequence_map, main_data->user_data) ;
+      (main_data->user_func)(main_data->orig_sequence_map, selected_sources, main_data->user_data) ;
     }
   else
     {
@@ -953,8 +958,13 @@ static void applyCB(GtkWidget *widget, gpointer cb_data)
             }
           else
             {
+              const char *err_msg = NULL;
+              list<ZMapConfigSource> selected_sources = getSelectedSources(main_data->sources_tree,
+                                                                           seq_map,
+                                                                           err_msg) ;
+
               /* Call back with users parameters for new sequence display. */
-              (main_data->user_func)(seq_map, main_data->user_data) ;
+              (main_data->user_func)(seq_map, selected_sources, main_data->user_data) ;
             }
         }
 

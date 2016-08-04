@@ -49,6 +49,8 @@
 #include <ZMap/zmapUtilsGUI.hpp>
 #include <ZMap/zmapAppServices.hpp>
 #include <ZMap/zmapUrl.hpp>
+#include <ZMap/zmapDataSource.hpp>
+#include <ZMap/zmapConfigStrings.hpp>
 
 #ifdef USE_ENSEMBL
 #include <ZMap/zmapEnsemblUtils.hpp>
@@ -1087,6 +1089,227 @@ const char* getEntryText(GtkEntry *entry)
 }
 
 
+
+/* Get the script to use for the given file type. This should not be hard-coded really but long
+ * term we will hopefully not need these scripts when zmap can do the remapping itself. Returns
+ * null if not found or not executable */
+static const char* fileTypeGetPipeScript(ZMapDataSourceType source_type, 
+                                         string &err_msg)
+{
+  const char *result = NULL ;
+
+  if (source_type == ZMapDataSourceType::HTS)
+    result = "bam_get" ;
+  else if (source_type == ZMapDataSourceType::BIGWIG)
+    result = "bigwig_get" ;
+  else
+    err_msg = "File type does not have a remapping script" ;
+
+  /* Check it's executable */
+  if (result && !g_find_program_in_path(result))
+    {
+      err_msg = "Script '" ;
+      err_msg += result ;
+      err_msg += "' is not executable" ;
+      result = NULL ;
+    }
+
+  return result ;
+}
+
+
+/* Returns true if zmap is running under otter (according to the config file) */
+static bool runningUnderOtter(MainFrame main_frame)
+{
+  bool is_otter = false ;
+
+  if (main_frame && main_frame->sequence_map && main_frame->sequence_map->config_file)
+    {
+      ZMapConfigIniContext context = zMapConfigIniContextProvide(main_frame->sequence_map->config_file, 
+                                                                 ZMAPCONFIG_FILE_NONE);
+
+      if (context)
+        {
+          char *tmp_string = NULL;
+          
+          if(zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+                                           ZMAPSTANZA_APP_CSVER, &tmp_string))
+            {
+              if(tmp_string && !g_ascii_strcasecmp(tmp_string,"Otter"))
+                {
+                  is_otter = TRUE;
+                }
+
+              if (tmp_string)
+                {
+                  g_free(tmp_string) ;
+                  tmp_string = NULL ;
+                }
+            }
+        }
+
+    }      
+
+  return is_otter ;
+}
+
+
+/* Create the url for normal file types */
+static string constructRegularFileURL(const char *filename, string &err_msg)
+{
+  string url;
+
+  // Prepend file:///, unless its an http/ftp url
+  if (strncasecmp(filename, "http://", 7) != 0 &&
+      strncasecmp(filename, "https://", 8) != 0 &&
+      strncasecmp(filename, "ftp://", 6) != 0)
+    {
+      url += "file:///" ;
+    }
+
+  url += filename ;
+
+  return url ;
+}
+
+
+/* Create the url for special file types that use a pipe script (this is because we use these
+ * scripts for now to do remapping but when zmap can do its own remapping we can get rid of
+ * this). Note that these scripts are only available when running under otter. */
+static string constructPipeFileURL(MainFrame main_frame, 
+                                   const char *source_name,
+                                   const char *filename, 
+                                   ZMapDataSourceType source_type,
+                                   string &err_msg)
+{
+  string url;
+  zMapReturnValIfFail(main_frame, url) ;
+
+  bool done = false ;
+  
+  if (runningUnderOtter(main_frame))
+    {
+      /* Ask the user if they want to remap, and if ask, for the assembly */
+      char *source_assembly = NULL ;
+      GtkResponseType response = zMapGUIMsgGetText(GTK_WINDOW(main_frame->toplevel),
+                                                   ZMAP_MSG_INFORMATION, 
+                                                   "Is this source from another assembly?\n\nIf so, enter the assembly name to remap (leave blank to skip):",
+                                                   TRUE,
+                                                   &source_assembly) ;
+
+      if (response == GTK_RESPONSE_OK && source_assembly && *source_assembly)
+        {
+          /* Use a pipe script that will remap the features if necessary. This is also required
+           * in order to be able to blixem the columns because blixem doesn't support bam reading
+           * at the moment, so the script command gets passed through to blixem. */
+          const char *script = fileTypeGetPipeScript(source_type, err_msg) ;
+
+          if (script)
+            {
+              /* The sequence name in the file may be different to the sequence name in
+               * zmap. Ask the user to enter the lookup name, if different. */
+              char *req_sequence = NULL ;
+              response = zMapGUIMsgGetText(GTK_WINDOW(main_frame->toplevel),
+                                           ZMAP_MSG_INFORMATION, 
+                                           "ZMap will look for features in the file for the following sequence.\n\nIf the sequence name in the file is different, please enter the correct name here:",
+                                           TRUE,
+                                           &req_sequence) ;
+
+              if (response == GTK_RESPONSE_OK && req_sequence && *req_sequence)
+                {
+                  GString *args = g_string_new("") ;
+
+                  g_string_append_printf(args, "--file=%s&--chr=%s&--start=%d&--end=%d&--gff_seqname=%s&--gff_source=%s",
+                                         filename, 
+                                         main_frame->sequence_map->sequence,
+                                         main_frame->sequence_map->start,
+                                         main_frame->sequence_map->end,
+                                         req_sequence, 
+                                         source_name) ;
+
+                  if (source_type == ZMapDataSourceType::BIGWIG)
+                    {
+                      // for bigwig, we need the strand for the script. ask the user.
+                      bool forward_strand = zMapGUIMsgGetBoolFull(GTK_WINDOW(main_frame->toplevel), 
+                                                                  ZMAP_MSG_INFORMATION,
+                                                                  "Is this data from the forward or reverse strand?",
+                                                                  "Forward", "Reverse") ;
+
+                      g_string_append_printf(args, "&--strand=%d", (forward_strand ? 1 : -1)) ;
+                    }
+
+                  g_string_append_printf(args, "&--csver_remote=%s&--dataset=%s", 
+                                         source_assembly, 
+                                         main_frame->sequence_map->dataset) ;
+
+                  done = true ;
+                }
+            }
+        }
+    }
+
+  if (!done && err_msg.empty())
+    {
+      url = constructRegularFileURL(filename, err_msg) ;
+    }
+
+  return url ;
+}
+
+
+/* Create a valid url for the given file (which should either be a filename on the local system
+ * or a remote file url e.g. starting http:// */
+static string constructFileURL(MainFrame main_frame, 
+                               const char *source_name,
+                               const char *filename, 
+                               GError **error)
+{
+  string url("");
+
+  GError *g_error = NULL ;
+  ZMapDataSourceType source_type = zMapDataSourceTypeFromFilename(filename, &g_error) ;
+
+  if (g_error)
+    {
+      g_propagate_error(error, g_error) ;
+    }
+  else
+    {
+      string err_msg;
+
+      // Some file types currently have special treatment
+      switch (source_type)
+        {
+        case ZMapDataSourceType::GIO: //fall through
+        case ZMapDataSourceType::HTS: //fall through
+        case ZMapDataSourceType::BCF:
+        case ZMapDataSourceType::BIGBED: //fall through
+          constructRegularFileURL(filename, err_msg) ;
+          break ;
+
+        case ZMapDataSourceType::BED:    //fall through
+        case ZMapDataSourceType::BIGWIG:
+          
+          constructPipeFileURL(main_frame, source_name, filename, source_type, err_msg) ;
+          break ;
+
+        case ZMapDataSourceType::UNK:
+          // Shouldn't get here because g_error should have been set
+          zMapWarnIfReached() ;
+          break ;
+        }
+
+      if (!err_msg.empty())
+        {
+          g_set_error(&g_error, ZMAP_APP_SERVICES_ERROR, ZMAPAPPSERVICES_ERROR_URL, "%s", err_msg.c_str()) ;
+          g_propagate_error(error, g_error) ;
+        }
+    }
+
+  return url ;
+}
+
+
 gboolean applyFile(MainFrame main_frame)
 {
   gboolean ok = FALSE ;
@@ -1105,20 +1328,10 @@ gboolean applyFile(MainFrame main_frame)
   else
     {
       GError *tmp_error = NULL ;
-      
-      // Prepend file:///, unless its an http/ftp url
-      string url("");
+      string url = constructFileURL(main_frame, source_name, path, &tmp_error) ;
 
-      if (strncasecmp(path, "http://", 7) != 0 &&
-          strncasecmp(path, "https://", 8) != 0 &&
-          strncasecmp(path, "ftp://", 6) != 0)
-        {
-          url += "file:///" ;
-        }
-
-      url += path ;
-
-      (main_frame->user_func)(source_name, url, NULL, NULL, main_frame->user_data, &tmp_error) ;
+      if (!tmp_error)
+        (main_frame->user_func)(source_name, url, NULL, NULL, main_frame->user_data, &tmp_error) ;
 
       if (tmp_error)
         zMapCritical("Failed to create new source: %s", tmp_error->message) ;

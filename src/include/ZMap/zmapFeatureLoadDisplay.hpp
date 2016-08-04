@@ -47,15 +47,6 @@ struct _ZMapConfigSourceStruct ;
 struct ZMapFeatureAnyStructType ;
 
 
-/* Possible file types for a file or pipe source */
-typedef enum
-  {
-    ZMAPSOURCE_FILE_NONE,
-    ZMAPSOURCE_FILE_GFF,
-    ZMAPSOURCE_FILE_BAM,
-    ZMAPSOURCE_FILE_BIGWIG
-  } ZMapSourceFileType;
-
 
 /* Overview:
  * 

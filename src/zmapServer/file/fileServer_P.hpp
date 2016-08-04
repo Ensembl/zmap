@@ -33,7 +33,7 @@
 
 #include <zmapServerPrototype.hpp>
 
-#include <zmapDataSource.hpp>
+#include <ZMap/zmapDataSource.hpp>
 #include <zmapDataSource_P.hpp>
 
 /*

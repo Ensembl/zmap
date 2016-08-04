@@ -68,7 +68,7 @@ typedef enum {
 
 static void newSequenceByConfigCB(gpointer cb_data, guint callback_action, GtkWidget *w) ;
 static void newSourceCB(gpointer cb_data, guint callback_action, GtkWidget *w) ;
-static void makeSequenceViewCB(ZMapFeatureSequenceMap sequence_map, gpointer user_data) ;
+static void makeSequenceViewCB(ZMapFeatureSequenceMap sequence_map, std::list<ZMapConfigSource> selected_sources, gpointer user_data) ;
 static void closeSequenceDialogCB(GtkWidget *toplevel, gpointer user_data) ;
 static void closeSourceDialogCB(GtkWidget *toplevel, gpointer user_data) ;
 static void closeCB(gpointer cb_data, guint callback_action, GtkWidget *w) ;
@@ -780,7 +780,9 @@ static void newSourceCB(gpointer cb_data, guint callback_action, GtkWidget *w)
 }
 
 /* Called once user has selected a new sequence. */
-static void makeSequenceViewCB(ZMapFeatureSequenceMap seq_map, gpointer user_data)
+static void makeSequenceViewCB(ZMapFeatureSequenceMap seq_map, 
+                               std::list<ZMapConfigSource> selected_sources,
+                               gpointer user_data)
 {
   ZMap zmap = (ZMap)user_data ;
   ZMapView view = NULL ;

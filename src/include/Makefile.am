@@ -38,6 +38,7 @@ ZMap/zmapRemoteControl.hpp \
 ZMap/zmapRemoteProtocol.hpp \
 ZMap/zmapSeqBitmap.hpp \
 ZMap/zmapSequence.hpp \
+ZMap/zmapDataSource.hpp \
 ZMap/zmapServerProtocol.hpp \
 ZMap/zmapSO.hpp \
 ZMap/zmapSOParser.hpp \

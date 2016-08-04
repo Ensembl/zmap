@@ -33,7 +33,7 @@
 #define DATA_SOURCE_P_H
 
 
-#include <zmapDataSource.hpp>
+#include <ZMap/zmapDataSource.hpp>
 
 
 #ifdef USE_HTSLIB

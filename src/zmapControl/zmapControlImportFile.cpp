@@ -62,7 +62,6 @@
  */
 typedef struct
 {
-  ZMapSourceFileType file_type;
   char * script;
   gchar ** args;   /* an allocated null terminated array of arg strings */
   gchar ** allocd; /* args for freeing on destroy */
@@ -85,8 +84,6 @@ typedef struct MainFrameStruct_
   GtkWidget *map_widg ;
 
 
-  ZMapSourceFileType file_type;
-
   gboolean is_otter;
   char *chr;
 
@@ -102,11 +99,12 @@ typedef struct MainFrameStruct_
 static MainFrame makePanel(GtkWidget *toplevel, gpointer *seqdata_out,
                       ZMapControlImportFileCB user_func, gpointer user_data,
                       ZMapFeatureSequenceMap sequence_map, int req_start, int req_end) ;
-static GtkWidget *makeMainFrame(MainFrame main_frame, ZMapFeatureSequenceMap sequence_map) ;
 static GtkWidget *makeOptionsBox(MainFrame main_frame, const char *seq, int start, int end);
 
 static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data) ;
-static void importFileCB(ZMapFeatureSequenceMap sequence_map, gpointer cb_data) ;
+static void importFileCB(ZMapFeatureSequenceMap sequence_map, 
+                         std::list<ZMapConfigSource> selected_sources,
+                         gpointer cb_data) ;
 
 #ifdef NOT_USED
 static void sequenceCB(GtkWidget *widget, gpointer cb_data) ;
@@ -393,50 +391,6 @@ static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data)
 
 
 
-/* Get the script to use for the given file type. This should not be hard-coded really but long
- * term we will hopefully not need these scripts when zmap can do the remapping itself. Returns
- * null if not found or not executable */
-static const char* fileTypeGetPipeScript(ZMapSourceFileType file_type, 
-                                         std::string &script_err)
-{
-  const char *result = NULL ;
-
-  if (file_type == ZMAPSOURCE_FILE_BAM)
-    result = "bam_get" ;
-  else if (file_type == ZMAPSOURCE_FILE_BIGWIG)
-    result = "bigwig_get" ;
-  else
-    script_err = "File type does not have a remapping script" ;
-
-  /* Check it's executable */
-  if (result && !g_find_program_in_path(result))
-    {
-      script_err = "Script '" ;
-      script_err += result ;
-      script_err += "' is not executable" ;
-      result = NULL ;
-    }
-
-  return result ;
-}
-
-
-/* Various functions to validate the input values on the dialog. They set the status to false
- * if there is a problem. */
-static void validateFile(bool &status, 
-                         std::string &err_msg,
-                         const char *file_txt)
-{
-  if (status)
-    {
-      if (!(*file_txt))
-        {
-          status = FALSE ;
-          err_msg = "Please choose a file to import." ;
-        }
-    }
-}
-
 static void validateReqSequence(bool &status,
                                 std::string &err_msg,
                                 const char *req_sequence_txt, 
@@ -472,92 +426,6 @@ static void validateReqSequence(bool &status,
     }
 }
 
-static void validateFileType(bool &status, 
-                             std::string &err_msg,
-                             ZMapSourceFileType file_type,
-                             const char *source_txt,
-                             const char *assembly_txt,
-                             const char *dataset_txt, 
-                             const bool remap_features,
-                             bool &have_assembly,
-                             bool &have_dataset,
-                             char *sequence_txt)
-{
-  /*
-   * Error conditions and data combinations are complex enough here to be treated
-   * seperately for each data type.
-   */
-  if (status)
-    {
-      if (file_type == ZMAPSOURCE_FILE_GFF)
-        {
-          /* we do not want the source for a gff file */
-          if (status && *source_txt)
-            {
-              status = FALSE ;
-              err_msg = "Source should not be specified for GFF file." ;
-            }
-
-          /* we do not want the assembly for a gff file */
-          if (status && (*assembly_txt))
-            {
-              status = FALSE ;
-              err_msg = "Assembly should not be specified for GFF file." ;
-            }
-
-        }
-      else if ((file_type == ZMAPSOURCE_FILE_BAM) || (file_type == ZMAPSOURCE_FILE_BIGWIG))
-        {
-          /* we must have a source for these data types */
-          if (!*source_txt)
-            {
-              status = FALSE ;
-              err_msg = "Source must be specified for this type." ;
-            }
-
-          /*
-           * actually this needs to be modified to require neither
-           * or both of assembly and dataset...
-           */
-          if (*assembly_txt)
-            have_assembly = TRUE ;
-          if (*dataset_txt)
-            have_dataset = TRUE ;
-
-          /*
-           * Some error checking of conditions for remapping. If we request remapping
-           * then there must be a dataset and assembly given. Then the call to
-           * the scripts with remapping data can be done. Otherwise these data are
-           * to be ignored.
-           */
-          if (remap_features)
-            {
-              if ((!have_assembly) || (!have_dataset))
-                {
-                  status = FALSE ;
-                  err_msg = "Both the 'assembly' and 'dataset' are required for remapping." ;
-                }
-
-            }
-          else
-            {
-              char *pos = strchr(sequence_txt, '-') ;
-
-              if (pos)
-                *pos = '\0' ;
-            }
-
-        }
-      else
-        {
-          status = FALSE ;
-          err_msg = "Unknown file type." ;
-        }
-
-    } /* if (status) */
-
-}
-
 
 /* Ok...check the users entries and then call the callback function provided.
  *
@@ -573,33 +441,25 @@ static void validateFileType(bool &status,
  * remapping should be done.
  *
  */
-static void importFileCB(ZMapFeatureSequenceMap sequence_map, gpointer cb_data)
+static void importFileCB(ZMapFeatureSequenceMap sequence_map, 
+                         std::list<ZMapConfigSource> sources,
+                         gpointer cb_data)
 {
   bool status = TRUE ;
-  bool have_dataset = FALSE ;
-  bool have_assembly = FALSE ;
-  bool remap_features = TRUE ;
-  MainFrame main_frame = NULL ;
+  MainFrame main_frame = (MainFrame)cb_data ;
+  zMapReturnIfFail(main_frame) ;
+
   std::string err_msg("") ;
-  char *sequence_txt = NULL ;
-  const char *dataset_txt = NULL ;
-  const char *file_txt = NULL ;
   const char *req_start_txt= NULL ;
   const char *req_end_txt = NULL ;
-  const char *source_txt = NULL ;
-  const char *assembly_txt = NULL ;
   const char *req_sequence_txt = NULL ;
   int start = 0 ;
   int req_start = 0 ;
   int req_end = 0 ;
-  int strand = 0 ;
-  ZMapSourceFileType file_type = ZMAPSOURCE_FILE_NONE ;
   ZMapView view = NULL ;
   ZMap zmap = NULL ;
 
-  main_frame = (MainFrame)cb_data ;
-  zMapReturnIfFail(main_frame) ;
-  file_type = main_frame->file_type;
+
   zmap = (ZMap) main_frame->user_data;
   zMapReturnIfFail(zmap) ;
   zMapReturnIfFail(sequence_map) ;
@@ -612,25 +472,16 @@ static void importFileCB(ZMapFeatureSequenceMap sequence_map, gpointer cb_data)
 
   view = zMapViewGetView(zmap->focus_viewwindow);
 
-  /* Note gtk_entry returns the empty string "" _not_ NULL when there is no text. */
-  sequence_txt = g_strdup(sequence_map->sequence) ;
-  dataset_txt = sequence_map->dataset ;
-
   req_sequence_txt = gtk_entry_get_text(GTK_ENTRY(main_frame->req_sequence_widg)) ;
   req_start_txt = gtk_entry_get_text(GTK_ENTRY(main_frame->req_start_widg)) ;
   req_end_txt = gtk_entry_get_text(GTK_ENTRY(main_frame->req_end_widg)) ;
-  source_txt = gtk_entry_get_text(GTK_ENTRY(main_frame->source_widg)) ;
-  assembly_txt = gtk_entry_get_text(GTK_ENTRY(main_frame->assembly_widg)) ;
-  remap_features = gtk_toggle_button_get_active((GtkToggleButton*)main_frame->map_widg) ;
 
   /* Validate the user-specified arguments. These calls set status to false if there is a problem
    * and also set the err_msg. The start/end/strand functions also set the int from the string. 
    */
-  validateFile(status, err_msg, file_txt) ;
-  validateReqSequence(status, err_msg, req_sequence_txt, req_start_txt, req_end_txt, req_start, req_end, start) ;
-  validateFileType(status, err_msg, file_type, source_txt, 
-                   assembly_txt, dataset_txt, remap_features, 
-                   have_assembly, have_dataset, sequence_txt) ;
+  validateReqSequence(status, err_msg, 
+                      req_sequence_txt, req_start_txt, req_end_txt, 
+                      req_start, req_end, start) ;
 
   /*
    * If we got this far, then attempt to do something.
@@ -638,111 +489,52 @@ static void importFileCB(ZMapFeatureSequenceMap sequence_map, gpointer cb_data)
    */
   if (status)
     {
-      bool create_source_data = FALSE ;
+      
+//      if (create_source_data)
+//        {
+//          /* If we're using a pipe script, we need to create the source data for the named source
+//           * so that we can set is_seq=true for bam sources (otherwise we don't know when we come
+//           * to parse the results of the bam_get script that is_seq should be true).
+//           * We don't do this if we're loading the file directly because the named source is not used
+//           * (the source data is created when the features are parsed from the file instead) */
+//          ZMapFeatureContextMap context_map = zMapViewGetContextMap(view) ;
+//
+//          GQuark fset_id = zMapFeatureSetCreateID(source_txt);
+//          ZMapFeatureSource source_data = context_map->getSource(fset_id);
+//
+//          if (!source_data)
+//            {
+//              GQuark source_id = fset_id ;
+//              GQuark style_id = zMapStyleCreateID(NULL) ;
+//              GQuark source_text = g_quark_from_string(source_txt) ;
+//              const bool is_seq = (file_type == ZMAPSOURCE_FILE_BAM || file_type == ZMAPSOURCE_FILE_BIGWIG) ;
+//
+//              context_map->createSource(fset_id,
+//                                        source_id, source_text, style_id,
+//                                        0, 0, is_seq) ;
+//            }
+//        }
 
-      /* Create the server */
-      ZMapConfigSource server = NULL ;
-
-      if (file_type == ZMAPSOURCE_FILE_GFF)
+      if (sources.empty())
         {
-          /* Just load the file directly */
-          server = sequence_map->createFileSource(source_txt, file_txt) ;
-        }
-      else
-        {
-          /* Use a pipe script that will remap the features if necessary. This is also required
-           * in order to be able to blixem the columns because blixem doesn't support bam reading
-           * at the moment, so the script command gets passed through to blixem. */
-          std::string script_err("");
-          const char *script = fileTypeGetPipeScript(file_type, script_err) ;
-
-          GString *args = g_string_new("") ;
-
-          g_string_append_printf(args, "--file=%s&--chr=%s&--start=%d&--end=%d&--gff_seqname=%s&--gff_source=%s",
-                                 file_txt, sequence_txt, req_start, req_end, req_sequence_txt, source_txt) ;
-
-          if (file_type == ZMAPSOURCE_FILE_BIGWIG)
-            g_string_append_printf(args, "&--strand=%d", strand) ;
-
-          if (remap_features)
-            g_string_append_printf(args, "&--csver_remote=%s&--dataset=%s", assembly_txt, dataset_txt) ;
-
-          if (script)
-            {
-              /* Ok, create the server for this pipe scripe */
-              server = sequence_map->createPipeSource(source_txt, file_txt, script, args->str) ;
-              create_source_data = TRUE ;
-            }
-          else if (!remap_features)
-            {
-              /* No script; if not remapping features, we can load directly with htslib
-               * instead. There are a couple of problems with this, though:
-               * - the given source name will be ignored and therefore the source_data won't
-               *   be linked correctly. This means it won't be recognised as a bam.
-               * - blixem won't work (until it can load bam files directly, or unless the user
-               *   has preconfigured the source in the blixem config). */
-#ifdef USE_HTSLIB
-              zMapLogMessage("%s", "Pipe script not available; using htslib") ;
-              server = sequence_map->createFileSource(source_txt, file_txt) ;
-#else
-              err_msg = "Cannot load features; pipe script not available: " ;
-              err_msg += script_err ;
-#endif
-            }
-          else
-            {
-              err_msg = "Cannot remap features: " ;
-              err_msg += script_err ;
-            }
-
-          g_string_free(args, TRUE) ;
+          zMapCritical("%s", "Please select which sources you want to import data from") ;
         }
 
-      if (create_source_data)
-        {
-          /* If we're using a pipe script, we need to create the source data for the named source
-           * so that we can set is_seq=true for bam sources (otherwise we don't know when we come
-           * to parse the results of the bam_get script that is_seq should be true).
-           * We don't do this if we're loading the file directly because the named source is not used
-           * (the source data is created when the features are parsed from the file instead) */
-          ZMapFeatureContextMap context_map = zMapViewGetContextMap(view) ;
-
-          GQuark fset_id = zMapFeatureSetCreateID(source_txt);
-          ZMapFeatureSource source_data = context_map->getSource(fset_id);
-
-          if (!source_data)
-            {
-              GQuark source_id = fset_id ;
-              GQuark style_id = zMapStyleCreateID(NULL) ;
-              GQuark source_text = g_quark_from_string(source_txt) ;
-              const bool is_seq = (file_type == ZMAPSOURCE_FILE_BAM || file_type == ZMAPSOURCE_FILE_BIGWIG) ;
-
-              context_map->createSource(fset_id,
-                                        source_id, source_text, style_id,
-                                        0, 0, is_seq) ;
-            }
-        }
-
-      if (server)
+      for (auto server : sources)
         {
           GError *g_error = NULL ;
           zMapViewSetUpServerConnection(view, server, req_start, req_end, false, &g_error) ;
 
           if (g_error)
-            zMapWarning("Failed to set up server connection for file '%s': %s", file_txt, err_msg.c_str()) ;
-        }
-      else
-        {
-          zMapWarning("Failed to set up source for file '%s': %s", file_txt, err_msg.c_str()) ;
+            zMapWarning("Failed to set up server connection for '%s': %s", 
+                        g_quark_to_string(server->name_),
+                        (g_error ? g_error->message : "<no error>")) ;
         }
     }
   else
     {
       zMapWarning("Error: \"%s\"", err_msg.c_str()) ;
     }
-
-  if (sequence_txt)
-    g_free(sequence_txt) ;
 
   return ;
 }

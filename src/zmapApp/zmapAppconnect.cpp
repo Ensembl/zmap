@@ -41,7 +41,9 @@
 
 
 
-static void createThreadCB(ZMapFeatureSequenceMap sequence_map, gpointer user_data) ;
+static void createThreadCB(ZMapFeatureSequenceMap sequence_map, 
+                           std::list<ZMapConfigSource> selected_sources,
+                           gpointer user_data) ;
 
 
 
@@ -147,7 +149,9 @@ gboolean zmapAppCreateZMap(ZMapAppContext app_context, ZMapFeatureSequenceMap se
  */
 
 
-static void createThreadCB(ZMapFeatureSequenceMap sequence_map, gpointer user_data)
+static void createThreadCB(ZMapFeatureSequenceMap sequence_map, 
+                           std::list<ZMapConfigSource> selected_sources,
+                           gpointer user_data)
 {
   ZMapAppContext app_context = (ZMapAppContext)user_data ;
   ZMap zmap = NULL ;

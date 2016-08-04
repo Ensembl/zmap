@@ -20,7 +20,6 @@ zmapServer_P.hpp \
 zmapServerProtocolHandler.cpp \
 zmapServerPrototype.hpp \
 zmapDataSource_P.hpp \
-zmapDataSource.hpp \
 zmapDataSource.cpp \
 $(NULL)
 
