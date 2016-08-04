@@ -49,6 +49,7 @@
 #include <ZMap/zmapConfigStrings.hpp>
 #include <ZMap/zmapControlImportFile.hpp>
 #include <ZMap/zmapFeatureLoadDisplay.hpp>
+#include <ZMap/zmapAppServices.hpp>
 #include <zmapControl_P.hpp>
 
 
@@ -75,7 +76,6 @@ typedef struct MainFrameStruct_
   GtkWidget *start_widg ;
   GtkWidget *end_widg ;
   /*GtkWidget *whole_widg ;*/
-  GtkWidget *file_widg ;
   GtkWidget *dataset_widg;
   GtkWidget *req_sequence_widg ;
   GtkWidget *req_start_widg ;
@@ -108,10 +108,7 @@ static GtkWidget *makeOptionsBox(MainFrame main_frame, const char *seq, int star
 static void makeButtonBox(GtkWidget *toplevel, MainFrame main_frame) ;
 
 static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data) ;
-static void importFileCB(gpointer cb_data) ;
-#ifndef __CYGWIN__
-static void chooseConfigCB(GtkFileChooserButton *widget, gpointer user_data) ;
-#endif
+static void importFileCB(ZMapFeatureSequenceMap sequence_map, gpointer cb_data) ;
 static void closeCB(gpointer cb_data) ;
 
 #ifdef NOT_USED
@@ -126,29 +123,6 @@ static void fileChangedCB(GtkWidget *widget, gpointer user_data);
 /*
  *                   External interface routines.
  */
-
-/* \brief Handles the response to the import dialog */
-void importDialogResponseCB(GtkDialog *dialog, gint response_id, gpointer data)
-{
-  switch (response_id)
-  {
-    case GTK_RESPONSE_ACCEPT:
-    case GTK_RESPONSE_APPLY:
-    case GTK_RESPONSE_OK:
-      importFileCB(data) ;
-      break;
-
-    case GTK_RESPONSE_CANCEL:
-    case GTK_RESPONSE_CLOSE:
-    case GTK_RESPONSE_REJECT:
-      closeCB(data) ;
-      break;
-
-    default:
-      break;
-  };
-}
-
 
 /* Display a dialog to get from the reader a file to be displayed
  * with a optional start/end and various mapping parameters
@@ -166,7 +140,7 @@ void zMapControlImportFile(ZMapControlImportFileCB user_func, gpointer user_data
 
   ZMap zmap = (ZMap)user_data;
 
-  toplevel = zMapGUIDialogNew(NULL, "Please choose a file to import.", NULL, NULL) ;
+  toplevel = zMapGUIDialogNew(NULL, "Import data from a source", NULL, NULL) ;
 
   /* Make sure the dialog is destroyed if the zmap window is closed */
   /*! \todo For some reason this doesn't work and the dialog hangs around
@@ -178,8 +152,6 @@ void zMapControlImportFile(ZMapControlImportFileCB user_func, gpointer user_data
   gtk_container_border_width(GTK_CONTAINER(toplevel), 0) ;
 
   main_frame = makePanel(toplevel, &seq_data, user_func, user_data, sequence_map, req_start, req_end) ;
-
-  g_signal_connect(G_OBJECT(toplevel), "response", G_CALLBACK(importDialogResponseCB), main_frame) ;
 
   gtk_signal_connect(GTK_OBJECT(toplevel), "destroy",
      GTK_SIGNAL_FUNC(toplevelDestroyCB), seq_data) ;
@@ -302,7 +274,7 @@ static MainFrame makePanel(GtkWidget *toplevel, gpointer *our_data,
                            ZMapControlImportFileCB user_func, gpointer user_data,
                            ZMapFeatureSequenceMap sequence_map, int req_start, int req_end)
 {
-  GtkWidget *vbox, *main_frame, *options_box;
+  GtkWidget *vbox, *sequence_box, *options_box;
   MainFrame main_data ;
   const char *sequence = "";
   GtkDialog *dialog = GTK_DIALOG(toplevel) ;
@@ -322,17 +294,15 @@ static MainFrame makePanel(GtkWidget *toplevel, gpointer *our_data,
       *our_data = main_data ;
     }
 
-  main_frame = makeMainFrame(main_data, sequence_map) ;
-  gtk_box_pack_start(GTK_BOX(vbox), main_frame, TRUE, TRUE, 0) ;
-
   main_data->sequence_map = sequence_map;
   if(sequence_map)
     sequence = sequence_map->sequence;/* request defaults to original */
 
+  sequence_box = zMapCreateSequenceViewWidg(importFileCB, main_data, sequence_map, TRUE, FALSE) ;
+  gtk_box_pack_start(GTK_BOX(vbox), sequence_box, TRUE, TRUE, 0) ;
+
   options_box = makeOptionsBox(main_data, sequence, req_start, req_end) ;
   gtk_box_pack_start(GTK_BOX(vbox), options_box, TRUE, TRUE, 0) ;
-
-  makeButtonBox(toplevel, main_data) ;
 
   return main_data ;
 }
@@ -465,11 +435,10 @@ static GtkWidget *makeMainFrame(MainFrame main_frame, ZMapFeatureSequenceMap seq
 static GtkWidget *makeOptionsBox(MainFrame main_frame, const char *req_sequence, int req_start, int req_end)
 {
   GtkWidget *frame = NULL ;
-  GtkWidget *map_seq_button = NULL , *config_button = NULL ;
+  GtkWidget *map_seq_button = NULL ;
   GtkWidget *topbox = NULL, *hbox = NULL, *entrybox = NULL, *labelbox = NULL, *entry = NULL, *label = NULL ;
-  const char *sequence = "", *file = "" ;
+  const char *sequence = "" ;
   char *start = NULL, *end = NULL ;
-  char *home_dir ;
 
   if (req_sequence)
     {
@@ -495,25 +464,6 @@ static GtkWidget *makeOptionsBox(MainFrame main_frame, const char *req_sequence,
   /* Labels..... */
   labelbox = gtk_vbox_new(TRUE, 0) ;
   gtk_box_pack_start(GTK_BOX(hbox), labelbox, FALSE, FALSE, 0) ;
-
-#ifndef __CYGWIN__
-  /* N.B. we use the gtk "built-in" file chooser stuff. Create a file-chooser button instead of
-   * placing a label next to the file text-entry box */
-  config_button = gtk_file_chooser_button_new("Choose a File to Import", GTK_FILE_CHOOSER_ACTION_OPEN) ;
-  gtk_signal_connect(GTK_OBJECT(config_button), "file-set",
-     GTK_SIGNAL_FUNC(chooseConfigCB), (gpointer)main_frame) ;
-  gtk_box_pack_start(GTK_BOX(labelbox), config_button, FALSE, TRUE, 0) ;
-  home_dir = (char *)g_get_home_dir() ;
-  gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(config_button), home_dir) ;
-  gtk_file_chooser_set_show_hidden(GTK_FILE_CHOOSER(config_button), TRUE) ;
-#else
-  /* We can't have a file-chooser button, but we already have a text entry
-   * box for the filename anyway, so just create a label for that where the
-   * button would have been */
-  label = gtk_label_new("File ") ;
-  gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5);
-  gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
-#endif
 
   /*
   label = gtk_label_new( "Script " ) ;
@@ -568,13 +518,6 @@ static GtkWidget *makeOptionsBox(MainFrame main_frame, const char *req_sequence,
   /* Entries.... */
   entrybox = gtk_vbox_new(TRUE, 0) ;
   gtk_box_pack_start(GTK_BOX(hbox), entrybox, TRUE, TRUE, 0) ;
-
-  main_frame->file_widg = entry = gtk_entry_new() ;
-  gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE) ;
-  gtk_entry_set_text(GTK_ENTRY(entry), file) ;
-  gtk_signal_connect(GTK_OBJECT(entry), "changed",
-     GTK_SIGNAL_FUNC(fileChangedCB), (gpointer)main_frame) ;
-  gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
 
   /*
   main_frame->script_widg = entry = gtk_entry_new() ;
@@ -649,47 +592,6 @@ static GtkWidget *makeOptionsBox(MainFrame main_frame, const char *req_sequence,
 
 
   return frame ;
-}
-
-
-
-/* Make the action buttons frame. */
-static void makeButtonBox(GtkWidget *toplevel, MainFrame main_frame)
-{
-
- GtkDialog *dialog = GTK_DIALOG(toplevel) ;
-
-  gtk_dialog_add_button(dialog, GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL) ;
-  gtk_dialog_add_button(dialog, GTK_STOCK_OPEN, GTK_RESPONSE_OK) ;
-
-  gtk_dialog_set_default_response(dialog, GTK_RESPONSE_OK) ;
-
-
-  /*
-  GtkDialog *dialog = GTK_DIALOG(toplevel) ;
-
-  gtk_dialog_add_button(dialog, GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL) ;
-  gtk_dialog_add_button(dialog, GTK_STOCK_OPEN, GTK_RESPONSE_OK) ;
-
-  create_button = gtk_button_new_with_label("Import File") ;
-  gtk_signal_connect(GTK_OBJECT(create_button), "clicked",
-     GTK_SIGNAL_FUNC(importFileCB), (gpointer)main_frame) ;
-  gtk_box_pack_start(GTK_BOX(button_box), create_button, FALSE, TRUE, 0) ;
-
-
-  if (main_frame->toplevel)
-    {
-      close_button = gtk_button_new_with_label("Close") ;
-      gtk_signal_connect(GTK_OBJECT(close_button), "clicked",
- GTK_SIGNAL_FUNC(closeCB), (gpointer)main_frame) ;
-      gtk_box_pack_start(GTK_BOX(button_box), close_button, FALSE, TRUE, 0) ;
-
-      GTK_WIDGET_SET_FLAGS(create_button, GTK_CAN_DEFAULT) ;
-      gtk_window_set_default(GTK_WINDOW(main_frame->toplevel), create_button) ;
-    }
-
-  return frame ;
-  */
 }
 
 
@@ -772,21 +674,6 @@ static void sequenceCB(GtkWidget *widget, gpointer cb_data)
 #endif
 
 
-
-#ifndef __CYGWIN__
-/* Called when user chooses a file via the file dialog. */
-static void chooseConfigCB(GtkFileChooserButton *widget, gpointer user_data)
-{
-  MainFrame main_frame = (MainFrame) user_data ;
-  char *filename = NULL ;
-
-  filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(widget)) ;
-
-  gtk_entry_set_text(GTK_ENTRY(main_frame->file_widg), g_strdup(filename)) ;
-
-  fileChangedCB ( main_frame->file_widg, user_data);
-}
-#endif
 
 /*
  * Special cases:
@@ -986,32 +873,6 @@ static void validateFile(bool &status,
     }
 }
 
-static void validateSequence(bool &status, 
-                             std::string &err_msg,
-                             const char *sequence_txt, 
-                             const char *start_txt, 
-                             const char *end_txt,
-                             int &start,
-                             int &end)
-{
-  if (status)
-    {
-      if (*sequence_txt && *start_txt && *end_txt)
-        {
-          if (!zMapStr2Int(start_txt, &start) || start < 1)
-            {
-              status = FALSE ;
-              err_msg = "Invalid start specified." ;
-            }
-          else if (!zMapStr2Int(end_txt, &end) || end <= start)
-            {
-              status = FALSE ;
-              err_msg = "Invalid end specified." ;
-            }
-        }
-    }
-}
-
 static void validateReqSequence(bool &status,
                                 std::string &err_msg,
                                 const char *req_sequence_txt, 
@@ -1185,14 +1046,13 @@ static void validateStrand(bool &status,
  * remapping should be done.
  *
  */
-static void importFileCB(gpointer cb_data)
+static void importFileCB(ZMapFeatureSequenceMap sequence_map, gpointer cb_data)
 {
   bool status = TRUE ;
   bool have_dataset = FALSE ;
   bool have_assembly = FALSE ;
   bool remap_features = TRUE ;
   MainFrame main_frame = NULL ;
-  ZMapFeatureSequenceMap sequence_map = NULL ;
   std::string err_msg("") ;
   char *sequence_txt = NULL ;
   const char *dataset_txt = NULL ;
@@ -1219,7 +1079,6 @@ static void importFileCB(gpointer cb_data)
   file_type = main_frame->file_type;
   zmap = (ZMap) main_frame->user_data;
   zMapReturnIfFail(zmap) ;
-  sequence_map = main_frame->sequence_map ;
   zMapReturnIfFail(sequence_map) ;
 
   /* Check that the zmap window hasn't been closed (currently the dialog
@@ -1231,12 +1090,9 @@ static void importFileCB(gpointer cb_data)
   view = zMapViewGetView(zmap->focus_viewwindow);
 
   /* Note gtk_entry returns the empty string "" _not_ NULL when there is no text. */
-  sequence_txt = g_strdup(gtk_entry_get_text(GTK_ENTRY(main_frame->sequence_widg))) ;
-  dataset_txt = gtk_entry_get_text(GTK_ENTRY(main_frame->dataset_widg)) ;
-  start_txt = gtk_entry_get_text(GTK_ENTRY(main_frame->start_widg)) ;
-  end_txt = gtk_entry_get_text(GTK_ENTRY(main_frame->end_widg)) ;
+  sequence_txt = g_strdup(sequence_map->sequence) ;
+  dataset_txt = sequence_map->dataset ;
 
-  file_txt = gtk_entry_get_text(GTK_ENTRY(main_frame->file_widg)) ;
   req_sequence_txt = gtk_entry_get_text(GTK_ENTRY(main_frame->req_sequence_widg)) ;
   req_start_txt = gtk_entry_get_text(GTK_ENTRY(main_frame->req_start_widg)) ;
   req_end_txt = gtk_entry_get_text(GTK_ENTRY(main_frame->req_end_widg)) ;
@@ -1249,7 +1105,6 @@ static void importFileCB(gpointer cb_data)
    * and also set the err_msg. The start/end/strand functions also set the int from the string. 
    */
   validateFile(status, err_msg, file_txt) ;
-  validateSequence(status, err_msg, sequence_txt, start_txt, end_txt, start, end) ;
   validateReqSequence(status, err_msg, req_sequence_txt, req_start_txt, req_end_txt, req_start, req_end, start) ;
   validateFileType(status, err_msg, file_type, source_txt, 
                    assembly_txt, dataset_txt, remap_features, 
