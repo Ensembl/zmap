@@ -72,6 +72,7 @@ typedef struct MainFrameStructName
   ZMapFeatureSequenceMap orig_sequence_map ;
   ZMapFeatureSequenceMapStruct sequence_map ;
   gboolean display_sequence ;
+  gboolean sequence_editable ;
 
   ZMapAppGetSequenceViewCB user_func ;
   gpointer user_data ;
@@ -89,12 +90,13 @@ typedef struct MainFrameStructName
 static GtkWidget *makePanel(GtkWidget *toplevel, gpointer *seqdata_out,
                             ZMapAppGetSequenceViewCB user_func, gpointer user_data,
                             ZMapAppClosedSequenceViewCB close_func, gpointer close_data,
-                            ZMapFeatureSequenceMap sequence_map, gboolean display_sequence) ;
+                            ZMapFeatureSequenceMap sequence_map, 
+                            gboolean display_sequence, gboolean sequence_editable) ;
 static GtkWidget *makeMainFrame(MainFrame main_data, ZMapFeatureSequenceMap sequence_map) ;
 static GtkWidget *makeButtonBox(MainFrame main_data) ;
 static void setSequenceEntries(MainFrame main_data) ;
 static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data) ;
-static void createViewCB(GtkWidget *widget, gpointer cb_data) ;
+static void applyCB(GtkWidget *widget, gpointer cb_data) ;
 #ifndef __CYGWIN__
 static void chooseConfigCB(GtkFileChooserButton *widget, gpointer user_data) ;
 #endif
@@ -138,7 +140,7 @@ GtkWidget *zMapAppGetSequenceView(ZMapAppGetSequenceViewCB user_func, gpointer u
   container = makePanel(toplevel, &seq_data,
                         user_func, user_data,
                         close_func, close_data,
-                        sequence_map, display_sequence) ;
+                        sequence_map, display_sequence, true) ;
 
   gtk_container_add(GTK_CONTAINER(toplevel), container) ;
   gtk_signal_connect(GTK_OBJECT(toplevel), "destroy",
@@ -151,13 +153,18 @@ GtkWidget *zMapAppGetSequenceView(ZMapAppGetSequenceViewCB user_func, gpointer u
 
 
 /* As for zMapAppGetSequenceView() except that returns a GtkWidget that can be
- * incorporated into a window. */
+ * incorporated into a window. 
+ * If edit_sequence the user will be allowed to enter sequence details (e.g. in order
+ * to create a new view). Otherwise they will not be able to enter new sequene details
+ * and the existing sequence map will be used (e.g. for importing data into an existing view).
+ */
 GtkWidget *zMapCreateSequenceViewWidg(ZMapAppGetSequenceViewCB user_func, gpointer user_data,
-                                      ZMapFeatureSequenceMap sequence_map, gboolean display_sequence)
+                                      ZMapFeatureSequenceMap sequence_map, 
+                                      gboolean display_sequence, gboolean sequence_editable)
 {
   GtkWidget *container = NULL ;
 
-  container = makePanel(NULL, NULL, user_func, user_data, NULL, NULL, sequence_map, display_sequence) ;
+  container = makePanel(NULL, NULL, user_func, user_data, NULL, NULL, sequence_map, display_sequence, sequence_editable) ;
 
   return container ;
 }
@@ -174,7 +181,8 @@ GtkWidget *zMapCreateSequenceViewWidg(ZMapAppGetSequenceViewCB user_func, gpoint
 static GtkWidget *makePanel(GtkWidget *toplevel, gpointer *our_data,
                             ZMapAppGetSequenceViewCB user_func, gpointer user_data,
                             ZMapAppClosedSequenceViewCB close_func, gpointer close_data,
-                            ZMapFeatureSequenceMap sequence_map, gboolean display_sequence)
+                            ZMapFeatureSequenceMap sequence_map, 
+                            gboolean display_sequence, gboolean sequence_editable)
 {
   GtkWidget *frame = NULL ;
   GtkWidget *vbox, *main_frame, *button_box ;
@@ -191,6 +199,7 @@ static GtkWidget *makePanel(GtkWidget *toplevel, gpointer *our_data,
   main_data->sequence_map.sequence = g_strdup(main_data->sequence_map.sequence) ;
   main_data->sequence_map.config_file = g_strdup(main_data->sequence_map.config_file) ;
   main_data->display_sequence = display_sequence ;
+  main_data->sequence_editable = sequence_editable ;
 
   if (toplevel)
     {
@@ -514,7 +523,7 @@ static GtkWidget *makeButtonBox(MainFrame main_data)
 
   create_button = createButton(NULL, GTK_STOCK_OK, false,
                                "Load the specified region for the selected source(s)",
-                               G_CALLBACK(createViewCB), (gpointer)main_data, button_box) ;
+                               G_CALLBACK(applyCB), (gpointer)main_data, button_box) ;
 
   /* set create button as default. */
   GTK_WIDGET_SET_FLAGS(create_button, GTK_CAN_DEFAULT) ;
@@ -811,6 +820,14 @@ static void setSequenceEntries(MainFrame main_data)
   if (end)
     g_free(end) ;
 
+  if (!main_data->sequence_editable)
+    {
+      gtk_widget_set_sensitive(main_data->sequence_widg, FALSE) ;
+      gtk_widget_set_sensitive(main_data->start_widg, FALSE) ;
+      gtk_widget_set_sensitive(main_data->end_widg, FALSE) ;
+      gtk_widget_set_sensitive(main_data->config_widg, FALSE) ;
+    }
+
   return ;
 }
 
@@ -823,8 +840,15 @@ static void setSequenceEntries(MainFrame main_data)
  *
  *       config file (which contains sequence, start, end)
  *
+ * The user must have selected which source(s) from the list they want to load.
+ *
+ * If the user has specified a new sequence, we create a new sequence map for it
+ * (e.g. if the user is creating a new view).
+ * Otherwise we call the user callback on the original sequence map (e.g. if the
+ * user is importing into an existing view).
+ *
  *  */
-static void createViewCB(GtkWidget *widget, gpointer cb_data)
+static void applyCB(GtkWidget *widget, gpointer cb_data)
 {
   MainFrame main_data = (MainFrame)cb_data ;
   gboolean status = TRUE ;

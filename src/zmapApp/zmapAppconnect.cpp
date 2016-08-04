@@ -54,7 +54,7 @@ GtkWidget *zmapMainMakeConnect(ZMapAppContext app_context, ZMapFeatureSequenceMa
   GtkWidget *frame ;
 
 
-  frame = zMapCreateSequenceViewWidg(createThreadCB, app_context, sequence_map, TRUE) ;
+  frame = zMapCreateSequenceViewWidg(createThreadCB, app_context, sequence_map) ;
 
 
   return frame ;
