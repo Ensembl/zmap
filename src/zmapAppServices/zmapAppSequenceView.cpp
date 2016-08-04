@@ -412,51 +412,74 @@ static GtkWidget *makeMainFrame(MainFrame main_data, ZMapFeatureSequenceMap sequ
 }
 
 
+/* Utility to create a button with various properties */
+static GtkWidget *createButton(const char *label, 
+                               const char *stock,
+                               const bool icon_only,
+                               const char *tooltip,
+                               GCallback cb_func,
+                               gpointer cb_data,
+                               GtkBox *container)
+{
+  GtkWidget *button = NULL ;
+
+  if (label)
+    {
+      button = gtk_button_new_with_label(label) ;
+      
+      if (stock)
+        gtk_button_set_image(GTK_BUTTON(button), gtk_image_new_from_stock(stock, GTK_ICON_SIZE_BUTTON));
+    }
+  else if (icon_only)
+    {
+      button = gtk_button_new() ;
+      gtk_button_set_image(GTK_BUTTON(button), gtk_image_new_from_stock(stock, GTK_ICON_SIZE_BUTTON));
+    }
+  else
+    {
+      button = gtk_button_new_from_stock(stock) ;
+    }
+
+  gtk_widget_set_tooltip_text(button, tooltip) ;
+  g_signal_connect(G_OBJECT(button), "clicked", cb_func, cb_data) ;
+  gtk_box_pack_start(container, button, FALSE, TRUE, 0) ;
+
+  return button ;
+}
+
+
 /* Make the action buttons frame. */
 static GtkWidget *makeButtonBox(MainFrame main_data)
 {
   GtkWidget *frame ;
-  GtkWidget *button_box, *create_button, *chooser_button, *defaults_button, *close_button,
+  GtkBox *button_box ;
+  GtkWidget *create_button, *chooser_button, *defaults_button, *close_button,
     *save_button, *source_button, *remove_button, *edit_button;
   char *home_dir ;
 
   frame = gtk_frame_new(NULL) ;
   gtk_container_border_width(GTK_CONTAINER(frame), 5) ;
 
-  button_box = gtk_hbutton_box_new() ;
+  button_box = GTK_BOX(gtk_hbutton_box_new()) ;
   gtk_container_border_width(GTK_CONTAINER(button_box), 5) ;
-  gtk_container_add (GTK_CONTAINER (frame), button_box) ;
+  gtk_container_add (GTK_CONTAINER (frame), GTK_WIDGET(button_box)) ;
   
-  source_button = gtk_button_new() ;
-  gtk_button_set_image(GTK_BUTTON(source_button), 
-                       gtk_image_new_from_stock(GTK_STOCK_ADD, GTK_ICON_SIZE_BUTTON));
-  gtk_widget_set_tooltip_text(source_button, "Create a new source") ;
-  gtk_signal_connect(GTK_OBJECT(source_button), "clicked", 
-                     GTK_SIGNAL_FUNC(createSourceCB), (gpointer)main_data) ;
-  gtk_box_pack_start(GTK_BOX(button_box), source_button, FALSE, TRUE, 0) ;
-  
-  edit_button = gtk_button_new() ;
-  gtk_button_set_image(GTK_BUTTON(edit_button), 
-                       gtk_image_new_from_stock(GTK_STOCK_EDIT, GTK_ICON_SIZE_BUTTON));
-  gtk_widget_set_tooltip_text(edit_button, "Edit the selected source(s)") ;
-  gtk_signal_connect(GTK_OBJECT(edit_button), "clicked", 
-                     GTK_SIGNAL_FUNC(editSourceCB), (gpointer)main_data) ;
-  gtk_box_pack_start(GTK_BOX(button_box), edit_button, FALSE, TRUE, 0) ;
+  source_button = createButton(NULL, GTK_STOCK_ADD, true, 
+                               "Create a new source", 
+                               G_CALLBACK(createSourceCB), (gpointer)main_data, button_box) ;
 
-  remove_button = gtk_button_new() ;
-  gtk_button_set_image(GTK_BUTTON(remove_button), 
-                       gtk_image_new_from_stock(GTK_STOCK_DELETE, GTK_ICON_SIZE_BUTTON));
-  gtk_widget_set_tooltip_text(remove_button, "Remove the selected source(s)") ;
-  gtk_signal_connect(GTK_OBJECT(remove_button), "clicked", 
-                     GTK_SIGNAL_FUNC(removeSourceCB), (gpointer)main_data) ;
-  gtk_box_pack_start(GTK_BOX(button_box), remove_button, FALSE, TRUE, 0) ;
-
-  save_button = gtk_button_new_from_stock(GTK_STOCK_SAVE) ;
-  gtk_widget_set_tooltip_text(save_button, "Save the source and sequence details to a configuration file") ;
-  gtk_signal_connect(GTK_OBJECT(save_button), "clicked",
-                     GTK_SIGNAL_FUNC(saveCB), (gpointer)main_data) ;
-  gtk_box_pack_start(GTK_BOX(button_box), save_button, FALSE, TRUE, 0) ;
   
+  edit_button = createButton(NULL, GTK_STOCK_EDIT, true,
+                             "Edit the selected source(s)",
+                             G_CALLBACK(editSourceCB), (gpointer)main_data, button_box) ;
+
+  remove_button = createButton(NULL, GTK_STOCK_DELETE, true, 
+                               "Remove the selected source(s)",
+                               G_CALLBACK(removeSourceCB), (gpointer)main_data, button_box) ;
+
+  save_button = createButton(NULL, GTK_STOCK_SAVE, false, 
+                             "Save the source and sequence details to a configuration file",
+                             G_CALLBACK(saveCB), (gpointer)main_data, button_box) ;
 
 #ifndef __CYGWIN__
   /* N.B. we use the gtk "built-in" file chooser stuff. */
@@ -464,7 +487,7 @@ static GtkWidget *makeButtonBox(MainFrame main_data)
                                                                          GTK_FILE_CHOOSER_ACTION_OPEN) ;
   gtk_signal_connect(GTK_OBJECT(chooser_button), "file-set",
                      GTK_SIGNAL_FUNC(chooseConfigCB), (gpointer)main_data) ;
-  gtk_box_pack_start(GTK_BOX(button_box), chooser_button, FALSE, TRUE, 0) ;
+  gtk_box_pack_start(button_box, chooser_button, FALSE, TRUE, 0) ;
   home_dir = (char *)g_get_home_dir() ;
   gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(chooser_button), home_dir) ;
   gtk_file_chooser_set_show_hidden(GTK_FILE_CHOOSER(chooser_button), TRUE) ;
@@ -477,27 +500,21 @@ static GtkWidget *makeButtonBox(MainFrame main_data)
    * saves the user tedious typing. */
   if ((main_data->sequence_map.sequence))
     {
-      defaults_button = gtk_button_new_with_label("Set Defaults") ;
-      gtk_widget_set_tooltip_text(defaults_button, "Set sequence details from default values") ;
-      gtk_signal_connect(GTK_OBJECT(defaults_button), "clicked",
-                         GTK_SIGNAL_FUNC(defaultsCB), (gpointer)main_data) ;
-      gtk_box_pack_start(GTK_BOX(button_box), defaults_button, FALSE, TRUE, 0) ;
+      defaults_button = createButton("Set Defaults", NULL, false,
+                                     "Set sequence details from default values",
+                                     G_CALLBACK(defaultsCB), (gpointer)main_data, button_box) ;
     }
 
   /* Only add a close button and set a default button if this is a standalone dialog. */
   if (main_data->toplevel)
     {
-      close_button = gtk_button_new_with_label("Close") ;
-      gtk_signal_connect(GTK_OBJECT(close_button), "clicked",
-                         GTK_SIGNAL_FUNC(closeCB), (gpointer)main_data) ;
-      gtk_box_pack_start(GTK_BOX(button_box), close_button, FALSE, TRUE, 0) ;
+      close_button = createButton("Close", NULL, false, NULL, 
+                                  G_CALLBACK(closeCB), (gpointer)main_data, button_box) ;
     }
 
-  create_button = gtk_button_new_from_stock(GTK_STOCK_OK) ;
-  gtk_widget_set_tooltip_text(create_button, "Load the specified region for the selected source(s)") ;
-  gtk_signal_connect(GTK_OBJECT(create_button), "clicked",
-                     GTK_SIGNAL_FUNC(createViewCB), (gpointer)main_data) ;
-  gtk_box_pack_start(GTK_BOX(button_box), create_button, FALSE, TRUE, 0) ;
+  create_button = createButton(NULL, GTK_STOCK_OK, false,
+                               "Load the specified region for the selected source(s)",
+                               G_CALLBACK(createViewCB), (gpointer)main_data, button_box) ;
 
   /* set create button as default. */
   GTK_WIDGET_SET_FLAGS(create_button, GTK_CAN_DEFAULT) ;
