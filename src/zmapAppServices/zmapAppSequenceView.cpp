@@ -57,11 +57,16 @@ enum class SourceColumn {NAME, TYPE, TOTAL} ;
 typedef struct MainFrameStructName
 {
   GtkWidget *toplevel ;
+
+  // Sequence details
   GtkWidget *sequence_widg ;
   GtkWidget *start_widg ;
   GtkWidget *end_widg ;
+
+  // Config file
   GtkWidget *config_widg ;
 
+  // Config file chooser
   GtkWidget *chooser_widg ;
 
   ZMapFeatureSequenceMap orig_sequence_map ;
@@ -73,8 +78,9 @@ typedef struct MainFrameStructName
   ZMapAppClosedSequenceViewCB close_func ;
   gpointer close_data ;
 
-  GtkTreeView *tree_view ;
-  GtkTreeModel *model ;
+  // A tree view and model for showing the list of sources
+  GtkTreeView *sources_tree ;
+  GtkTreeModel *sources_model ;
 
 } MainFrameStruct, *MainFrame ;
 
@@ -248,9 +254,9 @@ static void updateSourcesList(MainFrame main_data, ZMapFeatureSequenceMap sequen
 {
   zMapReturnIfFail(main_data && sequence_map) ;
 
-  if (main_data && main_data->model && sequence_map && sequence_map->sources)
+  if (main_data && main_data->sources_model && sequence_map && sequence_map->sources)
     {
-      GtkListStore *store = GTK_LIST_STORE(main_data->model) ;
+      GtkListStore *store = GTK_LIST_STORE(main_data->sources_model) ;
       map<string, ZMapConfigSource> *sources = sequence_map->sources ; 
 
       gtk_list_store_clear(store) ;
@@ -284,8 +290,8 @@ static GtkWidget* createListWidget(ZMapFeatureSequenceMap sequence_map, MainFram
 
   if (main_data)
     {
-      main_data->tree_view = tree_view ;
-      main_data->model = GTK_TREE_MODEL(store) ;
+      main_data->sources_tree = tree_view ;
+      main_data->sources_model = GTK_TREE_MODEL(store) ;
     }
 
   /* Update the values in the store with the sources from the sequence map */
@@ -649,7 +655,7 @@ static void editSourceCB(GtkWidget *widget, gpointer cb_data)
   MainFrame main_data = (MainFrame)cb_data ;
   zMapReturnIfFail(main_data) ;
 
-  GtkTreeSelection *selection = gtk_tree_view_get_selection(main_data->tree_view) ;
+  GtkTreeSelection *selection = gtk_tree_view_get_selection(main_data->sources_tree) ;
   ZMapFeatureSequenceMap sequence_map = main_data->orig_sequence_map ;
 
   if (!selection)
@@ -698,9 +704,9 @@ static void editSourceCB(GtkWidget *widget, gpointer cb_data)
 static void removeSourceCB(GtkWidget *widget, gpointer cb_data)
 {
   MainFrame main_data = (MainFrame)cb_data ;
-  zMapReturnIfFail(main_data && main_data->tree_view && main_data->orig_sequence_map) ;
+  zMapReturnIfFail(main_data && main_data->sources_tree && main_data->orig_sequence_map) ;
 
-  GtkTreeSelection *selection = gtk_tree_view_get_selection(main_data->tree_view) ;
+  GtkTreeSelection *selection = gtk_tree_view_get_selection(main_data->sources_tree) ;
   ZMapFeatureSequenceMap sequence_map = main_data->orig_sequence_map ;
 
   if (!selection)
