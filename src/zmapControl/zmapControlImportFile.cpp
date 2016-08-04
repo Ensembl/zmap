@@ -82,7 +82,6 @@ typedef struct MainFrameStruct_
   GtkWidget *req_end_widg ;
   GtkWidget *source_widg;
   GtkWidget *assembly_widg;
-  GtkWidget *strand_widg ;
   GtkWidget *map_widg ;
 
 
@@ -363,13 +362,6 @@ static GtkWidget *makeOptionsBox(MainFrame main_frame, const char *req_sequence,
   gtk_entry_set_text(GTK_ENTRY(entry), "") ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, TRUE, 0) ;
 
-  main_frame->strand_widg = entry = gtk_entry_new() ;
-  gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE) ;
-  gtk_entry_set_max_length(GTK_ENTRY(entry), (gint)1) ;
-  gtk_entry_set_text(GTK_ENTRY(entry), "") ;
-  gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
-  gtk_widget_set_sensitive(main_frame->strand_widg, FALSE );
-
 
   /* Make the default remap setting true if we're hooked up to otterlace (which does the
    * remapping), false otherwise. */
@@ -566,43 +558,6 @@ static void validateFileType(bool &status,
 
 }
 
-static void validateStrand(bool &status, 
-                           std::string &err_msg,
-                           ZMapSourceFileType file_type,
-                           const char *strand_txt,
-                           int &strand)
-{
-  /* strand is required for bigwig only */
-  if (status && (file_type == ZMAPSOURCE_FILE_BIGWIG))
-    {
-      if (strlen(strand_txt) == 1)
-        {
-          if ((strchr(strand_txt, '+')))
-            strand = 1 ;
-          else if ((strchr(strand_txt, '-')))
-            strand = -1 ;
-          else
-            {
-              status = FALSE ;
-              err_msg = "Strand must be + or -";
-            }
-        }
-      else
-        {
-          status = FALSE ;
-          err_msg = "Invalid value for strand.";
-        }
-    }
-  else if (status)
-    {
-      if (strlen(strand_txt) != 0)
-        {
-          status = FALSE ;
-          err_msg = "Strand should not be specified for this type." ;
-        }
-    }
-}
-
 
 /* Ok...check the users entries and then call the callback function provided.
  *
@@ -632,7 +587,6 @@ static void importFileCB(ZMapFeatureSequenceMap sequence_map, gpointer cb_data)
   const char *req_start_txt= NULL ;
   const char *req_end_txt = NULL ;
   const char *source_txt = NULL ;
-  const char *strand_txt = NULL ;
   const char *assembly_txt = NULL ;
   const char *req_sequence_txt = NULL ;
   int start = 0 ;
@@ -667,7 +621,6 @@ static void importFileCB(ZMapFeatureSequenceMap sequence_map, gpointer cb_data)
   req_end_txt = gtk_entry_get_text(GTK_ENTRY(main_frame->req_end_widg)) ;
   source_txt = gtk_entry_get_text(GTK_ENTRY(main_frame->source_widg)) ;
   assembly_txt = gtk_entry_get_text(GTK_ENTRY(main_frame->assembly_widg)) ;
-  strand_txt = gtk_entry_get_text(GTK_ENTRY(main_frame->strand_widg)) ;
   remap_features = gtk_toggle_button_get_active((GtkToggleButton*)main_frame->map_widg) ;
 
   /* Validate the user-specified arguments. These calls set status to false if there is a problem
@@ -678,7 +631,6 @@ static void importFileCB(ZMapFeatureSequenceMap sequence_map, gpointer cb_data)
   validateFileType(status, err_msg, file_type, source_txt, 
                    assembly_txt, dataset_txt, remap_features, 
                    have_assembly, have_dataset, sequence_txt) ;
-  validateStrand(status, err_msg, file_type, strand_txt, strand) ;
 
   /*
    * If we got this far, then attempt to do something.
