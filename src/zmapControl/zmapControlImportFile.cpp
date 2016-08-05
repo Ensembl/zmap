@@ -79,9 +79,6 @@ typedef struct MainFrameStruct_
   GtkWidget *req_sequence_widg ;
   GtkWidget *req_start_widg ;
   GtkWidget *req_end_widg ;
-  GtkWidget *source_widg;
-  GtkWidget *assembly_widg;
-  GtkWidget *map_widg ;
 
 
   gboolean is_otter;
@@ -305,18 +302,6 @@ static GtkWidget *makeOptionsBox(MainFrame main_frame, const char *req_sequence,
   gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5);
   gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
 
-  label = gtk_label_new( "Assembly " ) ;
-  gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5);
-  gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
-
-  label = gtk_label_new( "Source " ) ;
-  gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5);
-  gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
-
-  label = gtk_label_new( "Map Features " ) ;
-  gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5);
-  gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
-
 
 
   /* Entries.... */
@@ -344,24 +329,6 @@ static GtkWidget *makeOptionsBox(MainFrame main_frame, const char *req_sequence,
   gtk_widget_set_tooltip_text(main_frame->req_end_widg, 
                               "The range to import data for (defaults to the mark, if set, or the full ZMap range if not)") ;
 
-  main_frame->assembly_widg = entry = gtk_entry_new() ;
-  gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE) ;
-  gtk_entry_set_text(GTK_ENTRY(entry), "") ;
-  gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, TRUE, 0) ;
-  gtk_widget_set_tooltip_text(main_frame->req_end_widg, 
-                              "The assembly that the input source is from. If given, ZMap will attempt to map data from this to the current assembly.") ;
-
-  main_frame->source_widg = entry = gtk_entry_new() ;
-  gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE) ;
-  gtk_entry_set_text(GTK_ENTRY(entry), "") ;
-  gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, TRUE, 0) ;
-
-
-  /* Make the default remap setting true if we're hooked up to otterlace (which does the
-   * remapping), false otherwise. */
-  main_frame->map_widg = map_seq_button = gtk_check_button_new () ;
-  gtk_toggle_button_set_active((GtkToggleButton*)map_seq_button, main_frame->is_otter) ;
-  gtk_box_pack_start(GTK_BOX(entrybox), map_seq_button, FALSE, TRUE, 0) ;
 
 
   if (*start)
