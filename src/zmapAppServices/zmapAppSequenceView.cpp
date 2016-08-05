@@ -167,11 +167,12 @@ GtkWidget *zMapAppGetSequenceView(ZMapAppGetSequenceViewCB user_func, gpointer u
  */
 GtkWidget *zMapCreateSequenceViewWidg(ZMapAppGetSequenceViewCB user_func, gpointer user_data,
                                       ZMapFeatureSequenceMap sequence_map, 
-                                      gboolean display_sequence, gboolean sequence_editable)
+                                      gboolean display_sequence, gboolean sequence_editable,
+                                      GtkWidget *toplevel)
 {
   GtkWidget *container = NULL ;
 
-  container = makePanel(NULL, NULL, user_func, user_data, NULL, NULL, sequence_map, display_sequence, sequence_editable) ;
+  container = makePanel(toplevel, NULL, user_func, user_data, NULL, NULL, sequence_map, display_sequence, sequence_editable) ;
 
   return container ;
 }
@@ -211,7 +212,9 @@ static GtkWidget *makePanel(GtkWidget *toplevel, gpointer *our_data,
   if (toplevel)
     {
       main_data->toplevel = toplevel ;
-      *our_data = main_data ;
+
+      if (our_data)
+        *our_data = main_data ;
     }
 
   frame = gtk_frame_new(NULL) ;
