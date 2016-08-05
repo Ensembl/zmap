@@ -100,7 +100,7 @@ static GtkWidget *makeOptionsBox(MainFrame main_frame, const char *seq, int star
 
 static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data) ;
 static void importFileCB(ZMapFeatureSequenceMap sequence_map, 
-                         std::list<ZMapConfigSource> selected_sources,
+                         std::list<ZMapConfigSource> &selected_sources,
                          gpointer cb_data) ;
 
 #ifdef NOT_USED
@@ -405,7 +405,7 @@ static void validateReqSequence(bool &status,
  *
  */
 static void importFileCB(ZMapFeatureSequenceMap sequence_map, 
-                         std::list<ZMapConfigSource> sources,
+                         std::list<ZMapConfigSource> &sources,
                          gpointer cb_data)
 {
   bool status = TRUE ;
