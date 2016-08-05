@@ -48,6 +48,7 @@ typedef struct _ZMapConfigSourceStruct
   gboolean provide_mapping;
   gboolean req_styles;
   int group;
+  bool recent;
 #define SOURCE_GROUP_NEVER    0     // these are bitfields, and correspond to the obvious strings
 #define SOURCE_GROUP_START    1
 #define SOURCE_GROUP_DELAYED  2

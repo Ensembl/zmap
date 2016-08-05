@@ -515,6 +515,7 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::createSource(const char *sour
 
   source->name_ = g_quark_from_string(source_name) ;
   source->url = g_strdup(url) ;
+  source->recent = true ;
       
   if (featuresets && *featuresets)
     source->featuresets = g_strdup(featuresets) ;

@@ -72,7 +72,8 @@ typedef struct MainFrameStructName
   ZMapFeatureSequenceMap orig_sequence_map ;
   ZMapFeatureSequenceMapStruct sequence_map ;
   gboolean display_sequence ;
-  gboolean sequence_editable ;
+  bool import ; // importing into existing view
+  bool show_all ; // if true, show all sources; otherwise, filter them
 
   ZMapAppGetSequenceViewCB user_func ;
   gpointer user_data ;
@@ -91,7 +92,7 @@ static GtkWidget *makePanel(GtkWidget *toplevel, gpointer *seqdata_out,
                             ZMapAppGetSequenceViewCB user_func, gpointer user_data,
                             ZMapAppClosedSequenceViewCB close_func, gpointer close_data,
                             ZMapFeatureSequenceMap sequence_map, 
-                            gboolean display_sequence, gboolean sequence_editable) ;
+                            gboolean display_sequence, gboolean import) ;
 static GtkWidget *makeMainFrame(MainFrame main_data, ZMapFeatureSequenceMap sequence_map) ;
 static GtkWidget *makeButtonBox(MainFrame main_data) ;
 static void setSequenceEntries(MainFrame main_data) ;
@@ -171,12 +172,12 @@ GtkWidget *zMapAppGetSequenceView(ZMapAppGetSequenceViewCB user_func, gpointer u
  */
 GtkWidget *zMapCreateSequenceViewWidg(ZMapAppGetSequenceViewCB user_func, gpointer user_data,
                                       ZMapFeatureSequenceMap sequence_map, 
-                                      gboolean display_sequence, gboolean sequence_editable,
+                                      gboolean display_sequence, gboolean import,
                                       GtkWidget *toplevel)
 {
   GtkWidget *container = NULL ;
 
-  container = makePanel(toplevel, NULL, user_func, user_data, NULL, NULL, sequence_map, display_sequence, sequence_editable) ;
+  container = makePanel(toplevel, NULL, user_func, user_data, NULL, NULL, sequence_map, display_sequence, import) ;
 
   return container ;
 }
@@ -194,7 +195,7 @@ static GtkWidget *makePanel(GtkWidget *toplevel, gpointer *our_data,
                             ZMapAppGetSequenceViewCB user_func, gpointer user_data,
                             ZMapAppClosedSequenceViewCB close_func, gpointer close_data,
                             ZMapFeatureSequenceMap sequence_map, 
-                            gboolean display_sequence, gboolean sequence_editable)
+                            gboolean display_sequence, gboolean import)
 {
   GtkWidget *frame = NULL ;
   GtkWidget *vbox, *main_frame, *button_box ;
@@ -211,7 +212,8 @@ static GtkWidget *makePanel(GtkWidget *toplevel, gpointer *our_data,
   main_data->sequence_map.sequence = g_strdup(main_data->sequence_map.sequence) ;
   main_data->sequence_map.config_file = g_strdup(main_data->sequence_map.config_file) ;
   main_data->display_sequence = display_sequence ;
-  main_data->sequence_editable = sequence_editable ;
+  main_data->import = import ;
+  main_data->show_all = !import ; // only show recent sources in import dialog
 
   if (toplevel)
     {
@@ -280,23 +282,28 @@ static void updateSourcesList(MainFrame main_data, ZMapFeatureSequenceMap sequen
   if (main_data && main_data->sources_model && sequence_map && sequence_map->sources)
     {
       GtkListStore *store = GTK_LIST_STORE(main_data->sources_model) ;
-      map<string, ZMapConfigSource> *sources = sequence_map->sources ; 
 
       gtk_list_store_clear(store) ;
 
       /* Loop through all of the sources */
-      for (auto source_iter = sources->begin(); source_iter != sources->end(); ++source_iter)
+      for (auto source_iter : *sequence_map->sources)
         {
-          string source_type = sourceGetType(source_iter->second) ;
+          ZMapConfigSource source = source_iter.second ;
 
-          /* Create a new row in the list store and set the values */
-          GtkTreeIter store_iter ;
-          gtk_list_store_append(store, &store_iter);
+          /* Only show recent sources, if applicable */
+          if (main_data->show_all || source->recent)
+            {
+              string source_type = sourceGetType(source) ;
 
-          gtk_list_store_set(store, &store_iter, 
-                             SourceColumn::NAME, source_iter->first.c_str(),
-                             SourceColumn::TYPE, source_type.c_str(),
-                             -1);
+              /* Create a new row in the list store and set the values */
+              GtkTreeIter store_iter ;
+              gtk_list_store_append(store, &store_iter);
+
+              gtk_list_store_set(store, &store_iter, 
+                                 SourceColumn::NAME, source_iter.first.c_str(),
+                                 SourceColumn::TYPE, source_type.c_str(),
+                                 -1);
+            }
         }
     }
   
@@ -522,7 +529,7 @@ static GtkWidget *makeButtonBox(MainFrame main_data)
 
   /* If a sequence is provided then make a button to set it in the entries fields,
    * saves the user tedious typing. */
-  if (main_data->sequence_map.sequence && main_data->sequence_editable)
+  if (main_data->sequence_map.sequence && !main_data->import)
     {
       defaults_button = createButton("Set Defaults", NULL, false,
                                      "Set sequence details from default values",
@@ -690,9 +697,7 @@ static void createSourceCB(GtkWidget *widget, gpointer cb_data)
   zMapReturnIfFail(main_data) ;
 
   /* When importing via the import dialog we probably(?) want the default import type to FILE. */
-  /* gb10: Bit of a hack but we can tell if we're being called from the import dialog if
-   * sequence_editable is false. */
-  if (!main_data->sequence_editable)
+  if (main_data->import)
     zMapAppCreateSource(&main_data->sequence_map, createNewSourceCB, main_data, NULL, NULL, ZMapAppSourceType::FILE) ;
   else
     zMapAppCreateSource(&main_data->sequence_map, createNewSourceCB, main_data, NULL, NULL) ;
@@ -812,7 +817,8 @@ static void setSequenceEntries(MainFrame main_data)
   if (end)
     g_free(end) ;
 
-  if (!main_data->sequence_editable)
+  /* Don't allow editing of the sequence if we're importing into an existing view */
+  if (main_data->import)
     {
       gtk_widget_set_sensitive(main_data->sequence_widg, FALSE) ;
       gtk_widget_set_sensitive(main_data->start_widg, FALSE) ;
@@ -836,15 +842,15 @@ static void setSequenceEntries(MainFrame main_data)
  *
  * If the user has specified a new sequence, we create a new sequence map for it
  * (e.g. if the user is creating a new view).
- * Otherwise we call the user callback on the original sequence map (e.g. if the
- * user is importing into an existing view).
+ * If importing into an existing sequence, the user callback on the original sequence 
+ * map.
  *
  *  */
 static void applyCB(GtkWidget *widget, gpointer cb_data)
 {
   MainFrame main_data = (MainFrame)cb_data ;
 
-  if (!main_data->sequence_editable)
+  if (main_data->import)
     {
       const char *err_msg = NULL;
       list<ZMapConfigSource> selected_sources = getSelectedSources(main_data->sources_tree,

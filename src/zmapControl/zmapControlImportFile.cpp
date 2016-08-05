@@ -109,6 +109,7 @@ static void importFileCB(ZMapFeatureSequenceMap sequence_map,
 static void sequenceCB(GtkWidget *widget, gpointer cb_data) ;
 #endif
 
+static void clearRecentSources(ZMapFeatureSequenceMap sequence_map) ;
 
 
 
@@ -131,6 +132,10 @@ void zMapControlImportFile(ZMapControlImportFileCB user_func, gpointer user_data
   zMapReturnIfFail(user_func && user_data) ;
 
   ZMap zmap = (ZMap)user_data;
+
+  /* First clear 'recent' flag from all sources so that we only list new sources we create from
+   * this dialog */
+  clearRecentSources(sequence_map) ;
 
   toplevel = zMapGUIDialogNew(NULL, "Import data from a source", NULL, NULL) ;
 
@@ -166,6 +171,16 @@ void zMapControlImportFile(ZMapControlImportFileCB user_func, gpointer user_data
  *                   Internal routines.
  */
 
+
+/* Utility to clear the 'recent' flag from all sources */
+static void clearRecentSources(ZMapFeatureSequenceMap sequence_map)
+{
+  if (sequence_map && sequence_map->sources)
+    {
+      for (auto iter : *sequence_map->sources)
+        iter.second->recent = false ;
+    }
+}
 
 
 /* To fit in w/ ZMap practice we have to handle multiple views and config files
@@ -257,7 +272,7 @@ static MainFrame makePanel(GtkWidget *toplevel, gpointer *our_data,
   options_box = makeOptionsBox(main_data, sequence, req_start, req_end) ;
   gtk_box_pack_start(GTK_BOX(vbox), options_box, FALSE, FALSE, 0) ;
 
-  sequence_box = zMapCreateSequenceViewWidg(importFileCB, main_data, sequence_map, TRUE, FALSE, toplevel) ;
+  sequence_box = zMapCreateSequenceViewWidg(importFileCB, main_data, sequence_map, TRUE, TRUE, toplevel) ;
   gtk_box_pack_start(GTK_BOX(vbox), sequence_box, TRUE, TRUE, 0) ;
 
   return main_data ;
