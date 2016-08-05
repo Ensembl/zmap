@@ -491,7 +491,7 @@ static void importFileCB(ZMapFeatureSequenceMap sequence_map,
           zMapCritical("%s", "Please select which sources you want to import data from") ;
         }
 
-      for (auto server : sources)
+      for (ZMapConfigSource server : sources)
         {
           GError *g_error = NULL ;
           zMapViewSetUpServerConnection(view, server, req_start, req_end, false, &g_error) ;
