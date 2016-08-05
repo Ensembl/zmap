@@ -166,7 +166,7 @@ gboolean zmapMainMakeAppWindow(int argc, char *argv[], ZMapAppContext app_contex
   gtk_box_pack_start(GTK_BOX(vbox), connect_frame, TRUE, TRUE, 0);
 
   manage_frame = zmapMainMakeManage(app_context) ;
-  gtk_box_pack_start(GTK_BOX(vbox), manage_frame, TRUE, TRUE, 0);
+  gtk_box_pack_start(GTK_BOX(vbox), manage_frame, FALSE, TRUE, 0);
 
   quit_button = gtk_button_new_with_label("Quit") ;
   gtk_signal_connect(GTK_OBJECT(quit_button), "clicked",

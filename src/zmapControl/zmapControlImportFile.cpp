@@ -247,7 +247,7 @@ static MainFrame makePanel(GtkWidget *toplevel, gpointer *our_data,
     sequence = sequence_map->sequence;/* request defaults to original */
 
   options_box = makeOptionsBox(main_data, sequence, req_start, req_end) ;
-  gtk_box_pack_start(GTK_BOX(vbox), options_box, TRUE, TRUE, 0) ;
+  gtk_box_pack_start(GTK_BOX(vbox), options_box, FALSE, FALSE, 0) ;
 
   sequence_box = zMapCreateSequenceViewWidg(importFileCB, main_data, sequence_map, TRUE, FALSE) ;
   gtk_box_pack_start(GTK_BOX(vbox), sequence_box, TRUE, TRUE, 0) ;
@@ -292,15 +292,15 @@ static GtkWidget *makeOptionsBox(MainFrame main_frame, const char *req_sequence,
 
   label = gtk_label_new( "Sequence " ) ;
   gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5);
-  gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
+  gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, FALSE, 0) ;
 
   label = gtk_label_new( "Start " ) ;
-  gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
+  gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, FALSE, 0) ;
   gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5);
 
   label = gtk_label_new( "End " ) ;
   gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5);
-  gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
+  gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, FALSE, 0) ;
 
 
 

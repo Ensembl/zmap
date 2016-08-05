@@ -224,7 +224,7 @@ static GtkWidget *makePanel(GtkWidget *toplevel, gpointer *our_data,
   gtk_box_pack_start(GTK_BOX(vbox), main_frame, TRUE, TRUE, 0) ;
 
   button_box = makeButtonBox(main_data) ;
-  gtk_box_pack_start(GTK_BOX(vbox), button_box, TRUE, TRUE, 0) ;
+  gtk_box_pack_start(GTK_BOX(vbox), button_box, FALSE, FALSE, 0) ;
 
   return frame ;
 }
@@ -352,7 +352,7 @@ static void makeLabel(const char *text, GtkWidget *parent)
 {
   GtkWidget *label = gtk_label_new(text) ;
   gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
-  gtk_box_pack_start(GTK_BOX(parent), label, FALSE, TRUE, 0) ;
+  gtk_box_pack_start(GTK_BOX(parent), label, FALSE, FALSE, 0) ;
 }
 
 
@@ -381,7 +381,7 @@ static GtkWidget *makeSequenceFrame(MainFrame main_data, ZMapFeatureSequenceMap 
 
   hbox = gtk_hbox_new(FALSE, 0) ;
   gtk_container_border_width(GTK_CONTAINER(hbox), 0);
-  gtk_box_pack_start(GTK_BOX(topbox), hbox, TRUE, FALSE, 0) ;
+  gtk_box_pack_start(GTK_BOX(topbox), hbox, FALSE, FALSE, 0) ;
 
   /* Box for labels */
   labelbox = gtk_vbox_new(TRUE, 0) ;
@@ -389,7 +389,7 @@ static GtkWidget *makeSequenceFrame(MainFrame main_data, ZMapFeatureSequenceMap 
 
   /* Box for entries */
   entrybox = gtk_vbox_new(TRUE, 0) ;
-  gtk_box_pack_start(GTK_BOX(hbox), entrybox, TRUE, TRUE, 0) ;
+  gtk_box_pack_start(GTK_BOX(hbox), entrybox, FALSE, FALSE, 0) ;
 
   /* Create the widgets */
   makeLabel("Sequence :", labelbox) ;
@@ -397,7 +397,7 @@ static GtkWidget *makeSequenceFrame(MainFrame main_data, ZMapFeatureSequenceMap 
   makeLabel("End :", labelbox) ;
   makeLabel( "Config File :", labelbox) ;
 
-  main_data->sequence_widg = makeEntry(entrybox, TRUE) ;
+  main_data->sequence_widg = makeEntry(entrybox, FALSE) ;
   main_data->start_widg = makeEntry(entrybox, FALSE) ;
   main_data->end_widg = makeEntry(entrybox, FALSE) ;
   main_data->config_widg = makeEntry(entrybox, FALSE) ;
@@ -422,7 +422,7 @@ static GtkWidget *makeMainFrame(MainFrame main_data, ZMapFeatureSequenceMap sequ
   GtkWidget *sequence_frame = makeSequenceFrame(main_data, sequence_map) ;
 
   gtk_box_pack_start(box, sources_frame, TRUE, TRUE, 0) ;
-  gtk_box_pack_start(box, sequence_frame, TRUE, TRUE, 0) ;
+  gtk_box_pack_start(box, sequence_frame, FALSE, FALSE, 0) ;
 
   return frame ;
 }
@@ -458,7 +458,7 @@ static GtkWidget *createButton(const char *label,
 
   gtk_widget_set_tooltip_text(button, tooltip) ;
   g_signal_connect(G_OBJECT(button), "clicked", cb_func, cb_data) ;
-  gtk_box_pack_start(container, button, FALSE, TRUE, 0) ;
+  gtk_box_pack_start(container, button, FALSE, FALSE, 0) ;
 
   return button ;
 }
@@ -503,7 +503,7 @@ static GtkWidget *makeButtonBox(MainFrame main_data)
                                                                          GTK_FILE_CHOOSER_ACTION_OPEN) ;
   gtk_signal_connect(GTK_OBJECT(chooser_button), "file-set",
                      GTK_SIGNAL_FUNC(chooseConfigCB), (gpointer)main_data) ;
-  gtk_box_pack_start(button_box, chooser_button, FALSE, TRUE, 0) ;
+  gtk_box_pack_start(button_box, chooser_button, FALSE, FALSE, 0) ;
   home_dir = (char *)g_get_home_dir() ;
   gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(chooser_button), home_dir) ;
   gtk_file_chooser_set_show_hidden(GTK_FILE_CHOOSER(chooser_button), TRUE) ;
