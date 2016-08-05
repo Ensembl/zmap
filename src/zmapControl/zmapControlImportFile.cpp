@@ -41,6 +41,8 @@
 
 #include <string.h>
 
+#include <gbtools/gbtools.hpp>
+
 #include <ZMap/zmapString.hpp>    /* testing only. */
 
 #include <config.h>
@@ -131,6 +133,12 @@ void zMapControlImportFile(ZMapControlImportFileCB user_func, gpointer user_data
   ZMap zmap = (ZMap)user_data;
 
   toplevel = zMapGUIDialogNew(NULL, "Import data from a source", NULL, NULL) ;
+
+  int width = 0 ;
+  int height = 0 ;
+
+  if (gbtools::GUIGetTrueMonitorSize(toplevel, &width, &height))
+    gtk_window_set_default_size(GTK_WINDOW(toplevel), std::min(640.0, width * 0.5), std::min(400.0, height * 0.7)) ;
 
   /* Make sure the dialog is destroyed if the zmap window is closed */
   /*! \todo For some reason this doesn't work and the dialog hangs around
