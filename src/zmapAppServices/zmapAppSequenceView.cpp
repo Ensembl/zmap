@@ -514,7 +514,7 @@ static GtkWidget *makeButtonBox(MainFrame main_data)
 
   /* If a sequence is provided then make a button to set it in the entries fields,
    * saves the user tedious typing. */
-  if ((main_data->sequence_map.sequence))
+  if (main_data->sequence_map.sequence && main_data->sequence_editable)
     {
       defaults_button = createButton("Set Defaults", NULL, false,
                                      "Set sequence details from default values",
@@ -585,7 +585,8 @@ static void defaultsCB(GtkWidget *widget, gpointer cb_data)
   setSequenceEntries(main_data) ;
 
 #ifndef __CYGWIN__
-  gtk_file_chooser_set_filename(GTK_FILE_CHOOSER(main_data->chooser_widg), main_data->sequence_map.config_file) ;
+  if (main_data->sequence_map.config_file)
+    gtk_file_chooser_set_filename(GTK_FILE_CHOOSER(main_data->chooser_widg), main_data->sequence_map.config_file) ;
 #endif
 
   return ;
