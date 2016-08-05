@@ -614,7 +614,7 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::createFileSource(const char *
     src->url = g_strdup_printf("file:///%s", file) ;
 
   /* Add the source to our list. Use the filename as the source name if none given */
-  string source_name(source_name_in ? source_name_in : file) ;
+  string source_name(source_name_in ? source_name_in : g_path_get_basename(file)) ;
   GError *error = NULL ;
 
   addSource(source_name, src, &error) ;
@@ -651,7 +651,7 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::createPipeSource(const char *
     src->url = g_strdup_printf("pipe:///%s", script) ;
 
   /* Add the source to our list. Use the filename as the source name if none given */
-  string source_name(source_name_in ? source_name_in : file) ;
+  string source_name(source_name_in ? source_name_in : g_path_get_basename(file)) ;
   GError *error = NULL ;
 
   addSource(source_name, src, &error) ;
