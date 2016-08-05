@@ -470,7 +470,7 @@ GtkWidget* makeEntryWidget(const char *label_str,
                            const int max_col, 
                            gboolean mandatory,
                            list<GtkWidget*> *widget_list,
-                           const bool activates_default = false)
+                           const bool activates_default = true)
 {
   GtkWidget *label = gtk_label_new(label_str) ;
   gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5) ;

@@ -364,6 +364,7 @@ static GtkWidget *makeEntry(GtkWidget *parent, const gboolean fill)
   GtkWidget *entry = gtk_entry_new() ;
   gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
   gtk_box_pack_start(GTK_BOX(parent), entry, FALSE, fill, 0) ;
+  gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE) ;
   return entry ;
 }
 
@@ -537,7 +538,7 @@ static GtkWidget *makeButtonBox(MainFrame main_data)
 
   /* set create button as default. */
   GTK_WIDGET_SET_FLAGS(create_button, GTK_CAN_DEFAULT) ;
-  //gtk_window_set_default(GTK_WINDOW(main_data->toplevel), create_button) ;
+  gtk_window_set_default(GTK_WINDOW(main_data->toplevel), create_button) ;
   
 
   return frame ;
