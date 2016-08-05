@@ -260,7 +260,6 @@ static MainFrame makePanel(GtkWidget *toplevel, gpointer *our_data,
 static GtkWidget *makeOptionsBox(MainFrame main_frame, const char *req_sequence, int req_start, int req_end)
 {
   GtkWidget *frame = NULL ;
-  GtkWidget *map_seq_button = NULL ;
   GtkWidget *topbox = NULL, *hbox = NULL, *entrybox = NULL, *labelbox = NULL, *entry = NULL, *label = NULL ;
   const char *sequence = "" ;
   char *start = NULL, *end = NULL ;
