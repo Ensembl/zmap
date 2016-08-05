@@ -689,7 +689,13 @@ static void createSourceCB(GtkWidget *widget, gpointer cb_data)
   MainFrame main_data = (MainFrame)cb_data ;
   zMapReturnIfFail(main_data) ;
 
-  zMapAppCreateSource(&main_data->sequence_map, createNewSourceCB, main_data, NULL, NULL) ;
+  /* When importing via the import dialog we probably(?) want the default import type to FILE. */
+  /* gb10: Bit of a hack but we can tell if we're being called from the import dialog if
+   * sequence_editable is false. */
+  if (!main_data->sequence_editable)
+    zMapAppCreateSource(&main_data->sequence_map, createNewSourceCB, main_data, NULL, NULL, ZMapAppSourceType::FILE) ;
+  else
+    zMapAppCreateSource(&main_data->sequence_map, createNewSourceCB, main_data, NULL, NULL) ;
 
   return ;
 }

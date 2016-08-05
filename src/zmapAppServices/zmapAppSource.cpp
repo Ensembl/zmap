@@ -109,6 +109,8 @@ typedef struct MainFrameStructName
   ZMapAppClosedSequenceViewCB close_func ;
   gpointer close_data ;
 
+  ZMapAppSourceType default_type ;
+
   // General
   GtkWidget *name_widg ;
 
@@ -189,6 +191,7 @@ GtkWidget *makePanel(GtkWidget *toplevel,
                      gpointer user_data,
                      ZMapAppClosedSequenceViewCB close_func,
                      gpointer close_data,
+                     ZMapAppSourceType default_type,
                      MainFrame *main_data) ;
 GtkWidget *makeButtonBox(MainFrame main_data) ;
 void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data) ;
@@ -233,6 +236,7 @@ GtkWidget *makePanel(GtkWidget *toplevel,
                      gpointer user_data,
                      ZMapAppClosedSequenceViewCB close_func,
                      gpointer close_data,
+                     ZMapAppSourceType default_type,
                      MainFrame *main_data_out)
 {
   GtkWidget *frame = NULL ;
@@ -246,6 +250,7 @@ GtkWidget *makePanel(GtkWidget *toplevel,
   main_data->user_data = user_data ;
   main_data->close_func = close_func ;
   main_data->close_data = close_data ;
+  main_data->default_type = default_type ;
 
   if (toplevel)
     {
@@ -557,33 +562,34 @@ void sourceTypeChangedCB(GtkComboBox *combo, gpointer data)
 
   if (value)
     {
-      if (strcmp(value, SOURCE_TYPE_FILE) == 0)
-        {
-          setWidgetsVisibility(main_data->file_widgets, TRUE) ;
-          setWidgetsVisibility(main_data->trackhub_widgets, FALSE) ;
+      setWidgetsVisibility(main_data->file_widgets,     strcmp(value, SOURCE_TYPE_FILE) == 0) ;
+      setWidgetsVisibility(main_data->trackhub_widgets, strcmp(value, SOURCE_TYPE_TRACKHUB) == 0) ;
 #ifdef USE_ENSEMBL
-          setWidgetsVisibility(main_data->ensembl_widgets, FALSE) ;
-#endif /* USE_ENSEMBL */
-        }
-      else if (strcmp(value, SOURCE_TYPE_TRACKHUB) == 0)
-        {
-          setWidgetsVisibility(main_data->trackhub_widgets, TRUE) ;
-          setWidgetsVisibility(main_data->file_widgets, FALSE) ;
-#ifdef USE_ENSEMBL
-          setWidgetsVisibility(main_data->ensembl_widgets, FALSE) ;
-#endif
-        }
-#ifdef USE_ENSEMBL
-      else if (strcmp(value, SOURCE_TYPE_ENSEMBL) == 0)
-        {
-          setWidgetsVisibility(main_data->ensembl_widgets, TRUE) ;
-          setWidgetsVisibility(main_data->trackhub_widgets, FALSE) ;
-          setWidgetsVisibility(main_data->file_widgets, FALSE) ;
-        }
+      setWidgetsVisibility(main_data->ensembl_widgets,  strcmp(value, SOURCE_TYPE_ENSEMBL) == 0) ;
 #endif /* USE_ENSEMBL */
 
       g_free(value) ;
     }
+}
+
+
+void createComboItem(MainFrame main_data,
+                     GtkComboBox *combo, 
+                     GtkListStore *store,
+                     ZMapURLScheme scheme,
+                     const char *text,
+                     unsigned int &combo_index,
+                     const bool active)
+{
+  GtkTreeIter iter;
+  gtk_list_store_append(store, &iter);
+  gtk_list_store_set(store, &iter, GenericListColumn::NAME, text, -1);
+
+  main_data->combo_indices[scheme] = combo_index ;
+  ++combo_index ;
+
+  if (active)
+    gtk_combo_box_set_active_iter(combo, &iter);
 }
 
 
@@ -603,30 +609,19 @@ GtkComboBox *createComboBox(MainFrame main_data)
   /* Add the rows to the combo box */
   unsigned int combo_index = 0 ;
 
-  GtkTreeIter iter;
+  createComboItem(main_data, combo, store, 
+                  SCHEME_FILE, SOURCE_TYPE_FILE, combo_index,
+                  main_data->default_type == ZMapAppSourceType::FILE) ;
 
-  gtk_list_store_append(store, &iter);
-  gtk_list_store_set(store, &iter, GenericListColumn::NAME, SOURCE_TYPE_FILE, -1);
-  gtk_combo_box_set_active_iter(combo, &iter);
-
-  main_data->combo_indices[SCHEME_FILE] = combo_index ;
-  ++combo_index ;
-
-  gtk_list_store_append(store, &iter);
-  gtk_list_store_set(store, &iter, 0, SOURCE_TYPE_TRACKHUB, -1);
-  gtk_combo_box_set_active_iter(combo, &iter);
-
-  main_data->combo_indices[SCHEME_TRACKHUB] = combo_index ;
-  ++combo_index ;
+  createComboItem(main_data, combo, store, 
+                  SCHEME_TRACKHUB, SOURCE_TYPE_TRACKHUB, combo_index,
+                  main_data->default_type == ZMapAppSourceType::TRACKHUB) ;
 
 #ifdef USE_ENSEMBL
-  gtk_list_store_append(store, &iter);
-  gtk_list_store_set(store, &iter, GenericListColumn::NAME, SOURCE_TYPE_ENSEMBL, -1);
-  gtk_combo_box_set_active_iter(combo, &iter);
-
-  main_data->combo_indices[SCHEME_ENSEMBL] = combo_index ;
-  ++combo_index ;
-#endif /* USE_ENSEMBL */
+  createComboItem(main_data, combo, store, 
+                  SCHEME_ENSEMBL, SOURCE_TYPE_ENSEMBL, combo_index,
+                  main_data->default_type == ZMapAppSourceType::ENSEMBL) ;
+#endif
 
   g_signal_connect(G_OBJECT(combo), "changed", G_CALLBACK(sourceTypeChangedCB), main_data);
 
@@ -2468,7 +2463,8 @@ GtkWidget *zMapAppCreateSource(ZMapFeatureSequenceMap sequence_map,
                                ZMapAppCreateSourceCB user_func,
                                gpointer user_data,
                                ZMapAppClosedSequenceViewCB close_func,
-                               gpointer close_data)
+                               gpointer close_data,
+                               ZMapAppSourceType default_type)
 {
   zMapReturnValIfFail(user_func, NULL) ;
 
@@ -2482,7 +2478,7 @@ GtkWidget *zMapAppCreateSource(ZMapFeatureSequenceMap sequence_map,
   gtk_container_border_width(GTK_CONTAINER(toplevel), 0) ;
 
   MainFrame main_data = NULL ;
-  container = makePanel(toplevel, &seq_data, sequence_map, user_func, user_data, close_func, close_data, &main_data) ;
+  container = makePanel(toplevel, &seq_data, sequence_map, user_func, user_data, close_func, close_data, default_type, &main_data) ;
 
   gtk_container_add(GTK_CONTAINER(toplevel), container) ;
   gtk_signal_connect(GTK_OBJECT(toplevel), "destroy",
@@ -2490,36 +2486,19 @@ GtkWidget *zMapAppCreateSource(ZMapFeatureSequenceMap sequence_map,
 
   gtk_widget_show_all(toplevel) ;
 
-  /* Only show widgets for the relevant file type (ensembl by default if it exists, 
-   * trackhub otherwise) */
+  /* Only show widgets for the relevant file type (use given default) */
   if (main_data)
     {
+      setWidgetsVisibility(main_data->trackhub_widgets, default_type == ZMapAppSourceType::TRACKHUB) ;
+      setWidgetsVisibility(main_data->file_widgets,     default_type == ZMapAppSourceType::FILE) ;
 #ifdef USE_ENSEMBL
-      setWidgetsVisibility(main_data->ensembl_widgets, TRUE) ;
-      setWidgetsVisibility(main_data->file_widgets, FALSE) ;
-      setWidgetsVisibility(main_data->trackhub_widgets, FALSE) ;
-#else
-      setWidgetsVisibility(main_data->trackhub_widgets, TRUE) ;
-      setWidgetsVisibility(main_data->file_widgets, FALSE) ;
+      setWidgetsVisibility(main_data->ensembl_widgets,  default_type == ZMapAppSourceType::ENSEMBL) ;
 #endif
     }
 
   return toplevel ;
 }
 
-
-/* As for zMapAppCreateSource() except that returns a GtkWidget that can be
- * incorporated into a window. */
-GtkWidget *zMapAppCreateSourceWidg(ZMapFeatureSequenceMap sequence_map,
-                                   ZMapAppCreateSourceCB user_func,
-                                   gpointer user_data)
-{
-  GtkWidget *container = NULL ;
-
-  container = makePanel(NULL, NULL, sequence_map, user_func, user_data, NULL, NULL, NULL) ;
-
-  return container ;
-}
 
 
 /* Show a dialog to edit an existing source */
@@ -2540,7 +2519,7 @@ GtkWidget *zMapAppEditSource(ZMapFeatureSequenceMap sequence_map,
   gtk_container_border_width(GTK_CONTAINER(toplevel), 0) ;
 
   MainFrame main_data = NULL ;
-  container = makePanel(toplevel, &seq_data, sequence_map, user_func, user_data, NULL, NULL, &main_data) ;
+  container = makePanel(toplevel, &seq_data, sequence_map, user_func, user_data, NULL, NULL, ZMapAppSourceType::NONE, &main_data) ;
 
   gtk_container_add(GTK_CONTAINER(toplevel), container) ;
   gtk_signal_connect(GTK_OBJECT(toplevel), "destroy",
