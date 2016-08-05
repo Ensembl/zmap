@@ -116,6 +116,10 @@ static list<ZMapConfigSource> getSelectedSources(GtkTreeView *sources_tree,
                                                  const char *err_msg) ;
 static list<GQuark> getSelectedSourceNames(GtkTreeView *sources_tree,
                                            const char *err_msg) ;
+static void selectSource(const char *source_name, 
+                         GtkTreeView *tree,
+                         GtkTreeModel *model,
+                         const bool deselect_others = false) ;
 
 
 
@@ -640,9 +644,13 @@ static void createNewSourceCB(const char *source_name,
 
   sequence_map->createSource(source_name, url, featuresets, biotypes, &tmp_error) ;
 
-  /* Update the list of sources shown in the dialog to include the new source */
+  /* Update the list of sources shown in the dialog to include the new source,
+   * and add the new source to the current selection */
   if (!tmp_error)
-    updateSourcesList(main_data, sequence_map) ;
+    {
+      updateSourcesList(main_data, sequence_map) ;
+      selectSource(source_name, main_data->sources_tree, main_data->sources_model) ;
+    }
 
   if (tmp_error)
     g_propagate_error(error, tmp_error) ;
@@ -1072,6 +1080,56 @@ static void configChangedCB(GtkWidget *widget, gpointer user_data)
 
       /* Update the sources list */
       updateSourcesList(main_frame, main_frame->orig_sequence_map) ;
+    }
+}
+
+
+/* Select a source in the sources tree. Optionally deselect other sources first. */
+static void selectSource(const char *source_name, 
+                         GtkTreeView *tree,
+                         GtkTreeModel *model,
+                         const bool deselect_others)
+{
+  zMapReturnIfFail(source_name && tree && model) ;
+
+  GtkTreeSelection *selection = gtk_tree_view_get_selection(tree) ;
+
+  if (!selection)
+    {
+      zMapLogWarning("%s", "Could not select source: failed to get tree view selection") ;
+    }
+  else
+    {
+      /*! \todo select_iter actually the deselects others anyway so we need to reselect the
+       * original selection  */
+      //if (deselect_others)
+      //  gtk_tree_selection_unselect_all(selection) ;
+
+      /* Find the tree row with this source name */
+      GtkTreeIter iter ;
+
+      if (gtk_tree_model_get_iter_first(model, &iter))
+        {
+          bool found = false ;
+
+          do
+            {
+              char *cur_source_name = NULL ;
+
+              gtk_tree_model_get (model, &iter,
+                                  SourceColumn::NAME, &cur_source_name,
+                                  -1);
+              
+              if (strcmp(cur_source_name, source_name) == 0)
+                {
+                  found = true ;
+                  break ;
+                }
+            } while (gtk_tree_model_iter_next(model, &iter)) ;
+      
+          if (found)
+            gtk_tree_selection_select_iter(selection, &iter) ;
+        }
     }
 }
 
