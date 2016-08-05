@@ -117,6 +117,7 @@ typedef struct MainFrameStructName
   // File
   list<GtkWidget*> file_widgets ;
   GtkWidget *path_widg ;
+  char *filename ;
 
 #ifdef USE_ENSEMBL
   // Ensembl
@@ -251,6 +252,7 @@ GtkWidget *makePanel(GtkWidget *toplevel,
   main_data->close_func = close_func ;
   main_data->close_data = close_data ;
   main_data->default_type = default_type ;
+  main_data->filename = NULL ;
 
   if (toplevel)
     {
@@ -520,6 +522,116 @@ GtkWidget* makeEntryWidget(const char *label_str,
   return entry ;
 }
 
+
+#ifndef __CYGWIN__
+/* Called when user chooses a file via the file dialog. Updates the filename text entry box. */
+static void chooseFileCB(GtkFileChooserButton *widget, gpointer user_data)
+{
+  MainFrame main_data = (MainFrame) user_data ;
+  char *filename = NULL ;
+
+  filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(widget)) ;
+
+  if (filename)
+    {
+      gtk_entry_set_text(GTK_ENTRY(main_data->path_widg), g_strdup(filename)) ;
+
+      if (main_data->filename)
+        g_free(main_data->filename) ;
+
+      main_data->filename = filename ;
+
+      /* If the source name is not already set, set it by default to the basename of the path */
+      const char *source_name = gtk_entry_get_text(GTK_ENTRY(main_data->name_widg)) ;
+
+      if (!source_name || *source_name == '\0')
+        gtk_entry_set_text(GTK_ENTRY(main_data->name_widg), g_path_get_basename(filename));
+    }
+}
+#endif
+
+
+/* Similar to makeEntryWidget but adds a file chooser button instead of a label */
+GtkWidget* makeFileChooserWidget(const char *label_str,
+                                 const char *default_value,
+                                 const char *tooltip,
+                                 GtkTable *table,
+                                 int *row,
+                                 const int col,
+                                 const int max_col,
+                                 gboolean mandatory,
+                                 list<GtkWidget*> *widget_list,
+                                 const bool activates_default,
+                                 MainFrame main_data)
+{
+  /* Create a file chooser button instead of a label (this will just be a label on cygwin) */
+  GtkWidget *config_button = NULL ;
+
+#ifndef __CYGWIN__
+  /* N.B. we use the gtk "built-in" file chooser stuff. Create a file-chooser button instead of
+   * placing a label next to the file text-entry box */
+  config_button = gtk_file_chooser_button_new("Choose a File to Import", GTK_FILE_CHOOSER_ACTION_OPEN) ;
+  gtk_signal_connect(GTK_OBJECT(config_button), "file-set", GTK_SIGNAL_FUNC(chooseFileCB), (gpointer)main_data) ;
+  gtk_file_chooser_set_show_hidden(GTK_FILE_CHOOSER(config_button), TRUE) ;
+
+  char *default_dir = NULL ;
+  
+  if (default_value)
+    default_dir = g_path_get_basename(default_value) ;
+  else
+    default_dir = g_strdup(g_get_home_dir()) ;
+
+  gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(config_button), default_dir) ;
+
+  g_free(default_dir) ;
+#else
+  /* We can't have a file-chooser button, but we already have a text entry
+   * box for the filename anyway, so just create a label for that where the
+   * button would have been */
+  config_button = gtk_label_new(label_str) ;
+  gtk_misc_set_alignment(GTK_MISC(config_button), 1.0, 0.5);
+  gtk_label_set_justify(GTK_LABEL(config_button), GTK_JUSTIFY_RIGHT) ;
+#endif
+
+  gtk_table_attach(table, config_button, col, col + 1, *row, *row + 1, GTK_FILL, GTK_SHRINK, xpad, ypad) ;
+
+  if (mandatory)
+    {
+      GdkColor color ;
+      gdk_color_parse("red", &color) ;
+      gtk_widget_modify_fg(config_button, GTK_STATE_NORMAL, &color) ;
+    }
+
+  GtkWidget *entry = gtk_entry_new() ;
+  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
+
+  gtk_table_attach(table, entry, col + 1, max_col, *row, *row + 1,
+                   (GtkAttachOptions)(GTK_EXPAND | GTK_FILL),
+                   GTK_SHRINK,
+                   xpad, ypad) ;
+
+  *row += 1;
+
+  if (default_value)
+    gtk_entry_set_text(GTK_ENTRY(entry), default_value) ;
+
+  if (activates_default)
+    gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE) ;
+
+  if (tooltip)
+    {
+      gtk_widget_set_tooltip_text(config_button, tooltip) ;
+      gtk_widget_set_tooltip_text(entry, tooltip) ;
+    }
+
+  if (widget_list)
+    {
+      widget_list->push_back(config_button) ;
+      widget_list->push_back(entry) ;
+    }
+
+  return entry ;
+}
 
 /* Set the visibility of all the widgets in the given list */
 void setWidgetsVisibility(list<GtkWidget*> &widget_list, const gboolean visible)
@@ -949,14 +1061,18 @@ GtkWidget *makeMainFrame(MainFrame main_data,
   gtk_table_attach(table, GTK_WIDGET(main_data->combo), col + 1, col + 2, row, row + 1, GTK_SHRINK, GTK_SHRINK, xpad, ypad) ;
   ++row ;
 
+  /* Get the default filename to display, if any */
+  const char *filename = main_data->filename ;
+
   /* Create the label/entry widgets */
 
   /* First column */
   main_data->name_widg = makeEntryWidget("Source name :", NULL, "REQUIRED: Please enter a name for the new source", 
                                          table, &row, col, col + 2, TRUE, NULL) ;
   int path_widg_row = row;
-  main_data->path_widg = makeEntryWidget("Path/URL :", NULL, "REQUIRED: The file/URL to load features from", 
-                                         table, &row, col, col + 2, TRUE, &main_data->file_widgets) ;
+
+  main_data->path_widg = makeFileChooserWidget("Path/URL :", filename, "REQUIRED: The file/URL to load features from",
+                                               table, &row, col, col + 2, TRUE, &main_data->file_widgets, TRUE, main_data) ;
 
 #ifdef USE_ENSEMBL
   /* Place this widget on the same row as path_widg as they will be interchangeable */
@@ -1016,6 +1132,9 @@ void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data)
   /* Signal app we are going if we are a separate window. */
   if (main_data->close_func)
     (main_data->close_func)(main_data->toplevel, main_data->close_data) ;
+
+  if (main_data->filename)
+    g_free(main_data->filename) ;
 
   delete main_data ;
 
