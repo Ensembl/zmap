@@ -338,7 +338,33 @@ static GtkWidget* createListWidget(ZMapFeatureSequenceMap sequence_map, MainFram
 }
 
 
-/* Create a frame listing all of the available sources, plus buttons to add/edit/remove sources */
+/* Callback when the user hits the 'clear' button to clear all recent sources */
+static void onClearRecentClicked(GtkWidget *button, gpointer data)
+{
+  MainFrame main_data = (MainFrame)data ;
+
+  if (main_data)
+    {
+      for (auto iter : *main_data->sequence_map.sources)
+        iter.second->recent = false ;
+
+      updateSourcesList(main_data, &main_data->sequence_map) ;
+    }
+}
+
+static void onUpdateList(GtkWidget *button, gpointer data)
+{
+  MainFrame main_data = (MainFrame)data ;
+
+  if (main_data)
+    {
+      main_data->show_all = !main_data->show_all ;
+      updateSourcesList(main_data, &main_data->sequence_map) ;
+    }
+}
+
+
+/* Create a frame listing all of the available sources */
 static GtkWidget *makeSourcesFrame(MainFrame main_data, ZMapFeatureSequenceMap sequence_map)
 {
   GtkWidget *frame = gtk_frame_new( "Sources: " );
@@ -355,8 +381,20 @@ static GtkWidget *makeSourcesFrame(MainFrame main_data, ZMapFeatureSequenceMap s
   GtkWidget *list_widget = createListWidget(sequence_map, main_data) ;
   gtk_container_add(GTK_CONTAINER(scrolled), list_widget) ;
 
-  GtkWidget *button_box = gtk_hbox_new(FALSE, 5) ;
-  gtk_box_pack_start(GTK_BOX(topbox), button_box, FALSE, FALSE, 0) ;
+  /* Add a check button to filter by recent sources, and a button to clear the recent list */
+  GtkWidget *hbox = gtk_hbox_new(FALSE, 0) ;
+  gtk_box_pack_start(GTK_BOX(topbox), hbox, FALSE, FALSE, 0) ;
+
+  GtkWidget *filter_widget = gtk_check_button_new_with_label("Recent") ;
+  gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(filter_widget), !main_data->show_all) ;
+  gtk_widget_set_tooltip_text(filter_widget, "Tick this to filter the list by recent sources; un-tick to show all sources in ZMap") ;
+  gtk_box_pack_start(GTK_BOX(hbox), filter_widget, FALSE, FALSE, 0) ;
+  g_signal_connect(G_OBJECT(filter_widget), "clicked", G_CALLBACK(onUpdateList), main_data) ;
+
+  GtkWidget *clear_button = gtk_button_new_with_label("Clear recent") ;
+  gtk_widget_set_tooltip_text(clear_button, "Clear recent sources list") ;
+  gtk_box_pack_start(GTK_BOX(hbox), clear_button, FALSE, FALSE, 0) ;
+  g_signal_connect(G_OBJECT(clear_button), "clicked", G_CALLBACK(onClearRecentClicked), main_data) ;
 
   return frame ;
 }

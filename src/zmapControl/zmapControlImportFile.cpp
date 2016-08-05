@@ -133,9 +133,15 @@ void zMapControlImportFile(ZMapControlImportFileCB user_func, gpointer user_data
 
   ZMap zmap = (ZMap)user_data;
 
-  /* First clear 'recent' flag from all sources so that we only list new sources we create from
-   * this dialog */
-  clearRecentSources(sequence_map) ;
+  /* First tiem around, clear the 'recent' flag from all sources so that we don't show sources
+   * that were loaded on startup. This won't be ideal if the user opens the import dialog before
+   * all sources have finished loading. In that case though they can clear the list manually. */
+  static bool first_time = true ;
+  if (first_time)
+    {
+      clearRecentSources(sequence_map) ;
+      first_time = false ;
+    }
 
   toplevel = zMapGUIDialogNew(NULL, "Import data from a source", NULL, NULL) ;
 
