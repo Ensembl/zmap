@@ -246,11 +246,11 @@ static MainFrame makePanel(GtkWidget *toplevel, gpointer *our_data,
   if(sequence_map)
     sequence = sequence_map->sequence;/* request defaults to original */
 
-  sequence_box = zMapCreateSequenceViewWidg(importFileCB, main_data, sequence_map, TRUE, FALSE) ;
-  gtk_box_pack_start(GTK_BOX(vbox), sequence_box, TRUE, TRUE, 0) ;
-
   options_box = makeOptionsBox(main_data, sequence, req_start, req_end) ;
   gtk_box_pack_start(GTK_BOX(vbox), options_box, TRUE, TRUE, 0) ;
+
+  sequence_box = zMapCreateSequenceViewWidg(importFileCB, main_data, sequence_map, TRUE, FALSE) ;
+  gtk_box_pack_start(GTK_BOX(vbox), sequence_box, TRUE, TRUE, 0) ;
 
   return main_data ;
 }
