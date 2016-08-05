@@ -1284,13 +1284,13 @@ static string constructFileURL(MainFrame main_frame,
         case ZMapDataSourceType::HTS: //fall through
         case ZMapDataSourceType::BCF:
         case ZMapDataSourceType::BIGBED: //fall through
-          constructRegularFileURL(filename, err_msg) ;
+          url = constructRegularFileURL(filename, err_msg) ;
           break ;
 
         case ZMapDataSourceType::BED:    //fall through
         case ZMapDataSourceType::BIGWIG:
           
-          constructPipeFileURL(main_frame, source_name, filename, source_type, err_msg) ;
+          url = constructPipeFileURL(main_frame, source_name, filename, source_type, err_msg) ;
           break ;
 
         case ZMapDataSourceType::UNK:
