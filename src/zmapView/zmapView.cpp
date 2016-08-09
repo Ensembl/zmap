@@ -3825,11 +3825,19 @@ static gboolean checkStateConnections(ZMapView zmap_view)
                         /* Warn the user ! */
                         if (view_con->show_warning)
                           {
-                            /* Don't bother the user if it's just that there were no features in
-                             * the source */
-                            if (err_code != ZMAPVIEW_ERROR_CONTEXT_EMPTY)
-                              zMapWarning("Error loading source.\n\n %s", (err_msg ? err_msg : "<no error message>")) ;
-                            
+                            /* gb10: The user can get spammed with loads of messages. For now,
+                             * just show one */
+                            if (view_con->show_warning)
+                              {
+                                static bool warn_user = true ;
+
+                                if (warn_user)
+                                  {
+                                    zMapWarning("%s", "Error loading source(s). See log file for details.\n") ;
+                                    warn_user = false ;
+                                  }
+                              }
+
                             zMapLogWarning("Source is being cancelled: Error was: '%s'. Source: %s",
                                            (err_msg ? err_msg : "<no error message>"), view_con->url) ;
                           }
