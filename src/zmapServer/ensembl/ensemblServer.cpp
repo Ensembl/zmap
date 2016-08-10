@@ -1858,19 +1858,19 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
 
       GError *g_error = NULL ; 
 
-      if (fatalError(&g_error))
+      if (!fatalError(&g_error))
         getAllSimpleFeatures(server, get_features_data, feature_block, &g_error) ;
 
-      if (fatalError(&g_error))      
+      if (!fatalError(&g_error))      
         getAllDNAAlignFeatures(server, get_features_data, feature_block, &g_error) ;
 
-      if (fatalError(&g_error))
+      if (!fatalError(&g_error))
         getAllDNAPepAlignFeatures(server, get_features_data, feature_block, &g_error) ;
 
-      if (fatalError(&g_error))
+      if (!fatalError(&g_error))
         getAllRepeatFeatures(server, get_features_data, feature_block, &g_error) ;
 
-      if (fatalError(&g_error))
+      if (!fatalError(&g_error))
         getAllPredictionTranscripts(server, get_features_data, feature_block, &g_error) ;
 
       /* We get transcripts via the gene for genes whose logic_name is in the list of requested
@@ -1881,10 +1881,10 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
        * therefore we can check all transcripts from there. We need to make sure that this won't cause
        * a performance problem, though. */
       set<GQuark> transcript_ids;
-      if (fatalError(&g_error))
+      if (!fatalError(&g_error))
         getAllGenes(server, get_features_data, feature_block, transcript_ids, &g_error) ;
 
-      if (fatalError(&g_error))
+      if (!fatalError(&g_error))
         getAllTranscripts(server, get_features_data, feature_block, transcript_ids, &g_error) ;
 
       pthread_mutex_unlock(server->mutex) ;
