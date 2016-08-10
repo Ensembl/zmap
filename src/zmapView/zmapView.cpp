@@ -2013,7 +2013,8 @@ static void trackhubTrackCreateServer(const gbtools::trackhub::Track &track,
 
           if (track_server && !g_error)
             {
-              // Success: add it to the list
+              // Success: add it to the list. Make it delayed if the track should be hidden by default.
+              track_server->delayed = !track.visible() ;
               servers_inout.push_back(track_server) ;
             }
           else if (g_error)
