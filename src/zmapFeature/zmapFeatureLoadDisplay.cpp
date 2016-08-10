@@ -41,6 +41,7 @@
 #include <ZMap/zmapConfigStrings.hpp>
 #include <ZMap/zmapGLibUtils.hpp>
 #include <ZMap/zmapConfigIni.hpp>
+#include <ZMap/zmapUrl.hpp>
 
 using namespace std ;
 
@@ -53,20 +54,24 @@ typedef gboolean (*HashListExportValueFunc)(const char *key_str, const char *val
  *              Local function declarations
  */
 
-static gint colIDOrderCB(gconstpointer a, gconstpointer b,gpointer user_data) ;
-static bool colOrderCB(const ZMapFeatureColumn &first, const ZMapFeatureColumn &second) ;
+// unnamed namespace
+namespace
+{
+gint colIDOrderCB(gconstpointer a, gconstpointer b,gpointer user_data) ;
+bool colOrderCB(const ZMapFeatureColumn &first, const ZMapFeatureColumn &second) ;
 
-static void updateContextHashList(ZMapConfigIniContext context,
-                                  ZMapConfigIniFileType file_type, 
-                                  const char *stanza,
-                                  GHashTable *ghash,
-                                  HashListExportValueFunc *export_func) ;
+void updateContextHashList(ZMapConfigIniContext context,
+                           ZMapConfigIniFileType file_type, 
+                           const char *stanza,
+                           GHashTable *ghash,
+                           HashListExportValueFunc *export_func) ;
 
-static ZMapFeatureContextExecuteStatus updateContextFeatureSetStyle(GQuark key,
-                                                                    gpointer data,
-                                                                    gpointer user_data,
-                                                                    char **err_out) ;
+ZMapFeatureContextExecuteStatus updateContextFeatureSetStyle(GQuark key,
+                                                             gpointer data,
+                                                             gpointer user_data,
+                                                             char **err_out) ;
 
+}
 
 /**********************************************************************
  *                       ZMapFeatureContextMap
@@ -511,7 +516,7 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::createSource(const char *sour
   zMapReturnValIfFail(url, source) ;
 
   GError *tmp_error = NULL ;
-  source = g_new0(ZMapConfigSourceStruct, 1) ;
+  source = new ZMapConfigSourceStruct ;
 
   source->name_ = g_quark_from_string(source_name) ;
   source->url = g_strdup(url) ;
@@ -528,11 +533,13 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::createSource(const char *sour
 
   addSource(source_name_str, source, &tmp_error) ;
 
+  /* Recursively create any child sources */
+  if (!tmp_error)
+    createSourceChildren(source, &tmp_error) ;
+
   /* Indicate that there are changes that need saving */
   if (!tmp_error)
-    {
-      setFlag(ZMAPFLAG_SAVE_SOURCES, TRUE) ;
-    }
+    setFlag(ZMAPFLAG_SAVE_SOURCES, TRUE) ;
 
   if (tmp_error)
     {
@@ -543,6 +550,110 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::createSource(const char *sour
     }
 
   return source ;
+}
+
+
+/* Some sources (namely trackhub) may have child tracks. This function creates a source for each
+ * child track. */
+void ZMapFeatureSequenceMapStructType::createSourceChildren(ZMapConfigSource source,
+                                                            GError **error)
+{
+  ZMapURL zmap_url = url_parse(source->url, NULL);
+
+  if (zmap_url && zmap_url->scheme == SCHEME_TRACKHUB)
+    {
+      const char *trackdb_id = zmap_url->file ;
+
+      if (trackdb_id)
+        {
+          string err_msg;
+          gbtools::trackhub::Registry registry ;
+          gbtools::trackhub::TrackDb trackdb = registry.searchTrackDb(trackdb_id, err_msg) ;
+
+          if (err_msg.empty())
+            {
+              // Create a source for each individual track in this trackdb
+              for (auto &track : trackdb.tracks())
+                {
+                  createTrackhubSourceChild(source, track) ;
+                }
+            }
+          else
+            {
+              g_set_error(error, g_quark_from_string("ZMap"), 99,
+                          "Error getting tracks for trackDb '%s': %s", 
+                          trackdb_id, err_msg.c_str()) ;
+            }
+        }
+      else
+        {
+          g_set_error(error, g_quark_from_string("ZMap"), 99,
+                      "Error getting trackDb from URL: %s", source->url) ;
+        }
+    }
+}
+
+
+/* Recursively create a server for a given trackhub track and its children */
+void ZMapFeatureSequenceMapStructType::createTrackhubSourceChild(ZMapConfigSource parent_source,
+                                                                 const gbtools::trackhub::Track &track)
+{
+  zMapReturnIfFail(parent_source) ;
+
+  // Create the server for this track. Note that some Tracks may be parents which
+  // don't have a url themselves so they won't actually load any data but are added to maintain
+  // the hierarchy.
+  string track_name = track.name() ;
+
+  // If the track doesn't have a name, create one from the file name in the url
+  if (track_name.empty())
+    {
+      ZMapURL zmap_url = url_parse(track.url().c_str(), NULL) ;
+
+      if (zmap_url && zmap_url->file)
+        track_name = string(zmap_url->file) ;
+    }
+
+  if (!track_name.empty())
+    {
+      GError *g_error = NULL ;
+
+      ZMapConfigSource new_source = createSource(track.name().c_str(),
+                                                 track.url().c_str(), 
+                                                 parent_source->featuresets, 
+                                                 parent_source->biotypes, 
+                                                 &g_error) ;
+
+      if (new_source && !g_error)
+        {
+          // Success. Set the delayed flag if the track should be hidden by default.
+          // Set the parent pointer and add the child to the parent's list.
+          new_source->delayed = !track.visible() ;
+          new_source->parent = parent_source ;
+          parent_source->children.push_back(new_source) ;
+
+          // Recurse through any child tracks
+          for (auto &child_track : track.children())
+            {
+              createTrackhubSourceChild(new_source, child_track) ;
+            }
+        }
+      else if (g_error)
+        {
+          zMapLogWarning("Error setting up server for track %s: %s\n%s", 
+                         track_name.c_str(), track.url().c_str(), g_error->message) ;
+          g_error_free(g_error) ;
+        }
+      else
+        {
+          zMapLogWarning("Error setting up server for track %s: %s", track_name.c_str(), track.url().c_str()) ;
+        }
+
+    }
+  else
+    {
+      zMapLogWarning("Error setting up server; track has no name: %s", track.url().c_str()) ;
+    }
 }
 
 
@@ -603,7 +714,7 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::createFileSource(const char *
   zMapReturnValIfFail(file, src) ;
 
   /* Create the new source */
-  src = g_new0(ZMapConfigSourceStruct, 1) ;
+  src = new ZMapConfigSourceStruct ;
 
   src->name_ = g_quark_from_string(source_name_in) ;
   src->group = SOURCE_GROUP_START ;        // default_value
@@ -640,7 +751,7 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::createPipeSource(const char *
   zMapReturnValIfFail(file && script, src) ;
 
   /* Create the new source */
-  src = g_new0(ZMapConfigSourceStruct, 1) ;
+  src = new ZMapConfigSourceStruct ;
 
   src->name_ = g_quark_from_string(source_name_in) ;
   src->group = SOURCE_GROUP_START ;        // default_value
@@ -956,7 +1067,11 @@ void zMapFeatureUpdateContext(ZMapFeatureContextMap context_map,
  *              Internal routines.
  */
 
-static gint colIDOrderCB(gconstpointer a, gconstpointer b,gpointer user_data)
+// unnamed namespace
+namespace
+{
+
+gint colIDOrderCB(gconstpointer a, gconstpointer b,gpointer user_data)
 {
   ZMapFeatureColumn pa = NULL,pb = NULL;
   map<GQuark, ZMapFeatureColumn> *columns = (map<GQuark, ZMapFeatureColumn>*)user_data;
@@ -987,7 +1102,7 @@ static gint colIDOrderCB(gconstpointer a, gconstpointer b,gpointer user_data)
 }
 
 
-static bool colOrderCB(const ZMapFeatureColumn &pa, const ZMapFeatureColumn &pb)
+bool colOrderCB(const ZMapFeatureColumn &pa, const ZMapFeatureColumn &pb)
 {
   bool result = true ;
 
@@ -1007,8 +1122,8 @@ static bool colOrderCB(const ZMapFeatureColumn &pa, const ZMapFeatureColumn &pb)
  * semi-colon-separated list of the ids from the glist. export_func is an optional function that
  * takes the key and glist-value and returns true if the value should be included in the context, false if
  * not. If this function is null then all values are included.  */
-static void updateContextHashList(ZMapConfigIniContext context, ZMapConfigIniFileType file_type, 
-                                  const char *stanza, GHashTable *ghash, HashListExportValueFunc *export_func)
+void updateContextHashList(ZMapConfigIniContext context, ZMapConfigIniFileType file_type, 
+                           const char *stanza, GHashTable *ghash, HashListExportValueFunc *export_func)
 {
   zMapReturnIfFail(context && context->config) ;
 
@@ -1055,10 +1170,10 @@ static void updateContextHashList(ZMapConfigIniContext context, ZMapConfigIniFil
 
 /* Callback called for all featuresets to set the key-value pair for the featureset-style stanza
  * in the given key file. Note that featuresets that have their default are not included. */
-static ZMapFeatureContextExecuteStatus updateContextFeatureSetStyle(GQuark key,
-                                                                    gpointer data,
-                                                                    gpointer user_data,
-                                                                    char **err_out)
+ZMapFeatureContextExecuteStatus updateContextFeatureSetStyle(GQuark key,
+                                                             gpointer data,
+                                                             gpointer user_data,
+                                                             char **err_out)
 {
   ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK ;
   ZMapFeatureAny feature_any = (ZMapFeatureAny)data ;
@@ -1100,3 +1215,6 @@ static ZMapFeatureContextExecuteStatus updateContextFeatureSetStyle(GQuark key,
   return status ;
 }
 
+
+
+} // unnamed namespace

@@ -34,16 +34,16 @@
 
 #include <map>
 #include <list>
+#include <string>
+
+#include <gbtools/gbtools.hpp>
 
 #include <ZMap/zmapStyle.hpp>
 #include <ZMap/zmapStyleTree.hpp>
 #include <ZMap/zmapConfigIni.hpp>
 
-#include <string>
-#include <map>
 
-
-struct _ZMapConfigSourceStruct ;
+class ZMapConfigSourceStruct ;
 struct ZMapFeatureAnyStructType ;
 
 
@@ -276,7 +276,7 @@ typedef struct ZMapFeatureSequenceMapStructType
   GHashTable *cached_parsers ; /* filenames (as GQuarks) mapped to cached info about GFF parsing that
                                 * is in progress (ZMapFeatureParserCache) if parsing has already been started */
 
-  std::map<std::string, _ZMapConfigSourceStruct*> *sources ;
+  std::map<std::string, ZMapConfigSourceStruct*> *sources ;
 
   char *dataset ;                                           /* e.g. human */
   char *sequence ;                                          /* e.g. chr6-18 */
@@ -311,7 +311,9 @@ typedef struct ZMapFeatureSequenceMapStructType
   void removeSource(const char *source_name_cstr, GError **error) ;
 
 private:
-  void addSource(const std::string &source_name, _ZMapConfigSourceStruct *source, GError **error) ;
+  void addSource(const std::string &source_name, ZMapConfigSourceStruct *source, GError **error) ;
+  void createSourceChildren(ZMapConfigSource source, GError **error) ;
+  void createTrackhubSourceChild(ZMapConfigSource parent_source, const gbtools::trackhub::Track &track) ;
 
 } ZMapFeatureSequenceMapStruct, *ZMapFeatureSequenceMap ;
 

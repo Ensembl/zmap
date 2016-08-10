@@ -2125,7 +2125,7 @@ static gpointer create_config_source(gpointer data)
   ZMapConfigSource src ;
   const char *source_name = (const char*)data ;
 
-  src = g_new0(ZMapConfigSourceStruct, 1) ;
+  src = new ZMapConfigSourceStruct ;
 
   src->name_ = g_quark_from_string(source_name) ;
   src->group = SOURCE_GROUP_START ;                         // default_value

@@ -31,10 +31,31 @@
 #ifndef ZMAPCONFIGSTANZASTRUCTS_H
 #define ZMAPCONFIGSTANZASTRUCTS_H
 
+#include <list>
+
+
 
 /* We should convert this to use the same calls/mechanism as the keyvalue stuff below. */
-typedef struct _ZMapConfigSourceStruct
+class ZMapConfigSourceStruct
 {
+public:
+  ZMapConfigSourceStruct() 
+    : name_(0),
+      url(NULL),
+      version(NULL),
+      featuresets(NULL),
+      biotypes(NULL),
+      stylesfile(NULL),
+      format(NULL),
+      timeout(0),
+      delayed(FALSE),
+      provide_mapping(FALSE),
+      req_styles(FALSE),
+      group(0),
+      recent(false),
+      parent(NULL)
+  {} ;
+
   GQuark name_ ;
   char *url ;
   char *version ;
@@ -49,12 +70,15 @@ typedef struct _ZMapConfigSourceStruct
   gboolean req_styles;
   int group;
   bool recent;
+  ZMapConfigSourceStruct* parent ;
+  std::list<ZMapConfigSourceStruct*> children ;
 #define SOURCE_GROUP_NEVER    0     // these are bitfields, and correspond to the obvious strings
 #define SOURCE_GROUP_START    1
 #define SOURCE_GROUP_DELAYED  2
 #define SOURCE_GROUP_ALWAYS   3
-} ZMapConfigSourceStruct, *ZMapConfigSource ;
+} ;
 
+typedef ZMapConfigSourceStruct *ZMapConfigSource ;
 
 typedef enum {ZMAPCONF_INVALID, ZMAPCONF_BOOLEAN, ZMAPCONF_INT, ZMAPCONF_DOUBLE,
 	      ZMAPCONF_STR,  ZMAPCONF_STR_ARRAY} ZMapKeyValueType ;
