@@ -1114,7 +1114,9 @@ GtkWidget *makeButtonBox(MainFrame main_data)
 
   /* set create button as default. */
   GTK_WIDGET_SET_FLAGS(ok_button, GTK_CAN_DEFAULT) ;
-  gtk_window_set_default(GTK_WINDOW(main_data->toplevel), ok_button) ;
+
+  if (GTK_IS_WINDOW(main_data->toplevel))
+    gtk_window_set_default(GTK_WINDOW(main_data->toplevel), ok_button) ;
 
   return frame ;
 }

@@ -105,6 +105,7 @@ static void defaultsCB(GtkWidget *widget, gpointer cb_data) ;
 static void createSourceCB(GtkWidget *widget, gpointer cb_data) ;
 static void removeSourceCB(GtkWidget *widget, gpointer cb_data) ;
 static void editSourceCB(GtkWidget *widget, gpointer cb_data) ;
+static void clearRecentCB(GtkWidget *button, gpointer data) ;
 static void saveCB(GtkWidget *widget, gpointer cb_data) ;
 static void closeCB(GtkWidget *widget, gpointer cb_data) ;
 static void saveSourcesToConfig(ZMapFeatureSequenceMap sequence_map,
@@ -338,20 +339,6 @@ static GtkWidget* createListWidget(ZMapFeatureSequenceMap sequence_map, MainFram
 }
 
 
-/* Callback when the user hits the 'clear' button to clear all recent sources */
-static void onClearRecentClicked(GtkWidget *button, gpointer data)
-{
-  MainFrame main_data = (MainFrame)data ;
-
-  if (main_data)
-    {
-      for (auto iter : *main_data->sequence_map.sources)
-        iter.second->recent = false ;
-
-      updateSourcesList(main_data, &main_data->sequence_map) ;
-    }
-}
-
 static void onUpdateList(GtkWidget *button, gpointer data)
 {
   MainFrame main_data = (MainFrame)data ;
@@ -361,6 +348,42 @@ static void onUpdateList(GtkWidget *button, gpointer data)
       main_data->show_all = !main_data->show_all ;
       updateSourcesList(main_data, &main_data->sequence_map) ;
     }
+}
+
+
+/* Utility to create a button with various properties */
+static GtkWidget *createButton(const char *label, 
+                               const char *stock,
+                               const bool icon_only,
+                               const char *tooltip,
+                               GCallback cb_func,
+                               gpointer cb_data,
+                               GtkBox *container)
+{
+  GtkWidget *button = NULL ;
+
+  if (label)
+    {
+      button = gtk_button_new_with_label(label) ;
+      
+      if (stock)
+        gtk_button_set_image(GTK_BUTTON(button), gtk_image_new_from_stock(stock, GTK_ICON_SIZE_BUTTON));
+    }
+  else if (icon_only)
+    {
+      button = gtk_button_new() ;
+      gtk_button_set_image(GTK_BUTTON(button), gtk_image_new_from_stock(stock, GTK_ICON_SIZE_BUTTON));
+    }
+  else
+    {
+      button = gtk_button_new_from_stock(stock) ;
+    }
+
+  gtk_widget_set_tooltip_text(button, tooltip) ;
+  g_signal_connect(G_OBJECT(button), "clicked", cb_func, cb_data) ;
+  gtk_box_pack_start(container, button, FALSE, FALSE, 0) ;
+
+  return button ;
 }
 
 
@@ -380,21 +403,6 @@ static GtkWidget *makeSourcesFrame(MainFrame main_data, ZMapFeatureSequenceMap s
 
   GtkWidget *list_widget = createListWidget(sequence_map, main_data) ;
   gtk_container_add(GTK_CONTAINER(scrolled), list_widget) ;
-
-  /* Add a check button to filter by recent sources, and a button to clear the recent list */
-  GtkWidget *hbox = gtk_hbox_new(FALSE, 0) ;
-  gtk_box_pack_start(GTK_BOX(topbox), hbox, FALSE, FALSE, 0) ;
-
-  GtkWidget *filter_widget = gtk_check_button_new_with_label("Recent") ;
-  gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(filter_widget), !main_data->show_all) ;
-  gtk_widget_set_tooltip_text(filter_widget, "Tick this to filter the list by recent sources; un-tick to show all sources in ZMap") ;
-  gtk_box_pack_start(GTK_BOX(hbox), filter_widget, FALSE, FALSE, 0) ;
-  g_signal_connect(G_OBJECT(filter_widget), "clicked", G_CALLBACK(onUpdateList), main_data) ;
-
-  GtkWidget *clear_button = gtk_button_new_with_label("Clear recent") ;
-  gtk_widget_set_tooltip_text(clear_button, "Clear recent sources list") ;
-  gtk_box_pack_start(GTK_BOX(hbox), clear_button, FALSE, FALSE, 0) ;
-  g_signal_connect(G_OBJECT(clear_button), "clicked", G_CALLBACK(onClearRecentClicked), main_data) ;
 
   return frame ;
 }
@@ -481,74 +489,54 @@ static GtkWidget *makeMainFrame(MainFrame main_data, ZMapFeatureSequenceMap sequ
 }
 
 
-/* Utility to create a button with various properties */
-static GtkWidget *createButton(const char *label, 
-                               const char *stock,
-                               const bool icon_only,
-                               const char *tooltip,
-                               GCallback cb_func,
-                               gpointer cb_data,
-                               GtkBox *container)
-{
-  GtkWidget *button = NULL ;
-
-  if (label)
-    {
-      button = gtk_button_new_with_label(label) ;
-      
-      if (stock)
-        gtk_button_set_image(GTK_BUTTON(button), gtk_image_new_from_stock(stock, GTK_ICON_SIZE_BUTTON));
-    }
-  else if (icon_only)
-    {
-      button = gtk_button_new() ;
-      gtk_button_set_image(GTK_BUTTON(button), gtk_image_new_from_stock(stock, GTK_ICON_SIZE_BUTTON));
-    }
-  else
-    {
-      button = gtk_button_new_from_stock(stock) ;
-    }
-
-  gtk_widget_set_tooltip_text(button, tooltip) ;
-  g_signal_connect(G_OBJECT(button), "clicked", cb_func, cb_data) ;
-  gtk_box_pack_start(container, button, FALSE, FALSE, 0) ;
-
-  return button ;
-}
 
 
 /* Make the action buttons frame. */
 static GtkWidget *makeButtonBox(MainFrame main_data)
 {
-  GtkWidget *frame ;
   GtkBox *button_box ;
-  GtkWidget *create_button, *chooser_button, *defaults_button, *close_button,
-    *save_button, *source_button, *remove_button, *edit_button;
+  GtkWidget *ok_button, *chooser_button;
   char *home_dir ;
 
-  frame = gtk_frame_new(NULL) ;
-  gtk_container_border_width(GTK_CONTAINER(frame), 5) ;
-
+  //
+  // Container
+  //
   button_box = GTK_BOX(gtk_hbutton_box_new()) ;
   gtk_container_border_width(GTK_CONTAINER(button_box), 5) ;
-  gtk_container_add (GTK_CONTAINER (frame), GTK_WIDGET(button_box)) ;
+
+  //
+  // Butotns to add/edit/delete/clear sources
+  //
+  createButton(NULL, GTK_STOCK_ADD, true, 
+               "Create a new source", 
+               G_CALLBACK(createSourceCB), (gpointer)main_data, button_box) ;
   
-  source_button = createButton(NULL, GTK_STOCK_ADD, true, 
-                               "Create a new source", 
-                               G_CALLBACK(createSourceCB), (gpointer)main_data, button_box) ;
+  createButton(NULL, GTK_STOCK_EDIT, true,
+               "Edit the selected source(s)",
+               G_CALLBACK(editSourceCB), (gpointer)main_data, button_box) ;
 
-  
-  edit_button = createButton(NULL, GTK_STOCK_EDIT, true,
-                             "Edit the selected source(s)",
-                             G_CALLBACK(editSourceCB), (gpointer)main_data, button_box) ;
+  createButton(NULL, GTK_STOCK_DELETE, true, 
+               "Delete the selected source(s). This will completely remove the sources from ZMap. If you just want to hide them, use the Clear button instead.",
+               G_CALLBACK(removeSourceCB), (gpointer)main_data, button_box) ;
 
-  remove_button = createButton(NULL, GTK_STOCK_DELETE, true, 
-                               "Remove the selected source(s)",
-                               G_CALLBACK(removeSourceCB), (gpointer)main_data, button_box) ;
+  createButton(NULL, GTK_STOCK_CLEAR, true,
+               "Clear the recent sources list. This will cause all of the current sources to be hidden when the 'Recent' box is ticked.",
+               G_CALLBACK(clearRecentCB), (gpointer)main_data, button_box) ;
 
-  save_button = createButton(NULL, GTK_STOCK_SAVE, false, 
-                             "Save the source and sequence details to a configuration file",
-                             G_CALLBACK(saveCB), (gpointer)main_data, button_box) ;
+  /* Add a check button to filter by recent sources, and a button to clear the recent list */
+  GtkWidget *filter_widget = gtk_check_button_new_with_label("Recent") ;
+  gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(filter_widget), !main_data->show_all) ;
+  gtk_widget_set_tooltip_text(filter_widget, "Tick this to filter the list by recent sources; un-tick to show all sources ") ;
+  gtk_box_pack_start(button_box, filter_widget, FALSE, FALSE, 0) ;
+  g_signal_connect(G_OBJECT(filter_widget), "clicked", G_CALLBACK(onUpdateList), main_data) ;
+
+
+  //
+  // Save and load buttons
+  //
+  createButton(NULL, GTK_STOCK_SAVE, true, 
+               "Save the source and sequence details to a configuration file",
+               G_CALLBACK(saveCB), (gpointer)main_data, button_box) ;
 
 #ifndef __CYGWIN__
   /* N.B. we use the gtk "built-in" file chooser stuff. */
@@ -569,28 +557,35 @@ static GtkWidget *makeButtonBox(MainFrame main_data)
    * saves the user tedious typing. */
   if (main_data->sequence_map.sequence && !main_data->import)
     {
-      defaults_button = createButton("Set Defaults", NULL, false,
-                                     "Set sequence details from default values",
-                                     G_CALLBACK(defaultsCB), (gpointer)main_data, button_box) ;
+      createButton("Set Defaults", NULL, false,
+                   "Set sequence details from default values",
+                   G_CALLBACK(defaultsCB), (gpointer)main_data, button_box) ;
     }
 
+  //
+  // Close and OK buttons
+  //
   /* Only add a close button and set a default button if this is a standalone dialog. */
   if (main_data->toplevel)
     {
-      close_button = createButton("Close", NULL, false, NULL, 
-                                  G_CALLBACK(closeCB), (gpointer)main_data, button_box) ;
+      createButton("Close", NULL, false, NULL, 
+                   G_CALLBACK(closeCB), (gpointer)main_data, button_box) ;
     }
 
-  create_button = createButton(NULL, GTK_STOCK_OK, false,
-                               "Load the specified region for the selected source(s)",
-                               G_CALLBACK(applyCB), (gpointer)main_data, button_box) ;
+  ok_button = createButton(NULL, GTK_STOCK_OK, false,
+                           "Load the specified region for the selected source(s)",
+                           G_CALLBACK(applyCB), (gpointer)main_data, button_box) ;
 
-  /* set create button as default. */
-  GTK_WIDGET_SET_FLAGS(create_button, GTK_CAN_DEFAULT) ;
-  gtk_window_set_default(GTK_WINDOW(main_data->toplevel), create_button) ;
+  //
+  // Set the default button
+  //
+  GTK_WIDGET_SET_FLAGS(ok_button, GTK_CAN_DEFAULT) ;
+
+  if (GTK_IS_WINDOW(main_data->toplevel))
+    gtk_window_set_default(GTK_WINDOW(main_data->toplevel), ok_button) ;
   
 
-  return frame ;
+  return GTK_WIDGET(button_box) ;
 }
 
 
@@ -809,6 +804,20 @@ static void removeSourceCB(GtkWidget *widget, gpointer cb_data)
     }
 
   return ;
+}
+
+/* Callback when the user hits the 'clear' button to clear all recent sources */
+static void clearRecentCB(GtkWidget *button, gpointer data)
+{
+  MainFrame main_data = (MainFrame)data ;
+
+  if (main_data)
+    {
+      for (auto iter : *main_data->sequence_map.sources)
+        iter.second->recent = false ;
+
+      updateSourcesList(main_data, &main_data->sequence_map) ;
+    }
 }
 
 
