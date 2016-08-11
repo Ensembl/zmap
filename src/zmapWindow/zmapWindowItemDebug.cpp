@@ -341,9 +341,6 @@ static void printItem(FooCanvasItem *item, int indent)
 static void printCanvasItems(FooCanvasItem *item, int indent, GString *buf)
 {
   int i ;
-  GList *glist ;
-  GList *item_list ;
-
 
   buf = g_string_set_size(buf, 0) ;
 
