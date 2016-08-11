@@ -516,7 +516,7 @@ static GtkWidget *makeButtonBox(MainFrame main_data)
                G_CALLBACK(editSourceCB), (gpointer)main_data, button_box) ;
 
   createButton(NULL, GTK_STOCK_DELETE, true, 
-               "Delete the selected source(s). This will completely remove the sources from ZMap. If you just want to hide them, use the Clear button instead.",
+               "Delete the selected source(s).",
                G_CALLBACK(removeSourceCB), (gpointer)main_data, button_box) ;
 
   createButton(NULL, GTK_STOCK_CLEAR, true,
