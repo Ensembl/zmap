@@ -640,10 +640,9 @@ gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view
       /* set the default stylesfile */
       stylesfile = zmap_view->view_sequence->stylesfile;
 
-      // get the stanza structs from ZMap config
+      zmap_view->view_sequence->addSourcesFromConfig(config_str, &stylesfile) ;
       settings_list = zmap_view->view_sequence->getSources() ;
 
-      zmap_view->view_sequence->addSourcesFromConfig(config_str, &stylesfile) ;
       viewSetUpStyles(zmap_view, stylesfile) ;
 
       /* read in a few ZMap stanzas giving column groups etc. */

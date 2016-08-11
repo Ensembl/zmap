@@ -520,7 +520,7 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::addSource(const string &sourc
       result = source ;
     }
 
-  return source ;
+  return result ;
 }
 
 
@@ -576,7 +576,7 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::createSource(const char *sour
         source = addSource(source_name_str, source, &tmp_error) ;
 
       /* Recursively create any child sources */
-      if (!tmp_error)
+      if (!tmp_error && source->children.empty())
         createSourceChildren(source, NULL, &tmp_error) ;
 
       /* Indicate that there are changes that need saving */
@@ -675,7 +675,8 @@ void ZMapFeatureSequenceMapStructType::createTrackhubSourceChild(ZMapConfigSourc
                                                  true, false,
                                                  &g_error) ;
 
-      if (results_out && !track.url().empty())
+      if (results_out && !track.url().empty() &&
+          strncasecmp(track.url().c_str(), "trackhub://", 11) != 0)
         {
           *results_out = g_list_append(*results_out, new_source) ;
         }
@@ -955,7 +956,7 @@ void ZMapFeatureSequenceMapStructType::getSourceChildren(ZMapConfigSource source
   
   for (ZMapConfigSource child : source->children)
     {
-      if (source && source->url && *source->url != '\0' && !strncasecmp(source->url, "trackhub://", 11))
+      if (child && child->url && *child->url != '\0' && strncasecmp(child->url, "trackhub://", 11) != 0)
         *result = g_list_append(*result, child) ;
 
       getSourceChildren(child, result) ;
@@ -1016,11 +1017,17 @@ GList* ZMapFeatureSequenceMapStructType::addSourcesFromConfig(const char *filena
             }
           else
             {
-              // Add it to the output list
-              result = g_list_append(result, source) ;
+              // Add it to the output list (if it has data)
+              if (source && source->url && *source->url != '\0' &&
+                  strncasecmp(source->url, "trackhub://", 11) != 0)
+                {
+                  result = g_list_append(result, source) ;
+                }
 
-              // Recursively create any child sources
-              if (!tmp_error)
+              // Recursively create any child sources (only if not already created - addSource
+              // might have returned an existing source if it had already been added before, in
+              // which case the children will already have been created).
+              if (!tmp_error && source->children.empty())
                 createSourceChildren(source, &result, &tmp_error) ;
             }
         }
