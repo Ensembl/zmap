@@ -275,6 +275,36 @@ static void createTreeViewColumn(GtkTreeView *tree_view,
 }
 
 
+/* Called by updateSourcesList to add a single source to the store and to recursively add any
+ * child sources, if it has any */
+static void updateSourcesListAddSource(MainFrame main_data, 
+                                       GtkTreeStore *store, 
+                                       ZMapConfigSource source,
+                                       GtkTreeIter *parent_tree_iter)
+{
+  /* Only show recent sources, if applicable */
+  if (main_data->show_all || source->recent)
+    {
+      string source_type = sourceGetType(source) ;
+
+      /* Create a new row in the list store and set the values */
+      GtkTreeIter tree_iter ;
+      gtk_tree_store_append(store, &tree_iter, parent_tree_iter);
+
+      gtk_tree_store_set(store, &tree_iter, 
+                         SourceColumn::NAME, g_quark_to_string(source->name_),
+                         SourceColumn::TYPE, source_type.c_str(),
+                         -1);
+
+      /* Also add child sources, if any */
+      for (ZMapConfigSource child_source : source->children)
+        {
+          updateSourcesListAddSource(main_data, store, child_source, &tree_iter) ;
+        }
+    }
+}
+
+
 /* Update the list of sources on the dialog following a change to the sources in the sequence map */
 static void updateSourcesList(MainFrame main_data, ZMapFeatureSequenceMap sequence_map)
 {
@@ -282,39 +312,24 @@ static void updateSourcesList(MainFrame main_data, ZMapFeatureSequenceMap sequen
 
   if (main_data && main_data->sources_model && sequence_map && sequence_map->sources)
     {
-      GtkListStore *store = GTK_LIST_STORE(main_data->sources_model) ;
+      GtkTreeStore *store = GTK_TREE_STORE(main_data->sources_model) ;
 
-      gtk_list_store_clear(store) ;
+      gtk_tree_store_clear(store) ;
 
       /* Loop through all of the sources */
+      GtkTreeIter *parent_iter = NULL ;
       for (auto source_iter : *sequence_map->sources)
         {
-          ZMapConfigSource source = source_iter.second ;
-
-          /* Only show recent sources, if applicable */
-          if (main_data->show_all || source->recent)
-            {
-              string source_type = sourceGetType(source) ;
-
-              /* Create a new row in the list store and set the values */
-              GtkTreeIter store_iter ;
-              gtk_list_store_append(store, &store_iter);
-
-              gtk_list_store_set(store, &store_iter, 
-                                 SourceColumn::NAME, source_iter.first.c_str(),
-                                 SourceColumn::TYPE, source_type.c_str(),
-                                 -1);
-            }
+          updateSourcesListAddSource(main_data, store, source_iter.second, NULL) ;
         }
-    }
-  
+    }  
 }
 
 
 /* Create the list widget to show all of the existing source names */
 static GtkWidget* createListWidget(ZMapFeatureSequenceMap sequence_map, MainFrame main_data)
 {
-  GtkListStore *store = gtk_list_store_new((gint)(SourceColumn::TOTAL),
+  GtkTreeStore *store = gtk_tree_store_new((gint)(SourceColumn::TOTAL),
                                            G_TYPE_STRING, G_TYPE_STRING) ;
 
   GtkTreeView *tree_view = GTK_TREE_VIEW(gtk_tree_view_new_with_model(GTK_TREE_MODEL(store))) ;
