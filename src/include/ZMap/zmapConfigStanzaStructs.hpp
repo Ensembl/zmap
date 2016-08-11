@@ -65,7 +65,7 @@ public:
   char *stylesfile ;
   char *format ;
   int timeout ;
-  gboolean delayed ;
+  gboolean delayed ; // if true, don't load this source on start up
   gboolean provide_mapping;
   gboolean req_styles;
   int group;
