@@ -857,17 +857,49 @@ void ZMapFeatureSequenceMapStructType::removeSource(const char *source_name_cstr
 }
 
 
+/* Find the child of the given source that has the given name. Returns NULL if not found. */
+static ZMapConfigSource findSourceRecursively(ZMapConfigSource source, const GQuark search_quark)
+{
+  ZMapConfigSource result = NULL ;
+
+  if (source)
+    {
+      if (source->name_ == search_quark)
+        {
+          result = source ;
+        }
+      else
+        {
+          for (auto child : source->children)
+            {
+              result = findSourceRecursively(child, search_quark) ;
+
+              if (result)
+                break ;
+            }
+        }
+    }
+
+  return result ;
+}
+
+
 /* Get the ZMapConfigSource struct for the given source name. */
 ZMapConfigSource ZMapFeatureSequenceMapStructType::getSource(const string &source_name)
 {
   ZMapConfigSource result = NULL ;
+  GQuark search_quark = g_quark_from_string(source_name.c_str()) ;
 
-  if (sources)
+  if (sources && search_quark)
     {
-      map<string, ZMapConfigSource>::iterator iter = sources->find(source_name) ;
+      // Loop through all sources checking their name and recursively checking their child sources
+      for (auto &iter : *sources)
+        {
+          result = findSourceRecursively(iter.second, search_quark) ;
 
-      if (iter != sources->end())
-        result = iter->second ;
+          if (result)
+            break ;
+        }
     }
 
   return result ;

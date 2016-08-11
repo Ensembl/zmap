@@ -51,7 +51,7 @@ using namespace std;
 
 
 /* Columns in the list of sources */
-enum class SourceColumn {NAME, TYPE, TOTAL} ;
+enum class SourceColumn {NAME, TYPE, LOAD, TOTAL} ;
 
 /* Data we need in callbacks. */
 typedef struct MainFrameStructName
@@ -294,6 +294,7 @@ static void updateSourcesListAddSource(MainFrame main_data,
       gtk_tree_store_set(store, &tree_iter, 
                          SourceColumn::NAME, g_quark_to_string(source->name_),
                          SourceColumn::TYPE, source_type.c_str(),
+                         SourceColumn::LOAD, !source->delayed,
                          -1);
 
       /* Also add child sources, if any */
@@ -317,7 +318,6 @@ static void updateSourcesList(MainFrame main_data, ZMapFeatureSequenceMap sequen
       gtk_tree_store_clear(store) ;
 
       /* Loop through all of the sources */
-      GtkTreeIter *parent_iter = NULL ;
       for (auto source_iter : *sequence_map->sources)
         {
           updateSourcesListAddSource(main_data, store, source_iter.second, NULL) ;
@@ -326,11 +326,54 @@ static void updateSourcesList(MainFrame main_data, ZMapFeatureSequenceMap sequen
 }
 
 
+/* Called when the user toggles the 'load' button for a source. It finds the source at the given
+ * path and toggles its 'delayed' flag to be opposite the value of the 'load' value. */
+static void loadButtonToggledCB(GtkCellRendererToggle *toggle_renderer,
+                                gchar *path_str,
+                                gpointer user_data)
+{
+  MainFrame main_data = (MainFrame)user_data ;
+
+  GtkTreePath *path = gtk_tree_path_new_from_string(path_str) ;
+  GtkTreeIter iter ;
+  
+  if (path && gtk_tree_model_get_iter(main_data->sources_model, &iter, path))
+    {
+      char *source_name = NULL ;
+      gtk_tree_model_get(main_data->sources_model, &iter, SourceColumn::NAME, &source_name, -1) ;
+
+      // The toggle button is bound to the tree model, so update the value there
+      gboolean cur_value = FALSE ;
+      gtk_tree_model_get(main_data->sources_model, &iter, SourceColumn::LOAD, &cur_value, -1) ;
+      
+      gboolean load = !cur_value ;
+
+      gtk_tree_store_set(GTK_TREE_STORE(main_data->sources_model), &iter, SourceColumn::LOAD, load, -1);
+
+      if (source_name)
+        {
+          ZMapConfigSource source = main_data->orig_sequence_map->getSource(source_name) ;
+
+          if (source)
+            {
+              // Also update the delayed flag in the source
+              source->delayed = !load ;
+            }
+        }
+    }
+
+  if (path)
+    gtk_tree_path_free(path) ;
+}
+
+
 /* Create the list widget to show all of the existing source names */
 static GtkWidget* createListWidget(ZMapFeatureSequenceMap sequence_map, MainFrame main_data)
 {
   GtkTreeStore *store = gtk_tree_store_new((gint)(SourceColumn::TOTAL),
-                                           G_TYPE_STRING, G_TYPE_STRING) ;
+                                           G_TYPE_STRING, 
+                                           G_TYPE_STRING,
+                                           G_TYPE_BOOLEAN) ;
 
   GtkTreeView *tree_view = GTK_TREE_VIEW(gtk_tree_view_new_with_model(GTK_TREE_MODEL(store))) ;
 
@@ -346,9 +389,15 @@ static GtkWidget* createListWidget(ZMapFeatureSequenceMap sequence_map, MainFram
   GtkTreeSelection *tree_selection = gtk_tree_view_get_selection(tree_view) ;
   gtk_tree_selection_set_mode(tree_selection, GTK_SELECTION_MULTIPLE);
 
-  GtkCellRenderer *renderer = gtk_cell_renderer_text_new();
-  createTreeViewColumn(tree_view, "Name", renderer, "text", SourceColumn::NAME) ;
-  createTreeViewColumn(tree_view, "Type", renderer, "text", SourceColumn::TYPE) ;
+  GtkCellRenderer *text_renderer = gtk_cell_renderer_text_new();
+  createTreeViewColumn(tree_view, "Name", text_renderer,   "text",   SourceColumn::NAME) ;
+  createTreeViewColumn(tree_view, "Type", text_renderer,   "text",   SourceColumn::TYPE) ;
+
+  GtkCellRenderer *toggle_renderer = gtk_cell_renderer_toggle_new();
+  gtk_cell_renderer_toggle_set_activatable(GTK_CELL_RENDERER_TOGGLE(toggle_renderer), TRUE) ;
+  g_signal_connect(G_OBJECT(toggle_renderer), "toggled", G_CALLBACK(loadButtonToggledCB), main_data) ;
+
+  createTreeViewColumn(tree_view, "Load", toggle_renderer, "active", SourceColumn::LOAD) ;
 
   return GTK_WIDGET(tree_view) ;
 }
