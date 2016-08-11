@@ -682,7 +682,7 @@ static void createNewSourceCB(const char *source_name,
   ZMapFeatureSequenceMap sequence_map = main_data->orig_sequence_map ;
   GError *tmp_error = NULL ;
 
-  sequence_map->createSource(source_name, url, featuresets, biotypes, &tmp_error) ;
+  sequence_map->createSource(source_name, url, featuresets, biotypes, false, true, &tmp_error) ;
 
   /* Update the list of sources shown in the dialog to include the new source,
    * and add the new source to the current selection */
@@ -1135,7 +1135,7 @@ static void configChangedCB(GtkWidget *widget, gpointer user_data)
  
   if (main_frame && main_frame->orig_sequence_map)
     {
-      main_frame->orig_sequence_map->constructSources(filename, NULL, NULL) ;
+      main_frame->orig_sequence_map->addSourcesFromConfig(filename, NULL, NULL) ;
 
       /* Update the sources list */
       updateSourcesList(main_frame, main_frame->orig_sequence_map) ;

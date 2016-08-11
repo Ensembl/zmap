@@ -475,34 +475,66 @@ ZMapFeatureSequenceMapStructType* ZMapFeatureSequenceMapStructType::copy()
 }
 
 
-/* Add a source to our list of user-created sources. Sets the error if the name already exists. */
-void ZMapFeatureSequenceMapStructType::addSource(const string &source_name, 
-                                                 ZMapConfigSource source, 
-                                                 GError **error)
+/* Add a source to our list of user-created sources. Sets the error if the name already exists and
+ * the source is different to the existing one. If this is a duplicate of an existing source then
+ * it frees the given source and returns the original. */
+ZMapConfigSource ZMapFeatureSequenceMapStructType::addSource(const string &source_name, 
+                                                             ZMapConfigSource source, 
+                                                             GError **error)
 {
-  zMapReturnIfFail(source) ;
+  ZMapConfigSource result = source ;
 
-  if (sources && sources->find(source_name) != sources->end())
+  // Check if the source has already been added.
+  ZMapConfigSource existing = getSource(source_name) ;
+
+  if (existing)
     {
-      g_set_error(error, g_quark_from_string("ZMap"), 99,
-                  "Source '%s' already exists", source_name.c_str()) ;
+      if (source == existing)
+        {
+          // Same pointer as existing; nothing to do; already have ownership
+        }
+      else if (source->url == existing->url ||
+               (source->url && existing->url && strcmp(source->url, existing->url) == 0))
+        {
+          // Different pointer but duplicate - free the given source and return the existing one.
+          zMapConfigSourceDestroy(source) ;
+          result = existing ;
+        }
+      else
+        {
+          // Different source with same name; error. Return the given source so the caller can
+          // decide what to do with it.
+          g_set_error(error, g_quark_from_string("ZMap"), 99,
+                      "Source '%s' already exists", source_name.c_str()) ;
+          result = source ;
+        }
     }
   else
     {
+      /* Doesn't exist yet. Add it and return the given source. */
       if (!sources)
         sources = new map<string, ZMapConfigSource> ;
 
       (*sources)[source_name] = source ;
+
+      result = source ;
     }
+
+  return source ;
 }
 
 
-ZMapConfigSource ZMapFeatureSequenceMapStructType::createSource(const char *source_name, const std::string &url, 
+/* Create a source with the given details. If allow_duplicate is true then return the existing
+ * source with the same name if one exists; otherwise, give an error if the source name already exists */
+ZMapConfigSource ZMapFeatureSequenceMapStructType::createSource(const char *source_name, 
+                                                                const std::string &url, 
                                                                 const char *featuresets,
                                                                 const char *biotypes,
+                                                                const bool is_child,
+                                                                const bool allow_duplicate,
                                                                 GError **error)
 {
-  return createSource(source_name, url.c_str(), featuresets, biotypes, error) ;
+  return createSource(source_name, url.c_str(), featuresets, biotypes, is_child, error) ;
 }
 
 
@@ -510,43 +542,59 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::createSource(const char *sour
                                                                 const char *url,
                                                                 const char *featuresets,
                                                                 const char *biotypes,
+                                                                const bool is_child,
+                                                                const bool allow_duplicate,
                                                                 GError **error)
 {
   ZMapConfigSource source = NULL ;
   zMapReturnValIfFail(url, source) ;
 
-  GError *tmp_error = NULL ;
-  source = new ZMapConfigSourceStruct ;
+  // Check if there's already a source with this name and return that if found
+  source = getSource(source_name) ;
 
-  source->name_ = g_quark_from_string(source_name) ;
-  source->url = g_strdup(url) ;
-  source->recent = true ;
-      
-  if (featuresets && *featuresets)
-    source->featuresets = g_strdup(featuresets) ;
-
-  if (biotypes && *biotypes)
-    source->biotypes = g_strdup(biotypes) ;
-
-  /* Add the new source to the view */
-  std::string source_name_str(source_name) ;
-
-  addSource(source_name_str, source, &tmp_error) ;
-
-  /* Recursively create any child sources */
-  if (!tmp_error)
-    createSourceChildren(source, &tmp_error) ;
-
-  /* Indicate that there are changes that need saving */
-  if (!tmp_error)
-    setFlag(ZMAPFLAG_SAVE_SOURCES, TRUE) ;
-
-  if (tmp_error)
+  if (!source)
     {
-      zMapConfigSourceDestroy(source) ;
-      source = NULL ;
+      GError *tmp_error = NULL ;
+      source = new ZMapConfigSourceStruct ;
 
-      g_propagate_error(error, tmp_error) ;
+      source->name_ = g_quark_from_string(source_name) ;
+      source->url = g_strdup(url) ;
+      source->recent = true ;
+      
+      if (featuresets && *featuresets)
+        source->featuresets = g_strdup(featuresets) ;
+
+      if (biotypes && *biotypes)
+        source->biotypes = g_strdup(biotypes) ;
+
+      /* Add the new source to the view */
+      std::string source_name_str(source_name) ;
+
+      /* Add it to the sources list (unless it's a child, in which case it will be acccessed via its
+       * parent hierarchy) */
+      if (!is_child)
+        source = addSource(source_name_str, source, &tmp_error) ;
+
+      /* Recursively create any child sources */
+      if (!tmp_error)
+        createSourceChildren(source, NULL, &tmp_error) ;
+
+      /* Indicate that there are changes that need saving */
+      if (!tmp_error)
+        setFlag(ZMAPFLAG_SAVE_SOURCES, TRUE) ;
+
+      if (tmp_error)
+        {
+          zMapConfigSourceDestroy(source) ;
+          source = NULL ;
+          g_propagate_error(error, tmp_error) ;
+        }
+    }
+  else if (!allow_duplicate)
+    {
+      g_set_error(error, g_quark_from_string("ZMap"), 99,
+                  "Cannot add source: source name '%s' already exists", 
+                  source_name) ;
     }
 
   return source ;
@@ -556,6 +604,7 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::createSource(const char *sour
 /* Some sources (namely trackhub) may have child tracks. This function creates a source for each
  * child track. */
 void ZMapFeatureSequenceMapStructType::createSourceChildren(ZMapConfigSource source,
+                                                            GList **results_out,
                                                             GError **error)
 {
   ZMapURL zmap_url = url_parse(source->url, NULL);
@@ -575,7 +624,7 @@ void ZMapFeatureSequenceMapStructType::createSourceChildren(ZMapConfigSource sou
               // Create a source for each individual track in this trackdb
               for (auto &track : trackdb.tracks())
                 {
-                  createTrackhubSourceChild(source, track) ;
+                  createTrackhubSourceChild(source, track, results_out) ;
                 }
             }
           else
@@ -596,7 +645,8 @@ void ZMapFeatureSequenceMapStructType::createSourceChildren(ZMapConfigSource sou
 
 /* Recursively create a server for a given trackhub track and its children */
 void ZMapFeatureSequenceMapStructType::createTrackhubSourceChild(ZMapConfigSource parent_source,
-                                                                 const gbtools::trackhub::Track &track)
+                                                                 const gbtools::trackhub::Track &track,
+                                                                 GList **results_out)
 {
   zMapReturnIfFail(parent_source) ;
 
@@ -621,8 +671,14 @@ void ZMapFeatureSequenceMapStructType::createTrackhubSourceChild(ZMapConfigSourc
       ZMapConfigSource new_source = createSource(track.name().c_str(),
                                                  track.url().c_str(), 
                                                  parent_source->featuresets, 
-                                                 parent_source->biotypes, 
+                                                 parent_source->biotypes,
+                                                 true, false,
                                                  &g_error) ;
+
+      if (results_out && !track.url().empty())
+        {
+          *results_out = g_list_append(*results_out, new_source) ;
+        }
 
       if (new_source && !g_error)
         {
@@ -635,7 +691,7 @@ void ZMapFeatureSequenceMapStructType::createTrackhubSourceChild(ZMapConfigSourc
           // Recurse through any child tracks
           for (auto &child_track : track.children())
             {
-              createTrackhubSourceChild(new_source, child_track) ;
+              createTrackhubSourceChild(new_source, child_track, results_out) ;
             }
         }
       else if (g_error)
@@ -729,12 +785,14 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::createFileSource(const char *
   string source_name(source_name_in ? source_name_in : g_path_get_basename(file)) ;
   GError *error = NULL ;
 
-  addSource(source_name, src, &error) ;
+  src = addSource(source_name, src, &error) ;
 
   if (error)
     {
       zMapLogWarning("Error creating source for file '%s': %s", file, error->message) ;
       g_error_free(error) ;
+      zMapConfigSourceDestroy(src) ;
+      src = NULL ;
     }
 
   return src ;
@@ -766,12 +824,14 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::createPipeSource(const char *
   string source_name(source_name_in ? source_name_in : g_path_get_basename(file)) ;
   GError *error = NULL ;
 
-  addSource(source_name, src, &error) ;
+  src = addSource(source_name, src, &error) ;
 
   if (error)
     {
       zMapLogWarning("Error creating source for file '%s': %s", file, error->message) ;
       g_error_free(error) ;
+      zMapConfigSourceDestroy(src) ;
+      src = NULL ;
     }
 
   return src ;
@@ -861,37 +921,63 @@ char* ZMapFeatureSequenceMapStructType::getSourceURL(const string &source_name)
 }
 
 
-/* Get the list of ZMapConfigSource structs from our sources map, returned in a glist. */
-GList* ZMapFeatureSequenceMapStructType::getSources()
+/* Get the list of ZMapConfigSource structs from our sources map, returned in a glist. Includes
+ * child sources if the flag is set; otherwise, just includes toplevel sources. Note that it
+ * excludes trackhub parent sources which do not have data themselves (the "trackhub://" source
+ * itself and sources in the hierarchy without a data url). */
+GList* ZMapFeatureSequenceMapStructType::getSources(const bool include_children)
 {
-  GList *settings_list = NULL ;
+  GList *result = NULL ;
 
   if (sources)
     {
-      for (map<string, ZMapConfigSource>::iterator iter = sources->begin();
-           iter != sources->end() ;
-           ++iter)
+      for (auto iter : *sources)
         {
-          settings_list = g_list_append(settings_list, iter->second) ;
+          ZMapConfigSource source = iter.second ;
+
+          if (source && source->url && *source->url != '\0' && strncasecmp(source->url, "trackhub://", 11) != 0)
+            result = g_list_append(result, source) ;
+
+          if (include_children)
+            getSourceChildren(source, &result) ;
         }
     }
 
-  return settings_list ;
+  return result ;
 }
 
 
-/* Construct the full list of all sources. this adds any sources from the config file or 
- * the given config string to those already stored in the sources list (from the command line or
- * user-defined sources). */
-void ZMapFeatureSequenceMapStructType::constructSources(const char *filename,
-                                                        const char *config_str,
-                                                        char **stylesfile)
+/* Recursively adds a source's children to the given list */
+void ZMapFeatureSequenceMapStructType::getSourceChildren(ZMapConfigSource source,
+                                                         GList **result)
 {
+  zMapReturnIfFail(source && result) ;
+  
+  for (ZMapConfigSource child : source->children)
+    {
+      if (source && source->url && *source->url != '\0' && !strncasecmp(source->url, "trackhub://", 11))
+        *result = g_list_append(*result, child) ;
+
+      getSourceChildren(child, result) ;
+    }
+}
+
+
+/* This adds any sources from the given config file/string. Returns a list of the
+ * newly-added sources. Note that this only returns the top level sources and not any child
+ * sources (the return is only used in a twisty bit of code in zmapViewLoadFeatures which could
+ * probably be improved but I'm preserving the original behaviour for now.) */
+GList* ZMapFeatureSequenceMapStructType::addSourcesFromConfig(const char *filename,
+                                                              const char *config_str,
+                                                              char **stylesfile)
+{
+  GList *result = NULL ;
+
   // This will be the list of names from the sources stanza
   char *source_names = NULL ;
 
   // get any sources specified in the config file or the given config string
-  GList *settings_list = zMapConfigGetSources(filename, config_str, stylesfile) ;
+  GList *sources_list = zMapConfigGetSources(filename, config_str, stylesfile) ;
 
   ZMapConfigIniContext context = zMapConfigIniContextProvide(filename, ZMAPCONFIG_FILE_NONE) ;
 
@@ -899,34 +985,61 @@ void ZMapFeatureSequenceMapStructType::constructSources(const char *filename,
     zMapConfigIniContextIncludeBuffer(context, config_str);
 
   if (context && 
-      settings_list && g_list_length(settings_list) > 0 &&
+      sources_list && g_list_length(sources_list) > 0 &&
       zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG, 
                                     ZMAPSTANZA_APP_SOURCES, &source_names))
     {
-      // Create the sources map if it doesn't exist
-      if (!sources)
-        sources = new map<string, ZMapConfigSource> ;
-
       GList *names_list = zMapConfigString2QuarkIDGList(source_names) ;
 
       // loop through all config sources
-      GList *source_item = settings_list ;
+      GList *source_item = sources_list ;
       GList *name_item = names_list ;
 
       for ( ; source_item && name_item; source_item = g_list_next(source_item), name_item = g_list_next(name_item))
         {
+          ZMapConfigSource source = (ZMapConfigSource)(source_item->data) ;
           string source_name(g_quark_to_string(GPOINTER_TO_INT(name_item->data))) ;
+          GError *tmp_error = NULL ;
 
-          (*sources)[source_name] = (ZMapConfigSource)(source_item->data) ;
+          // Add the source to our internal list and take ownership
+          source = addSource(source_name, source, &tmp_error) ;
+
+          if (tmp_error)
+            {
+              zMapLogWarning("Error creating source '%s': %s", source_name.c_str(), tmp_error->message) ;
+              g_error_free(tmp_error) ;
+              tmp_error = NULL ;
+
+              zMapConfigSourceDestroy(source) ;
+              source = NULL ;
+              source_item->data = NULL ;
+            }
+          else
+            {
+              // Add it to the output list
+              result = g_list_append(result, source) ;
+
+              // Recursively create any child sources
+              if (!tmp_error)
+                createSourceChildren(source, &result, &tmp_error) ;
+            }
         }
+
+      if (names_list)
+        g_list_free(names_list) ;
     }
+
+  if (sources_list)
+    g_list_free(sources_list) ;
+
+  return result ;
 }
 
 
-void ZMapFeatureSequenceMapStructType::constructSources(const char *config_str,
-                                                        char **stylesfile)
+GList* ZMapFeatureSequenceMapStructType::addSourcesFromConfig(const char *config_str,
+                                                              char **stylesfile)
 {
-  constructSources(config_file, config_str, stylesfile) ;
+  return addSourcesFromConfig(config_file, config_str, stylesfile) ;
 }
 
 
@@ -941,6 +1054,8 @@ bool ZMapFeatureSequenceMapStructType::updateContext(ZMapConfigIniContext contex
     {
       std::string sources_str ;
 
+      // Loop through all top level sources (note that we generally don't want to save child
+      // sources to config so they are ignored here)
       for (std::map<std::string, ZMapConfigSource>::const_iterator iter = sources->begin(); iter != sources->end(); ++iter)
         {
           std::string source_name = iter->first ;

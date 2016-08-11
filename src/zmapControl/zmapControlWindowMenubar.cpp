@@ -747,7 +747,9 @@ static void createNewSourceCB(const char *source_name,
 
   if (sequence_map)
     {
-      ZMapConfigSource source = sequence_map->createSource(source_name, url, featuresets, biotypes, &tmp_error) ;
+      ZMapConfigSource source = sequence_map->createSource(source_name, url, 
+                                                           featuresets, biotypes, 
+                                                           false, true, &tmp_error) ;
 
       /* Connect to the new source */
       if (!tmp_error)

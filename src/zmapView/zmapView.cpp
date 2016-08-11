@@ -643,7 +643,7 @@ gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view
       // get the stanza structs from ZMap config
       settings_list = zmap_view->view_sequence->getSources() ;
 
-      zMapConfigGetSources(zmap_view->view_sequence->config_file, config_str, &stylesfile) ;
+      zmap_view->view_sequence->addSourcesFromConfig(config_str, &stylesfile) ;
       viewSetUpStyles(zmap_view, stylesfile) ;
 
       /* read in a few ZMap stanzas giving column groups etc. */
@@ -1428,7 +1428,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig,
       /* OH DEAR...THINK WE MIGHT NEED THE CONFIG FILE HERE TOO.... */
 
      /* mh17: this is tedious to do for each request esp on startup */
-      sources = zMapConfigGetSources(view->view_sequence->config_file, NULL, NULL) ;
+      sources = view->view_sequence->addSourcesFromConfig(NULL, NULL) ;
       ghash = getFeatureSourceHash(sources);
 
       for ( ; req_sources ; req_sources = g_list_next(req_sources))

@@ -159,7 +159,7 @@ gboolean zmapMainMakeAppWindow(int argc, char *argv[], ZMapAppContext app_contex
 
   if (app_context->default_sequence)
     {
-      app_context->default_sequence->constructSources(NULL, NULL) ;
+      app_context->default_sequence->addSourcesFromConfig(NULL, NULL) ;
     }
 
   connect_frame = zmapMainMakeConnect(app_context, app_context->default_sequence) ;
@@ -235,7 +235,7 @@ gboolean zmapMainMakeAppWindow(int argc, char *argv[], ZMapAppContext app_contex
                   ZMapFeatureSequenceMap seq_map = (ZMapFeatureSequenceMap)(seq_map_item->data) ;
                   char *err_msg = NULL ;
 
-                  seq_map->constructSources(NULL, NULL) ;
+                  seq_map->addSourcesFromConfig(NULL, NULL) ;
 
                   zMapControlInsertView(zmap, seq_map, &err_msg) ;
 

@@ -293,15 +293,20 @@ typedef struct ZMapFeatureSequenceMapStructType
   ZMapConfigSource getSource(const std::string &source_name) ;
   char* getSourceName(ZMapConfigSource source) ;
   char* getSourceURL(const std::string &source_name) ;
-  GList* getSources() ;
-  void constructSources(const char *filename, const char *config_str, char **stylesfile) ;
-  void constructSources(const char *config_str, char **stylesfile) ;
+  GList* getSources(const bool include_children = true) ;
+  void getSourceChildren(ZMapConfigSource source, GList **result) ;
+  GList* addSourcesFromConfig(const char *filename, const char *config_str, char **stylesfile) ;
+  GList* addSourcesFromConfig(const char *config_str, char **stylesfile) ;
   bool updateContext(_ZMapConfigIniContextStruct *context, ZMapConfigIniFileType file_type) ;
 
   ZMapConfigSource createSource(const char *source_name, const char *url, 
-                                const char *featuresets, const char *biotypes, GError **error) ;
+                                const char *featuresets, const char *biotypes, 
+                                const bool is_child = false, const bool allow_duplicate = true,
+                                GError **error = NULL) ;
   ZMapConfigSource createSource(const char *source_name, const std::string &url, 
-                                const char *featuresets, const char *biotypes, GError **error) ;
+                                const char *featuresets, const char *biotypes, 
+                                const bool is_child = false, const bool allow_duplicate = true,
+                                GError **error = NULL) ;
   void updateSource(const char *source_name, const char *url, 
                     const char *featuresets, const char *biotypes, GError **error) ;
   void updateSource(const char *source_name, const std::string &url, 
@@ -311,9 +316,10 @@ typedef struct ZMapFeatureSequenceMapStructType
   void removeSource(const char *source_name_cstr, GError **error) ;
 
 private:
-  void addSource(const std::string &source_name, ZMapConfigSourceStruct *source, GError **error) ;
-  void createSourceChildren(ZMapConfigSource source, GError **error) ;
-  void createTrackhubSourceChild(ZMapConfigSource parent_source, const gbtools::trackhub::Track &track) ;
+  ZMapConfigSource addSource(const std::string &source_name, ZMapConfigSourceStruct *source, GError **error) ;
+  void createSourceChildren(ZMapConfigSource source, GList **results_out = NULL, GError **error = NULL) ;
+  void createTrackhubSourceChild(ZMapConfigSource parent_source, const gbtools::trackhub::Track &track,
+                                 GList **results_out = NULL) ;
 
 } ZMapFeatureSequenceMapStruct, *ZMapFeatureSequenceMap ;
 
