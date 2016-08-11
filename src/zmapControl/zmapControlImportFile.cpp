@@ -102,7 +102,7 @@ static GtkWidget *makeOptionsBox(MainFrame main_frame, const char *seq, int star
 
 static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data) ;
 static void importFileCB(ZMapFeatureSequenceMap sequence_map, 
-                         std::list<ZMapConfigSource> &selected_sources,
+                         const bool recent_only,
                          gpointer cb_data) ;
 
 #ifdef NOT_USED
@@ -418,6 +418,34 @@ static void validateReqSequence(bool &status,
 }
 
 
+/* Recursively import a source and any child sources */
+static void importSource(ZMapConfigSource server,
+                         ZMapView view,
+                         const int req_start,
+                         const int req_end,
+                         const bool recent_only)
+{
+  if (!recent_only || server->recent)
+    {
+      GError *g_error = NULL ;
+      zMapViewSetUpServerConnection(view, server, req_start, req_end, false, &g_error) ;
+
+      if (g_error)
+        {
+          zMapWarning("Failed to set up server connection for '%s': %s", 
+                      g_quark_to_string(server->name_),
+                      (g_error ? g_error->message : "<no error>")) ;
+        }
+
+      // Recurse through children
+      for (auto child : server->children)
+        {
+          importSource(child, view, req_start, req_end, recent_only) ;
+        }
+    }
+}
+
+
 /* Ok...check the users entries and then call the callback function provided.
  *
  * Note that valid entries are:
@@ -433,7 +461,7 @@ static void validateReqSequence(bool &status,
  *
  */
 static void importFileCB(ZMapFeatureSequenceMap sequence_map, 
-                         std::list<ZMapConfigSource> &sources,
+                         const bool recent_only,
                          gpointer cb_data)
 {
   bool status = TRUE ;
@@ -507,20 +535,9 @@ static void importFileCB(ZMapFeatureSequenceMap sequence_map,
 //            }
 //        }
 
-      if (sources.empty())
+      for (auto &iter : *sequence_map->sources)
         {
-          zMapCritical("%s", "Please select which sources you want to import data from") ;
-        }
-
-      for (ZMapConfigSource server : sources)
-        {
-          GError *g_error = NULL ;
-          zMapViewSetUpServerConnection(view, server, req_start, req_end, false, &g_error) ;
-
-          if (g_error)
-            zMapWarning("Failed to set up server connection for '%s': %s", 
-                        g_quark_to_string(server->name_),
-                        (g_error ? g_error->message : "<no error>")) ;
+          importSource(iter.second, view, req_start, req_end, recent_only) ;
         }
     }
   else
@@ -531,4 +548,4 @@ static void importFileCB(ZMapFeatureSequenceMap sequence_map,
   return ;
 }
 
-
+  

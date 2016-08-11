@@ -69,8 +69,10 @@ typedef struct MainFrameStructName
   // Config file chooser
   GtkWidget *chooser_widg ;
 
+  // 'Recent' button
+  GtkWidget *recent_widg ;
+
   ZMapFeatureSequenceMap orig_sequence_map ;
-  ZMapFeatureSequenceMapStruct sequence_map ;
   gboolean display_sequence ;
   bool import ; // importing into existing view
   bool show_all ; // if true, show all sources; otherwise, filter them
@@ -209,9 +211,6 @@ static GtkWidget *makePanel(GtkWidget *toplevel, gpointer *our_data,
   main_data->close_func = close_func ;
   main_data->close_data = close_data ;
   main_data->orig_sequence_map = sequence_map ;
-  main_data->sequence_map = *sequence_map ;
-  main_data->sequence_map.sequence = g_strdup(main_data->sequence_map.sequence) ;
-  main_data->sequence_map.config_file = g_strdup(main_data->sequence_map.config_file) ;
   main_data->display_sequence = display_sequence ;
   main_data->import = import ;
   main_data->show_all = !import ; // only show recent sources in import dialog
@@ -442,7 +441,7 @@ static void onUpdateList(GtkWidget *button, gpointer data)
   if (main_data)
     {
       main_data->show_all = !main_data->show_all ;
-      updateSourcesList(main_data, &main_data->sequence_map) ;
+      updateSourcesList(main_data, main_data->orig_sequence_map) ;
     }
 }
 
@@ -620,11 +619,11 @@ static GtkWidget *makeButtonBox(MainFrame main_data)
                G_CALLBACK(clearRecentCB), (gpointer)main_data, button_box) ;
 
   /* Add a check button to filter by recent sources, and a button to clear the recent list */
-  GtkWidget *filter_widget = gtk_check_button_new_with_label("Recent") ;
-  gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(filter_widget), !main_data->show_all) ;
-  gtk_widget_set_tooltip_text(filter_widget, "Tick this to filter the list by recent sources; un-tick to show all sources ") ;
-  gtk_box_pack_start(button_box, filter_widget, FALSE, FALSE, 0) ;
-  g_signal_connect(G_OBJECT(filter_widget), "clicked", G_CALLBACK(onUpdateList), main_data) ;
+  main_data->recent_widg = gtk_check_button_new_with_label("Recent") ;
+  gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(main_data->recent_widg), !main_data->show_all) ;
+  gtk_widget_set_tooltip_text(main_data->recent_widg, "Tick this to filter the list by recent sources; un-tick to show all sources ") ;
+  gtk_box_pack_start(button_box, main_data->recent_widg, FALSE, FALSE, 0) ;
+  g_signal_connect(G_OBJECT(main_data->recent_widg), "clicked", G_CALLBACK(onUpdateList), main_data) ;
 
 
   //
@@ -651,7 +650,7 @@ static GtkWidget *makeButtonBox(MainFrame main_data)
 
   /* If a sequence is provided then make a button to set it in the entries fields,
    * saves the user tedious typing. */
-  if (main_data->sequence_map.sequence && !main_data->import)
+  if (main_data->orig_sequence_map->sequence && !main_data->import)
     {
       createButton("Set Defaults", NULL, false,
                    "Set sequence details from default values",
@@ -699,10 +698,10 @@ static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data)
     (main_data->close_func)(main_data->toplevel, main_data->close_data) ;
 
   /* Free resources. */
-  if (main_data->sequence_map.sequence)
-    g_free(main_data->sequence_map.sequence) ;
-  if (main_data->sequence_map.config_file)
-    g_free(main_data->sequence_map.config_file) ;
+  if (main_data->orig_sequence_map->sequence)
+    g_free(main_data->orig_sequence_map->sequence) ;
+  if (main_data->orig_sequence_map->config_file)
+    g_free(main_data->orig_sequence_map->config_file) ;
 
   g_free(main_data) ;
 
@@ -729,8 +728,8 @@ static void defaultsCB(GtkWidget *widget, gpointer cb_data)
   setSequenceEntries(main_data) ;
 
 #ifndef __CYGWIN__
-  if (main_data->sequence_map.config_file)
-    gtk_file_chooser_set_filename(GTK_FILE_CHOOSER(main_data->chooser_widg), main_data->sequence_map.config_file) ;
+  if (main_data->orig_sequence_map->config_file)
+    gtk_file_chooser_set_filename(GTK_FILE_CHOOSER(main_data->chooser_widg), main_data->orig_sequence_map->config_file) ;
 #endif
 
   return ;
@@ -827,9 +826,9 @@ static void createSourceCB(GtkWidget *widget, gpointer cb_data)
 
   /* When importing via the import dialog we probably(?) want the default import type to FILE. */
   if (main_data->import)
-    zMapAppCreateSource(&main_data->sequence_map, createNewSourceCB, main_data, NULL, NULL, ZMapAppSourceType::FILE) ;
+    zMapAppCreateSource(main_data->orig_sequence_map, createNewSourceCB, main_data, NULL, NULL, ZMapAppSourceType::FILE) ;
   else
-    zMapAppCreateSource(&main_data->sequence_map, createNewSourceCB, main_data, NULL, NULL) ;
+    zMapAppCreateSource(main_data->orig_sequence_map, createNewSourceCB, main_data, NULL, NULL) ;
 
   return ;
 }
@@ -909,10 +908,10 @@ static void clearRecentCB(GtkWidget *button, gpointer data)
 
   if (main_data)
     {
-      for (auto iter : *main_data->sequence_map.sources)
+      for (auto iter : *main_data->orig_sequence_map->sources)
         iter.second->recent = false ;
 
-      updateSourcesList(main_data, &main_data->sequence_map) ;
+      updateSourcesList(main_data, main_data->orig_sequence_map) ;
     }
 }
 
@@ -941,14 +940,14 @@ static void setSequenceEntries(MainFrame main_data)
   const char *sequence = "", *config_file = "" ;
   char *start = NULL, *end = NULL ;
 
-  if (main_data->sequence_map.sequence)
-    sequence = main_data->sequence_map.sequence ;
-  if (main_data->sequence_map.start)
-    start = g_strdup_printf("%d", main_data->sequence_map.start) ;
-  if (main_data->sequence_map.end)
-    end = g_strdup_printf("%d", main_data->sequence_map.end) ;
-  if (main_data->sequence_map.config_file)
-    config_file = main_data->sequence_map.config_file ;
+  if (main_data->orig_sequence_map->sequence)
+    sequence = main_data->orig_sequence_map->sequence ;
+  if (main_data->orig_sequence_map->start)
+    start = g_strdup_printf("%d", main_data->orig_sequence_map->start) ;
+  if (main_data->orig_sequence_map->end)
+    end = g_strdup_printf("%d", main_data->orig_sequence_map->end) ;
+  if (main_data->orig_sequence_map->config_file)
+    config_file = main_data->orig_sequence_map->config_file ;
 
   gtk_entry_set_text(GTK_ENTRY(main_data->sequence_widg), sequence) ;
   gtk_entry_set_text(GTK_ENTRY(main_data->start_widg), (start ? start : "")) ;
@@ -993,15 +992,12 @@ static void applyCB(GtkWidget *widget, gpointer cb_data)
 {
   MainFrame main_data = (MainFrame)cb_data ;
 
+  const bool recent_only = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(main_data->recent_widg)) ;
+
   if (main_data->import)
     {
-      const char *err_msg = NULL;
-      list<ZMapConfigSource> selected_sources = getSelectedSources(main_data->sources_tree,
-                                                                   main_data->orig_sequence_map,
-                                                                   err_msg) ;
-
       /* Just call user callback with original sequence map. */
-      (main_data->user_func)(main_data->orig_sequence_map, selected_sources, main_data->user_data) ;
+      (main_data->user_func)(main_data->orig_sequence_map, recent_only, main_data->user_data) ;
     }
   else
     {
@@ -1126,13 +1122,8 @@ static void applyCB(GtkWidget *widget, gpointer cb_data)
             }
           else
             {
-              const char *err_msg = NULL;
-              list<ZMapConfigSource> selected_sources = getSelectedSources(main_data->sources_tree,
-                                                                           seq_map,
-                                                                           err_msg) ;
-
               /* Call back with users parameters for new sequence display. */
-              (main_data->user_func)(seq_map, selected_sources, main_data->user_data) ;
+              (main_data->user_func)(seq_map, recent_only, main_data->user_data) ;
             }
         }
 

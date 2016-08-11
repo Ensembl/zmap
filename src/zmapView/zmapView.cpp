@@ -1978,14 +1978,13 @@ void zmapViewResetWindows(ZMapView zmap_view, gboolean revcomp)
 
 
 /* Utility called by zMapViewSetUpServerConnection to do any scheme-specific set up for the given
- * server. This updates the terminate flag and the servers list - for trackhub servers this
- * returns a list of servers for each track in the trackDb. For other server types it just puts
- * the current server in the list. */
-static void setUpServerConnectionByScheme(ZMapView zmap_view,
+ * server. This updates the terminate flag. Returns true if the source should be loaded. */
+static bool setUpServerConnectionByScheme(ZMapView zmap_view,
                                           ZMapConfigSource current_server,
                                           bool &terminate,
                                           GError **error)
 {
+  bool result = true ;
   ZMapURL zmap_url = url_parse(current_server->url, NULL);
   terminate = FALSE ;
 
@@ -1996,7 +1995,18 @@ static void setUpServerConnectionByScheme(ZMapView zmap_view,
         {
           terminate = TRUE ;
         }
+      else if (zmap_url->scheme == SCHEME_TRACKHUB)
+        {
+          // Don't load trackhub sources directly (they are just parent sources for child sources)
+          result = false ;
+        }
     }
+  else
+    {
+      result = false ;
+    }
+
+  return result ;
 }
 
 
@@ -2046,12 +2056,13 @@ void zMapViewSetUpServerConnection(ZMapView zmap_view,
               req_biotypes = zMapConfigString2QuarkGList(current_server->biotypes,FALSE) ;
             }
 
-          setUpServerConnectionByScheme(zmap_view, current_server, terminate, error) ;
-
-          /* Load the features for the server */
-          zmapViewLoadFeatures(zmap_view, NULL, req_featuresets, req_biotypes, current_server,
-                               req_start, req_end, thread_fail_silent,
-                               SOURCE_GROUP_START,TRUE, terminate) ;
+          if (setUpServerConnectionByScheme(zmap_view, current_server, terminate, error))
+            {
+              /* Load the features for the server */
+              zmapViewLoadFeatures(zmap_view, NULL, req_featuresets, req_biotypes, current_server,
+                                   req_start, req_end, thread_fail_silent,
+                                   SOURCE_GROUP_START,TRUE, terminate) ;
+            }
         }
     }
 }

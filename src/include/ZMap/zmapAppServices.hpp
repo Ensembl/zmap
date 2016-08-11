@@ -52,7 +52,7 @@ enum class ZMapAppSourceType
 
 /* User callback function, called by zMapAppGetSequenceView code to return
  * a sequence, start, end and optionally config file specificed by user. */
-typedef void (*ZMapAppGetSequenceViewCB)(ZMapFeatureSequenceMap sequence_map, std::list<ZMapConfigSource> &selected_sources, gpointer user_data) ;
+typedef void (*ZMapAppGetSequenceViewCB)(ZMapFeatureSequenceMap sequence_map, const bool recent_only, gpointer user_data) ;
 typedef void (*ZMapAppClosedSequenceViewCB)(GtkWidget *toplevel, gpointer user_data) ;
 
 /* User callback function, called by zMapAppCreateSource code */

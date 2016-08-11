@@ -858,13 +858,13 @@ void ZMapFeatureSequenceMapStructType::removeSource(const char *source_name_cstr
 
 
 /* Find the child of the given source that has the given name. Returns NULL if not found. */
-static ZMapConfigSource findSourceRecursively(ZMapConfigSource source, const GQuark search_quark)
+static ZMapConfigSource findSourceRecursively(ZMapConfigSource source, const char *search_str)
 {
   ZMapConfigSource result = NULL ;
 
   if (source)
     {
-      if (source->name_ == search_quark)
+      if (strcasecmp(g_quark_to_string(source->name_), search_str) == 0)
         {
           result = source ;
         }
@@ -872,7 +872,7 @@ static ZMapConfigSource findSourceRecursively(ZMapConfigSource source, const GQu
         {
           for (auto child : source->children)
             {
-              result = findSourceRecursively(child, search_quark) ;
+              result = findSourceRecursively(child, search_str) ;
 
               if (result)
                 break ;
@@ -888,14 +888,14 @@ static ZMapConfigSource findSourceRecursively(ZMapConfigSource source, const GQu
 ZMapConfigSource ZMapFeatureSequenceMapStructType::getSource(const string &source_name)
 {
   ZMapConfigSource result = NULL ;
-  GQuark search_quark = g_quark_from_string(source_name.c_str()) ;
+  const char *search_str = source_name.c_str() ;
 
-  if (sources && search_quark)
+  if (sources && search_str)
     {
       // Loop through all sources checking their name and recursively checking their child sources
       for (auto &iter : *sources)
         {
-          result = findSourceRecursively(iter.second, search_quark) ;
+          result = findSourceRecursively(iter.second, search_str) ;
 
           if (result)
             break ;
@@ -1059,7 +1059,7 @@ GList* ZMapFeatureSequenceMapStructType::addSourcesFromConfig(const char *filena
               // Recursively create any child sources (only if not already created - addSource
               // might have returned an existing source if it had already been added before, in
               // which case the children will already have been created).
-              if (!tmp_error && source->children.empty())
+              if (!tmp_error && source->children.size() == 0)
                 createSourceChildren(source, &result, &tmp_error) ;
             }
         }
