@@ -451,6 +451,24 @@ GQuark ZMapFeatureContextMapStructType::getRelatedColumnID(const GQuark fset_id)
  *                      ZMapFeatureSequenceMap
  **********************************************************************/
 
+/* Default constructor */
+ZMapFeatureSequenceMapStructType::ZMapFeatureSequenceMapStructType()
+  : config_file(NULL),
+    stylesfile(NULL),
+    cached_parsers(NULL),
+    sources(NULL),
+    dataset(NULL),
+    sequence(NULL),
+    start(0),
+    end(0)
+{
+  for (int i = 0; flag < ZMAPFLAG_NUM_FLAGS; ++i)
+    {
+      flags[i] = FALSE ;
+    }
+}
+
+
 ZMapFeatureSequenceMapStructType* ZMapFeatureSequenceMapStructType::copy()
 {
   ZMapFeatureSequenceMapStructType *dest = NULL ;

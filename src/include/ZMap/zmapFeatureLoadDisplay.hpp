@@ -285,6 +285,8 @@ typedef struct ZMapFeatureSequenceMapStructType
   gboolean flags[ZMAPFLAG_NUM_FLAGS] ;
 
 
+  ZMapFeatureSequenceMapStructType() ;
+
   ZMapFeatureSequenceMapStructType* copy() ;
 
   gboolean getFlag(ZMapFlag flag) ;
