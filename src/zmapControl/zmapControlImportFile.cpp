@@ -468,12 +468,15 @@ static void createSourceData(ZMapView view,
 /* Recursively import a source and any child sources */
 static void importSource(ZMapConfigSource server,
                          ZMapView view,
+                         ZMapFeatureSequenceMap sequence_map,
                          const int req_start,
                          const int req_end,
                          const bool recent_only)
 {
   if (!recent_only || server->recent)
     {
+      createSourceData(view, sequence_map, server) ;
+
       GError *g_error = NULL ;
       zMapViewSetUpServerConnection(view, server, req_start, req_end, false, &g_error) ;
 
@@ -487,7 +490,7 @@ static void importSource(ZMapConfigSource server,
       // Recurse through children
       for (auto child : server->children)
         {
-          importSource(child, view, req_start, req_end, recent_only) ;
+          importSource(child, view, sequence_map, req_start, req_end, recent_only) ;
         }
     }
 }
@@ -558,7 +561,7 @@ static void importFileCB(ZMapFeatureSequenceMap sequence_map,
     {      
       for (auto &iter : *sequence_map->sources)
         {
-          importSource(iter.second, view, req_start, req_end, recent_only) ;
+          importSource(iter.second, view, sequence_map, req_start, req_end, recent_only) ;
         }
     }
   else

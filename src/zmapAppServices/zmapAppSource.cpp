@@ -310,13 +310,10 @@ void updatePanelFromFileSource(MainFrame main_data,
                                ZMapConfigSource source,
                                ZMapURL zmap_url)
 {
-  char *source_name = main_data->sequence_map->getSourceName(source) ;
+  const char *source_name = main_data->sequence_map->getSourceName(source) ;
 
   gtk_entry_set_text(GTK_ENTRY(main_data->name_widg), source_name) ;
   gtk_entry_set_text(GTK_ENTRY(main_data->path_widg), zmap_url->path) ;
-
-  if (source_name)
-    g_free(source_name) ;
 }
 
 void updatePanelFromTrackhubSource(MainFrame main_data, 
@@ -325,7 +322,7 @@ void updatePanelFromTrackhubSource(MainFrame main_data,
 {
   zMapReturnIfFail(main_data) ;
 
-  char *source_name = main_data->sequence_map->getSourceName(source) ;
+  const char *source_name = main_data->sequence_map->getSourceName(source) ;
   const char *trackdb_id = "" ;
 
   if (zmap_url)
@@ -333,8 +330,6 @@ void updatePanelFromTrackhubSource(MainFrame main_data,
 
   gtk_entry_set_text(GTK_ENTRY(main_data->name_widg), source_name) ;
   gtk_entry_set_text(GTK_ENTRY(main_data->trackdb_id_widg), trackdb_id) ;
-
-  g_free(source_name) ;
 }
 
 
@@ -343,7 +338,7 @@ void updatePanelFromEnsemblSource(MainFrame main_data,
                                   ZMapConfigSource source,
                                   ZMapURL zmap_url)
 {
-  char *source_name = main_data->sequence_map->getSourceName(source) ;
+  const char *source_name = main_data->sequence_map->getSourceName(source) ;
   const char *host = zmap_url->host ;
   char *port = g_strdup_printf("%d", zmap_url->port) ;
   const char *user = zmap_url->user ;
@@ -398,8 +393,6 @@ void updatePanelFromEnsemblSource(MainFrame main_data,
   if (main_data->dna_check)
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(main_data->dna_check), load_dna) ;
 
-  if (source_name)
-    g_free(source_name) ;
   if (port)
     g_free(port) ;
   if (dbname)

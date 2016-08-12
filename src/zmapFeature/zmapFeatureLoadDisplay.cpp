@@ -262,7 +262,7 @@ ZMapFeatureSource ZMapFeatureContextMapStructType::getSource(GQuark fset_id)
   ZMapFeatureSource src = NULL ;
   zMapReturnValIfFail(fset_id, src) ;
 
-  src = (ZMapFeatureSource)g_hash_table_lookup(source_2_sourcedata, GUINT_TO_POINTER(fset_id)) ;
+  src = (ZMapFeatureSource)g_hash_table_lookup(source_2_sourcedata, GUINT_TO_POINTER(unique_id)) ;
 
   return src ;
 }
@@ -534,7 +534,9 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::addSource(const string &sourc
       if (!sources)
         sources = new map<string, ZMapConfigSource> ;
 
-      (*sources)[source_name] = source ;
+      // Convert name to a unique id (i.e. lowercase it)
+      GQuark source_id = zMapStyleCreateID(source_name) ;
+      (*sources)[source_id] = source ;
 
       result = source ;
     }
@@ -907,10 +909,12 @@ static ZMapConfigSource findSourceRecursively(ZMapConfigSource source, const cha
 ZMapConfigSource ZMapFeatureSequenceMapStructType::getSource(const string &source_name)
 {
   ZMapConfigSource result = NULL ;
-  const char *search_str = source_name.c_str() ;
 
   if (sources && search_str)
     {
+      GQuark unique_id = zMapStyleCreateIDFromID(source_name.c_str()) ;
+      const char *search_str = g_quark_to_string(unique_id) ;
+      
       // Loop through all sources checking their name and recursively checking their child sources
       for (auto &iter : *sources)
         {
@@ -927,20 +931,12 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::getSource(const string &sourc
 
 /* Get the source name of the given source struct. Returns a newly-allocated string which should
  * be free'd with g_free, or NULL if not found */
-char* ZMapFeatureSequenceMapStructType::getSourceName(ZMapConfigSource source)
+const char* ZMapFeatureSequenceMapStructType::getSourceName(ZMapConfigSource source)
 {
-  char *result = NULL ;
+  const char *result = NULL ;
 
-  if (sources)
-    {
-      for (map<string, ZMapConfigSource>::iterator iter = sources->begin();
-           iter != sources->end();
-           ++iter)
-        {
-          if (iter->second == source)
-            result = g_strdup(iter->first.c_str()) ;
-        }
-    }
+  if (source && source->name_)
+    result = g_quark_to_string(source->name_) ;
 
   return result ;
 }
@@ -1041,16 +1037,13 @@ GList* ZMapFeatureSequenceMapStructType::addSourcesFromConfig(const char *filena
       zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG, 
                                     ZMAPSTANZA_APP_SOURCES, &source_names))
     {
-      GList *names_list = zMapConfigString2QuarkIDGList(source_names) ;
-
       // loop through all config sources
       GList *source_item = sources_list ;
-      GList *name_item = names_list ;
 
-      for ( ; source_item && name_item; source_item = g_list_next(source_item), name_item = g_list_next(name_item))
+      for ( ; source_item; source_item = g_list_next(source_item))
         {
           ZMapConfigSource source = (ZMapConfigSource)(source_item->data) ;
-          string source_name(g_quark_to_string(GPOINTER_TO_INT(name_item->data))) ;
+          const char *source_name = g_quark_to_string(source->name_) ;
           GError *tmp_error = NULL ;
 
           // Add the source to our internal list and take ownership
@@ -1058,7 +1051,7 @@ GList* ZMapFeatureSequenceMapStructType::addSourcesFromConfig(const char *filena
 
           if (tmp_error)
             {
-              zMapLogWarning("Error creating source '%s': %s", source_name.c_str(), tmp_error->message) ;
+              zMapLogWarning("Error creating source '%s': %s", source_name, tmp_error->message) ;
               g_error_free(tmp_error) ;
               tmp_error = NULL ;
 
@@ -1082,9 +1075,6 @@ GList* ZMapFeatureSequenceMapStructType::addSourcesFromConfig(const char *filena
                 createSourceChildren(source, &result, &tmp_error) ;
             }
         }
-
-      if (names_list)
-        g_list_free(names_list) ;
     }
 
   if (sources_list)
