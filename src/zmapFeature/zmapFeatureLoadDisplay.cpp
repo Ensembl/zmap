@@ -523,7 +523,8 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::addSource(const string &sourc
           // Different source with same name; error. Return the given source so the caller can
           // decide what to do with it.
           g_set_error(error, g_quark_from_string("ZMap"), 99,
-                      "Source '%s' already exists", source_name.c_str()) ;
+                      "Source '%s' already exists with a different url:\nPrevious url: %s\nNew url:%s", 
+                      source_name.c_str(), source->url, existing->url) ;
           result = source ;
         }
     }
