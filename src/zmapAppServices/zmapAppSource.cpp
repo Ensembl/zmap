@@ -1234,42 +1234,6 @@ static const char* fileTypeGetPipeScript(ZMapDataSourceType source_type,
 }
 
 
-/* Returns true if zmap is running under otter (according to the config file) */
-static bool runningUnderOtter(MainFrame main_frame)
-{
-  bool is_otter = false ;
-
-  if (main_frame && main_frame->sequence_map && main_frame->sequence_map->config_file)
-    {
-      ZMapConfigIniContext context = zMapConfigIniContextProvide(main_frame->sequence_map->config_file, 
-                                                                 ZMAPCONFIG_FILE_NONE);
-
-      if (context)
-        {
-          char *tmp_string = NULL;
-          
-          if(zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
-                                           ZMAPSTANZA_APP_CSVER, &tmp_string))
-            {
-              if(tmp_string && !g_ascii_strcasecmp(tmp_string,"Otter"))
-                {
-                  is_otter = TRUE;
-                }
-
-              if (tmp_string)
-                {
-                  g_free(tmp_string) ;
-                  tmp_string = NULL ;
-                }
-            }
-        }
-
-    }      
-
-  return is_otter ;
-}
-
-
 /* Create the url for normal file types */
 static string constructRegularFileURL(const char *filename, string &err_msg)
 {
@@ -1289,6 +1253,7 @@ static string constructRegularFileURL(const char *filename, string &err_msg)
 }
 
 
+
 /* Create the url for special file types that use a pipe script (this is because we use these
  * scripts for now to do remapping but when zmap can do its own remapping we can get rid of
  * this). Note that these scripts are only available when running under otter. */
@@ -1299,11 +1264,11 @@ static string constructPipeFileURL(MainFrame main_frame,
                                    string &err_msg)
 {
   string url;
-  zMapReturnValIfFail(main_frame, url) ;
+  zMapReturnValIfFail(main_frame && main_frame->sequence_map, url) ;
 
   bool done = false ;
   
-  if (runningUnderOtter(main_frame))
+  if (main_frame->sequence_map->runningUnderOtter())
     {
       /* Ask the user if they want to remap, and if ask, for the assembly */
       char *source_assembly = NULL ;

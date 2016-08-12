@@ -1184,6 +1184,43 @@ gboolean ZMapFeatureSequenceMapStructType::getFlag(ZMapFlag flag)
 }
 
 
+/* Returns true if zmap is running under otter (according to the config file) */
+bool ZMapFeatureSequenceMapStructType::runningUnderOtter()
+{
+  bool is_otter = false ;
+
+  if (config_file)
+    {
+      ZMapConfigIniContext context = zMapConfigIniContextProvide(config_file, 
+                                                                 ZMAPCONFIG_FILE_NONE);
+
+      if (context)
+        {
+          char *tmp_string = NULL;
+          
+          if(zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+                                           ZMAPSTANZA_APP_CSVER, &tmp_string))
+            {
+              if(tmp_string && !g_ascii_strcasecmp(tmp_string,"Otter"))
+                {
+                  is_otter = TRUE;
+                }
+
+              if (tmp_string)
+                {
+                  g_free(tmp_string) ;
+                  tmp_string = NULL ;
+                }
+            }
+        }
+
+    }      
+
+  return is_otter ;
+}
+
+
+
 /*
  *              External routines.
  */

@@ -52,6 +52,7 @@
 #include <ZMap/zmapControlImportFile.hpp>
 #include <ZMap/zmapFeatureLoadDisplay.hpp>
 #include <ZMap/zmapAppServices.hpp>
+#include <ZMap/zmapDataSource.hpp>
 #include <zmapControl_P.hpp>
 
 
@@ -418,6 +419,52 @@ static void validateReqSequence(bool &status,
 }
 
 
+/* If we're using a pipe script, we need to create the source data for the named source so that we
+ * can set is_seq=true for bam sources (otherwise we don't know when we come to parse the results
+ * of the bam_get script that is_seq should be true).  We don't do this if we're loading the file
+ * directly because the named source is not used (the source data is created when the features are
+ * parsed from the file instead).
+ * 
+ * This is all a horrible hack for the bam_get stuff and should probably be dealt with elsewhere
+ * but leaving it here for now to preserve the old behaviour. We will get rid of all the bam_get
+ * stuff anyway when zmap can do its own remapping. */
+static void createSourceData(ZMapView view, 
+                             ZMapFeatureSequenceMap sequence_map, 
+                             ZMapConfigSource source)
+{
+  zMapReturnIfFail(view && sequence_map) ;
+
+  ZMapFeatureContextMap context_map = zMapViewGetContextMap(view) ;
+
+  int status = 0 ;
+  ZMapURL zmap_url = url_parse(source->url, &status) ;
+
+  if (context_map && sequence_map->runningUnderOtter() && zmap_url && zmap_url->path)
+    {
+      ZMapDataSourceType source_type = zMapDataSourceTypeFromFilename(zmap_url->path, NULL) ;
+
+      if (source_type == ZMapDataSourceType::HTS || source_type == ZMapDataSourceType::BIGWIG)
+        {
+          const char *source_name = g_quark_to_string(source->name_) ;
+          GQuark fset_id = zMapFeatureSetCreateID(source_name);
+          ZMapFeatureSource source_data = context_map->getSource(fset_id);
+
+          if (!source_data)
+            {
+              GQuark source_id = fset_id ;
+              GQuark style_id = zMapStyleCreateID(NULL) ;
+              GQuark source_text = source->name_ ;
+              const bool is_seq = true ;
+              
+              context_map->createSource(fset_id,
+                                        source_id, source_text, style_id,
+                                        0, 0, is_seq) ;
+            }
+        }
+    }
+}
+
+
 /* Recursively import a source and any child sources */
 static void importSource(ZMapConfigSource server,
                          ZMapView view,
@@ -508,33 +555,7 @@ static void importFileCB(ZMapFeatureSequenceMap sequence_map,
    *
    */
   if (status)
-    {
-      
-//      if (create_source_data)
-//        {
-//          /* If we're using a pipe script, we need to create the source data for the named source
-//           * so that we can set is_seq=true for bam sources (otherwise we don't know when we come
-//           * to parse the results of the bam_get script that is_seq should be true).
-//           * We don't do this if we're loading the file directly because the named source is not used
-//           * (the source data is created when the features are parsed from the file instead) */
-//          ZMapFeatureContextMap context_map = zMapViewGetContextMap(view) ;
-//
-//          GQuark fset_id = zMapFeatureSetCreateID(source_txt);
-//          ZMapFeatureSource source_data = context_map->getSource(fset_id);
-//
-//          if (!source_data)
-//            {
-//              GQuark source_id = fset_id ;
-//              GQuark style_id = zMapStyleCreateID(NULL) ;
-//              GQuark source_text = g_quark_from_string(source_txt) ;
-//              const bool is_seq = (file_type == ZMAPSOURCE_FILE_BAM || file_type == ZMAPSOURCE_FILE_BIGWIG) ;
-//
-//              context_map->createSource(fset_id,
-//                                        source_id, source_text, style_id,
-//                                        0, 0, is_seq) ;
-//            }
-//        }
-
+    {      
       for (auto &iter : *sequence_map->sources)
         {
           importSource(iter.second, view, req_start, req_end, recent_only) ;

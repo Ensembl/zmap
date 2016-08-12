@@ -310,6 +310,8 @@ typedef struct ZMapFeatureSequenceMapStructType
   ZMapConfigSource createPipeSource(const char *source_name, const char *file, const char *script, const char *args) ;
   void removeSource(const char *source_name_cstr, GError **error) ;
 
+  bool runningUnderOtter() ;
+
 private:
   ZMapConfigSource addSource(const std::string &source_name, ZMapConfigSourceStruct *source, GError **error) ;
   void createSourceChildren(ZMapConfigSource source, GList **results_out = NULL, GError **error = NULL) ;
