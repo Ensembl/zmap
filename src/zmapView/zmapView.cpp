@@ -2783,22 +2783,26 @@ static void getIniData(ZMapView view, char *config_str, GList *req_sources)
               }
           }
 
+        GList *seq_data_featuresets = NULL ;
+
         if(zMapConfigIniContextGetString(context,
                                          ZMAPSTANZA_APP_CONFIG,
                                          ZMAPSTANZA_APP_CONFIG,
                                          ZMAPSTANZA_APP_SEQ_DATA,&str))
           {
-            view->context_map.seq_data_featuresets = zMapConfigString2QuarkIDGList(str);
+            seq_data_featuresets = zMapConfigString2QuarkIDGList(str);
           }
 
         /* add a flag for each seq_data featureset */
-        for(iter = view->context_map.seq_data_featuresets; iter; iter = iter->next)
+        for(iter = seq_data_featuresets; iter; iter = iter->next)
           {
             gff_source = (ZMapFeatureSource)g_hash_table_lookup(source_2_sourcedata,iter->data);
             //zMapLogWarning("view is_seq: %s -> %p",g_quark_to_string(GPOINTER_TO_UINT(iter->data)),gff_source);
             if(gff_source)
               gff_source->is_seq = TRUE;
           }
+
+        g_list_free(seq_data_featuresets) ;
 
         view->context_map.source_2_sourcedata = source_2_sourcedata;
 

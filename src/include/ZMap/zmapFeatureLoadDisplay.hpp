@@ -200,14 +200,7 @@ typedef struct ZMapFeatureContextMapStructType
    * of this hash table? */
   GHashTable *source_2_sourcedata ;
 
-
-  /* This is a list BAM featureset unique id's (GQuark). It is only used to create the Blixem and
-   * ZMap right-click menus for short-read options. This info is also available via the is_seq
-   * member of the ZMapFeatureSource struct. */
-  /* gb10: I'm not sure how much those menus are used so maybe we should look into getting rid of
-   * them? Or look at using is_seq to construct these menus instead (if that's not too slow)? */
-  GList *seq_data_featuresets ;
-
+  
   /* This maps virtual featuresets to their lists of real featuresets. The reverse mapping is
    * provided by the maps_to field in the ZMapFeatureSource. 
    * Maps the virtual featureset unique_id (GQuark) to a GList of real featureset unique_ids
