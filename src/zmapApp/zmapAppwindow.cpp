@@ -399,7 +399,7 @@ static void destroyAppContext(ZMapAppContext app_context)
       if(app_context->default_sequence->sequence)
         g_free(app_context->default_sequence->sequence);
 
-      g_free(app_context->default_sequence);
+      delete app_context->default_sequence;
     }
   g_free(app_context) ;
 

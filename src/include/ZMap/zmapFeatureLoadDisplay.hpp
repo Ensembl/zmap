@@ -276,7 +276,7 @@ typedef struct ZMapFeatureSequenceMapStructType
   GHashTable *cached_parsers ; /* filenames (as GQuarks) mapped to cached info about GFF parsing that
                                 * is in progress (ZMapFeatureParserCache) if parsing has already been started */
 
-  std::map<std::string, ZMapConfigSourceStruct*> *sources ;
+  std::map<std::string, ZMapConfigSourceStruct*> *sources ; /* map source name to struct */
 
   char *dataset ;                                           /* e.g. human */
   char *sequence ;                                          /* e.g. chr6-18 */

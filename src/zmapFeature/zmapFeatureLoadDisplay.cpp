@@ -455,7 +455,7 @@ ZMapFeatureSequenceMapStructType* ZMapFeatureSequenceMapStructType::copy()
 {
   ZMapFeatureSequenceMapStructType *dest = NULL ;
 
-  dest = g_new0(ZMapFeatureSequenceMapStruct, 1) ;
+  dest = new ZMapFeatureSequenceMapStruct ;
 
   dest->config_file = g_strdup(config_file) ;
   dest->stylesfile = g_strdup(stylesfile) ;

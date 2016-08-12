@@ -1081,7 +1081,7 @@ static void applyCB(GtkWidget *widget, gpointer cb_data)
           gboolean sequence_ok = FALSE ;
           const char *err_msg = NULL ;
 
-          seq_map = g_new0(ZMapFeatureSequenceMapStruct,1) ;
+          seq_map = new ZMapFeatureSequenceMapStruct ;
 
           seq_map->config_file = g_strdup(config_txt) ;
 
@@ -1118,7 +1118,7 @@ static void applyCB(GtkWidget *widget, gpointer cb_data)
           if (!sequence_ok)
             {
               zMapWarning("%s", err_msg) ;
-              g_free(seq_map) ;
+              delete seq_map ;
             }
           else
             {

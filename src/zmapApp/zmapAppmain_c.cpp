@@ -1321,7 +1321,7 @@ static ZMapFeatureSequenceMap createSequenceMap(char *sequence, int start, int e
                                                 char *config_file, char *styles_file, 
                                                 GList **seq_maps_inout)
 {
-  ZMapFeatureSequenceMap seq_map = g_new0(ZMapFeatureSequenceMapStruct, 1) ;
+  ZMapFeatureSequenceMap seq_map = new ZMapFeatureSequenceMapStruct ;
 
   seq_map->sequence = sequence ;
   seq_map->start = start ;

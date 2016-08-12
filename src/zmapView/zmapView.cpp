@@ -3354,7 +3354,7 @@ static void destroyZMapView(ZMapView *zmap_view_out)
   {
 //      if(zmap_view->view_sequence->sequence)
 //           g_free(zmap_view->view_sequence->sequence);
-//      g_free(zmap_view->view_sequence) ;
+//      delete zmap_view->view_sequence ;
       zmap_view->view_sequence = NULL;
   }
 

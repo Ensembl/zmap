@@ -701,7 +701,7 @@ static void createZMap(ZMapManager manager, ZMap zmap, gpointer view_id,
 
   /* MH17: this is a bodge FTM, we need a dataset XRemote field as well */
   /* default sequence may be NULL */
-  sequence_map = g_new0(ZMapFeatureSequenceMapStruct, 1) ;
+  sequence_map = new ZMapFeatureSequenceMapStruct ;
 
   sequence_map->config_file = g_strdup(g_quark_to_string(config_file)) ;
   sequence_map->sequence = sequence = g_strdup(g_quark_to_string(sequence_id)) ;
