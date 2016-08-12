@@ -269,7 +269,7 @@ static gboolean possiblyPopulateWithFullData(ZMapWindow window,
 
 
 static gboolean isColumnVisible(FooCanvasItem *item, gpointer user_data_unused) ;
-static gboolean checkItem(FooCanvasItem *item, gpointer user_data) ;
+//static gboolean checkItem(FooCanvasItem *item, gpointer user_data) ;
 
 
 static void popUpMenu(GdkEventKey *key_event, ZMapWindow window, FooCanvasItem *focus_item) ;
