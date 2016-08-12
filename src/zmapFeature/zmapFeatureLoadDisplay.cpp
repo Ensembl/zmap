@@ -262,7 +262,7 @@ ZMapFeatureSource ZMapFeatureContextMapStructType::getSource(GQuark fset_id)
   ZMapFeatureSource src = NULL ;
   zMapReturnValIfFail(fset_id, src) ;
 
-  src = (ZMapFeatureSource)g_hash_table_lookup(source_2_sourcedata, GUINT_TO_POINTER(unique_id)) ;
+  src = (ZMapFeatureSource)g_hash_table_lookup(source_2_sourcedata, GUINT_TO_POINTER(fset_id)) ;
 
   return src ;
 }
@@ -535,8 +535,8 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::addSource(const string &sourc
         sources = new map<string, ZMapConfigSource> ;
 
       // Convert name to a unique id (i.e. lowercase it)
-      GQuark source_id = zMapStyleCreateID(source_name) ;
-      (*sources)[source_id] = source ;
+      GQuark source_id = zMapStyleCreateID(source_name.c_str()) ;
+      (*sources)[g_quark_to_string(source_id)] = source ;
 
       result = source ;
     }
@@ -910,9 +910,9 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::getSource(const string &sourc
 {
   ZMapConfigSource result = NULL ;
 
-  if (sources && search_str)
+  if (sources && !source_name.empty())
     {
-      GQuark unique_id = zMapStyleCreateIDFromID(source_name.c_str()) ;
+      GQuark unique_id = zMapStyleCreateID(source_name.c_str()) ;
       const char *search_str = g_quark_to_string(unique_id) ;
       
       // Loop through all sources checking their name and recursively checking their child sources
