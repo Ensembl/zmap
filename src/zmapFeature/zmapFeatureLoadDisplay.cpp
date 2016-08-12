@@ -514,9 +514,13 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::addSource(const string &sourc
       else if (source->url == existing->url ||
                (source->url && existing->url && strcmp(source->url, existing->url) == 0))
         {
-          // Different pointer but duplicate - free the given source and return the existing one.
-          zMapConfigSourceDestroy(source) ;
-          result = existing ;
+          // Different pointer but duplicate - free the existing source and replace with the new one.
+          zMapConfigSourceDestroy(existing) ;
+
+          GQuark source_id = zMapStyleCreateID(source_name.c_str()) ;
+          (*sources)[g_quark_to_string(source_id)] = source ;
+
+          result = source ;
         }
       else
         {
