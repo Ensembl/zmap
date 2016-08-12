@@ -691,7 +691,7 @@ gboolean zMapWindowXRemoteRegister(ZMapWindow window) ;
 char *zMapWindowRemoteReceiveAccepts(ZMapWindow window);
 void zMapWindowSetupXRemote(ZMapWindow window, GtkWidget *widget);
 
-char *zMapWindowGetSelectionText(ZMapWindow window, ZMapWindowDisplayStyle display_style) ;
+char *zMapWindowGetSelectionText(ZMapWindow window, ZMapWindowDisplayStyle display_style, const gboolean expand_children = FALSE) ;
 
 ZMapGuiNotebookChapter zMapWindowGetConfigChapter(ZMapWindow window, ZMapGuiNotebook parent);
 

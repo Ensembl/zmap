@@ -2256,7 +2256,7 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
     }
   else
     {
-      select.secondary_text = zmapWindowMakeFeatureSelectionTextFromSelection(window, display_style) ;
+      select.secondary_text = zmapWindowMakeFeatureSelectionTextFromSelection(window, display_style, TRUE) ;
     }
 
   /* this puts the DNA in the clipbaord */
