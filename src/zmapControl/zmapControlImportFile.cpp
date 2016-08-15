@@ -479,7 +479,7 @@ static void importSource(ZMapConfigSource server,
       createSourceData(view, sequence_map, server) ;
 
       GError *g_error = NULL ;
-      zMapViewSetUpServerConnection(view, server, req_start, req_end, false, &g_error) ;
+      zMapViewSetUpServerConnection(view, server, req_sequence, req_start, req_end, false, &g_error) ;
 
       if (g_error)
         {
@@ -562,7 +562,7 @@ static void importFileCB(ZMapFeatureSequenceMap sequence_map,
     {      
       for (auto &iter : *sequence_map->sources)
         {
-          importSource(iter.second, view, sequence_map, req_sequence, req_start, req_end, recent_only) ;
+          importSource(iter.second, view, sequence_map, req_sequence_txt, req_start, req_end, recent_only) ;
         }
     }
   else

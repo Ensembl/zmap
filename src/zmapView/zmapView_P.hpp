@@ -498,7 +498,8 @@ void zmapViewStepListDestroy(ZMapViewConnectionStepList step_list) ;
 
 void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req_featuresets, GList *req_biotypes,
                           ZMapConfigSource server,
-                          int features_start, int features_end, const bool thread_fail_silent,
+                          const char *req_sequence, int features_start, int features_end, 
+                          const bool thread_fail_silent,
                           gboolean group, gboolean make_new_connection, gboolean terminate) ;
 
 GQuark zmapViewSrc2FSetGetID(GHashTable *source_2_featureset, char *source_name) ;

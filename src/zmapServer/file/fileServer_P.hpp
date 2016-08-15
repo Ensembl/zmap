@@ -56,6 +56,7 @@ typedef struct FileServerStruct_
   char *last_err_msg ;
   char *styles_file ;
 
+  GQuark req_sequence;
   int gff_version, zmap_start, zmap_end, exit_code ;
 
   gboolean sequence_server, is_otter, error ;

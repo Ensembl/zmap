@@ -364,6 +364,7 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
       GQuark file_quark = g_quark_from_string(filename) ;
       ZMapFeatureParserCache parser_cache = NULL ;
 
+      server->req_sequence = req_open->req_sequence ;
       server->zmap_start = req_open->zmap_start;
       server->zmap_end = req_open->zmap_end;
 
@@ -461,7 +462,7 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
                   if (!server->parser)
                     {
                       server->parser = zMapGFFCreateParser(server->gff_version,
-                                                           server->sequence_map->sequence,
+                                                           g_quark_to_string(server->req_sequence),
                                                            server->zmap_start, server->zmap_end) ;
                     }
 
@@ -979,8 +980,8 @@ static char *make_arg(PipeArg pipe_arg, const char *prefix, PipeServer server)
         q = g_strdup_printf("%s%s=%s",prefix,pipe_arg->arg,server->sequence_map->dataset);
       break;
     case PA_FLAG_SEQUENCE:
-      if (server->sequence_map->sequence)
-        q = g_strdup_printf("%s%s=%s",prefix,pipe_arg->arg,server->sequence_map->sequence);
+      if (g_quark_to_string(server->req_sequence))
+        q = g_strdup_printf("%s%s=%s",prefix,pipe_arg->arg, g_quark_to_string(server->req_sequence));
       break;
     default:
       zMapLogCritical("Bad pipe_arg->flag %d !!", pipe_arg->flag) ;

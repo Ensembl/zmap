@@ -152,8 +152,15 @@ typedef struct ConnectionDataStructType
 
 
   /* Why are start/end separate...are they not in sequence_map ??? */
+  /* gb10: the request region may be different to the view region (in the sequence map) if
+     requesting e.g. from the mark. The sequence name may also be different if we're requesting
+     from a server where we need to look up the sequence using a different name, e.g. "chr1"
+     rather than "chr1-38". Maybe we could make a copy of the sequence map with these updated
+     values in it but I'm not sure that's any better (for most sources we don't need to change
+     them so will end up with many unnecessary copies of the sequence map) */
   ZMapFeatureSequenceMap sequence_map;
   gint start,end;
+  GQuark req_sequence;
 
   /* Move into loaded_features ? */
   GError *error;
@@ -253,7 +260,7 @@ static ZMapViewConnection createViewConnection(ZMapView zmap_view,
                                                GList *req_featuresets,
                                                GList *req_biotypes,
                                                gboolean dna_requested,
-                                               gint start,gint end,
+                                               const char *req_sequence, gint start,gint end,
                                                gboolean terminate);
 static void destroyViewConnection(ZMapView view, ZMapViewConnection view_conn) ;
 static void killGUI(ZMapView zmap_view) ;
@@ -362,7 +369,7 @@ static gboolean viewSetUpServerConnections(ZMapView zmap_view, GList *settings_l
 static ZMapViewConnection zmapViewRequestServer(ZMapView view, ZMapViewConnection view_conn,
                                                 ZMapFeatureBlock block_orig, GList *req_featuresets, GList *req_biotypes,
                                                 ZMapConfigSource server,
-                                                int req_start, int req__end,
+                                                const char *req_sequence, int req_start, int req__end,
                                                 gboolean dna_requested, gboolean terminate, gboolean show_warning) ;
 
 
@@ -1376,7 +1383,7 @@ void zMapViewShowLoadStatus(ZMapView view)
 void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, 
                           GList *req_sources, GList *req_biotypes,
                           ZMapConfigSource server,
-                          int features_start, int features_end,
+                          const char *req_sequence, int features_start, int features_end,
                           const bool thread_fail_silent,
                           gboolean group_flag, gboolean make_new_connection, gboolean terminate)
 {
@@ -1418,7 +1425,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig,
         }
 
       view_conn = zmapViewRequestServer(view, NULL, block_orig, req_sources, req_biotypes, server,
-                                        req_start, req_end, dna_requested, terminate, !thread_fail_silent);
+                                        req_sequence, req_start, req_end, dna_requested, terminate, !thread_fail_silent);
       if(view_conn)
         requested = TRUE;
     }
@@ -1584,7 +1591,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig,
 
 
               view_conn = zmapViewRequestServer(view, view_conn, block_orig, req_featuresets, req_biotypes,
-                                                server, req_start, req_end,
+                                                server, req_sequence, req_start, req_end,
                                                 dna_requested,
                                                 (!existing && terminate), !thread_fail_silent) ;
 
@@ -1844,7 +1851,7 @@ void zmapViewEraseFeatures(ZMapView view, ZMapFeatureContext context, GList **fe
 static ZMapViewConnection zmapViewRequestServer(ZMapView view, ZMapViewConnection view_conn,
                                                 ZMapFeatureBlock block_orig, GList *req_featuresets, GList *req_biotypes,
                                                 ZMapConfigSource server,
-                                                int req_start, int req_end,
+                                                const char *req_sequence, int req_start, int req_end,
                                                 gboolean dna_requested, gboolean terminate, gboolean show_warning)
 {
   ZMapFeatureContext context ;
@@ -1899,7 +1906,7 @@ static ZMapViewConnection zmapViewRequestServer(ZMapView view, ZMapViewConnectio
                                         req_featuresets,
                                         req_biotypes,
                                         dna_requested,
-                                        req_start,req_end,
+                                        req_sequence, req_start,req_end,
                                         terminate || is_pipe)))
     {
       /* Why does this need reiniting ? */
@@ -2008,9 +2015,12 @@ static bool setUpServerConnectionByScheme(ZMapView zmap_view,
 
 
 /* Set up a connection to a single named server and load features for the given region.
+ * Optionally req_sequence can be given if the sequence name to look up in the server is different
+ * to that in the view.
  * Does nothing if the server is delayed. Sets the error if there is a problem. */
 void zMapViewSetUpServerConnection(ZMapView zmap_view, 
                                    ZMapConfigSource current_server, 
+                                   const char *req_sequence,
                                    const int req_start,
                                    const int req_end,
                                    const bool thread_fail_silent,
@@ -2057,7 +2067,7 @@ void zMapViewSetUpServerConnection(ZMapView zmap_view,
             {
               /* Load the features for the server */
               zmapViewLoadFeatures(zmap_view, NULL, req_featuresets, req_biotypes, current_server,
-                                   req_start, req_end, thread_fail_silent,
+                                   req_sequence, req_start, req_end, thread_fail_silent,
                                    SOURCE_GROUP_START,TRUE, terminate) ;
             }
         }
@@ -2075,6 +2085,7 @@ void zMapViewSetUpServerConnection(ZMapView zmap_view,
 
   zMapViewSetUpServerConnection(zmap_view, 
                                 current_server, 
+                                NULL,
                                 zmap_view->view_sequence->start,
                                 zmap_view->view_sequence->end,
                                 zmap_view->thread_fail_silent,
@@ -4119,6 +4130,7 @@ static gboolean dispatchContextRequests(ZMapViewConnection connection, ZMapServe
       ZMapServerReqOpen open = (ZMapServerReqOpen) req_any;
 
       open->sequence_map = connect_data->sequence_map;
+      open->req_sequence = connect_data->req_sequence;
       open->zmap_start = connect_data->start;
       open->zmap_end = connect_data->end;
       }
@@ -4875,6 +4887,7 @@ static ZMapViewConnection createViewConnection(ZMapView zmap_view,
                                                GList *req_featuresets,
                                                GList *req_biotypes,
                                                gboolean dna_requested,
+                                               const char *req_sequence,
                                                gint features_start, gint features_end,
                                                gboolean terminate)
 {
@@ -4975,12 +4988,20 @@ static ZMapViewConnection createViewConnection(ZMapView zmap_view,
          coordinates were buried in blocks in the context supplied incidentally when requesting
          features after extracting other data from the server.  Obviously done to handle multiple
          blocks but it's another iso 7 violation  */
-
+      
       connect_data->start = features_start;
       connect_data->end = features_end;
 
       /* likewise this has to get copied through a series of data structs */
       connect_data->sequence_map = zmap_view->view_sequence;
+
+      /* gb10: also added the req_sequence here. This is non-null if the sequence name we need to
+         look up in the server is different to the sequence name in the view. Otherwise, use the
+         sequence name from the sequence map */
+      if (req_sequence)
+        connect_data->req_sequence = g_quark_from_string(req_sequence) ;
+      else if (zmap_view->view_sequence)
+        connect_data->req_sequence = g_quark_from_string(zmap_view->view_sequence->sequence) ;
 
       connect_data->display_after = ZMAP_SERVERREQ_FEATURES ;
 
@@ -5997,7 +6018,7 @@ static void commandCB(ZMapWindow window, void *caller_data, void *window_data)
           }
 
         zmapViewLoadFeatures(view, get_data->block, get_data->feature_set_ids, NULL, NULL,
-                             req_start, req_end, view->thread_fail_silent,
+                             NULL, req_start, req_end, view->thread_fail_silent,
                              SOURCE_GROUP_DELAYED, TRUE, FALSE) ;        /* don't terminate, need to keep alive for blixem */
 
         break ;

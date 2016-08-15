@@ -305,7 +305,7 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
 
   zMapReturnValIfFail(server && req_open && req_open->sequence_map, ZMAP_SERVERRESPONSE_REQFAIL) ;
 
-  server->sequence = g_strdup(req_open->sequence_map->sequence) ;
+  server->sequence = g_strdup(g_quark_to_string(req_open->req_sequence)) ;
   server->zmap_start = req_open->zmap_start ;
   server->zmap_end = req_open->zmap_end ;
 

@@ -137,7 +137,7 @@ static const char *find_tag(const char * str, const char *tag) ;
  * Optionally a feature start/end range may be specified, if start and end are 0 then
  * all features for the reference sequence are parsed from the gff.
  */
-ZMapGFFParser zMapGFFCreateParser_V2(char *sequence, int features_start, int features_end)
+ZMapGFFParser zMapGFFCreateParser_V2(const char *sequence, int features_start, int features_end)
 {
   ZMapGFF2Parser parser = NULL ;
   ZMapGFFParser parser_base = NULL ;
