@@ -1427,7 +1427,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig,
       /* OH DEAR...THINK WE MIGHT NEED THE CONFIG FILE HERE TOO.... */
 
      /* mh17: this is tedious to do for each request esp on startup */
-      sources = view->view_sequence->addSourcesFromConfig(NULL, NULL) ;
+      sources = view->view_sequence->getSources(true) ;
       ghash = getFeatureSourceHash(sources);
 
       for ( ; req_sources ; req_sources = g_list_next(req_sources))
