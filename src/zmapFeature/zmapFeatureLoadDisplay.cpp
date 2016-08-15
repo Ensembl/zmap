@@ -493,15 +493,13 @@ ZMapFeatureSequenceMapStructType* ZMapFeatureSequenceMapStructType::copy()
 }
 
 
-/* Add a source to our list of user-created sources. Sets the error if the name already exists and
- * the source is different to the existing one. If this is a duplicate of an existing source then
- * it frees the given source and returns the original. */
-ZMapConfigSource ZMapFeatureSequenceMapStructType::addSource(const string &source_name, 
-                                                             ZMapConfigSource source, 
-                                                             GError **error)
+/* Add a source to our list of user-created sources. Sets the error if the source cannot be
+ * added, e.g. if the name already exsits. If the name exists and already points to this source
+ * then does nothing. */
+void ZMapFeatureSequenceMapStructType::addSource(const string &source_name, 
+                                                 ZMapConfigSource source, 
+                                                 GError **error)
 {
-  ZMapConfigSource result = source ;
-
   // Check if the source has already been added.
   ZMapConfigSource existing = getSource(source_name) ;
 
@@ -509,27 +507,14 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::addSource(const string &sourc
     {
       if (source == existing)
         {
-          // Same pointer as existing; nothing to do; already have ownership
-        }
-      else if (source->url == existing->url ||
-               (source->url && existing->url && strcmp(source->url, existing->url) == 0))
-        {
-          // Different pointer but duplicate - free the existing source and replace with the new one.
-          zMapConfigSourceDestroy(existing) ;
-
-          GQuark source_id = zMapStyleCreateID(source_name.c_str()) ;
-          (*sources)[g_quark_to_string(source_id)] = source ;
-
-          result = source ;
+          // Same pointer as existing; nothing to do
         }
       else
         {
-          // Different source with same name; error. Return the given source so the caller can
-          // decide what to do with it.
+          // Different source with same name; error.
           g_set_error(error, g_quark_from_string("ZMap"), 99,
                       "Source '%s' already exists with a different url:\nPrevious url: %s\nNew url:%s", 
                       source_name.c_str(), source->url, existing->url) ;
-          result = source ;
         }
     }
   else
@@ -541,11 +526,7 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::addSource(const string &sourc
       // Convert name to a unique id (i.e. lowercase it)
       GQuark source_id = zMapStyleCreateID(source_name.c_str()) ;
       (*sources)[g_quark_to_string(source_id)] = source ;
-
-      result = source ;
     }
-
-  return result ;
 }
 
 
@@ -598,7 +579,7 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::createSource(const char *sour
       /* Add it to the sources list (unless it's a child, in which case it will be acccessed via its
        * parent hierarchy) */
       if (!is_child)
-        source = addSource(source_name_str, source, &tmp_error) ;
+        addSource(source_name_str, source, &tmp_error) ;
 
       /* Recursively create any child sources */
       if (!tmp_error && source->children.empty())
@@ -816,7 +797,7 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::createFileSource(const char *
 
       /* Add the source to our list. */
       GError *error = NULL ;
-      src = addSource(source_name, src, &error) ;
+      addSource(source_name, src, &error) ;
 
       if (error)
         {
@@ -865,7 +846,7 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::createPipeSource(const char *
 
       /* Add the source to our list. Use the filename as the source name if none given */
       GError *error = NULL ;
-      src = addSource(source_name, src, &error) ;
+      addSource(source_name, src, &error) ;
 
       if (error)
         {
@@ -1080,7 +1061,7 @@ void ZMapFeatureSequenceMapStructType::addSourcesFromConfig(const char *filename
           GError *tmp_error = NULL ;
 
           // Add the source to our internal list and take ownership
-          source = addSource(source_name, source, &tmp_error) ;
+          addSource(source_name, source, &tmp_error) ;
 
           if (tmp_error)
             {
@@ -1094,11 +1075,8 @@ void ZMapFeatureSequenceMapStructType::addSourcesFromConfig(const char *filename
             }
           else
             {
-              // Recursively create any child sources (only if not already created - addSource
-              // might have returned an existing source if it had already been added before, in
-              // which case the children will already have been created).
-              if (!tmp_error && source->children.size() == 0)
-                createSourceChildren(source, &tmp_error) ;
+              // Recursively create any child sources
+              createSourceChildren(source, &tmp_error) ;
             }
         }
     }

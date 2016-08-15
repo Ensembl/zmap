@@ -314,7 +314,7 @@ typedef struct ZMapFeatureSequenceMapStructType
   bool runningUnderOtter() ;
 
 private:
-  ZMapConfigSource addSource(const std::string &source_name, ZMapConfigSourceStruct *source, GError **error) ;
+  void addSource(const std::string &source_name, ZMapConfigSourceStruct *source, GError **error) ;
   void createSourceChildren(ZMapConfigSource source, GError **error = NULL) ;
   void createTrackhubSourceChild(ZMapConfigSource parent_source, const gbtools::trackhub::Track &track) ;
 
