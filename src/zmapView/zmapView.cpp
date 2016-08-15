@@ -1613,9 +1613,6 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig,
       zMapViewShowLoadStatus(view);
     }
 
-  if (sources)
-    zMapConfigSourcesFreeList(sources);
-
   if (ghash)
     g_hash_table_destroy(ghash);
 
