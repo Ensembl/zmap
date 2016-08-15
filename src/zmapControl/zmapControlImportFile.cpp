@@ -79,7 +79,7 @@ typedef struct MainFrameStruct_
   GtkWidget *end_widg ;
   /*GtkWidget *whole_widg ;*/
   GtkWidget *dataset_widg;
-  //GtkWidget *req_sequence_widg ;
+  GtkWidget *req_sequence_widg ;
   GtkWidget *req_start_widg ;
   GtkWidget *req_end_widg ;
 
@@ -337,12 +337,12 @@ static GtkWidget *makeOptionsBox(MainFrame main_frame, const char *req_sequence,
   entrybox = gtk_vbox_new(TRUE, 0) ;
   gtk_box_pack_start(GTK_BOX(hbox), entrybox, TRUE, TRUE, 0) ;
 
-  //main_frame->req_sequence_widg = entry = gtk_entry_new() ;
-  //gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE) ;
-  //gtk_entry_set_text(GTK_ENTRY(entry), sequence) ;
-  //gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, TRUE, 0) ;
-  //gtk_widget_set_tooltip_text(main_frame->req_sequence_widg, 
-  //                            "The sequence name to look for in the source (if different to the name in ZMap)") ;
+  main_frame->req_sequence_widg = entry = gtk_entry_new() ;
+  gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE) ;
+  gtk_entry_set_text(GTK_ENTRY(entry), sequence) ;
+  gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, TRUE, 0) ;
+  gtk_widget_set_tooltip_text(main_frame->req_sequence_widg, 
+                              "The sequence name to look for in the source (if different to the name in ZMap)") ;
 
   main_frame->req_start_widg = entry = gtk_entry_new() ;
   gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE) ;
@@ -385,7 +385,7 @@ static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data)
 
 static void validateReqSequence(bool &status,
                                 std::string &err_msg,
-                                //const char *req_sequence_txt, 
+                                const char *req_sequence_txt, 
                                 const char *req_start_txt, 
                                 const char *req_end_txt,
                                 int &req_start,
@@ -397,7 +397,7 @@ static void validateReqSequence(bool &status,
    */
   if (status)
     {
-      if (/*req_sequence_txt &&*/ *req_start_txt && *req_end_txt)
+      if (req_sequence_txt && *req_start_txt && *req_end_txt)
         {
           if (!zMapStr2Int(req_start_txt, &req_start) || req_start < 1)
             {
@@ -469,6 +469,7 @@ static void createSourceData(ZMapView view,
 static void importSource(ZMapConfigSource server,
                          ZMapView view,
                          ZMapFeatureSequenceMap sequence_map,
+                         const char *req_sequence,
                          const int req_start,
                          const int req_end,
                          const bool recent_only)
@@ -490,7 +491,7 @@ static void importSource(ZMapConfigSource server,
       // Recurse through children
       for (auto child : server->children)
         {
-          importSource(child, view, sequence_map, req_start, req_end, recent_only) ;
+          importSource(child, view, sequence_map, req_sequence, req_start, req_end, recent_only) ;
         }
     }
 }
@@ -521,7 +522,7 @@ static void importFileCB(ZMapFeatureSequenceMap sequence_map,
   std::string err_msg("") ;
   const char *req_start_txt= NULL ;
   const char *req_end_txt = NULL ;
-  //const char *req_sequence_txt = NULL ;
+  const char *req_sequence_txt = NULL ;
   int start = 0 ;
   int req_start = 0 ;
   int req_end = 0 ;
@@ -541,7 +542,7 @@ static void importFileCB(ZMapFeatureSequenceMap sequence_map,
 
   view = zMapViewGetView(zmap->focus_viewwindow);
 
-  //req_sequence_txt = gtk_entry_get_text(GTK_ENTRY(main_frame->req_sequence_widg)) ;
+  req_sequence_txt = gtk_entry_get_text(GTK_ENTRY(main_frame->req_sequence_widg)) ;
   req_start_txt = gtk_entry_get_text(GTK_ENTRY(main_frame->req_start_widg)) ;
   req_end_txt = gtk_entry_get_text(GTK_ENTRY(main_frame->req_end_widg)) ;
 
@@ -549,7 +550,7 @@ static void importFileCB(ZMapFeatureSequenceMap sequence_map,
    * and also set the err_msg. The start/end/strand functions also set the int from the string. 
    */
   validateReqSequence(status, err_msg, 
-                      //req_sequence_txt, 
+                      req_sequence_txt, 
                       req_start_txt, req_end_txt, 
                       req_start, req_end, start) ;
 
@@ -561,7 +562,7 @@ static void importFileCB(ZMapFeatureSequenceMap sequence_map,
     {      
       for (auto &iter : *sequence_map->sources)
         {
-          importSource(iter.second, view, sequence_map, req_start, req_end, recent_only) ;
+          importSource(iter.second, view, sequence_map, req_sequence, req_start, req_end, recent_only) ;
         }
     }
   else
