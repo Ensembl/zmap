@@ -319,9 +319,9 @@ static GtkWidget *makeOptionsBox(MainFrame main_frame, const char *req_sequence,
   labelbox = gtk_vbox_new(TRUE, 0) ;
   gtk_box_pack_start(GTK_BOX(hbox), labelbox, FALSE, FALSE, 0) ;
 
-  //label = gtk_label_new( "Sequence " ) ;
-  //tk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5);
-  //gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, FALSE, 0) ;
+  label = gtk_label_new( "Sequence " ) ;
+  gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5);
+  gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, FALSE, 0) ;
 
   label = gtk_label_new( "Start " ) ;
   gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, FALSE, 0) ;
@@ -342,21 +342,21 @@ static GtkWidget *makeOptionsBox(MainFrame main_frame, const char *req_sequence,
   gtk_entry_set_text(GTK_ENTRY(entry), sequence) ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, TRUE, 0) ;
   gtk_widget_set_tooltip_text(main_frame->req_sequence_widg, 
-                              "The sequence name to look for in the source (if different to the name in ZMap)") ;
+                              "The sequence name to look for in the source, if different to the name in ZMap\n\ne.g.\nOtter 'chr1-38'\nTrackhub 'chr1'\nEnsembl '1'") ;
 
   main_frame->req_start_widg = entry = gtk_entry_new() ;
   gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE) ;
   gtk_entry_set_text(GTK_ENTRY(entry), (start ? start : "")) ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
   gtk_widget_set_tooltip_text(main_frame->req_start_widg, 
-                              "The range to import data for (defaults to the mark, if set, or the full ZMap range if not)") ;
+                              "The range to import data for (when you open the Import dialog this defaults to the mark, if set, or the full ZMap range if not)") ;
 
   main_frame->req_end_widg = entry = gtk_entry_new() ;
   gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE) ;
   gtk_entry_set_text(GTK_ENTRY(entry), (end ? end : "")) ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
   gtk_widget_set_tooltip_text(main_frame->req_end_widg, 
-                              "The range to import data for (defaults to the mark, if set, or the full ZMap range if not)") ;
+                              "The range to import data for (when you open the Import dialog this defaults to the mark, if set, or the full ZMap range if not)") ;
 
 
 
