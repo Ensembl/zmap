@@ -290,8 +290,8 @@ typedef struct ZMapFeatureSequenceMapStructType
   char* getSourceURL(const std::string &source_name) ;
   GList* getSources(const bool include_children = true) ;
   void getSourceChildren(ZMapConfigSource source, GList **result) ;
-  GList* addSourcesFromConfig(const char *filename, const char *config_str, char **stylesfile) ;
-  GList* addSourcesFromConfig(const char *config_str, char **stylesfile) ;
+  void addSourcesFromConfig(const char *filename, const char *config_str, char **stylesfile) ;
+  void addSourcesFromConfig(const char *config_str, char **stylesfile) ;
   bool updateContext(_ZMapConfigIniContextStruct *context, ZMapConfigIniFileType file_type) ;
 
   ZMapConfigSource createSource(const char *source_name, const char *url, 
@@ -314,9 +314,8 @@ typedef struct ZMapFeatureSequenceMapStructType
 
 private:
   ZMapConfigSource addSource(const std::string &source_name, ZMapConfigSourceStruct *source, GError **error) ;
-  void createSourceChildren(ZMapConfigSource source, GList **results_out = NULL, GError **error = NULL) ;
-  void createTrackhubSourceChild(ZMapConfigSource parent_source, const gbtools::trackhub::Track &track,
-                                 GList **results_out = NULL) ;
+  void createSourceChildren(ZMapConfigSource source, GError **error = NULL) ;
+  void createTrackhubSourceChild(ZMapConfigSource parent_source, const gbtools::trackhub::Track &track) ;
 
 } ZMapFeatureSequenceMapStruct, *ZMapFeatureSequenceMap ;
 

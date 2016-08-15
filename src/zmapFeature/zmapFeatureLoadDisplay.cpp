@@ -602,7 +602,7 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::createSource(const char *sour
 
       /* Recursively create any child sources */
       if (!tmp_error && source->children.empty())
-        createSourceChildren(source, NULL, &tmp_error) ;
+        createSourceChildren(source, &tmp_error) ;
 
       /* Indicate that there are changes that need saving */
       if (!tmp_error)
@@ -629,7 +629,6 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::createSource(const char *sour
 /* Some sources (namely trackhub) may have child tracks. This function creates a source for each
  * child track. */
 void ZMapFeatureSequenceMapStructType::createSourceChildren(ZMapConfigSource source,
-                                                            GList **results_out,
                                                             GError **error)
 {
   ZMapURL zmap_url = url_parse(source->url, NULL);
@@ -649,7 +648,7 @@ void ZMapFeatureSequenceMapStructType::createSourceChildren(ZMapConfigSource sou
               // Create a source for each individual track in this trackdb
               for (auto &track : trackdb.tracks())
                 {
-                  createTrackhubSourceChild(source, track, results_out) ;
+                  createTrackhubSourceChild(source, track) ;
                 }
             }
           else
@@ -670,8 +669,7 @@ void ZMapFeatureSequenceMapStructType::createSourceChildren(ZMapConfigSource sou
 
 /* Recursively create a server for a given trackhub track and its children */
 void ZMapFeatureSequenceMapStructType::createTrackhubSourceChild(ZMapConfigSource parent_source,
-                                                                 const gbtools::trackhub::Track &track,
-                                                                 GList **results_out)
+                                                                 const gbtools::trackhub::Track &track)
 {
   zMapReturnIfFail(parent_source) ;
 
@@ -700,12 +698,6 @@ void ZMapFeatureSequenceMapStructType::createTrackhubSourceChild(ZMapConfigSourc
                                                  true, false,
                                                  &g_error) ;
 
-      if (results_out && !track.url().empty() &&
-          strncasecmp(track.url().c_str(), "trackhub://", 11) != 0)
-        {
-          *results_out = g_list_append(*results_out, new_source) ;
-        }
-
       if (new_source && !g_error)
         {
           // Success. Set the delayed flag if the track should be hidden by default.
@@ -717,7 +709,7 @@ void ZMapFeatureSequenceMapStructType::createTrackhubSourceChild(ZMapConfigSourc
           // Recurse through any child tracks
           for (auto &child_track : track.children())
             {
-              createTrackhubSourceChild(new_source, child_track, results_out) ;
+              createTrackhubSourceChild(new_source, child_track) ;
             }
         }
       else if (g_error)
@@ -1019,12 +1011,10 @@ void ZMapFeatureSequenceMapStructType::getSourceChildren(ZMapConfigSource source
  * newly-added sources. Note that this only returns the top level sources and not any child
  * sources (the return is only used in a twisty bit of code in zmapViewLoadFeatures which could
  * probably be improved but I'm preserving the original behaviour for now.) */
-GList* ZMapFeatureSequenceMapStructType::addSourcesFromConfig(const char *filename,
-                                                              const char *config_str,
-                                                              char **stylesfile)
+void ZMapFeatureSequenceMapStructType::addSourcesFromConfig(const char *filename,
+                                                            const char *config_str,
+                                                            char **stylesfile)
 {
-  GList *result = NULL ;
-
   // This will be the list of names from the sources stanza
   char *source_names = NULL ;
 
@@ -1065,33 +1055,24 @@ GList* ZMapFeatureSequenceMapStructType::addSourcesFromConfig(const char *filena
             }
           else
             {
-              // Add it to the output list (if it has data)
-              if (source && source->url && *source->url != '\0' &&
-                  strncasecmp(source->url, "trackhub://", 11) != 0)
-                {
-                  result = g_list_append(result, source) ;
-                }
-
               // Recursively create any child sources (only if not already created - addSource
               // might have returned an existing source if it had already been added before, in
               // which case the children will already have been created).
               if (!tmp_error && source->children.size() == 0)
-                createSourceChildren(source, &result, &tmp_error) ;
+                createSourceChildren(source, &tmp_error) ;
             }
         }
     }
 
   if (sources_list)
     g_list_free(sources_list) ;
-
-  return result ;
 }
 
 
-GList* ZMapFeatureSequenceMapStructType::addSourcesFromConfig(const char *config_str,
-                                                              char **stylesfile)
+void ZMapFeatureSequenceMapStructType::addSourcesFromConfig(const char *config_str,
+                                                            char **stylesfile)
 {
-  return addSourcesFromConfig(config_file, config_str, stylesfile) ;
+  addSourcesFromConfig(config_file, config_str, stylesfile) ;
 }
 
 
