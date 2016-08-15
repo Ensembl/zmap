@@ -512,9 +512,7 @@ void ZMapFeatureSequenceMapStructType::addSource(const string &source_name,
       else
         {
           // Different source with same name; error.
-          g_set_error(error, g_quark_from_string("ZMap"), 99,
-                      "Source '%s' already exists with a different url:\nPrevious url: %s\nNew url:%s", 
-                      source_name.c_str(), source->url, existing->url) ;
+          g_set_error(error, g_quark_from_string("ZMap"), 99, "Source already exists") ;
         }
     }
   else
