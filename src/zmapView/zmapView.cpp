@@ -1424,9 +1424,9 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig,
     }
   else
     {
-      /* OH DEAR...THINK WE MIGHT NEED THE CONFIG FILE HERE TOO.... */
-
-     /* mh17: this is tedious to do for each request esp on startup */
+      /* mh17: this is tedious to do for each request esp on startup */
+      /* gb10: this hash table could be part of ZMapFeatureSequenceMap to avoid having
+       * to recreate it each time */
       sources = view->view_sequence->getSources(true) ;
       ghash = getFeatureSourceHash(sources);
 

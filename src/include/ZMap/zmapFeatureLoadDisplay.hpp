@@ -286,6 +286,7 @@ typedef struct ZMapFeatureSequenceMapStructType
   void setFlag(ZMapFlag flag, const gboolean value) ;
 
   ZMapConfigSource getSource(const std::string &source_name) ;
+  ZMapConfigSource getSource(const std::string &source_name, const std::string &url) ;
   const char* getSourceName(ZMapConfigSource source) ;
   char* getSourceURL(const std::string &source_name) ;
   GList* getSources(const bool include_children = true) ;

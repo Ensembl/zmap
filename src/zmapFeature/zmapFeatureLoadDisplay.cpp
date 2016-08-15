@@ -574,8 +574,8 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::createSource(const char *sour
   ZMapConfigSource source = NULL ;
   zMapReturnValIfFail(url, source) ;
 
-  // Check if there's already a source with this name and return that if found
-  source = getSource(source_name) ;
+  // Check if there's already a source with this name and url and return that if found
+  source = getSource(source_name, url) ;
 
   if (!source)
     {
@@ -786,31 +786,45 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::createFileSource(const char *
 {
   ZMapConfigSource src = NULL ;
   zMapReturnValIfFail(file, src) ;
+  
+  string url ;
 
-  /* Create the new source */
-  src = new ZMapConfigSourceStruct ;
-
-  src->name_ = g_quark_from_string(source_name_in) ;
-  src->group = SOURCE_GROUP_START ;        // default_value
-  src->featuresets = g_strdup(ZMAP_DEFAULT_FEATURESETS) ;
-
+  // Prepend "file://" to create the url, unless it's a remote file
   if (strncasecmp(file, "http://", 7) != 0 && 
       strncasecmp(file, "https://", 8) != 0 &&
       strncasecmp(file, "ftp://", 6) != 0)
-    src->url = g_strdup_printf("file:///%s", file) ;
-
-  /* Add the source to our list. Use the filename as the source name if none given */
-  string source_name(source_name_in ? source_name_in : g_path_get_basename(file)) ;
-  GError *error = NULL ;
-
-  src = addSource(source_name, src, &error) ;
-
-  if (error)
     {
-      zMapLogWarning("Error creating source for file '%s': %s", file, error->message) ;
-      g_error_free(error) ;
-      zMapConfigSourceDestroy(src) ;
-      src = NULL ;
+      url = "file:///" ;
+      url += file ;
+    }
+
+  // Use the filename as the source name if none given
+  string source_name(source_name_in ? source_name_in : g_path_get_basename(file)) ;
+  
+  // Check if there's already a source with this name and url and return that if found
+  src = getSource(source_name, url) ;
+
+  if (!src)
+    {
+      /* Create the new source */
+      src = new ZMapConfigSourceStruct ;
+
+      src->name_ = g_quark_from_string(source_name_in) ;
+      src->group = SOURCE_GROUP_START ;        // default_value
+      src->featuresets = g_strdup(ZMAP_DEFAULT_FEATURESETS) ;
+      src->url = g_strdup(url.c_str()) ;
+
+      /* Add the source to our list. */
+      GError *error = NULL ;
+      src = addSource(source_name, src, &error) ;
+
+      if (error)
+        {
+          zMapLogWarning("Error creating source for file '%s': %s", file, error->message) ;
+          g_error_free(error) ;
+          zMapConfigSourceDestroy(src) ;
+          src = NULL ;
+        }
     }
 
   return src ;
@@ -826,30 +840,40 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::createPipeSource(const char *
   ZMapConfigSource src = NULL ;
   zMapReturnValIfFail(file && script, src) ;
 
-  /* Create the new source */
-  src = new ZMapConfigSourceStruct ;
+  // Use the filename as the source name if none given
+  string source_name(source_name_in ? source_name_in : g_path_get_basename(file)) ;
 
-  src->name_ = g_quark_from_string(source_name_in) ;
-  src->group = SOURCE_GROUP_START ;        // default_value
-  src->featuresets = g_strdup(ZMAP_DEFAULT_FEATURESETS) ;
+  // Construct the url from the file and args
+  stringstream url ;
+  url << "pipe:///" << script ;
 
   if (args)
-    src->url = g_strdup_printf("pipe:///%s?%s", script, args) ;
-  else
-    src->url = g_strdup_printf("pipe:///%s", script) ;
+    url << "?" << args ;
 
-  /* Add the source to our list. Use the filename as the source name if none given */
-  string source_name(source_name_in ? source_name_in : g_path_get_basename(file)) ;
-  GError *error = NULL ;
+  // Check if there's already a source with this name and url and return that if found
+  src = getSource(source_name, url.str()) ;
 
-  src = addSource(source_name, src, &error) ;
-
-  if (error)
+  if (!src)
     {
-      zMapLogWarning("Error creating source for file '%s': %s", file, error->message) ;
-      g_error_free(error) ;
-      zMapConfigSourceDestroy(src) ;
-      src = NULL ;
+      /* Create the new source */
+      src = new ZMapConfigSourceStruct ;
+
+      src->name_ = g_quark_from_string(source_name_in) ;
+      src->group = SOURCE_GROUP_START ;        // default_value
+      src->featuresets = g_strdup(ZMAP_DEFAULT_FEATURESETS) ;
+      src->url = g_strdup(url.str().c_str()) ;
+
+      /* Add the source to our list. Use the filename as the source name if none given */
+      GError *error = NULL ;
+      src = addSource(source_name, src, &error) ;
+
+      if (error)
+        {
+          zMapLogWarning("Error creating source for file '%s': %s", file, error->message) ;
+          g_error_free(error) ;
+          zMapConfigSourceDestroy(src) ;
+          src = NULL ;
+        }
     }
 
   return src ;
@@ -901,7 +925,8 @@ static ZMapConfigSource findSourceRecursively(ZMapConfigSource source, const cha
 }
 
 
-/* Get the ZMapConfigSource struct for the given source name. */
+/* Get the ZMapConfigSource struct for the given source name. If url is also given then only
+ * return the source if its url also matches. */
 ZMapConfigSource ZMapFeatureSequenceMapStructType::getSource(const string &source_name)
 {
   ZMapConfigSource result = NULL ;
@@ -919,6 +944,20 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::getSource(const string &sourc
           if (result)
             break ;
         }
+    }
+
+  return result ;
+}
+
+ZMapConfigSource ZMapFeatureSequenceMapStructType::getSource(const string &source_name,
+                                                             const string &url)
+{
+  ZMapConfigSource result = getSource(source_name) ;
+
+  if (result && !url.empty())
+    {
+      if (!result->url || strcmp(url.c_str(), result->url) != 0)
+        result = NULL ; // url doesn't match
     }
 
   return result ;
