@@ -51,30 +51,40 @@ using namespace std;
 
 
 /* Columns in the list of sources */
-enum class SourceColumn {NAME, TYPE, TOTAL} ;
+enum class SourceColumn {NAME, TYPE, LOAD, TOTAL} ;
 
 /* Data we need in callbacks. */
 typedef struct MainFrameStructName
 {
   GtkWidget *toplevel ;
+
+  // Sequence details
   GtkWidget *sequence_widg ;
   GtkWidget *start_widg ;
   GtkWidget *end_widg ;
+
+  // Config file
   GtkWidget *config_widg ;
 
+  // Config file chooser
   GtkWidget *chooser_widg ;
 
+  // 'Recent' button
+  GtkWidget *recent_widg ;
+
   ZMapFeatureSequenceMap orig_sequence_map ;
-  ZMapFeatureSequenceMapStruct sequence_map ;
   gboolean display_sequence ;
+  bool import ; // importing into existing view
+  bool show_all ; // if true, show all sources; otherwise, filter them
 
   ZMapAppGetSequenceViewCB user_func ;
   gpointer user_data ;
   ZMapAppClosedSequenceViewCB close_func ;
   gpointer close_data ;
 
-  GtkTreeView *tree_view ;
-  GtkTreeModel *model ;
+  // A tree view and model for showing the list of sources
+  GtkTreeView *sources_tree ;
+  GtkTreeModel *sources_model ;
 
 } MainFrameStruct, *MainFrame ;
 
@@ -83,12 +93,13 @@ typedef struct MainFrameStructName
 static GtkWidget *makePanel(GtkWidget *toplevel, gpointer *seqdata_out,
                             ZMapAppGetSequenceViewCB user_func, gpointer user_data,
                             ZMapAppClosedSequenceViewCB close_func, gpointer close_data,
-                            ZMapFeatureSequenceMap sequence_map, gboolean display_sequence) ;
+                            ZMapFeatureSequenceMap sequence_map, 
+                            gboolean display_sequence, gboolean import) ;
 static GtkWidget *makeMainFrame(MainFrame main_data, ZMapFeatureSequenceMap sequence_map) ;
 static GtkWidget *makeButtonBox(MainFrame main_data) ;
 static void setSequenceEntries(MainFrame main_data) ;
 static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data) ;
-static void createViewCB(GtkWidget *widget, gpointer cb_data) ;
+static void applyCB(GtkWidget *widget, gpointer cb_data) ;
 #ifndef __CYGWIN__
 static void chooseConfigCB(GtkFileChooserButton *widget, gpointer user_data) ;
 #endif
@@ -96,12 +107,24 @@ static void defaultsCB(GtkWidget *widget, gpointer cb_data) ;
 static void createSourceCB(GtkWidget *widget, gpointer cb_data) ;
 static void removeSourceCB(GtkWidget *widget, gpointer cb_data) ;
 static void editSourceCB(GtkWidget *widget, gpointer cb_data) ;
+static void clearRecentCB(GtkWidget *button, gpointer data) ;
 static void saveCB(GtkWidget *widget, gpointer cb_data) ;
 static void closeCB(GtkWidget *widget, gpointer cb_data) ;
 static void saveSourcesToConfig(ZMapFeatureSequenceMap sequence_map,
                                 char **filepath_inout, 
                                 GError **error) ;
 static void configChangedCB(GtkWidget *widget, gpointer user_data) ;
+
+static list<ZMapConfigSource> getSelectedSources(GtkTreeView *sources_tree,
+                                                 ZMapFeatureSequenceMap sequence_map,
+                                                 const char *err_msg) ;
+static list<GQuark> getSelectedSourceNames(GtkTreeView *sources_tree,
+                                           const char *err_msg) ;
+static void selectSource(const char *source_name, 
+                         GtkTreeView *tree,
+                         GtkTreeModel *model,
+                         const bool deselect_others = false) ;
+
 
 
 
@@ -124,7 +147,7 @@ GtkWidget *zMapAppGetSequenceView(ZMapAppGetSequenceViewCB user_func, gpointer u
 
   zMapReturnValIfFail(user_func, NULL) ; 
 
-  toplevel = zMapGUIToplevelNew(NULL, "Please specify sequence to be viewed.") ;
+  toplevel = zMapGUIToplevelNew(NULL, "Choose source(s) and sequence to load") ;
 
   gtk_window_set_policy(GTK_WINDOW(toplevel), FALSE, TRUE, FALSE ) ;
   gtk_container_border_width(GTK_CONTAINER(toplevel), 0) ;
@@ -132,7 +155,7 @@ GtkWidget *zMapAppGetSequenceView(ZMapAppGetSequenceViewCB user_func, gpointer u
   container = makePanel(toplevel, &seq_data,
                         user_func, user_data,
                         close_func, close_data,
-                        sequence_map, display_sequence) ;
+                        sequence_map, display_sequence, true) ;
 
   gtk_container_add(GTK_CONTAINER(toplevel), container) ;
   gtk_signal_connect(GTK_OBJECT(toplevel), "destroy",
@@ -145,13 +168,19 @@ GtkWidget *zMapAppGetSequenceView(ZMapAppGetSequenceViewCB user_func, gpointer u
 
 
 /* As for zMapAppGetSequenceView() except that returns a GtkWidget that can be
- * incorporated into a window. */
+ * incorporated into a window. 
+ * If edit_sequence the user will be allowed to enter sequence details (e.g. in order
+ * to create a new view). Otherwise they will not be able to enter new sequene details
+ * and the existing sequence map will be used (e.g. for importing data into an existing view).
+ */
 GtkWidget *zMapCreateSequenceViewWidg(ZMapAppGetSequenceViewCB user_func, gpointer user_data,
-                                      ZMapFeatureSequenceMap sequence_map, gboolean display_sequence)
+                                      ZMapFeatureSequenceMap sequence_map, 
+                                      gboolean display_sequence, gboolean import,
+                                      GtkWidget *toplevel)
 {
   GtkWidget *container = NULL ;
 
-  container = makePanel(NULL, NULL, user_func, user_data, NULL, NULL, sequence_map, display_sequence) ;
+  container = makePanel(toplevel, NULL, user_func, user_data, NULL, NULL, sequence_map, display_sequence, import) ;
 
   return container ;
 }
@@ -168,7 +197,8 @@ GtkWidget *zMapCreateSequenceViewWidg(ZMapAppGetSequenceViewCB user_func, gpoint
 static GtkWidget *makePanel(GtkWidget *toplevel, gpointer *our_data,
                             ZMapAppGetSequenceViewCB user_func, gpointer user_data,
                             ZMapAppClosedSequenceViewCB close_func, gpointer close_data,
-                            ZMapFeatureSequenceMap sequence_map, gboolean display_sequence)
+                            ZMapFeatureSequenceMap sequence_map, 
+                            gboolean display_sequence, gboolean import)
 {
   GtkWidget *frame = NULL ;
   GtkWidget *vbox, *main_frame, *button_box ;
@@ -181,15 +211,16 @@ static GtkWidget *makePanel(GtkWidget *toplevel, gpointer *our_data,
   main_data->close_func = close_func ;
   main_data->close_data = close_data ;
   main_data->orig_sequence_map = sequence_map ;
-  main_data->sequence_map = *sequence_map ;
-  main_data->sequence_map.sequence = g_strdup(main_data->sequence_map.sequence) ;
-  main_data->sequence_map.config_file = g_strdup(main_data->sequence_map.config_file) ;
   main_data->display_sequence = display_sequence ;
+  main_data->import = import ;
+  main_data->show_all = !import ; // only show recent sources in import dialog
 
   if (toplevel)
     {
       main_data->toplevel = toplevel ;
-      *our_data = main_data ;
+
+      if (our_data)
+        *our_data = main_data ;
     }
 
   frame = gtk_frame_new(NULL) ;
@@ -202,7 +233,7 @@ static GtkWidget *makePanel(GtkWidget *toplevel, gpointer *our_data,
   gtk_box_pack_start(GTK_BOX(vbox), main_frame, TRUE, TRUE, 0) ;
 
   button_box = makeButtonBox(main_data) ;
-  gtk_box_pack_start(GTK_BOX(vbox), button_box, TRUE, TRUE, 0) ;
+  gtk_box_pack_start(GTK_BOX(vbox), button_box, FALSE, FALSE, 0) ;
 
   return frame ;
 }
@@ -243,49 +274,144 @@ static void createTreeViewColumn(GtkTreeView *tree_view,
 }
 
 
+/* Called by updateSourcesList to add a single source to the store and to recursively add any
+ * child sources, if it has any */
+static void updateSourcesListAddSource(MainFrame main_data, 
+                                       GtkTreeStore *store, 
+                                       ZMapConfigSource source,
+                                       GtkTreeIter *parent_tree_iter)
+{
+  /* Only show recent sources, if applicable */
+  if (main_data->show_all || source->recent)
+    {
+      string source_type = sourceGetType(source) ;
+
+      /* Create a new row in the list store and set the values */
+      GtkTreeIter tree_iter ;
+      gtk_tree_store_append(store, &tree_iter, parent_tree_iter);
+
+      gtk_tree_store_set(store, &tree_iter, 
+                         SourceColumn::NAME, g_quark_to_string(source->name_),
+                         SourceColumn::TYPE, source_type.c_str(),
+                         SourceColumn::LOAD, !source->delayed,
+                         -1);
+
+      /* Also add child sources, if any */
+      for (ZMapConfigSource child_source : source->children)
+        {
+          updateSourcesListAddSource(main_data, store, child_source, &tree_iter) ;
+        }
+    }
+}
+
+
 /* Update the list of sources on the dialog following a change to the sources in the sequence map */
 static void updateSourcesList(MainFrame main_data, ZMapFeatureSequenceMap sequence_map)
 {
   zMapReturnIfFail(main_data && sequence_map) ;
 
-  if (main_data && main_data->model && sequence_map && sequence_map->sources)
+  if (main_data && main_data->sources_model && sequence_map && sequence_map->sources)
     {
-      GtkListStore *store = GTK_LIST_STORE(main_data->model) ;
-      map<string, ZMapConfigSource> *sources = sequence_map->sources ; 
+      GtkTreeStore *store = GTK_TREE_STORE(main_data->sources_model) ;
 
-      gtk_list_store_clear(store) ;
+      gtk_tree_store_clear(store) ;
 
       /* Loop through all of the sources */
-      for (auto source_iter = sources->begin(); source_iter != sources->end(); ++source_iter)
+      for (auto source_iter : *sequence_map->sources)
         {
-          string source_type = sourceGetType(source_iter->second) ;
+          updateSourcesListAddSource(main_data, store, source_iter.second, NULL) ;
+        }
+    }  
+}
 
-          /* Create a new row in the list store and set the values */
-          GtkTreeIter store_iter ;
-          gtk_list_store_append(store, &store_iter);
 
-          gtk_list_store_set(store, &store_iter, 
-                             SourceColumn::NAME, source_iter->first.c_str(),
-                             SourceColumn::TYPE, source_type.c_str(),
-                             -1);
+/* Set the 'load' flag for a particular row in the tree. Also sets the delayed flag in the
+ * relevant source. Recurses through child paths, and sibling paths if do_siblings is true. */
+static void treePathSetLoadStatus(GtkTreeModel *model,
+                                  GtkTreePath *path, 
+                                  const gboolean load,
+                                  const gboolean do_siblings,
+                                  ZMapFeatureSequenceMap sequence_map)
+{
+  GtkTreeIter iter ;
+  
+  if (path && gtk_tree_model_get_iter(model, &iter, path))
+    {
+      // Update this tree path
+      gtk_tree_store_set(GTK_TREE_STORE(model), &iter, SourceColumn::LOAD, load, -1);
+
+      // Find the source and update the delayed flag
+      char *source_name = NULL ;
+      gtk_tree_model_get(model, &iter, SourceColumn::NAME, &source_name, -1) ;
+
+      if (source_name)
+        {
+          ZMapConfigSource source = sequence_map->getSource(source_name) ;
+
+          if (source)
+            source->delayed = !load ;
+        }
+
+      // Recurse through child paths and siblings (if applicable)
+      GtkTreePath *path_copy = gtk_tree_path_copy(path) ;
+      gtk_tree_path_down(path_copy) ;
+      treePathSetLoadStatus(model, path_copy, load, TRUE, sequence_map) ; // do all child siblings
+      gtk_tree_path_free(path_copy) ;
+      path_copy = NULL ; 
+
+      if (do_siblings)
+        {
+          path_copy = gtk_tree_path_copy(path) ;
+          gtk_tree_path_next(path_copy) ;
+          treePathSetLoadStatus(model, path_copy, load, do_siblings, sequence_map) ;
+          gtk_tree_path_free(path_copy) ;
+          path_copy = NULL ;
         }
     }
-  
+}
+
+
+/* Called when the user toggles the 'load' button for a source. It finds the source at the given
+ * path and toggles its 'delayed' flag to be opposite the value of the 'load' value. */
+static void loadButtonToggledCB(GtkCellRendererToggle *toggle_renderer,
+                                gchar *path_str,
+                                gpointer user_data)
+{
+  MainFrame main_data = (MainFrame)user_data ;
+
+  GtkTreePath *path = gtk_tree_path_new_from_string(path_str) ;
+  GtkTreeIter iter ;
+
+  if (path && gtk_tree_model_get_iter(main_data->sources_model, &iter, path))
+    {
+      // The toggle button is bound to the tree model, so update the value there
+      gboolean cur_value = FALSE ;
+      gtk_tree_model_get(main_data->sources_model, &iter, SourceColumn::LOAD, &cur_value, -1) ;
+      
+      gboolean load = !cur_value ;
+
+      treePathSetLoadStatus(main_data->sources_model, path, load, FALSE, main_data->orig_sequence_map) ;
+    }
+
+  if (path)
+    gtk_tree_path_free(path) ;
 }
 
 
 /* Create the list widget to show all of the existing source names */
 static GtkWidget* createListWidget(ZMapFeatureSequenceMap sequence_map, MainFrame main_data)
 {
-  GtkListStore *store = gtk_list_store_new((gint)(SourceColumn::TOTAL),
-                                           G_TYPE_STRING, G_TYPE_STRING) ;
+  GtkTreeStore *store = gtk_tree_store_new((gint)(SourceColumn::TOTAL),
+                                           G_TYPE_STRING, 
+                                           G_TYPE_STRING,
+                                           G_TYPE_BOOLEAN) ;
 
   GtkTreeView *tree_view = GTK_TREE_VIEW(gtk_tree_view_new_with_model(GTK_TREE_MODEL(store))) ;
 
   if (main_data)
     {
-      main_data->tree_view = tree_view ;
-      main_data->model = GTK_TREE_MODEL(store) ;
+      main_data->sources_tree = tree_view ;
+      main_data->sources_model = GTK_TREE_MODEL(store) ;
     }
 
   /* Update the values in the store with the sources from the sequence map */
@@ -294,15 +420,69 @@ static GtkWidget* createListWidget(ZMapFeatureSequenceMap sequence_map, MainFram
   GtkTreeSelection *tree_selection = gtk_tree_view_get_selection(tree_view) ;
   gtk_tree_selection_set_mode(tree_selection, GTK_SELECTION_MULTIPLE);
 
-  GtkCellRenderer *renderer = gtk_cell_renderer_text_new();
-  createTreeViewColumn(tree_view, "Name", renderer, "text", SourceColumn::NAME) ;
-  createTreeViewColumn(tree_view, "Type", renderer, "text", SourceColumn::TYPE) ;
+  GtkCellRenderer *text_renderer = gtk_cell_renderer_text_new();
+  createTreeViewColumn(tree_view, "Name", text_renderer,   "text",   SourceColumn::NAME) ;
+  createTreeViewColumn(tree_view, "Type", text_renderer,   "text",   SourceColumn::TYPE) ;
+
+  GtkCellRenderer *toggle_renderer = gtk_cell_renderer_toggle_new();
+  gtk_cell_renderer_toggle_set_activatable(GTK_CELL_RENDERER_TOGGLE(toggle_renderer), TRUE) ;
+  g_signal_connect(G_OBJECT(toggle_renderer), "toggled", G_CALLBACK(loadButtonToggledCB), main_data) ;
+
+  createTreeViewColumn(tree_view, "Load", toggle_renderer, "active", SourceColumn::LOAD) ;
 
   return GTK_WIDGET(tree_view) ;
 }
 
 
-/* Create a frame listing all of the available sources, plus buttons to add/edit/remove sources */
+static void onUpdateList(GtkWidget *button, gpointer data)
+{
+  MainFrame main_data = (MainFrame)data ;
+
+  if (main_data)
+    {
+      main_data->show_all = !main_data->show_all ;
+      updateSourcesList(main_data, main_data->orig_sequence_map) ;
+    }
+}
+
+
+/* Utility to create a button with various properties */
+static GtkWidget *createButton(const char *label, 
+                               const char *stock,
+                               const bool icon_only,
+                               const char *tooltip,
+                               GCallback cb_func,
+                               gpointer cb_data,
+                               GtkBox *container)
+{
+  GtkWidget *button = NULL ;
+
+  if (label)
+    {
+      button = gtk_button_new_with_label(label) ;
+      
+      if (stock)
+        gtk_button_set_image(GTK_BUTTON(button), gtk_image_new_from_stock(stock, GTK_ICON_SIZE_BUTTON));
+    }
+  else if (icon_only)
+    {
+      button = gtk_button_new() ;
+      gtk_button_set_image(GTK_BUTTON(button), gtk_image_new_from_stock(stock, GTK_ICON_SIZE_BUTTON));
+    }
+  else
+    {
+      button = gtk_button_new_from_stock(stock) ;
+    }
+
+  gtk_widget_set_tooltip_text(button, tooltip) ;
+  g_signal_connect(G_OBJECT(button), "clicked", cb_func, cb_data) ;
+  gtk_box_pack_start(container, button, FALSE, FALSE, 0) ;
+
+  return button ;
+}
+
+
+/* Create a frame listing all of the available sources */
 static GtkWidget *makeSourcesFrame(MainFrame main_data, ZMapFeatureSequenceMap sequence_map)
 {
   GtkWidget *frame = gtk_frame_new( "Sources: " );
@@ -319,9 +499,6 @@ static GtkWidget *makeSourcesFrame(MainFrame main_data, ZMapFeatureSequenceMap s
   GtkWidget *list_widget = createListWidget(sequence_map, main_data) ;
   gtk_container_add(GTK_CONTAINER(scrolled), list_widget) ;
 
-  GtkWidget *button_box = gtk_hbox_new(FALSE, 5) ;
-  gtk_box_pack_start(GTK_BOX(topbox), button_box, FALSE, FALSE, 0) ;
-
   return frame ;
 }
 
@@ -330,7 +507,7 @@ static void makeLabel(const char *text, GtkWidget *parent)
 {
   GtkWidget *label = gtk_label_new(text) ;
   gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
-  gtk_box_pack_start(GTK_BOX(parent), label, FALSE, TRUE, 0) ;
+  gtk_box_pack_start(GTK_BOX(parent), label, FALSE, FALSE, 0) ;
 }
 
 
@@ -339,6 +516,7 @@ static GtkWidget *makeEntry(GtkWidget *parent, const gboolean fill)
   GtkWidget *entry = gtk_entry_new() ;
   gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
   gtk_box_pack_start(GTK_BOX(parent), entry, FALSE, fill, 0) ;
+  gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE) ;
   return entry ;
 }
 
@@ -359,7 +537,7 @@ static GtkWidget *makeSequenceFrame(MainFrame main_data, ZMapFeatureSequenceMap 
 
   hbox = gtk_hbox_new(FALSE, 0) ;
   gtk_container_border_width(GTK_CONTAINER(hbox), 0);
-  gtk_box_pack_start(GTK_BOX(topbox), hbox, TRUE, FALSE, 0) ;
+  gtk_box_pack_start(GTK_BOX(topbox), hbox, FALSE, FALSE, 0) ;
 
   /* Box for labels */
   labelbox = gtk_vbox_new(TRUE, 0) ;
@@ -367,7 +545,7 @@ static GtkWidget *makeSequenceFrame(MainFrame main_data, ZMapFeatureSequenceMap 
 
   /* Box for entries */
   entrybox = gtk_vbox_new(TRUE, 0) ;
-  gtk_box_pack_start(GTK_BOX(hbox), entrybox, TRUE, TRUE, 0) ;
+  gtk_box_pack_start(GTK_BOX(hbox), entrybox, FALSE, FALSE, 0) ;
 
   /* Create the widgets */
   makeLabel("Sequence :", labelbox) ;
@@ -375,7 +553,7 @@ static GtkWidget *makeSequenceFrame(MainFrame main_data, ZMapFeatureSequenceMap 
   makeLabel("End :", labelbox) ;
   makeLabel( "Config File :", labelbox) ;
 
-  main_data->sequence_widg = makeEntry(entrybox, TRUE) ;
+  main_data->sequence_widg = makeEntry(entrybox, FALSE) ;
   main_data->start_widg = makeEntry(entrybox, FALSE) ;
   main_data->end_widg = makeEntry(entrybox, FALSE) ;
   main_data->config_widg = makeEntry(entrybox, FALSE) ;
@@ -400,57 +578,60 @@ static GtkWidget *makeMainFrame(MainFrame main_data, ZMapFeatureSequenceMap sequ
   GtkWidget *sequence_frame = makeSequenceFrame(main_data, sequence_map) ;
 
   gtk_box_pack_start(box, sources_frame, TRUE, TRUE, 0) ;
-  gtk_box_pack_start(box, sequence_frame, TRUE, TRUE, 0) ;
+  gtk_box_pack_start(box, sequence_frame, FALSE, FALSE, 0) ;
 
   return frame ;
 }
 
 
+
+
 /* Make the action buttons frame. */
 static GtkWidget *makeButtonBox(MainFrame main_data)
 {
-  GtkWidget *frame ;
-  GtkWidget *button_box, *create_button, *chooser_button, *defaults_button, *close_button,
-    *save_button, *source_button, *remove_button, *edit_button;
+  GtkBox *button_box ;
+  GtkWidget *ok_button, *chooser_button;
   char *home_dir ;
 
-  frame = gtk_frame_new(NULL) ;
-  gtk_container_border_width(GTK_CONTAINER(frame), 5) ;
-
-  button_box = gtk_hbutton_box_new() ;
+  //
+  // Container
+  //
+  button_box = GTK_BOX(gtk_hbutton_box_new()) ;
   gtk_container_border_width(GTK_CONTAINER(button_box), 5) ;
-  gtk_container_add (GTK_CONTAINER (frame), button_box) ;
-  
-  source_button = gtk_button_new() ;
-  gtk_button_set_image(GTK_BUTTON(source_button), 
-                       gtk_image_new_from_stock(GTK_STOCK_ADD, GTK_ICON_SIZE_BUTTON));
-  gtk_widget_set_tooltip_text(source_button, "Create a new source") ;
-  gtk_signal_connect(GTK_OBJECT(source_button), "clicked", 
-                     GTK_SIGNAL_FUNC(createSourceCB), (gpointer)main_data) ;
-  gtk_box_pack_start(GTK_BOX(button_box), source_button, FALSE, TRUE, 0) ;
-  
-  edit_button = gtk_button_new() ;
-  gtk_button_set_image(GTK_BUTTON(edit_button), 
-                       gtk_image_new_from_stock(GTK_STOCK_EDIT, GTK_ICON_SIZE_BUTTON));
-  gtk_widget_set_tooltip_text(edit_button, "Edit the selected source(s)") ;
-  gtk_signal_connect(GTK_OBJECT(edit_button), "clicked", 
-                     GTK_SIGNAL_FUNC(editSourceCB), (gpointer)main_data) ;
-  gtk_box_pack_start(GTK_BOX(button_box), edit_button, FALSE, TRUE, 0) ;
 
-  remove_button = gtk_button_new() ;
-  gtk_button_set_image(GTK_BUTTON(remove_button), 
-                       gtk_image_new_from_stock(GTK_STOCK_DELETE, GTK_ICON_SIZE_BUTTON));
-  gtk_widget_set_tooltip_text(remove_button, "Remove the selected source(s)") ;
-  gtk_signal_connect(GTK_OBJECT(remove_button), "clicked", 
-                     GTK_SIGNAL_FUNC(removeSourceCB), (gpointer)main_data) ;
-  gtk_box_pack_start(GTK_BOX(button_box), remove_button, FALSE, TRUE, 0) ;
-
-  save_button = gtk_button_new_from_stock(GTK_STOCK_SAVE) ;
-  gtk_widget_set_tooltip_text(save_button, "Save the source and sequence details to a configuration file") ;
-  gtk_signal_connect(GTK_OBJECT(save_button), "clicked",
-                     GTK_SIGNAL_FUNC(saveCB), (gpointer)main_data) ;
-  gtk_box_pack_start(GTK_BOX(button_box), save_button, FALSE, TRUE, 0) ;
+  //
+  // Butotns to add/edit/delete/clear sources
+  //
+  createButton(NULL, GTK_STOCK_ADD, true, 
+               "Create a new source", 
+               G_CALLBACK(createSourceCB), (gpointer)main_data, button_box) ;
   
+  createButton(NULL, GTK_STOCK_EDIT, true,
+               "Edit the selected source(s)",
+               G_CALLBACK(editSourceCB), (gpointer)main_data, button_box) ;
+
+  createButton(NULL, GTK_STOCK_DELETE, true, 
+               "Delete the selected source(s).",
+               G_CALLBACK(removeSourceCB), (gpointer)main_data, button_box) ;
+
+  createButton(NULL, GTK_STOCK_CLEAR, true,
+               "Clear the recent sources list. This will cause all of the current sources to be hidden when the 'Recent' box is ticked.",
+               G_CALLBACK(clearRecentCB), (gpointer)main_data, button_box) ;
+
+  /* Add a check button to filter by recent sources, and a button to clear the recent list */
+  main_data->recent_widg = gtk_check_button_new_with_label("Recent") ;
+  gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(main_data->recent_widg), !main_data->show_all) ;
+  gtk_widget_set_tooltip_text(main_data->recent_widg, "Tick this to filter the list by recent sources; un-tick to show all sources ") ;
+  gtk_box_pack_start(button_box, main_data->recent_widg, FALSE, FALSE, 0) ;
+  g_signal_connect(G_OBJECT(main_data->recent_widg), "clicked", G_CALLBACK(onUpdateList), main_data) ;
+
+
+  //
+  // Save and load buttons
+  //
+  createButton(NULL, GTK_STOCK_SAVE, true, 
+               "Save the source and sequence details to a configuration file",
+               G_CALLBACK(saveCB), (gpointer)main_data, button_box) ;
 
 #ifndef __CYGWIN__
   /* N.B. we use the gtk "built-in" file chooser stuff. */
@@ -458,7 +639,7 @@ static GtkWidget *makeButtonBox(MainFrame main_data)
                                                                          GTK_FILE_CHOOSER_ACTION_OPEN) ;
   gtk_signal_connect(GTK_OBJECT(chooser_button), "file-set",
                      GTK_SIGNAL_FUNC(chooseConfigCB), (gpointer)main_data) ;
-  gtk_box_pack_start(GTK_BOX(button_box), chooser_button, FALSE, TRUE, 0) ;
+  gtk_box_pack_start(button_box, chooser_button, FALSE, FALSE, 0) ;
   home_dir = (char *)g_get_home_dir() ;
   gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(chooser_button), home_dir) ;
   gtk_file_chooser_set_show_hidden(GTK_FILE_CHOOSER(chooser_button), TRUE) ;
@@ -469,36 +650,37 @@ static GtkWidget *makeButtonBox(MainFrame main_data)
 
   /* If a sequence is provided then make a button to set it in the entries fields,
    * saves the user tedious typing. */
-  if ((main_data->sequence_map.sequence))
+  if (main_data->orig_sequence_map->sequence && !main_data->import)
     {
-      defaults_button = gtk_button_new_with_label("Set Defaults") ;
-      gtk_widget_set_tooltip_text(defaults_button, "Set sequence details from default values") ;
-      gtk_signal_connect(GTK_OBJECT(defaults_button), "clicked",
-                         GTK_SIGNAL_FUNC(defaultsCB), (gpointer)main_data) ;
-      gtk_box_pack_start(GTK_BOX(button_box), defaults_button, FALSE, TRUE, 0) ;
+      createButton("Set Defaults", NULL, false,
+                   "Set sequence details from default values",
+                   G_CALLBACK(defaultsCB), (gpointer)main_data, button_box) ;
     }
 
+  //
+  // Close and OK buttons
+  //
   /* Only add a close button and set a default button if this is a standalone dialog. */
   if (main_data->toplevel)
     {
-      close_button = gtk_button_new_with_label("Close") ;
-      gtk_signal_connect(GTK_OBJECT(close_button), "clicked",
-                         GTK_SIGNAL_FUNC(closeCB), (gpointer)main_data) ;
-      gtk_box_pack_start(GTK_BOX(button_box), close_button, FALSE, TRUE, 0) ;
+      createButton("Close", NULL, false, NULL, 
+                   G_CALLBACK(closeCB), (gpointer)main_data, button_box) ;
     }
 
-  create_button = gtk_button_new_from_stock(GTK_STOCK_EXECUTE) ;
-  gtk_widget_set_tooltip_text(create_button, "Run ZMap on the given source/sequence") ;
-  gtk_signal_connect(GTK_OBJECT(create_button), "clicked",
-                     GTK_SIGNAL_FUNC(createViewCB), (gpointer)main_data) ;
-  gtk_box_pack_start(GTK_BOX(button_box), create_button, FALSE, TRUE, 0) ;
+  ok_button = createButton(NULL, GTK_STOCK_OK, false,
+                           "Load the specified region for the selected source(s)",
+                           G_CALLBACK(applyCB), (gpointer)main_data, button_box) ;
 
-  /* set create button as default. */
-  GTK_WIDGET_SET_FLAGS(create_button, GTK_CAN_DEFAULT) ;
-  //gtk_window_set_default(GTK_WINDOW(main_data->toplevel), create_button) ;
+  //
+  // Set the default button
+  //
+  GTK_WIDGET_SET_FLAGS(ok_button, GTK_CAN_DEFAULT) ;
+
+  if (GTK_IS_WINDOW(main_data->toplevel))
+    gtk_window_set_default(GTK_WINDOW(main_data->toplevel), ok_button) ;
   
 
-  return frame ;
+  return GTK_WIDGET(button_box) ;
 }
 
 
@@ -516,10 +698,10 @@ static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data)
     (main_data->close_func)(main_data->toplevel, main_data->close_data) ;
 
   /* Free resources. */
-  if (main_data->sequence_map.sequence)
-    g_free(main_data->sequence_map.sequence) ;
-  if (main_data->sequence_map.config_file)
-    g_free(main_data->sequence_map.config_file) ;
+  if (main_data->orig_sequence_map->sequence)
+    g_free(main_data->orig_sequence_map->sequence) ;
+  if (main_data->orig_sequence_map->config_file)
+    g_free(main_data->orig_sequence_map->config_file) ;
 
   g_free(main_data) ;
 
@@ -546,7 +728,8 @@ static void defaultsCB(GtkWidget *widget, gpointer cb_data)
   setSequenceEntries(main_data) ;
 
 #ifndef __CYGWIN__
-  gtk_file_chooser_set_filename(GTK_FILE_CHOOSER(main_data->chooser_widg), main_data->sequence_map.config_file) ;
+  if (main_data->orig_sequence_map->config_file)
+    gtk_file_chooser_set_filename(GTK_FILE_CHOOSER(main_data->chooser_widg), main_data->orig_sequence_map->config_file) ;
 #endif
 
   return ;
@@ -594,11 +777,15 @@ static void createNewSourceCB(const char *source_name,
   ZMapFeatureSequenceMap sequence_map = main_data->orig_sequence_map ;
   GError *tmp_error = NULL ;
 
-  sequence_map->createSource(source_name, url, featuresets, biotypes, &tmp_error) ;
+  sequence_map->createSource(source_name, url, featuresets, biotypes, false, true, &tmp_error) ;
 
-  /* Update the list of sources shown in the dialog to include the new source */
+  /* Update the list of sources shown in the dialog to include the new source,
+   * and add the new source to the current selection */
   if (!tmp_error)
-    updateSourcesList(main_data, sequence_map) ;
+    {
+      updateSourcesList(main_data, sequence_map) ;
+      selectSource(source_name, main_data->sources_tree, main_data->sources_model) ;
+    }
 
   if (tmp_error)
     g_propagate_error(error, tmp_error) ;
@@ -637,7 +824,11 @@ static void createSourceCB(GtkWidget *widget, gpointer cb_data)
   MainFrame main_data = (MainFrame)cb_data ;
   zMapReturnIfFail(main_data) ;
 
-  zMapAppCreateSource(&main_data->sequence_map, createNewSourceCB, main_data) ;
+  /* When importing via the import dialog we probably(?) want the default import type to FILE. */
+  if (main_data->import)
+    zMapAppCreateSource(main_data->orig_sequence_map, createNewSourceCB, main_data, NULL, NULL, ZMapAppSourceType::FILE) ;
+  else
+    zMapAppCreateSource(main_data->orig_sequence_map, createNewSourceCB, main_data, NULL, NULL) ;
 
   return ;
 }
@@ -649,47 +840,21 @@ static void editSourceCB(GtkWidget *widget, gpointer cb_data)
   MainFrame main_data = (MainFrame)cb_data ;
   zMapReturnIfFail(main_data) ;
 
-  GtkTreeSelection *selection = gtk_tree_view_get_selection(main_data->tree_view) ;
-  ZMapFeatureSequenceMap sequence_map = main_data->orig_sequence_map ;
+  const char *err_msg = NULL;
 
-  if (!selection)
-    {
-      zMapCritical("%s", "No source selected") ;
-    }
+  list<ZMapConfigSource> sources = getSelectedSources(main_data->sources_tree, 
+                                                      main_data->orig_sequence_map,
+                                                      err_msg) ;
+
+  if (sources.size() == 1)
+    zMapAppEditSource(main_data->orig_sequence_map, sources.front(), editSourceCB, main_data) ;
+  else if (sources.size() > 1)
+    zMapCritical("%s", "Please only select one source") ;
+  else if (err_msg)
+    zMapCritical("%s", err_msg) ;
   else
-    {
-      GtkTreeModel *model = NULL ; 
-      GList *rows = gtk_tree_selection_get_selected_rows(selection, &model) ;
-
-      if (g_list_length(rows) < 1)
-        {
-          zMapCritical("%s", "Please select a source") ;
-        }
-      else if (g_list_length(rows) > 1)
-        {
-          zMapCritical("%s", "Please only select one source") ;
-        }
-      else
-        {
-          GtkTreePath *path = (GtkTreePath*)(rows->data) ;
-          GtkTreeIter iter ;
-          gtk_tree_model_get_iter(model, &iter, path) ;
-
-          char *source_name = NULL ;
-          gtk_tree_model_get(model, &iter, SourceColumn::NAME, &source_name, -1) ;
-
-          if (source_name)
-            {
-              ZMapConfigSource source = sequence_map->getSource(source_name) ;
-              zMapAppEditSource(main_data->orig_sequence_map, source, editSourceCB, main_data) ;
-            }
-          else
-            {
-              zMapCritical("%s", "Program error: failed to get source name") ;
-            }
-        }
-    }
-
+    zMapCritical("%s", "Program error: failed to get sources") ;
+    
   return ;
 }
 
@@ -698,50 +863,56 @@ static void editSourceCB(GtkWidget *widget, gpointer cb_data)
 static void removeSourceCB(GtkWidget *widget, gpointer cb_data)
 {
   MainFrame main_data = (MainFrame)cb_data ;
-  zMapReturnIfFail(main_data && main_data->tree_view && main_data->orig_sequence_map) ;
+  zMapReturnIfFail(main_data && main_data->sources_tree && main_data->orig_sequence_map) ;
 
-  GtkTreeSelection *selection = gtk_tree_view_get_selection(main_data->tree_view) ;
-  ZMapFeatureSequenceMap sequence_map = main_data->orig_sequence_map ;
+  const char *err_msg = NULL;
 
-  if (!selection)
+  list<GQuark> source_names = getSelectedSourceNames(main_data->sources_tree, 
+                                                     err_msg) ;
+  
+  if (source_names.size() > 0)
     {
-      zMapCritical("%s", "No source selected") ;
-    }
-  else
-    {
-      GtkTreeModel *model = NULL ; 
-      GList *rows = gtk_tree_selection_get_selected_rows(selection, &model) ;
-
-      /* Loop through all selected sources */
-      for (GList *row = rows; row; row = g_list_next(row))
+      for (auto source_name : source_names)
         {
-          GtkTreePath *path = (GtkTreePath*)(row->data) ;
-          GtkTreeIter iter ;
-          gtk_tree_model_get_iter(model, &iter, path) ;
+          GError *error = NULL ;
+          main_data->orig_sequence_map->removeSource(g_quark_to_string(source_name), &error) ;
 
-          char *source_name = NULL ;
-          gtk_tree_model_get(model, &iter, SourceColumn::NAME, &source_name, -1) ;
-
-          if (source_name)
+          if (error)
             {
-              GError *error = NULL ;
-              sequence_map->removeSource(source_name, &error) ;
-              
-              if (error)
-                {
-                  zMapLogWarning("Error removing source '%s': %s", source_name, error->message) ;
-                  g_error_free(error) ;
-                  error = NULL ;
-                }
+              zMapLogWarning("Error removing source '%s': %s", source_name, error->message) ;
+              g_error_free(error) ;
+              error = NULL ;
             }
         }
 
       /* Update the list widget */
-      updateSourcesList(main_data, sequence_map) ;
-      sequence_map->setFlag(ZMAPFLAG_SAVE_SOURCES, TRUE) ;
+      updateSourcesList(main_data, main_data->orig_sequence_map) ;
+      main_data->orig_sequence_map->setFlag(ZMAPFLAG_SAVE_SOURCES, TRUE) ;
+    }
+  else if (err_msg)
+    {
+      zMapCritical("%s", err_msg) ;
+    }
+  else
+    {
+      zMapCritical("%s", "Program error: failed to get sources") ;
     }
 
   return ;
+}
+
+/* Callback when the user hits the 'clear' button to clear all recent sources */
+static void clearRecentCB(GtkWidget *button, gpointer data)
+{
+  MainFrame main_data = (MainFrame)data ;
+
+  if (main_data)
+    {
+      for (auto iter : *main_data->orig_sequence_map->sources)
+        iter.second->recent = false ;
+
+      updateSourcesList(main_data, main_data->orig_sequence_map) ;
+    }
 }
 
 
@@ -769,14 +940,14 @@ static void setSequenceEntries(MainFrame main_data)
   const char *sequence = "", *config_file = "" ;
   char *start = NULL, *end = NULL ;
 
-  if (main_data->sequence_map.sequence)
-    sequence = main_data->sequence_map.sequence ;
-  if (main_data->sequence_map.start)
-    start = g_strdup_printf("%d", main_data->sequence_map.start) ;
-  if (main_data->sequence_map.end)
-    end = g_strdup_printf("%d", main_data->sequence_map.end) ;
-  if (main_data->sequence_map.config_file)
-    config_file = main_data->sequence_map.config_file ;
+  if (main_data->orig_sequence_map->sequence)
+    sequence = main_data->orig_sequence_map->sequence ;
+  if (main_data->orig_sequence_map->start)
+    start = g_strdup_printf("%d", main_data->orig_sequence_map->start) ;
+  if (main_data->orig_sequence_map->end)
+    end = g_strdup_printf("%d", main_data->orig_sequence_map->end) ;
+  if (main_data->orig_sequence_map->config_file)
+    config_file = main_data->orig_sequence_map->config_file ;
 
   gtk_entry_set_text(GTK_ENTRY(main_data->sequence_widg), sequence) ;
   gtk_entry_set_text(GTK_ENTRY(main_data->start_widg), (start ? start : "")) ;
@@ -787,6 +958,15 @@ static void setSequenceEntries(MainFrame main_data)
     g_free(start) ;
   if (end)
     g_free(end) ;
+
+  /* Don't allow editing of the sequence if we're importing into an existing view */
+  if (main_data->import)
+    {
+      gtk_widget_set_sensitive(main_data->sequence_widg, FALSE) ;
+      gtk_widget_set_sensitive(main_data->start_widg, FALSE) ;
+      gtk_widget_set_sensitive(main_data->end_widg, FALSE) ;
+      gtk_widget_set_sensitive(main_data->config_widg, FALSE) ;
+    }
 
   return ;
 }
@@ -800,138 +980,156 @@ static void setSequenceEntries(MainFrame main_data)
  *
  *       config file (which contains sequence, start, end)
  *
+ * The user must have selected which source(s) from the list they want to load.
+ *
+ * If the user has specified a new sequence, we create a new sequence map for it
+ * (e.g. if the user is creating a new view).
+ * If importing into an existing sequence, the user callback on the original sequence 
+ * map.
+ *
  *  */
-static void createViewCB(GtkWidget *widget, gpointer cb_data)
+static void applyCB(GtkWidget *widget, gpointer cb_data)
 {
   MainFrame main_data = (MainFrame)cb_data ;
-  gboolean status = TRUE ;
-  const char *err_msg = NULL ;
-  const char *sequence = "", *start_txt, *end_txt, *config_txt ;
-  int start = 1, end = 0 ;
-  GError *tmp_error = NULL ;
 
+  const bool recent_only = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(main_data->recent_widg)) ;
 
-  /* Note gtk_entry returns the empty string "" _not_ NULL when there is no text. */
-  sequence = (char *)gtk_entry_get_text(GTK_ENTRY(main_data->sequence_widg)) ;
-  start_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_data->start_widg)) ;
-  end_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_data->end_widg)) ;
-  config_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_data->config_widg)) ;
-
-
-  if (!(*sequence) && !(*start_txt) && !(*end_txt) && *config_txt)
+  if (main_data->import)
     {
-      /* Just a config file specified, try that. */
-      status = TRUE ;
-    }
-  else if (!(*sequence) && !(*start_txt) && !(*end_txt))
-    {
-      status = FALSE ;
-      err_msg = "Please enter the sequence name and coordinates" ;
-    }
-  else if (!(*sequence))
-    {
-      status = FALSE ;
-      err_msg = "Please enter the sequence name" ;
-    }
-  else if (!(*start_txt) || !(*end_txt))
-    {
-      status = FALSE ;
-      err_msg = "Please enter the start and end coordinates" ;
-    }
-  else if (*sequence && *start_txt && *end_txt)
-    {
-      if (status)
-        {
-          if (!(*start_txt) || !zMapStr2Int(start_txt, &start) || start < 1)
-            {
-              status = FALSE ;
-              err_msg = "Invalid start specified." ;
-            }
-        }
-
-      if (status)
-        {
-          if (!(*end_txt) || !zMapStr2Int(end_txt, &end) || end <= start)
-            {
-              status = FALSE ;
-              err_msg = "Invalid end specified." ;
-            }
-        }
-
-      if (status)
-        {
-          if (!(*config_txt))
-            config_txt = NULL ;    /* No file specified. */
-        }
+      /* Just call user callback with original sequence map. */
+      (main_data->user_func)(main_data->orig_sequence_map, recent_only, main_data->user_data) ;
     }
   else
     {
-      status = FALSE ;
-      err_msg = "Please enter the sequence name and coordinates,\n"
-        "OR a config file containing these details (but not both)." ;
-    }
-
-
-  if (!status)
-    {
-      zMapWarning("%s", err_msg) ;
-    }
-  else
-    {
-      /* when we get here we should either have only a config file specified or
-       * a sequence/start/end and optionally a config file. */
-      ZMapFeatureSequenceMap seq_map ;
-      gboolean sequence_ok = FALSE ;
+      gboolean status = TRUE ;
       const char *err_msg = NULL ;
+      const char *sequence = "", *start_txt, *end_txt, *config_txt ;
+      int start = 1, end = 0 ;
+      GError *tmp_error = NULL ;
 
-      seq_map = g_new0(ZMapFeatureSequenceMapStruct,1) ;
 
-      seq_map->config_file = g_strdup(config_txt) ;
+      /* Note gtk_entry returns the empty string "" _not_ NULL when there is no text. */
+      sequence = (char *)gtk_entry_get_text(GTK_ENTRY(main_data->sequence_widg)) ;
+      start_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_data->start_widg)) ;
+      end_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_data->end_widg)) ;
+      config_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_data->config_widg)) ;
 
-      if (main_data->orig_sequence_map)
-        seq_map->sources = main_data->orig_sequence_map->sources ;
 
-      if (*sequence)
+      if (!(*sequence) && !(*start_txt) && !(*end_txt) && *config_txt)
         {
-          sequence_ok = TRUE ;
-          seq_map->sequence = g_strdup(sequence) ;
-          seq_map->start = start ;
-          seq_map->end = end ;
+          /* Just a config file specified, try that. */
+          status = TRUE ;
+        }
+      else if (!(*sequence) && !(*start_txt) && !(*end_txt))
+        {
+          status = FALSE ;
+          err_msg = "Please enter the sequence name and coordinates" ;
+        }
+      else if (!(*sequence))
+        {
+          status = FALSE ;
+          err_msg = "Please enter the sequence name" ;
+        }
+      else if (!(*start_txt) || !(*end_txt))
+        {
+          status = FALSE ;
+          err_msg = "Please enter the start and end coordinates" ;
+        }
+      else if (*sequence && *start_txt && *end_txt)
+        {
+          if (status)
+            {
+              if (!(*start_txt) || !zMapStr2Int(start_txt, &start) || start < 1)
+                {
+                  status = FALSE ;
+                  err_msg = "Invalid start specified." ;
+                }
+            }
+
+          if (status)
+            {
+              if (!(*end_txt) || !zMapStr2Int(end_txt, &end) || end <= start)
+                {
+                  status = FALSE ;
+                  err_msg = "Invalid end specified." ;
+                }
+            }
+
+          if (status)
+            {
+              if (!(*config_txt))
+                config_txt = NULL ;    /* No file specified. */
+            }
         }
       else
         {
-          zMapAppGetSequenceConfig(seq_map, &tmp_error);
-                  
-          if (tmp_error)
+          status = FALSE ;
+          err_msg = "Please enter the sequence name and coordinates,\n"
+            "OR a config file containing these details (but not both)." ;
+        }
+
+
+      if (!status)
+        {
+          zMapWarning("%s", err_msg) ;
+        }
+      else
+        {
+          /* when we get here we should either have only a config file specified or
+           * a sequence/start/end and optionally a config file. */
+          ZMapFeatureSequenceMap seq_map ;
+          gboolean sequence_ok = FALSE ;
+          const char *err_msg = NULL ;
+
+          seq_map = new ZMapFeatureSequenceMapStruct ;
+
+          seq_map->config_file = g_strdup(config_txt) ;
+
+          if (main_data->orig_sequence_map)
+            seq_map->sources = main_data->orig_sequence_map->sources ;
+
+          if (*sequence)
             {
-              sequence_ok = FALSE ;
-              err_msg = tmp_error->message ;
-            }
-          else if (!seq_map->sequence || !seq_map->start || !seq_map->end)
-            {
-              err_msg = "Cannot load sequence from config file, check sequence, start and end specified." ;
-              sequence_ok = FALSE ;
+              sequence_ok = TRUE ;
+              seq_map->sequence = g_strdup(sequence) ;
+              seq_map->start = start ;
+              seq_map->end = end ;
             }
           else
             {
-              sequence_ok = TRUE ;
+              zMapAppGetSequenceConfig(seq_map, &tmp_error);
+                  
+              if (tmp_error)
+                {
+                  sequence_ok = FALSE ;
+                  err_msg = tmp_error->message ;
+                }
+              else if (!seq_map->sequence || !seq_map->start || !seq_map->end)
+                {
+                  err_msg = "Cannot load sequence from config file, check sequence, start and end specified." ;
+                  sequence_ok = FALSE ;
+                }
+              else
+                {
+                  sequence_ok = TRUE ;
+                }
+            }
+
+          if (!sequence_ok)
+            {
+              zMapWarning("%s", err_msg) ;
+              delete seq_map ;
+            }
+          else
+            {
+              /* Call back with users parameters for new sequence display. */
+              (main_data->user_func)(seq_map, recent_only, main_data->user_data) ;
             }
         }
 
-      if (!sequence_ok)
-        {
-          zMapWarning("%s", err_msg) ;
-          g_free(seq_map) ;
-        }
-      else
-        {
-          /* Call back with users parameters for new sequence display. */
-          (main_data->user_func)(seq_map, main_data->user_data) ;
-        }
+      if (tmp_error)
+        g_error_free(tmp_error) ;
     }
-
-  if (tmp_error)
-    g_error_free(tmp_error) ;
 
   return ;
 }
@@ -1024,6 +1222,165 @@ static void configChangedCB(GtkWidget *widget, gpointer user_data)
  
   if (main_frame && main_frame->orig_sequence_map)
     {
-      main_frame->orig_sequence_map->constructSources(filename, NULL, NULL) ;
+      main_frame->orig_sequence_map->addSourcesFromConfig(filename, NULL, NULL) ;
+
+      /* Update the sources list */
+      updateSourcesList(main_frame, main_frame->orig_sequence_map) ;
     }
+}
+
+
+/* Select a source in the sources tree. Optionally deselect other sources first. */
+static void selectSource(const char *source_name, 
+                         GtkTreeView *tree,
+                         GtkTreeModel *model,
+                         const bool deselect_others)
+{
+  zMapReturnIfFail(source_name && tree && model) ;
+
+  GtkTreeSelection *selection = gtk_tree_view_get_selection(tree) ;
+
+  if (!selection)
+    {
+      zMapLogWarning("%s", "Could not select source: failed to get tree view selection") ;
+    }
+  else
+    {
+      /*! \todo select_iter actually the deselects others anyway so we need to reselect the
+       * original selection  */
+      //if (deselect_others)
+      //  gtk_tree_selection_unselect_all(selection) ;
+
+      /* Find the tree row with this source name */
+      GtkTreeIter iter ;
+
+      if (gtk_tree_model_get_iter_first(model, &iter))
+        {
+          bool found = false ;
+
+          do
+            {
+              char *cur_source_name = NULL ;
+
+              gtk_tree_model_get (model, &iter,
+                                  SourceColumn::NAME, &cur_source_name,
+                                  -1);
+              
+              if (strcmp(cur_source_name, source_name) == 0)
+                {
+                  found = true ;
+                  break ;
+                }
+            } while (gtk_tree_model_iter_next(model, &iter)) ;
+      
+          if (found)
+            gtk_tree_selection_select_iter(selection, &iter) ;
+        }
+    }
+}
+
+
+/* Utility to get the sources that are selected in the list box */
+static list<ZMapConfigSource> getSelectedSources(GtkTreeView *sources_tree,
+                                                 ZMapFeatureSequenceMap sequence_map,
+                                                 const char *err_msg)
+{
+  list<ZMapConfigSource> result ;
+
+  zMapReturnValIfFail(sources_tree && sequence_map, result) ;
+
+  GtkTreeSelection *selection = gtk_tree_view_get_selection(sources_tree) ;
+
+  if (!selection)
+    {
+      err_msg = "No source selected" ;
+    }
+  else
+    {
+      GtkTreeModel *model = NULL ; 
+      GList *rows = gtk_tree_selection_get_selected_rows(selection, &model) ;
+
+      if (g_list_length(rows) < 1)
+        {
+          err_msg = "No source selected" ;
+        }
+      else
+        {
+          for (GList *row_item = rows; row_item; row_item = row_item->next)
+            {
+              GtkTreePath *path = (GtkTreePath*)(row_item->data) ;
+              GtkTreeIter iter ;
+              gtk_tree_model_get_iter(model, &iter, path) ;
+
+              char *source_name = NULL ;
+              gtk_tree_model_get(model, &iter, SourceColumn::NAME, &source_name, -1) ;
+
+              if (source_name)
+                {
+                  ZMapConfigSource source = sequence_map->getSource(source_name) ;
+                  result.push_back(source) ;
+                  g_free(source_name) ;
+                }
+              else
+                {
+                  err_msg = "Program error: failed to get source name" ;
+                  break ;
+                }
+            }
+        }
+    }
+
+  return result ;
+}
+
+
+/* Utility to get the sources that are selected in the list box */
+static list<GQuark> getSelectedSourceNames(GtkTreeView *sources_tree,
+                                           const char *err_msg)
+{
+  list<GQuark> result ;
+
+  zMapReturnValIfFail(sources_tree, result) ;
+
+  GtkTreeSelection *selection = gtk_tree_view_get_selection(sources_tree) ;
+
+  if (!selection)
+    {
+      err_msg = "No source selected" ;
+    }
+  else
+    {
+      GtkTreeModel *model = NULL ; 
+      GList *rows = gtk_tree_selection_get_selected_rows(selection, &model) ;
+
+      if (g_list_length(rows) < 1)
+        {
+          err_msg = "No source selected" ;
+        }
+      else
+        {
+          for (GList *row_item = rows; row_item; row_item = row_item->next)
+            {
+              GtkTreePath *path = (GtkTreePath*)(row_item->data) ;
+              GtkTreeIter iter ;
+              gtk_tree_model_get_iter(model, &iter, path) ;
+
+              char *source_name = NULL ;
+              gtk_tree_model_get(model, &iter, SourceColumn::NAME, &source_name, -1) ;
+
+              if (source_name)
+                {
+                  result.push_back(g_quark_from_string(source_name)) ;
+                  g_free(source_name) ;
+                }
+              else
+                {
+                  err_msg = "Program error: failed to get source name" ;
+                  break ;
+                }
+            }
+        }
+    }
+
+  return result ;
 }

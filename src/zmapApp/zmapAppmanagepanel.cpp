@@ -149,7 +149,7 @@ GtkWidget *zmapMainMakeManage(ZMapAppContext app_context)
   /* Buttons */
   hbox = gtk_hbox_new(FALSE, 0) ;
   gtk_container_border_width(GTK_CONTAINER(hbox), 5);
-  gtk_container_add(GTK_CONTAINER(vbox), hbox);
+  gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
 
 
   close_button = gtk_button_new_with_label("Close Selected ZMap View") ;

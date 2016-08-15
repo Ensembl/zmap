@@ -205,6 +205,7 @@ ZMapServerReqAny zMapServerRequestCreate(ZMapServerReqType request_type, ...)
       {
         ZMapServerReqCreate create = (ZMapServerReqCreate)req_any ;
 
+        create->source_name = va_arg(args, int) ;
         create->config_file = g_strdup(va_arg(args, char *)) ;
         create->url = va_arg(args, ZMapURL) ;
         create->format  = g_strdup(va_arg(args, char *)) ;
@@ -379,7 +380,7 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
         else
           {
             if ((request->response
-                 = zMapServerCreateConnection(&server, global_init_data, create->config_file,
+                 = zMapServerCreateConnection(&server, global_init_data, create->source_name, create->config_file,
                                               create->url, create->format, create->timeout, create->version, mutex))
                 != ZMAP_SERVERRESPONSE_OK)
               {

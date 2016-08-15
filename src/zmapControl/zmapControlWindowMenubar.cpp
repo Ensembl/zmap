@@ -68,8 +68,9 @@ typedef enum {
 
 static void newSequenceByConfigCB(gpointer cb_data, guint callback_action, GtkWidget *w) ;
 static void newSourceCB(gpointer cb_data, guint callback_action, GtkWidget *w) ;
-static void makeSequenceViewCB(ZMapFeatureSequenceMap sequence_map, gpointer user_data) ;
+static void makeSequenceViewCB(ZMapFeatureSequenceMap sequence_map, const bool recent_only, gpointer user_data) ;
 static void closeSequenceDialogCB(GtkWidget *toplevel, gpointer user_data) ;
+static void closeSourceDialogCB(GtkWidget *toplevel, gpointer user_data) ;
 static void closeCB(gpointer cb_data, guint callback_action, GtkWidget *w) ;
 static void quitCB(gpointer cb_data, guint callback_action, GtkWidget *w) ;
 
@@ -746,7 +747,9 @@ static void createNewSourceCB(const char *source_name,
 
   if (sequence_map)
     {
-      ZMapConfigSource source = sequence_map->createSource(source_name, url, featuresets, biotypes, &tmp_error) ;
+      ZMapConfigSource source = sequence_map->createSource(source_name, url, 
+                                                           featuresets, biotypes, 
+                                                           false, true, &tmp_error) ;
 
       /* Connect to the new source */
       if (!tmp_error)
@@ -764,20 +767,24 @@ static void newSourceCB(gpointer cb_data, guint callback_action, GtkWidget *w)
   ZMap zmap = (ZMap)cb_data ;
   zMapReturnIfFail(zmap) ;
 
-  if (!(zmap->sequence_dialog))
+  if (!(zmap->source_dialog))
     {
       ZMapView view = zMapViewGetView(zmap->focus_viewwindow) ;
 
-      zmap->sequence_dialog = zMapAppCreateSource(zMapViewGetSequenceMap(view),
-                                                  createNewSourceCB,
-                                                  zmap) ;
+      zmap->source_dialog = zMapAppCreateSource(zMapViewGetSequenceMap(view),
+                                                createNewSourceCB,
+                                                zmap,
+                                                closeSourceDialogCB,
+                                                zmap) ;
     }
 
   return ;
 }
 
 /* Called once user has selected a new sequence. */
-static void makeSequenceViewCB(ZMapFeatureSequenceMap seq_map, gpointer user_data)
+static void makeSequenceViewCB(ZMapFeatureSequenceMap seq_map, 
+                               const bool recent_only,
+                               gpointer user_data)
 {
   ZMap zmap = (ZMap)user_data ;
   ZMapView view = NULL ;
@@ -808,6 +815,16 @@ static void closeSequenceDialogCB(GtkWidget *toplevel, gpointer user_data)
   zMapReturnIfFail(zmap) ;
 
   zmap->sequence_dialog = NULL ;
+
+  return ;
+}
+
+static void closeSourceDialogCB(GtkWidget *toplevel, gpointer user_data)
+{
+  ZMap zmap = (ZMap)user_data ;
+  zMapReturnIfFail(zmap) ;
+
+  zmap->source_dialog = NULL ;
 
   return ;
 }

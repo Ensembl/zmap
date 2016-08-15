@@ -133,7 +133,7 @@ gboolean zMapGFFGetVersionFromGIO(GIOChannel * const pChannel, GString *pString,
  * Modified old interface.
  */
 gboolean zMapGFFIsValidVersion(ZMapGFFParser) ;
-ZMapGFFParser zMapGFFCreateParser(int iGFFVersion, char *sequence, int features_start, int features_end) ;
+ZMapGFFParser zMapGFFCreateParser(int iGFFVersion, const char *sequence, int features_start, int features_end) ;
 gboolean zMapGFFParserInitForFeatures(ZMapGFFParser parser, ZMapStyleTree *sources, gboolean parse_only) ;
 gboolean zMapGFFParseHeader(ZMapGFFParser parser, char *line, gboolean *header_finished, ZMapGFFHeaderState *header_state) ;
 gboolean zMapGFFParseSequence(ZMapGFFParser parser, char *line, gboolean *sequence_finished) ;
