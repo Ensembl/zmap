@@ -259,8 +259,9 @@ typedef struct ZMapFeatureParserCacheStructType
 
 
 /* Holds data about a sequence to be fetched.
- * Used for the 'default-sequence' from the config file or one loaded later
- * via a peer program, e.g. otterlace. */
+ * 
+ * Used for the 'default-sequence' from the config file or main window, or for a sequence loaded
+ * later via a peer program, e.g. otterlace. */
 typedef struct ZMapFeatureSequenceMapStructType
 {
   char *config_file ;

@@ -560,6 +560,9 @@ static void importFileCB(ZMapFeatureSequenceMap sequence_map,
    */
   if (status)
     {      
+      /* If we have previously disabled popup warnings about failed sources, re-enable them now */
+      zMapViewSetDisablePopups(view, false) ;
+
       for (auto &iter : *sequence_map->sources)
         {
           importSource(iter.second, view, sequence_map, req_sequence_txt, req_start, req_end, recent_only) ;

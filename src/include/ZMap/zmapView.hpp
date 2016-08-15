@@ -267,6 +267,9 @@ void zMapViewSetUpServerConnection(ZMapView zmap_view, ZMapConfigSource current_
 
 void zMapViewAddSource(ZMapView view, const std::string &source_name, ZMapConfigSource source, GError **error) ;
 
+bool zMapViewGetDisablePopups(ZMapView zmap_view) ;
+void zMapViewSetDisablePopups(ZMapView zmap_view, const bool value) ;
+
 
 ZMAP_ENUM_TO_SHORT_TEXT_DEC(zMapView2Str, ZMapViewState) ;
 

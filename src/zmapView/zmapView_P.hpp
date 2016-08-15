@@ -422,6 +422,13 @@ typedef struct _ZMapViewStruct
    * file or from the first Save As operation. This is an array indexed on the type of export,
    * e.g. features/config/styles */
   GQuark save_file[ZMAPVIEW_EXPORT_NUM_TYPES] ;
+
+/* gb10: The user can get spammed with loads of messages if we have thousands of sources that all
+ * fail. For now, just add a simple hack to disable popup warnings after the first one. This gets
+ * reset each time the user does a new Import. Longer term the plan is that we will have a window
+ * where users can view source statuses so that we don't have to pop up messages at all. */
+  bool disable_popups ;
+
 } ZMapViewStruct ;
 
 

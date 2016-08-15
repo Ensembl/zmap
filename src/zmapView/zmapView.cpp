@@ -407,7 +407,6 @@ ZMapWindowCallbacksStruct window_cbs_G =
 static gboolean thread_debug_G = FALSE ;
 
 
-
 /*
  *                           External routines
  */
@@ -3268,6 +3267,7 @@ static ZMapView createZMapView(char *view_name, GList *sequences, void *app_data
 
   zmap_view->state = ZMAPVIEW_INIT ;
   zmap_view->busy = FALSE ;
+  zmap_view->disable_popups = false ;
 
 
   zmap_view->view_name = g_strdup(view_name) ;
@@ -3729,16 +3729,14 @@ static gboolean checkStateConnections(ZMapView zmap_view)
                         /* Warn the user ! */
                         if (view_con->show_warning)
                           {
-                            /* gb10: The user can get spammed with loads of messages. For now,
-                             * just show one */
                             if (view_con->show_warning)
                               {
-                                static bool warn_user = true ;
-
-                                if (warn_user)
+                                if (!zMapViewGetDisablePopups(zmap_view))
                                   {
-                                    zMapWarning("%s", "Error loading source(s). See log file for details.\n") ;
-                                    warn_user = false ;
+                                    zMapWarning("Error loading source(s).\n\nFirst source failure was: %s\n\nFurther source failures will not be reported. See the log file for details of any other failures.\n",
+                                                (err_msg ? err_msg : "<no error message>")) ;
+
+                                    zMapViewSetDisablePopups(zmap_view, true) ;
                                   }
                               }
 
@@ -7197,3 +7195,12 @@ void updateContextColumnStyles(ZMapConfigIniContext context, ZMapConfigIniFileTy
 }
 
 
+bool zMapViewGetDisablePopups(ZMapView zmap_view)
+{
+  return zmap_view->disable_popups ;
+}
+
+void zMapViewSetDisablePopups(ZMapView zmap_view, const bool value)
+{
+  zmap_view->disable_popups = value ;
+}
