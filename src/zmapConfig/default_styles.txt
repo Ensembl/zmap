@@ -59,6 +59,16 @@ graph-mode=histogram
 parent-style=histogram
 description=default graph mode
 
+[style-coverage]
+min-score=1.000000
+graph-baseline=1.000000
+parent-style=heatmap
+graph-fill=true
+graph-colours=normal fill LightBlue; normal border black
+width=10
+max-score=10000.000000
+score-scale=log
+
 [style-line]
 description=wiggle plot, rebinned on zoom
 width=40.000000
@@ -120,6 +130,30 @@ show-reverse-strand=true
 directional-ends=true
 max-score=100.000000
 min-score=1.000000
+
+
+[style-read]
+min-score=1
+alignment-show-gaps=true
+default-bump-mode=overlap
+strand-specific=false
+max-score=100
+alignment-squash=true
+parent-style=root
+alignment-join-threshold=4
+alignment-join-max=1000
+alignment-always-gapped=true
+alignment-parse-gaps=true
+directional-ends=true
+alignment-unique=true
+alignment-join-overlap=30
+collapse=true
+alignment-blixem=blixem-n
+colours=normal fill pink; normal border #97737a
+alignment-pfetchable=false
+width=8
+show-reverse-strand=true
+mode=alignment
 
 
 [style-basic]
