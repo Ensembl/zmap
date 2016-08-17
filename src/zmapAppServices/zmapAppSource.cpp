@@ -185,6 +185,31 @@ public:
 } ;
 
 
+class TrackhubSearchData
+{
+public:
+  TrackhubSearchData(MainFrame main_data,
+                     GtkWidget *search_entry,
+                     GtkWidget *species_entry,
+                     GtkWidget *assembly_entry,
+                     GtkWidget *hub_entry)
+    : main_data_(main_data),
+      search_entry_(search_entry),
+      species_entry_(species_entry),
+      assembly_entry_(assembly_entry),
+      hub_entry_(hub_entry)
+  {} ;
+
+  MainFrame main_data_ ;
+  GtkWidget *search_entry_ ;
+  GtkWidget *species_entry_ ;
+  GtkWidget *assembly_entry_ ;
+  GtkWidget *hub_entry_ ;
+} ;
+
+
+
+
 GtkWidget *makePanel(GtkWidget *toplevel,
                      gpointer *seqdata_out,
                      ZMapFeatureSequenceMap sequence_map,
@@ -2157,7 +2182,9 @@ GtkWidget* createListDialog(MainFrame main_data,
  * given entry widget with the result when the user selects a row and hits ok. If the user
  * selects multiple values then it sets a semi-colon-separated list in the entry widget.
  * This function can take lists of different types of values and will call an overload of
- * createListWidget for the relevant type. */
+ * createListWidget for the relevant type.
+ * Returns true if the user ok's the dialog and the operation succeeds; false if they cancel or
+ * there is an error. */
 template<class ListType, class ColType>
 gboolean runListDialog(MainFrame main_data, 
                        const ListType &values_list, 
@@ -2166,8 +2193,8 @@ gboolean runListDialog(MainFrame main_data,
                        const char *title,
                        const gboolean allow_multiple)
 {
-  gboolean ok = FALSE ;
-  zMapReturnValIfFail(main_data, ok) ;
+  gboolean done = FALSE ;
+  zMapReturnValIfFail(main_data, done) ;
 
   GtkTreeView *list_widget = NULL ;
   SearchListData search_data ;
@@ -2182,14 +2209,15 @@ gboolean runListDialog(MainFrame main_data,
         {
           if (setEntryFromSelection(list_widget, result_widg, result_col))
             {
+              // Success - close the dialog
               gtk_widget_destroy(dialog) ;
-              ok = TRUE ;
+              done = TRUE ;
             }
         }
       else
         {
+          // User cancelled - close the dialog
           gtk_widget_destroy(dialog) ;
-          ok = TRUE ;
         }
     }
   else
@@ -2197,7 +2225,7 @@ gboolean runListDialog(MainFrame main_data,
       zMapCritical("%s", "Failed to create list dialog") ;
     }
 
-  return ok ;
+  return done ;
 }
 
 
@@ -2231,6 +2259,81 @@ gboolean applyTrackhub(MainFrame main_frame)
 }
 
 
+/* Handles the response to the trackhub search dialog */
+void trackhubSearchResponseCB(GtkDialog *dialog, gint response_id, gpointer user_data)
+{
+  TrackhubSearchData *data = (TrackhubSearchData*)user_data ;
+  MainFrame main_data = data->main_data_ ;
+  gboolean done = FALSE ;
+
+  switch (response_id)
+  {
+  case GTK_RESPONSE_OK:    //fall through
+  case GTK_RESPONSE_APPLY: //fall through
+  case GTK_RESPONSE_ACCEPT:
+    {
+      const char *search_text = gtk_entry_get_text(GTK_ENTRY(data->search_entry_)) ;
+      const char *species_text = gtk_entry_get_text(GTK_ENTRY(data->species_entry_)) ;
+      const char *assembly_text = gtk_entry_get_text(GTK_ENTRY(data->assembly_entry_)) ;
+      const char *hub_text = gtk_entry_get_text(GTK_ENTRY(data->hub_entry_)) ;
+      string err_msg;
+
+      list<TrackDb> results = main_data->registry.search(search_text,
+                                                         species_text,
+                                                         assembly_text,
+                                                         hub_text,
+                                                         err_msg) ;
+      if (err_msg.empty())
+        {
+          // Show the search results. We'll only close our dialog if this is successful 
+          done = runListDialog(main_data, 
+                               results, 
+                               TrackListColumn::ID,
+                               GTK_ENTRY(main_data->trackdb_id_widg), 
+                               "Select track hub",
+                               FALSE) ;
+        }
+      else
+        {
+          zMapCritical("Search failed: %s", err_msg.c_str()) ;
+        }
+
+      break;
+    }
+
+  case GTK_RESPONSE_CANCEL: //fall through
+  case GTK_RESPONSE_CLOSE:  //fall through
+  case GTK_RESPONSE_REJECT:
+    {
+      // do nothing but close the dialog
+      done = TRUE ;
+      break;
+    }
+
+  default:
+    {
+      break;
+    }
+  };
+
+  // Close the dialog if done
+  if (done)
+    {
+      gtk_widget_destroy(GTK_WIDGET(dialog)) ;
+    }
+}
+
+
+/* Called when the trackhub search dialog is destroyed */
+void trackhubSearchDestroyCB(GtkWidget *widget, gpointer cb_data)
+{
+  TrackhubSearchData *data = (TrackhubSearchData*)cb_data ;
+
+  if (data)
+    delete data ;
+}
+
+
 /* Show a dialog where the user can search for trackhubs */
 void trackhubSearchCB(GtkWidget *widget, gpointer cb_data)
 {
@@ -2245,6 +2348,7 @@ void trackhubSearchCB(GtkWidget *widget, gpointer cb_data)
                                                   NULL);
 
   gtk_dialog_set_default_response(GTK_DIALOG(dialog), GTK_RESPONSE_OK) ;
+
   GtkBox *content = GTK_BOX(GTK_DIALOG(dialog)->vbox) ;
 
   GtkTable *table = GTK_TABLE(gtk_table_new(4, 4, FALSE)) ;
@@ -2254,48 +2358,22 @@ void trackhubSearchCB(GtkWidget *widget, gpointer cb_data)
   int col = 0 ;
 
   GtkWidget *search_entry = makeEntryWidget("Search text: ", "", 
-                                            "OPTIONAL: Enter the query string to search for. This is case-insensitive can be simple text, or more complex queries can be made using wildcards, regular expressions, logical and fuzzy operators, proximity searches and grouping. See the documentation at http://trackhubregistry.org/docs/search/advanced",
+                                            "OPTIONAL: Enter the query string to search for.\n\nThis is case-insensitive can be simple text, or more complex queries can be made using wildcards, regular expressions, logical and fuzzy operators, proximity searches and grouping. See the documentation at http://trackhubregistry.org/docs/search/advanced",
                                             table, &row, col, col + 2, false, NULL, true) ;
-  GtkWidget *species_entry = makeEntryWidget("Species: ", "", "OPTIONAL: Enter the species. Case sensitive, e.g. Homo sapiens",
+  GtkWidget *species_entry = makeEntryWidget("Species: ", "", "OPTIONAL: Enter the species.\n\nCase sensitive, e.g. Homo sapiens",
                                              table, &row, col, col + 2, false, NULL, true) ;
-  GtkWidget *assembly_entry = makeEntryWidget("Assembly: ", "", "OPTIONAL: Enter the assembly. Case sensitive, e.g. GRCh38",
+  GtkWidget *assembly_entry = makeEntryWidget("Assembly: ", "", "OPTIONAL: Enter the assembly.\n\nCase sensitive, e.g. GRCh38",
                                               table, &row, col, col + 2, false, NULL, true) ;
-  GtkWidget *hub_entry = makeEntryWidget("Hub: ", "", "OPTIONAL: Select the hub name. Case sensitive, e.g. AWG_Hub",
+  GtkWidget *hub_entry = makeEntryWidget("Hub: ", "", "OPTIONAL: Enter the hub name.\n\nCase sensitive, e.g. AWG_Hub",
                                          table, &row, col, col + 2, false, NULL, true) ;
 
-  /* Run the dialog */
+  TrackhubSearchData *data = new TrackhubSearchData(main_data, search_entry, species_entry,
+                                                    assembly_entry, hub_entry) ;
+
+  g_signal_connect(dialog, "response", G_CALLBACK(trackhubSearchResponseCB), data) ;
+  g_signal_connect(dialog, "destroy", G_CALLBACK(trackhubSearchDestroyCB), data) ;
+
   gtk_widget_show_all(dialog) ;
-  gint response = gtk_dialog_run(GTK_DIALOG(dialog)) ;
-
-  if (response == GTK_RESPONSE_OK)
-    {
-      const char *search_text = gtk_entry_get_text(GTK_ENTRY(search_entry)) ;
-      const char *species_text = gtk_entry_get_text(GTK_ENTRY(species_entry)) ;
-      const char *assembly_text = gtk_entry_get_text(GTK_ENTRY(assembly_entry)) ;
-      const char *hub_text = gtk_entry_get_text(GTK_ENTRY(hub_entry)) ;
-      string err_msg;
-
-      list<TrackDb> results = main_data->registry.search(search_text,
-                                                         species_text,
-                                                         assembly_text,
-                                                         hub_text,
-                                                         err_msg) ;
-      if (err_msg.empty())
-        {
-          runListDialog(main_data, 
-                        results, 
-                        TrackListColumn::ID,
-                        GTK_ENTRY(main_data->trackdb_id_widg), 
-                        "Select track hub",
-                        FALSE) ;
-        }
-      else
-        {
-          zMapCritical("Search failed: %s", err_msg.c_str()) ;
-        }
-    }
-
-  gtk_widget_destroy(dialog) ;
 }
 
 
