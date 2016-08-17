@@ -58,13 +58,14 @@ struct errCatch ;
 class ZMapDataSourceStruct
 {
 public:
-  ZMapDataSourceStruct(const GQuark source_name, const char *sequence) ;
+  ZMapDataSourceStruct(const GQuark source_name, const char *sequence, const int start, const int end) ;
   virtual ~ZMapDataSourceStruct() ;
 
   virtual bool isOpen() = 0 ;
   virtual bool checkHeader() = 0 ;
   virtual bool readLine(GString * const pStr) = 0 ;
   virtual bool gffVersion(int * const p_out_val) ;
+  virtual bool parseBodyLine(GError **error) = 0 ;
 
   GError* error() ;
 
@@ -73,42 +74,56 @@ public:
 protected:
   GQuark source_name_ ;
   char *sequence_ ;
+  int start_ ;
+  int end_ ;
   GError *error_ ;
+
+  ZMapGFFParser parser_ ;
+
 } ;
 
+
 /*
- *  Full declarations of concrete types to represent the GIO channel and
- *  HTS file data sources.
+ *  Full declarations of concrete types to represent the specific data sources types
  */
+
 class ZMapDataSourceGIOStruct : public ZMapDataSourceStruct
 {
 public:
-  ZMapDataSourceGIOStruct(const GQuark source_name, const char *file_name, const char *open_mode, const char *sequence) ;
+  ZMapDataSourceGIOStruct(const GQuark source_name, const char *file_name, const char *open_mode, 
+                          const char *sequence, const int start, const int end) ;
   ~ZMapDataSourceGIOStruct() ;
 
   bool isOpen() ;
   bool checkHeader() ;
   bool readLine(GString * const pStr) ;
   bool gffVersion(int * const p_out_val) ;
+  bool parseBodyLine(GError **error) ;
 
   GIOChannel *io_channel ;
+
+private:
 } ;
+
 
 class ZMapDataSourceBEDStruct : public ZMapDataSourceStruct
 {
 public:
-  ZMapDataSourceBEDStruct(const GQuark source_name, const char *file_name, const char *open_mode, const char *sequence) ;
+  ZMapDataSourceBEDStruct(const GQuark source_name, const char *file_name, const char *open_mode, 
+                          const char *sequence, const int start, const int end) ;
   ~ZMapDataSourceBEDStruct() ;
 
   bool isOpen() ;
   bool checkHeader() ;
   bool readLine(GString * const pStr) ;
+  bool parseBodyLine(GError **error) ;
 
 private:
   struct errCatch *err_catch_ ;
   struct bed* bed_features_ ;
   struct bed* cur_feature_ ;
 } ;
+
 
 class ZMapDataSourceBIGBEDStruct : public ZMapDataSourceStruct
 {
@@ -120,16 +135,16 @@ public:
   bool isOpen() ;
   bool checkHeader() ;
   bool readLine(GString * const pStr) ;
+  bool parseBodyLine(GError **error) ;
 
 private:
   struct errCatch *err_catch_ ;
-  int start_ ; // sequence region start
-  int end_ ;   // sequence region end
   struct bbiFile *bbi_file_ ;
   struct lm *lm_; // Memory pool to hold returned list from bbi file
   struct bigBedInterval *list_ ;
   struct bigBedInterval *cur_interval_ ; // current item from list_
 } ;
+
 
 class ZMapDataSourceBIGWIGStruct : public ZMapDataSourceStruct
 {
@@ -141,11 +156,10 @@ public:
   bool isOpen() ;
   bool checkHeader() ;
   bool readLine(GString * const pStr) ;
+  bool parseBodyLine(GError **error) ;
 
 private:
   struct errCatch *err_catch_ ;
-  int start_ ; // sequence region start
-  int end_ ;   // sequence region end
   struct bbiFile *bbi_file_ ;
   struct lm *lm_; // Memory pool to hold returned list from bbi file
   struct bbiInterval *list_ ;
@@ -158,11 +172,13 @@ private:
 class ZMapDataSourceHTSStruct : public ZMapDataSourceStruct
 {
 public:
-  ZMapDataSourceHTSStruct(const GQuark source_name, const char *file_name, const char *open_mode, const char *sequence) ;
+  ZMapDataSourceHTSStruct(const GQuark source_name, const char *file_name, const char *open_mode, 
+                          const char *sequence, const int start, const int end) ;
   ~ZMapDataSourceHTSStruct() ;
   bool isOpen() ;
   bool checkHeader() ;
   bool readLine(GString * const pStr) ;
+  bool parseBodyLine(GError **error) ;
 
   htsFile *hts_file ;
   /* bam header and record object */
@@ -175,14 +191,17 @@ public:
   char *so_type ;
 } ;
 
+
 class ZMapDataSourceBCFStruct : public ZMapDataSourceStruct
 {
 public:
-  ZMapDataSourceBCFStruct(const GQuark source_name, const char *file_name, const char *open_mode, const char *sequence) ;
+  ZMapDataSourceBCFStruct(const GQuark source_name, const char *file_name, const char *open_mode, 
+                          const char *sequence, const int start, const int end) ;
   ~ZMapDataSourceBCFStruct() ;
   bool isOpen() ;
   bool checkHeader() ;
   bool readLine(GString * const pStr) ;
+  bool parseBodyLine(GError **error) ;
 
   htsFile *hts_file ;
   /* bam header and record object */

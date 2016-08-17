@@ -332,22 +332,37 @@ void createGFFLineFromBed(GString *str,
  */
 
 ZMapDataSourceStruct::ZMapDataSourceStruct(const GQuark source_name,
-                                           const char *sequence)
+                                           const char *sequence,
+                                           const int start,
+                                           const int end)
   : type(ZMapDataSourceType::UNK), 
     source_name_(source_name),
-    error_(NULL)
+    start_(start),
+    end_(end),
+    error_(NULL),
+    parser_(NULL)
 {
   semaphore_G.wait() ;
 
   if (sequence)
     sequence_ = g_strdup(sequence) ;
+
+  int gff_version = ZMAPGFF_VERSION_UNKNOWN ;
+  gffVersion(&gff_version) ;
+
+  parser_ = zMapGFFCreateParser(gff_version,
+                                sequence,
+                                start,
+                                end) ;
 }
 
 ZMapDataSourceGIOStruct::ZMapDataSourceGIOStruct(const GQuark source_name, 
                                                  const char *file_name,
                                                  const char *open_mode,
-                                                 const char *sequence)
-  : ZMapDataSourceStruct(source_name, sequence)
+                                                 const char *sequence,
+                                                 const int start,
+                                                 const int end)
+  : ZMapDataSourceStruct(source_name, sequence, start, end)
 {
   type = ZMapDataSourceType::GIO ;
   io_channel = g_io_channel_new_file(file_name, open_mode, &error_) ;
@@ -356,8 +371,10 @@ ZMapDataSourceGIOStruct::ZMapDataSourceGIOStruct(const GQuark source_name,
 ZMapDataSourceBEDStruct::ZMapDataSourceBEDStruct(const GQuark source_name, 
                                                  const char *file_name,
                                                  const char *open_mode,
-                                                 const char *sequence)
-  : ZMapDataSourceStruct(source_name, sequence),
+                                                 const char *sequence,
+                                                 const int start,
+                                                 const int end)
+  : ZMapDataSourceStruct(source_name, sequence, start, end),
     cur_feature_(NULL)
 {
   zMapReturnIfFail(file_name) ;
@@ -388,9 +405,7 @@ ZMapDataSourceBIGBEDStruct::ZMapDataSourceBIGBEDStruct(const GQuark source_name,
                                                        const char *sequence,
                                                        const int start,
                                                        const int end)
-  : ZMapDataSourceStruct(source_name, sequence),
-    start_(start),
-    end_(end),
+  : ZMapDataSourceStruct(source_name, sequence, start, end),
     lm_(NULL),
     list_(NULL),
     cur_interval_(NULL)
@@ -423,9 +438,7 @@ ZMapDataSourceBIGWIGStruct::ZMapDataSourceBIGWIGStruct(const GQuark source_name,
                                                        const char *sequence,
                                                        const int start,
                                                        const int end)
-  : ZMapDataSourceStruct(source_name, sequence),
-    start_(start),
-    end_(end),
+  : ZMapDataSourceStruct(source_name, sequence, start, end),
     lm_(NULL),
     list_(NULL),
     cur_interval_(NULL)
@@ -453,10 +466,12 @@ ZMapDataSourceBIGWIGStruct::ZMapDataSourceBIGWIGStruct(const GQuark source_name,
 
 #ifdef USE_HTSLIB
 ZMapDataSourceHTSStruct::ZMapDataSourceHTSStruct(const GQuark source_name, 
-                                                         const char *file_name, 
-                                                         const char *open_mode,
-                                                         const char *sequence)
-  : ZMapDataSourceStruct(source_name, sequence),
+                                                 const char *file_name, 
+                                                 const char *open_mode,
+                                                 const char *sequence,
+                                                 const int start,
+                                                 const int end)
+  : ZMapDataSourceStruct(source_name, sequence, start, end),
     hts_file(NULL),
     hts_hdr(NULL),
     hts_rec(NULL),
@@ -483,8 +498,10 @@ ZMapDataSourceHTSStruct::ZMapDataSourceHTSStruct(const GQuark source_name,
 ZMapDataSourceBCFStruct::ZMapDataSourceBCFStruct(const GQuark source_name, 
                                                  const char *file_name, 
                                                  const char *open_mode,
-                                                 const char *sequence)
-  : ZMapDataSourceStruct(source_name, sequence),
+                                                 const char *sequence,
+                                                 const int start,
+                                                 const int end)
+  : ZMapDataSourceStruct(source_name, sequence, start, end),
     hts_file(NULL),
     hts_hdr(NULL),
     hts_rec(NULL),
@@ -617,8 +634,11 @@ bool ZMapDataSourceGIOStruct::isOpen()
 {
   bool result = false ;
 
-  if (io_channel)
-    result = true ;
+  // Check the io channel was opened ok and the parser was created
+  if (io_channel && parser_)
+    {
+      result = true ;
+    }
 
   return result ;
 }
@@ -1328,6 +1348,182 @@ bool ZMapDataSourceBCFStruct::readLine(GString * const pStr )
 #endif
 
 
+
+/*
+ * Process a body line. Reads a line from the source and create a feature from it. Returns false if
+ * a fatal error or end of file was encountered. Sets the error if there was a problem.
+ */
+bool ZMapDataSourceGIOStruct::parseBodyLine(GError **error)
+{
+  bool result = false ;
+
+  GString *line = g_string_new(NULL) ;
+
+  if (readLine(line))
+    {
+      result = true ; // not end of file
+
+      if (!zMapGFFParseLine(parser_, line->str))
+        {
+          GError *g_error = zMapGFFGetError(parser_) ;
+
+          if (g_error)
+            {
+              // Check if we should terminate
+              if (zMapGFFTerminated(parser_))
+                result = false ;
+            }
+        }
+
+    }
+
+  return result ;
+}
+
+bool ZMapDataSourceBEDStruct::parseBodyLine(GError **error)
+{
+  bool result = false ;
+
+  GString *line = g_string_new(NULL) ;
+
+  if (readLine(line))
+    {
+      result = true ; // not end of file
+
+      // Currently this always returns a GFF line so process it as GFF.
+      if (!zMapGFFParseLine(parser_, line->str))
+        {
+          GError *g_error = zMapGFFGetError(parser_) ;
+
+          if (g_error)
+            {
+              // Check if we should terminate
+              if (zMapGFFTerminated(parser_))
+                result = false ;
+            }
+        }
+
+    }
+
+  return result ;
+}
+
+bool ZMapDataSourceBIGBEDStruct::parseBodyLine(GError **error)
+{
+  bool result = false ;
+
+  GString *line = g_string_new(NULL) ;
+
+  if (readLine(line))
+    {
+      result = true ; // not end of file
+
+      // Currently this always returns a GFF line so process it as GFF.
+      if (!zMapGFFParseLine(parser_, line->str))
+        {
+          GError *g_error = zMapGFFGetError(parser_) ;
+
+          if (g_error)
+            {
+              // Check if we should terminate
+              if (zMapGFFTerminated(parser_))
+                result = false ;
+            }
+        }
+
+    }
+
+  return result ;
+}
+
+bool ZMapDataSourceBIGWIGStruct::parseBodyLine(GError **error)
+{
+  bool result = false ;
+
+  GString *line = g_string_new(NULL) ;
+
+  if (readLine(line))
+    {
+      result = true ; // not end of file
+
+      // Currently this always returns a GFF line so process it as GFF.
+      if (!zMapGFFParseLine(parser_, line->str))
+        {
+          GError *g_error = zMapGFFGetError(parser_) ;
+
+          if (g_error)
+            {
+              // Check if we should terminate
+              if (zMapGFFTerminated(parser_))
+                result = false ;
+            }
+        }
+
+    }
+
+  return result ;
+}
+
+#ifdef USE_HTSLIB
+bool ZMapDataSourceHTSStruct::parseBodyLine(GError **error)
+{
+  bool result = false ;
+
+  GString *line = g_string_new(NULL) ;
+
+  if (readLine(line))
+    {
+      result = true ; // not end of file
+
+      // Currently this always returns a GFF line so process it as GFF.
+      if (!zMapGFFParseLine(parser_, line->str))
+        {
+          GError *g_error = zMapGFFGetError(parser_) ;
+
+          if (g_error)
+            {
+              // Check if we should terminate
+              if (zMapGFFTerminated(parser_))
+                result = false ;
+            }
+        }
+
+    }
+
+  return result ;
+}
+
+bool ZMapDataSourceBCFStruct::parseBodyLine(GError **error)
+{
+  bool result = false ;
+
+  GString *line = g_string_new(NULL) ;
+
+  if (readLine(line))
+    {
+      result = true ; // not end of file
+
+      // Currently this always returns a GFF line so process it as GFF.
+      if (!zMapGFFParseLine(parser_, line->str))
+        {
+          GError *g_error = zMapGFFGetError(parser_) ;
+
+          if (g_error)
+            {
+              // Check if we should terminate
+              if (zMapGFFTerminated(parser_))
+                result = false ;
+            }
+        }
+
+    }
+
+  return result ;
+}
+
+#endif // USE_HTSLIB
+
+
 /*
  * Create a ZMapDataSource object
  */
@@ -1351,10 +1547,10 @@ ZMapDataSource zMapDataSourceCreate(const GQuark source_name,
       switch (source_type)
         {
         case ZMapDataSourceType::GIO:
-          data_source = new ZMapDataSourceGIOStruct(source_name, file_name, open_mode, sequence) ;
+          data_source = new ZMapDataSourceGIOStruct(source_name, file_name, open_mode, sequence, start, end) ;
           break ;
         case ZMapDataSourceType::BED:
-          data_source = new ZMapDataSourceBEDStruct(source_name, file_name, open_mode, sequence) ;
+          data_source = new ZMapDataSourceBEDStruct(source_name, file_name, open_mode, sequence, start, end) ;
           break ;
         case ZMapDataSourceType::BIGBED:
           data_source = new ZMapDataSourceBIGBEDStruct(source_name, file_name, open_mode, sequence, start, end) ;
@@ -1364,10 +1560,10 @@ ZMapDataSource zMapDataSourceCreate(const GQuark source_name,
           break ;
 #ifdef USE_HTSLIB
         case ZMapDataSourceType::HTS:
-          data_source = new ZMapDataSourceHTSStruct(source_name, file_name, open_mode, sequence) ;
+          data_source = new ZMapDataSourceHTSStruct(source_name, file_name, open_mode, sequence, start, end) ;
           break ;
         case ZMapDataSourceType::BCF:
-          data_source = new ZMapDataSourceBCFStruct(source_name, file_name, open_mode, sequence) ;
+          data_source = new ZMapDataSourceBCFStruct(source_name, file_name, open_mode, sequence, start, end) ;
           break ;
 #endif
         default:
@@ -1457,6 +1653,22 @@ gboolean zMapDataSourceReadLine (ZMapDataSource const data_source , GString * co
   zMapReturnValIfFail(data_source && (data_source->type != ZMapDataSourceType::UNK) && pStr, result ) ;
   
   result = data_source->readLine(pStr) ;
+
+  return result ;
+}
+
+
+
+/*
+ * Read one line from the body of the data and parse it.
+ *
+ */
+gboolean zMapDataSourceParseBodyLine(ZMapDataSource const data_source, GError **error)
+{
+  gboolean result = FALSE ;
+  zMapReturnValIfFail(data_source && (data_source->type != ZMapDataSourceType::UNK), result ) ;
+  
+  result = data_source->parseBodyLine(error) ;
 
   return result ;
 }

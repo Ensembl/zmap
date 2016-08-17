@@ -361,33 +361,6 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
    */
   server->sequence_server = req_open->sequence_server ;
 
-  /* Get the GFF version */
-  int parser_version = zMapGFFGetVersion(server->parser) ;
-  if (!parser_version)
-    {
-      int gff_version = ZMAPGFF_VERSION_UNKNOWN ;
-      if (!zMapDataSourceGetGFFVersion(server->data_source, &gff_version ))
-        {
-          /* sourceempty error */
-          server->last_err_msg = g_strdup("No data returned from file.") ;
-          result = ZMAP_SERVERRESPONSE_SOURCEEMPTY ;
-        }
-      else
-        {
-          server->gff_version = gff_version ;
-        }
-    }
-  else
-    server->gff_version = parser_version ;
-
-  if (!server->parser)
-    {
-      server->parser = zMapGFFCreateParser(server->gff_version,
-                                           g_quark_to_string(server->req_sequence),
-                                           server->zmap_start,
-                                           server->zmap_end) ;
-    }
-
   /*
    * Set size for a buffer line.
    */
@@ -401,6 +374,14 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
    */
   result = ZMAP_SERVERRESPONSE_OK ;
   result = fileGetHeader(server) ;
+
+  /* Check the gff version, if applicable */
+  if (!server->data_source->gffVersion(&server->gff_version))
+    {
+      /* sourceempty error */
+      server->last_err_msg = g_strdup("No data returned from file.") ;
+      result = ZMAP_SERVERRESPONSE_SOURCEEMPTY ;
+    }
 
   /*
    * Only look for ##DNA if we are reading gffv2.
@@ -1080,9 +1061,7 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
   FileServer server = get_features_data->server ;
   ZMapGFFParser parser = server->parser ;
   zMapReturnIfFail(server && parser) ;
-  GIOStatus status = G_IO_STATUS_NORMAL ;
   gboolean free_on_destroy = FALSE ;
-  GError *gff_file_err = NULL ;
 
   /* The caller may only want a small part of the features in the stream so we set the
    * feature start/end from the block, not the gff stream start/end. */
@@ -1101,39 +1080,39 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
   /* Keep track of how many warnings we log so we don't fill the log file with millions */
   int warning_count = 0;
   const int max_warnings = 1000;
+  bool finished = false ;
+  GError *g_error = NULL ;
 
   do
     {
-
-      if (!zMapGFFParseLine(parser, server->buffer_line->str))
+      finished = !zMapDataSourceParseBodyLine(server->data_source, &g_error) ;
+      
+      if (g_error)
         {
-          GError *error ;
-          error = zMapGFFGetError(parser) ;
-
           /* Only log a warning if an error was given (the error may be null if no warning is
            * required and we need to be careful not to fill the log with millions of warnings) */
-          if (error && warning_count < max_warnings)
+          if (warning_count < max_warnings)
             {
-              ZMAPSERVER_LOG(Warning, PROTOCOL_NAME, server->path, "%s", error->message) ;
+              ZMAPSERVER_LOG(Warning, PROTOCOL_NAME, server->path, "%s", g_error->message) ;
               ++warning_count ;
             }
 
-          if (zMapGFFTerminated(parser))
+          /* If there's a g_error and we should terminate then that indicates a fatal error */
+          if (finished)
             {
               get_features_data->result = ZMAP_SERVERRESPONSE_REQFAIL ;
-
-              setErrMsg(server, error->message) ;
-
-              break ;
+              setErrMsg(server, g_error->message) ;
             }
+
+          g_error_free(g_error) ;
+          g_error = NULL ;
         }
-    } while ((status = zMapDataSourceReadLine(server->data_source, server->buffer_line)
-                      ? G_IO_STATUS_NORMAL : G_IO_STATUS_EOF ) == G_IO_STATUS_NORMAL) ;
+    } while (!finished) ;
 
 
   /* If we reached the end of the stream then all is fine, so return features... */
   free_on_destroy = TRUE ;
-  if (status == G_IO_STATUS_EOF)
+  if (finished)
     {
       if (get_features_data->result == ZMAP_SERVERRESPONSE_OK
           && zMapGFFGetFeatures(parser, feature_block))
@@ -1156,13 +1135,6 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
               setErrMsg(server, err_msg) ;
             }
         }
-    }
-  else
-    {
-      zMapLogWarning("Could not read GFF features from stream \"%s\" with \"%s\".",
-                     server->path, &gff_file_err) ;
-
-      setErrorMsgGError(server, &gff_file_err) ;
     }
 
   zMapGFFSetFreeOnDestroy(parser, free_on_destroy) ;
