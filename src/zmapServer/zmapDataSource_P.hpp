@@ -119,6 +119,8 @@ public:
   GIOChannel *io_channel ;
 
 private:
+  int gff_version_ ;
+  bool gff_version_set_ ;
 } ;
 
 

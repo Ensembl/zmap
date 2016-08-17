@@ -359,16 +359,17 @@ ZMapDataSourceGIOStruct::ZMapDataSourceGIOStruct(const GQuark source_name,
                                                  const char *sequence,
                                                  const int start,
                                                  const int end)
-  : ZMapDataSourceStruct(source_name, sequence, start, end)
+  : ZMapDataSourceStruct(source_name, sequence, start, end),
+    gff_version_(ZMAPGFF_VERSION_UNKNOWN),
+    gff_version_set_(false)
 {
   type = ZMapDataSourceType::GIO ;
   io_channel = g_io_channel_new_file(file_name, open_mode, &error_) ;
 
+  gffVersion(&gff_version_) ;
+  gff_version_set_ = true ;
 
-  int gff_version = ZMAPGFF_VERSION_UNKNOWN ;
-  gffVersion(&gff_version) ;
-
-  parser_ = zMapGFFCreateParser(gff_version,
+  parser_ = zMapGFFCreateParser(gff_version_,
                                 sequence,
                                 start,
                                 end) ;
@@ -411,7 +412,6 @@ ZMapDataSourceBEDStruct::ZMapDataSourceBEDStruct(const GQuark source_name,
       zMapLogWarning("Failed to open file: %s", err_catch_->message->string) ;
       bed_features_ = NULL ;
     }
-
 
   int gff_version = ZMAPGFF_VERSION_UNKNOWN ;
   gffVersion(&gff_version) ;
@@ -814,33 +814,43 @@ bool ZMapDataSourceStruct::gffVersion(int * const p_out_val)
 
 bool ZMapDataSourceGIOStruct::gffVersion(int * const p_out_val)
 {
-  int out_val = ZMAPGFF_VERSION_UNKNOWN ;
-  gboolean result = FALSE ;
-  zMapReturnValIfFail(p_out_val, result) ;
-
-  GString *pString = g_string_new(NULL) ;
-  GIOStatus cIOStatus = G_IO_STATUS_NORMAL ;
-  GError *pError = NULL ;
-
-  result = zMapGFFGetVersionFromGIO(io_channel, pString,
-                                    &out_val, &cIOStatus, &pError) ;
-
-  *p_out_val = out_val ;
-
-  if ( !result || (cIOStatus != G_IO_STATUS_NORMAL)  || pError ||
-       ((out_val != ZMAPGFF_VERSION_2) && (out_val != ZMAPGFF_VERSION_3)) )
+  if (gff_version_set_)
     {
-      zMapLogCritical("Could not obtain GFF version from GIOChannel in gffVersion(), %s", "") ;
-      /* This is set to make sure that the calling program notices the error. */
-      result = FALSE ;
+      if (p_out_val)
+        *p_out_val = gff_version_ ;
+
+      return true ;
     }
+  else
+    {
+      int out_val = ZMAPGFF_VERSION_UNKNOWN ;
+      gboolean result = FALSE ;
+      zMapReturnValIfFail(p_out_val, result) ;
 
-  g_string_free(pString, TRUE) ;
+      GString *pString = g_string_new(NULL) ;
+      GIOStatus cIOStatus = G_IO_STATUS_NORMAL ;
+      GError *pError = NULL ;
 
-  if (pError)
-    g_error_free(pError) ;
+      result = zMapGFFGetVersionFromGIO(io_channel, pString,
+                                        &out_val, &cIOStatus, &pError) ;
 
-  return result ;
+      *p_out_val = out_val ;
+
+      if ( !result || (cIOStatus != G_IO_STATUS_NORMAL)  || pError ||
+           ((out_val != ZMAPGFF_VERSION_2) && (out_val != ZMAPGFF_VERSION_3)) )
+        {
+          zMapLogCritical("Could not obtain GFF version from GIOChannel in gffVersion(), %s", "") ;
+          /* This is set to make sure that the calling program notices the error. */
+          result = FALSE ;
+        }
+
+      g_string_free(pString, TRUE) ;
+
+      if (pError)
+        g_error_free(pError) ;
+
+      return result ;
+    }
 }
 
 void ZMapDataSourceStruct::setGffHeader()
