@@ -348,6 +348,23 @@ ZMapDataSourceStruct::ZMapDataSourceStruct(const GQuark source_name,
   if (sequence)
     sequence_ = g_strdup(sequence) ;
 
+
+  buffer_line_ = g_string_sized_new(READBUFFER_SIZE) ;
+
+}
+
+ZMapDataSourceGIOStruct::ZMapDataSourceGIOStruct(const GQuark source_name, 
+                                                 const char *file_name,
+                                                 const char *open_mode,
+                                                 const char *sequence,
+                                                 const int start,
+                                                 const int end)
+  : ZMapDataSourceStruct(source_name, sequence, start, end)
+{
+  type = ZMapDataSourceType::GIO ;
+  io_channel = g_io_channel_new_file(file_name, open_mode, &error_) ;
+
+
   int gff_version = ZMAPGFF_VERSION_UNKNOWN ;
   gffVersion(&gff_version) ;
 
@@ -363,21 +380,6 @@ ZMapDataSourceStruct::ZMapDataSourceStruct(const GQuark source_name,
       zMapGFFSetFeatureClipCoords(parser_, start, end) ;
       zMapGFFSetFeatureClip(parser_, GFF_CLIP_ALL);
     }
-
-
-  buffer_line_ = g_string_sized_new(READBUFFER_SIZE) ;
-}
-
-ZMapDataSourceGIOStruct::ZMapDataSourceGIOStruct(const GQuark source_name, 
-                                                 const char *file_name,
-                                                 const char *open_mode,
-                                                 const char *sequence,
-                                                 const int start,
-                                                 const int end)
-  : ZMapDataSourceStruct(source_name, sequence, start, end)
-{
-  type = ZMapDataSourceType::GIO ;
-  io_channel = g_io_channel_new_file(file_name, open_mode, &error_) ;
 }
 
 ZMapDataSourceBEDStruct::ZMapDataSourceBEDStruct(const GQuark source_name, 
@@ -408,6 +410,23 @@ ZMapDataSourceBEDStruct::ZMapDataSourceBEDStruct(const GQuark source_name,
     {
       zMapLogWarning("Failed to open file: %s", err_catch_->message->string) ;
       bed_features_ = NULL ;
+    }
+
+
+  int gff_version = ZMAPGFF_VERSION_UNKNOWN ;
+  gffVersion(&gff_version) ;
+
+  parser_ = zMapGFFCreateParser(gff_version,
+                                sequence,
+                                start,
+                                end) ;
+
+  /* The caller may only want a small part of the features in the stream so we set the
+   * feature start/end from the block, not the gff stream start/end. */
+  if (parser_ && end)
+    {
+      zMapGFFSetFeatureClipCoords(parser_, start, end) ;
+      zMapGFFSetFeatureClip(parser_, GFF_CLIP_ALL);
     }
 }
 
@@ -442,6 +461,23 @@ ZMapDataSourceBIGBEDStruct::ZMapDataSourceBIGBEDStruct(const GQuark source_name,
       zMapLogWarning("Failed to open file: %s", err_catch_->message->string) ;
       bbi_file_ = NULL ;
     }
+
+
+  int gff_version = ZMAPGFF_VERSION_UNKNOWN ;
+  gffVersion(&gff_version) ;
+
+  parser_ = zMapGFFCreateParser(gff_version,
+                                sequence,
+                                start,
+                                end) ;
+
+  /* The caller may only want a small part of the features in the stream so we set the
+   * feature start/end from the block, not the gff stream start/end. */
+  if (parser_ && end)
+    {
+      zMapGFFSetFeatureClipCoords(parser_, start, end) ;
+      zMapGFFSetFeatureClip(parser_, GFF_CLIP_ALL);
+    }
 }
 
 ZMapDataSourceBIGWIGStruct::ZMapDataSourceBIGWIGStruct(const GQuark source_name, 
@@ -474,6 +510,23 @@ ZMapDataSourceBIGWIGStruct::ZMapDataSourceBIGWIGStruct(const GQuark source_name,
       zMapLogWarning("Failed to open file: %s", err_catch_->message->string) ;
       bbi_file_ = NULL ;
     }
+
+
+  int gff_version = ZMAPGFF_VERSION_UNKNOWN ;
+  gffVersion(&gff_version) ;
+
+  parser_ = zMapGFFCreateParser(gff_version,
+                                sequence,
+                                start,
+                                end) ;
+
+  /* The caller may only want a small part of the features in the stream so we set the
+   * feature start/end from the block, not the gff stream start/end. */
+  if (parser_ && end)
+    {
+      zMapGFFSetFeatureClipCoords(parser_, start, end) ;
+      zMapGFFSetFeatureClip(parser_, GFF_CLIP_ALL);
+    }
 }
 
 #ifdef USE_HTSLIB
@@ -505,6 +558,23 @@ ZMapDataSourceHTSStruct::ZMapDataSourceHTSStruct(const GQuark source_name,
     {
       g_set_error(&error_, g_quark_from_string("ZMap"), 99, "Failed to open file") ;
     }
+
+
+  int gff_version = ZMAPGFF_VERSION_UNKNOWN ;
+  gffVersion(&gff_version) ;
+
+  parser_ = zMapGFFCreateParser(gff_version,
+                                sequence,
+                                start,
+                                end) ;
+
+  /* The caller may only want a small part of the features in the stream so we set the
+   * feature start/end from the block, not the gff stream start/end. */
+  if (parser_ && end)
+    {
+      zMapGFFSetFeatureClipCoords(parser_, start, end) ;
+      zMapGFFSetFeatureClip(parser_, GFF_CLIP_ALL);
+    }
 }
 
 ZMapDataSourceBCFStruct::ZMapDataSourceBCFStruct(const GQuark source_name, 
@@ -535,6 +605,23 @@ ZMapDataSourceBCFStruct::ZMapDataSourceBCFStruct(const GQuark source_name,
   else
     {
       g_set_error(&error_, g_quark_from_string("ZMap"), 99, "Failed to open file") ;
+    }
+
+
+  int gff_version = ZMAPGFF_VERSION_UNKNOWN ;
+  gffVersion(&gff_version) ;
+
+  parser_ = zMapGFFCreateParser(gff_version,
+                                sequence,
+                                start,
+                                end) ;
+
+  /* The caller may only want a small part of the features in the stream so we set the
+   * feature start/end from the block, not the gff stream start/end. */
+  if (parser_ && end)
+    {
+      zMapGFFSetFeatureClipCoords(parser_, start, end) ;
+      zMapGFFSetFeatureClip(parser_, GFF_CLIP_ALL);
     }
 }
 #endif
