@@ -211,9 +211,7 @@ static gboolean createConnection(void **server_out,
   server->exit_code = 0;
   server->sequence_server = FALSE ;
   server->is_otter = FALSE ;
-  server->parser = NULL ;
   server->gff_version = ZMAPGFF_VERSION_UNKNOWN ;
-  server->buffer_line = NULL ;
   server->zmap_start = 0 ;
   server->zmap_end = 0 ;
   server->req_context = NULL ;
@@ -360,14 +358,6 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
    * Then create the parser.
    */
   server->sequence_server = req_open->sequence_server ;
-
-  /*
-   * Set size for a buffer line.
-   */
-  if (!server->buffer_line)
-    {
-      server->buffer_line = g_string_sized_new(ZMAPFILESERVER_READBUFFER_SIZE) ;
-    }
 
   /*
    * Get the header data if there are any.
@@ -522,15 +512,16 @@ static ZMapServerResponseType setContext(void *server_in, ZMapFeatureContext fea
  * there may be no more lines in the file, we handle that as this point
  * as it's only here that the caller has asked for the features.
  */
-static ZMapServerResponseType getFeatures(void *server_in, ZMapStyleTree &styles,
-  ZMapFeatureContext feature_context)
+static ZMapServerResponseType getFeatures(void *server_in, 
+                                          ZMapStyleTree &styles,
+                                          ZMapFeatureContext feature_context)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   FileServer server = (FileServer)server_in ;
   GetFeaturesDataStruct get_features_data = {NULL} ;
 
   /* Check that there is any more to parse.... */
-  if (server->buffer_line->len == 0)                           /* GString len is always >= 0 */
+  if (server->data_source->endOfFile())                           /* GString len is always >= 0 */
     {
       setErrMsg(server, "No features found.") ;
 
@@ -542,47 +533,34 @@ static ZMapServerResponseType getFeatures(void *server_in, ZMapStyleTree &styles
     {
       get_features_data.server = server ;
 
-      zMapGFFParseSetSourceHash(server->parser, server->featureset_2_column, server->source_2_sourcedata) ;
-
-      zMapGFFParserInitForFeatures(server->parser, &styles, FALSE) ;
-
-      zMapGFFSetDefaultToBasic(server->parser, TRUE);
-
       server->result = ZMAP_SERVERRESPONSE_OK ;
 
       /* Get block to parent mapping.  */
       addMapping(feature_context, server->zmap_start, server->zmap_end) ;
 
-
       /* Fetch all the features for all the blocks in all the aligns. */
       g_hash_table_foreach(feature_context->alignments, eachAlignmentGetFeatures, &get_features_data) ;
 
+      bool empty = false ;
+      std::string err_msg ;
 
-      int num_features = zMapGFFParserGetNumFeatures(server->parser) ,
-        n_lines_bod = zMapGFFGetLineBod(server->parser),
-        n_lines_fas = zMapGFFGetLineFas(server->parser),
-        n_lines_seq = zMapGFFGetLineSeq(server->parser) ;
+      if (!server->data_source->checkFeatures(empty, err_msg, server->featureset_2_column, server->source_2_sourcedata, styles))
+        result = server->result = ZMAP_SERVERRESPONSE_SOURCEERROR ;
+      else if (empty)
+        result = server->result = ZMAP_SERVERRESPONSE_SOURCEEMPTY ;
 
-      if (!num_features)
+      if (!err_msg.empty())
         {
           setErrMsg(server, "No features found.") ;
-
           ZMAPSERVER_LOG(Warning, PROTOCOL_NAME, server->path, "%s", server->last_err_msg) ;
         }
-
-      if (!num_features && !n_lines_bod && !n_lines_fas && !n_lines_seq)
-        result = server->result = ZMAP_SERVERRESPONSE_SOURCEEMPTY ;
-      else if (   (!num_features && n_lines_bod)
-               || (n_lines_fas && !zMapGFFGetSequenceNum(server->parser))
-               || (n_lines_seq && !zMapGFFGetSequenceNum(server->parser) && zMapGFFGetVersion(server->parser) == ZMAPGFF_VERSION_2)  )
-        result = server->result = ZMAP_SERVERRESPONSE_SOURCEERROR ;
 
       /*
        * get the list of source featuresets
        */
-      if (num_features)
+      if (!empty)
         {
-          feature_context->src_feature_set_names = zMapGFFGetFeaturesets(server->parser);
+          feature_context->src_feature_set_names = server->data_source->getFeaturesets() ;
           result = server->result ;
         }
     }
@@ -606,8 +584,9 @@ static ZMapServerResponseType getContextSequence(void *server_in,
     {
       ZMapSequence sequence = NULL ;
       GQuark seq_id = g_quark_from_string(sequence_name) ;
+      GError *error = NULL ;
 
-      if ((sequence = zMapGFFGetSequence(server->parser, seq_id)))
+      if ((sequence = server->data_source->getSequence(seq_id, &error)))
         {
           // Why do we do this....because zmap expects lowercase dna...operations like revcomp
           // will fail with uppercase currently.....seems wasteful....but simplifies searches etc.   
@@ -627,10 +606,7 @@ static ZMapServerResponseType getContextSequence(void *server_in,
         }
       else
         {
-          GError *error;
           const char *estr;
-
-          error = zMapGFFGetError(server->parser);
 
           if (error)
             estr = error->message;
@@ -693,12 +669,6 @@ static ZMapServerResponseType closeConnection(void *server_in)
   FileServer server = (FileServer)server_in ;
   /* GError *gff_file_err = NULL ; */
 
-  if (server->parser)
-    zMapGFFDestroyParser(server->parser) ;
-
-  if (server->buffer_line)
-    g_string_free(server->buffer_line, TRUE) ;
-
   if (server->data_source)
     zMapDataSourceDestroy(&(server->data_source)) ;
 
@@ -721,10 +691,6 @@ static ZMapServerResponseType destroyConnection(void *server_in)
 
   /* Clear up. -> in destroyConnection() */
   /* crashes...
-     if (server->parser)
-     zMapGFFDestroyParser(server->parser) ;
-     if (server->buffer_line)
-     g_string_free(server->buffer_line, TRUE) ;
   */
 
   g_free(server) ;
@@ -781,7 +747,7 @@ static void getConfiguration(FileServer server)
 static ZMapServerResponseType fileGetHeader_GIO(FileServer server)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
-  GIOStatus status = G_IO_STATUS_NORMAL ;
+  bool status = true ;
   GError *error = NULL ;
   gboolean empty_file = TRUE,
     done_header = FALSE ;
@@ -792,13 +758,12 @@ static ZMapServerResponseType fileGetHeader_GIO(FileServer server)
   /*
    * Read lines from the source.
    */
-  while ((status = zMapDataSourceReadLine(server->data_source, server->buffer_line) ? G_IO_STATUS_NORMAL : G_IO_STATUS_EOF ) == G_IO_STATUS_NORMAL)
+  while ((status = server->data_source->readLine()))
     {
-
       empty_file = FALSE ;
       result = ZMAP_SERVERRESPONSE_OK;
 
-      if (zMapGFFParseHeader(server->parser, server->buffer_line->str, &done_header, &header_state))
+      if (server->data_source->parseHeader(&done_header, &header_state, &error))
         {
           if (done_header)
             break ;
@@ -807,14 +772,13 @@ static ZMapServerResponseType fileGetHeader_GIO(FileServer server)
         {
           if (!done_header)
             {
-              error = zMapGFFGetError(server->parser) ;
-
               if (!error)
                 {
                   char *err_msg ;
 
-                  err_msg = g_strdup_printf("zMapGFFParseHeader() failed with no GError for line %d: %s",
-                  zMapGFFGetLineNumber(server->parser), server->buffer_line->str) ;
+                  err_msg = g_strdup_printf("parseHeader() failed with no GError for line %d: %s",
+                                            server->data_source->lineNumber(),
+                                            server->data_source->lineString()) ;
                   setErrMsg(server, err_msg) ;
                   g_free(err_msg) ;
 
@@ -824,7 +788,7 @@ static ZMapServerResponseType fileGetHeader_GIO(FileServer server)
                 {
                   /* If the error was serious we stop processing and return the error,
                    * otherwise we just log the error. */
-                  if (zMapGFFTerminated(server->parser))
+                  if (server->data_source->terminated())
                     {
                       result = ZMAP_SERVERRESPONSE_REQFAIL ;
 
@@ -834,9 +798,10 @@ static ZMapServerResponseType fileGetHeader_GIO(FileServer server)
                     {
                       char *err_msg ;
 
-                      err_msg = g_strdup_printf("zMapGFFParseHeader() failed for line %d: %s",
-                      zMapGFFGetLineNumber(server->parser),
-                      server->buffer_line->str) ;
+                      err_msg = g_strdup_printf("parseHeader() failed for line %d: %s",
+                                                server->data_source->lineNumber(),
+                                                server->data_source->lineString()) ;
+                      
                       setErrMsg(server, err_msg) ;
                       g_free(err_msg) ;
 
@@ -859,20 +824,20 @@ static ZMapServerResponseType fileGetHeader_GIO(FileServer server)
     {
       char *err_msg ;
 
-      if (status == G_IO_STATUS_EOF)
+      if (!status)
         {
           if (empty_file)
             err_msg = g_strdup_printf("%s", "Empty file.") ;
           else
             err_msg = g_strdup_printf("EOF reached while trying to read header, at line %d",
-                                      zMapGFFGetLineNumber(server->parser)) ;
+                                      server->data_source->lineNumber()) ;
 
           result = ZMAP_SERVERRESPONSE_SOURCEERROR ;
         }
       else
         {
           err_msg = g_strdup_printf("Error in GFF header, at line %d",
-                                    zMapGFFGetLineNumber(server->parser)) ;
+                                    server->data_source->lineNumber()) ;
 
           result = ZMAP_SERVERRESPONSE_REQFAIL ;
         }
@@ -901,7 +866,7 @@ static ZMapServerResponseType fileGetHeader(FileServer server)
    * reset done flag for seq else skip the data
    */
   if (server->sequence_server)
-    zMapGFFParserSetSequenceFlag(server->parser);
+    server->data_source->setSequenceFlag() ;
 
   /*
    * Call different functions for different file types.
@@ -913,15 +878,7 @@ static ZMapServerResponseType fileGetHeader(FileServer server)
     }
   else if (server->data_source->checkHeader())
     {
-      /*
-       *  (i) Put in a fake header line to make it look to ZMap like something
-       *      has really been read from a GFF stream.
-       * (ii) Then what? Possibly check that the sequence is the same as what's
-       *      held by the server, and maybe set up a flag somewhere to require
-       *      remapping if it is not?
-       */
-      g_string_erase(server->buffer_line, 0, -1) ;
-      g_string_insert(server->buffer_line, 0, "##source-version ZMap-GFF-conversion") ;
+      server->data_source->setGffHeader() ;
       result = ZMAP_SERVERRESPONSE_OK ;
     }
   else if (server->data_source->error())
@@ -949,31 +906,30 @@ static ZMapServerResponseType fileGetSequence(FileServer server)
   do
     {
 
-      if (!zMapGFFParseSequence(server->parser, server->buffer_line->str, &sequence_finished) || sequence_finished)
+      if (!server->data_source->parseSequence(&sequence_finished, &error) || sequence_finished)
         break;
 
-      status = zMapDataSourceReadLine(server->data_source, server->buffer_line) ? G_IO_STATUS_NORMAL : G_IO_STATUS_EOF ;
+      status = server->data_source->readLine() ? G_IO_STATUS_NORMAL : G_IO_STATUS_EOF ;
 
     } while ( status == G_IO_STATUS_NORMAL );
-
-  error = zMapGFFGetError(server->parser) ;
 
   if (error)
     {
       /* If the error was serious we stop processing and return the error,
        * otherwise we just log the error. */
-      if (zMapGFFTerminated(server->parser))
+      if (server->data_source->terminated())
         {
-        server->result = ZMAP_SERVERRESPONSE_REQFAIL ;
-        setErrMsg(server, error->message) ;
+          server->result = ZMAP_SERVERRESPONSE_REQFAIL ;
+          setErrMsg(server, error->message) ;
         }
      else
        {
          char *err_msg ;
 
           err_msg = g_strdup_printf("zMapGFFParseSequence() failed for line %d: %s - %s",
-          zMapGFFGetLineNumber(server->parser),
-          server->buffer_line->str, error->message) ;
+                                    server->data_source->lineNumber(),
+                                    server->data_source->lineString(),
+                                    error->message) ;
           setErrMsg(server, err_msg) ;
           g_free(err_msg) ;
 
@@ -1059,19 +1015,8 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
     return ;
 
   FileServer server = get_features_data->server ;
-  ZMapGFFParser parser = server->parser ;
-  zMapReturnIfFail(server && parser) ;
+  zMapReturnIfFail(server) ;
   gboolean free_on_destroy = FALSE ;
-
-  /* The caller may only want a small part of the features in the stream so we set the
-   * feature start/end from the block, not the gff stream start/end. */
-  if (server->zmap_end)
-    {
-      zMapGFFSetFeatureClipCoords(parser,
-                                  server->zmap_start,
-                                  server->zmap_end) ;
-      zMapGFFSetFeatureClip(parser,GFF_CLIP_ALL);
-    }
 
   /*
    * Read lines from the source. We assume that the first line has already been read.
@@ -1080,42 +1025,43 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
   /* Keep track of how many warnings we log so we don't fill the log file with millions */
   int warning_count = 0;
   const int max_warnings = 1000;
-  bool finished = false ;
+  bool end_of_file = false ;
   GError *g_error = NULL ;
 
   do
     {
-      finished = !zMapDataSourceParseBodyLine(server->data_source, &g_error) ;
-      
-      if (g_error)
+      if (!server->data_source->parseBodyLine(end_of_file, &g_error))
         {
           /* Only log a warning if an error was given (the error may be null if no warning is
            * required and we need to be careful not to fill the log with millions of warnings) */
-          if (warning_count < max_warnings)
+          if (g_error && warning_count < max_warnings)
             {
               ZMAPSERVER_LOG(Warning, PROTOCOL_NAME, server->path, "%s", g_error->message) ;
               ++warning_count ;
             }
 
           /* If there's a g_error and we should terminate then that indicates a fatal error */
-          if (finished)
+          if (server->data_source->terminated())
             {
               get_features_data->result = ZMAP_SERVERRESPONSE_REQFAIL ;
+
               setErrMsg(server, g_error->message) ;
+
+              break ;
             }
 
           g_error_free(g_error) ;
           g_error = NULL ;
         }
-    } while (!finished) ;
+    } while (!end_of_file) ;
 
 
   /* If we reached the end of the stream then all is fine, so return features... */
   free_on_destroy = TRUE ;
-  if (finished)
+  if (end_of_file)
     {
       if (get_features_data->result == ZMAP_SERVERRESPONSE_OK
-          && zMapGFFGetFeatures(parser, feature_block))
+          && server->data_source->getFeatures(feature_block))
         {
           free_on_destroy = FALSE ;    /* Make sure parser does _not_ free our data ! */
         }
@@ -1137,7 +1083,7 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
         }
     }
 
-  zMapGFFSetFreeOnDestroy(parser, free_on_destroy) ;
+  server->data_source->finalise(free_on_destroy) ;
 
   return ;
 }

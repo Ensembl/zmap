@@ -44,7 +44,6 @@ typedef struct FileServerStruct_
   ZMapURLScheme scheme ;
   ZMapDataSource data_source ;
   ZMapServerResponseType result ;
-  ZMapGFFParser parser ;
   ZMapFeatureContext req_context ;
   ZMapFeatureSequenceMap sequence_map ;
 
@@ -60,13 +59,11 @@ typedef struct FileServerStruct_
   int gff_version, zmap_start, zmap_end, exit_code ;
 
   gboolean sequence_server, is_otter, error ;
-  GString *buffer_line ;
   GHashTable *source_2_sourcedata ;
   GHashTable *featureset_2_column ;
 
 } FileServerStruct, *FileServer ;
 
-#define ZMAPFILESERVER_READBUFFER_SIZE 2048
 
 
 #endif /* !FILE_SERVER_P_H */

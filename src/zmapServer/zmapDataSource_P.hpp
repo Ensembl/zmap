@@ -63,9 +63,25 @@ public:
 
   virtual bool isOpen() = 0 ;
   virtual bool checkHeader() = 0 ;
-  virtual bool readLine(GString * const pStr) = 0 ;
+  virtual bool readLine() = 0 ;
   virtual bool gffVersion(int * const p_out_val) ;
-  virtual bool parseBodyLine(GError **error) = 0 ;
+
+  bool parseBodyLine(bool &end_of_file, GError **error) ;
+  bool checkFeatures(bool &empty, std::string &err_msg, 
+                     GHashTable *featureset_2_column, GHashTable *source_2_sourcedata,
+                     ZMapStyleTree &styles) ;
+  bool getFeatures(ZMapFeatureBlock feature_block) ;
+  GList* getFeaturesets() ;
+  ZMapSequence getSequence(GQuark seq_id, GError **error) ;
+  bool parseHeader(gboolean *done_header, ZMapGFFHeaderState *header_state, GError **error) ;
+  bool parseSequence(gboolean *sequence_finished, GError **error) ;
+  int lineNumber() ;
+  const char *lineString() ;
+  bool endOfFile() ;
+  bool terminated() ;
+  void setSequenceFlag() ;
+  void finalise(bool free_on_destroy) ;
+  void setGffHeader() ;
 
   GError* error() ;
 
@@ -78,6 +94,7 @@ protected:
   int end_ ;
   GError *error_ ;
 
+  GString *buffer_line_ ;
   ZMapGFFParser parser_ ;
 
 } ;
@@ -96,9 +113,8 @@ public:
 
   bool isOpen() ;
   bool checkHeader() ;
-  bool readLine(GString * const pStr) ;
+  bool readLine() ;
   bool gffVersion(int * const p_out_val) ;
-  bool parseBodyLine(GError **error) ;
 
   GIOChannel *io_channel ;
 
@@ -115,8 +131,7 @@ public:
 
   bool isOpen() ;
   bool checkHeader() ;
-  bool readLine(GString * const pStr) ;
-  bool parseBodyLine(GError **error) ;
+  bool readLine() ;
 
 private:
   struct errCatch *err_catch_ ;
@@ -134,8 +149,7 @@ public:
 
   bool isOpen() ;
   bool checkHeader() ;
-  bool readLine(GString * const pStr) ;
-  bool parseBodyLine(GError **error) ;
+  bool readLine() ;
 
 private:
   struct errCatch *err_catch_ ;
@@ -155,8 +169,7 @@ public:
 
   bool isOpen() ;
   bool checkHeader() ;
-  bool readLine(GString * const pStr) ;
-  bool parseBodyLine(GError **error) ;
+  bool readLine() ;
 
 private:
   struct errCatch *err_catch_ ;
@@ -177,8 +190,7 @@ public:
   ~ZMapDataSourceHTSStruct() ;
   bool isOpen() ;
   bool checkHeader() ;
-  bool readLine(GString * const pStr) ;
-  bool parseBodyLine(GError **error) ;
+  bool readLine() ;
 
   htsFile *hts_file ;
   /* bam header and record object */
@@ -200,8 +212,7 @@ public:
   ~ZMapDataSourceBCFStruct() ;
   bool isOpen() ;
   bool checkHeader() ;
-  bool readLine(GString * const pStr) ;
-  bool parseBodyLine(GError **error) ;
+  bool readLine() ;
 
   htsFile *hts_file ;
   /* bam header and record object */

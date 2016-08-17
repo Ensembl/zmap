@@ -101,6 +101,7 @@ static const char * const ZMAP_BED_SO_TERM  = "sequence_feature" ;
 static const char * const ZMAP_BIGBED_SO_TERM  = "sequence_feature" ;
 static const char * const ZMAP_BIGWIG_SO_TERM  = "score" ;
 #define ZMAP_CIGARSTRING_MAXLENGTH 2048
+#define READBUFFER_SIZE 2048
 
 
 /* Need a semaphore to limit the number of threads.
@@ -354,6 +355,17 @@ ZMapDataSourceStruct::ZMapDataSourceStruct(const GQuark source_name,
                                 sequence,
                                 start,
                                 end) ;
+
+  /* The caller may only want a small part of the features in the stream so we set the
+   * feature start/end from the block, not the gff stream start/end. */
+  if (parser_ && end)
+    {
+      zMapGFFSetFeatureClipCoords(parser_, start, end) ;
+      zMapGFFSetFeatureClip(parser_, GFF_CLIP_ALL);
+    }
+
+
+  buffer_line_ = g_string_sized_new(READBUFFER_SIZE) ;
 }
 
 ZMapDataSourceGIOStruct::ZMapDataSourceGIOStruct(const GQuark source_name, 
@@ -537,6 +549,12 @@ ZMapDataSourceStruct::~ZMapDataSourceStruct()
 
   if (sequence_)
     g_free(sequence_) ;
+
+  if (parser_)
+    zMapGFFDestroyParser(parser_) ;
+
+  if (buffer_line_)
+    g_string_free(buffer_line_, TRUE) ;
 }
 
 ZMapDataSourceGIOStruct::~ZMapDataSourceGIOStruct()
@@ -738,6 +756,19 @@ bool ZMapDataSourceGIOStruct::gffVersion(int * const p_out_val)
   return result ;
 }
 
+void ZMapDataSourceStruct::setGffHeader()
+{
+  /*
+   *  (i) Put in a fake header line to make it look to ZMap like something
+   *      has really been read from a GFF stream.
+   * (ii) Then what? Possibly check that the sequence is the same as what's
+   *      held by the server, and maybe set up a flag somewhere to require
+   *      remapping if it is not?
+   */
+  g_string_erase(buffer_line_, 0, -1) ;
+  g_string_insert(buffer_line_, 0, "##source-version ZMap-GFF-conversion") ;
+}
+
 
 bool ZMapDataSourceGIOStruct::checkHeader()
 {
@@ -914,24 +945,50 @@ bool ZMapDataSourceBCFStruct::checkHeader()
 #endif
 
 
+bool ZMapDataSourceStruct::parseHeader(gboolean *done_header,
+                                       ZMapGFFHeaderState *header_state,
+                                       GError **error)
+{
+  bool result = zMapGFFParseHeader(parser_, buffer_line_->str, done_header, header_state) ;
+
+  if (!result && error)
+    {
+      *error = zMapGFFGetError(parser_) ;
+    }
+
+  return result ;
+}
+
+
+bool ZMapDataSourceStruct::parseSequence(gboolean *sequence_finished, 
+                                         GError **error)
+{
+  bool result = zMapGFFParseSequence(parser_, buffer_line_->str, sequence_finished) ;
+
+  if (!result && error)
+    *error = zMapGFFGetError(parser_) ;
+
+  return result ;
+}
+
 /*
  * Read a line from the GIO channel and remove the terminating
  * newline if present. That is,
  * "<string_data>\n" -> "<string_data>"
  * (It is still a NULL terminated c-string though.)
  */
-bool ZMapDataSourceGIOStruct::readLine(GString * const str)
+bool ZMapDataSourceGIOStruct::readLine()
 {
   bool result = false ;
   GError *pErr = NULL ;
   gsize pos = 0 ;
   GIOStatus cIOStatus = G_IO_STATUS_NORMAL;
 
-  cIOStatus = g_io_channel_read_line_string(io_channel, str, &pos, &pErr) ;
+  cIOStatus = g_io_channel_read_line_string(io_channel, buffer_line_, &pos, &pErr) ;
   if (cIOStatus == G_IO_STATUS_NORMAL && !pErr )
     {
       result = true ;
-      str->str[pos] = '\0';
+      buffer_line_->str[pos] = '\0';
     }
 
   return result ;
@@ -941,7 +998,7 @@ bool ZMapDataSourceGIOStruct::readLine(GString * const str)
 /*
  * Read a record from a BED file and turn it into GFFv3.
  */
-bool ZMapDataSourceBEDStruct::readLine(GString * const str)
+bool ZMapDataSourceBEDStruct::readLine()
 {
   bool result = false ;
 
@@ -956,7 +1013,7 @@ bool ZMapDataSourceBEDStruct::readLine(GString * const str)
   if (cur_feature_)
     {
       // Create a gff line for this feature
-      createGFFLineFromBed(str, cur_feature_, source_name_, ZMAP_BED_SO_TERM) ;
+      createGFFLineFromBed(buffer_line_, cur_feature_, source_name_, ZMAP_BED_SO_TERM) ;
       result = true ;
     }
   
@@ -966,7 +1023,7 @@ bool ZMapDataSourceBEDStruct::readLine(GString * const str)
 /*
  * Read a record from a BIGBED file and turn it into GFFv3.
  */
-bool ZMapDataSourceBIGBEDStruct::readLine(GString * const str)
+bool ZMapDataSourceBIGBEDStruct::readLine()
 {
   bool result = false ;
 
@@ -1006,7 +1063,7 @@ bool ZMapDataSourceBIGBEDStruct::readLine(GString * const str)
           struct bed *bed_feature = bedLoadN(row, num_fields) ;
 
           // Create a gff line for this feature
-          createGFFLineFromBed(str, bed_feature, source_name_, ZMAP_BIGBED_SO_TERM) ;
+          createGFFLineFromBed(buffer_line_, bed_feature, source_name_, ZMAP_BIGBED_SO_TERM) ;
         
           // Clean up
           g_free(line) ;
@@ -1043,7 +1100,7 @@ bool ZMapDataSourceBIGBEDStruct::readLine(GString * const str)
 /*
  * Read a record from a BIGWIG file and turn it into GFFv3.
  */
-bool ZMapDataSourceBIGWIGStruct::readLine(GString * const str)
+bool ZMapDataSourceBIGWIGStruct::readLine()
 {
   bool result = false ;
 
@@ -1074,7 +1131,7 @@ bool ZMapDataSourceBIGWIGStruct::readLine(GString * const str)
   if (cur_interval_)
     {
       // Create a gff line for this feature
-      createGFFLine(str,
+      createGFFLine(buffer_line_,
                     sequence_,
                     g_quark_to_string(source_name_),
                     ZMAP_BIGWIG_SO_TERM,
@@ -1110,7 +1167,7 @@ bool ZMapDataSourceBIGWIGStruct::readLine(GString * const str)
 /*
  * Read a record from a HTS file and turn it into GFFv3.
  */
-bool ZMapDataSourceHTSStruct::readLine(GString * const pStr )
+bool ZMapDataSourceHTSStruct::readLine()
 {
   static const gssize string_start = 0 ;
   static const char *sFormatName = "Name=%s;",
@@ -1145,7 +1202,7 @@ bool ZMapDataSourceHTSStruct::readLine(GString * const pStr )
   /*
    * Erase current buffer contents
    */
-  g_string_erase(pStr, string_start, -1) ;
+  g_string_erase(buffer_line_, string_start, -1) ;
 
   /*
    * Read line from HTS file and convert to GFF.
@@ -1222,7 +1279,7 @@ bool ZMapDataSourceHTSStruct::readLine(GString * const pStr )
                                  cStrand,
                                  cPhase,
                                  pStringAttributes->str) ;
-      g_string_insert(pStr, string_start, sGFFLine ) ;
+      g_string_insert(buffer_line_, string_start, sGFFLine ) ;
 
       /*
        * Clean up on finish
@@ -1245,7 +1302,7 @@ bool ZMapDataSourceHTSStruct::readLine(GString * const pStr )
   return result ;
 }
 
-bool ZMapDataSourceBCFStruct::readLine(GString * const pStr )
+bool ZMapDataSourceBCFStruct::readLine()
 {
   bool result = false ;
 
@@ -1261,7 +1318,7 @@ bool ZMapDataSourceBCFStruct::readLine(GString * const pStr )
   /*
    * Erase current buffer contents
    */
-  g_string_erase(pStr, string_start, -1) ;
+  g_string_erase(buffer_line_, string_start, -1) ;
 
   /*
    * Read line from HTS file and convert to GFF.
@@ -1323,7 +1380,7 @@ bool ZMapDataSourceBCFStruct::readLine(GString * const pStr )
           else if (!snv)
             so_term = "substitution" ;
 
-          createGFFLine(pStr, 
+          createGFFLine(buffer_line_, 
                         sequence_,
                         g_quark_to_string(source_name_),
                         so_term,
@@ -1336,7 +1393,7 @@ bool ZMapDataSourceBCFStruct::readLine(GString * const pStr )
                         0, 
                         0) ;
 
-          g_string_append_printf(pStr, "ensembl_variation=%s;", var_str.c_str()) ;
+          g_string_append_printf(buffer_line_, "ensembl_variation=%s;", var_str.c_str()) ;
 
           result = true ;
         }
@@ -1350,179 +1407,112 @@ bool ZMapDataSourceBCFStruct::readLine(GString * const pStr )
 
 
 /*
- * Process a body line. Reads a line from the source and create a feature from it. Returns false if
- * a fatal error or end of file was encountered. Sets the error if there was a problem.
+ * Parse the current line and then read in the next line ready for the next time.
  */
-bool ZMapDataSourceGIOStruct::parseBodyLine(GError **error)
+bool ZMapDataSourceStruct::parseBodyLine(bool &end_of_file, GError **error)
 {
-  bool result = false ;
+  bool result = zMapGFFParseLine(parser_, buffer_line_->str) ;
 
-  GString *line = g_string_new(NULL) ;
+  if (!result && error)
+    *error = zMapGFFGetError(parser_) ;
 
-  if (readLine(line))
+  // read the next line 
+  if (!readLine())
     {
-      result = true ; // not end of file
-
-      if (!zMapGFFParseLine(parser_, line->str))
-        {
-          GError *g_error = zMapGFFGetError(parser_) ;
-
-          if (g_error)
-            {
-              // Check if we should terminate
-              if (zMapGFFTerminated(parser_))
-                result = false ;
-            }
-        }
-
+      end_of_file = true ;
     }
 
   return result ;
 }
 
-bool ZMapDataSourceBEDStruct::parseBodyLine(GError **error)
+
+bool ZMapDataSourceStruct::checkFeatures(bool &empty, 
+                                         string &err_msg,
+                                         GHashTable *featureset_2_column,
+                                         GHashTable *source_2_sourcedata,
+                                         ZMapStyleTree &styles)
 {
-  bool result = false ;
+  bool result = true ;
+  zMapGFFParseSetSourceHash(parser_, featureset_2_column, source_2_sourcedata) ;
+  zMapGFFParserInitForFeatures(parser_, &styles, FALSE) ;
+  zMapGFFSetDefaultToBasic(parser_, TRUE);
 
-  GString *line = g_string_new(NULL) ;
+  int num_features = zMapGFFParserGetNumFeatures(parser_) ;
+  int n_lines_bod = zMapGFFGetLineBod(parser_) ;
+  int n_lines_fas = zMapGFFGetLineFas(parser_) ;
+  int n_lines_seq = zMapGFFGetLineSeq(parser_) ;
 
-  if (readLine(line))
+  if (!num_features)
     {
-      result = true ; // not end of file
+      err_msg = "No features found." ;
+    }
 
-      // Currently this always returns a GFF line so process it as GFF.
-      if (!zMapGFFParseLine(parser_, line->str))
-        {
-          GError *g_error = zMapGFFGetError(parser_) ;
+  if (!num_features && !n_lines_bod && !n_lines_fas && !n_lines_seq)
+    {
+      // Return true to preserve old behaviour for calling function
+      result = true ;
+    }
+  else if ((!num_features && n_lines_bod)
+           || (n_lines_fas && !zMapGFFGetSequenceNum(parser_))
+           || (n_lines_seq && !zMapGFFGetSequenceNum(parser_) && zMapGFFGetVersion(parser_) == ZMAPGFF_VERSION_2)  )
+    {
+      // Unexpected error
+      result = false ;
+    }
+}
 
-          if (g_error)
-            {
-              // Check if we should terminate
-              if (zMapGFFTerminated(parser_))
-                result = false ;
-            }
-        }
+bool ZMapDataSourceStruct::getFeatures(ZMapFeatureBlock feature_block)
+{
+  return zMapGFFGetFeatures(parser_, feature_block) ;
+}
 
+GList* ZMapDataSourceStruct::getFeaturesets()
+{
+  return zMapGFFGetFeaturesets(parser_) ;
+}
+
+void ZMapDataSourceStruct::finalise(bool free_on_destroy)
+{
+  zMapGFFSetFreeOnDestroy(parser_, free_on_destroy) ;
+}
+
+ZMapSequence ZMapDataSourceStruct::getSequence(GQuark seq_id, 
+                                               GError **error)
+{
+  ZMapSequence result = zMapGFFGetSequence(parser_, seq_id) ;
+
+  if (!result && error)
+    {
+      *error = zMapGFFGetError(parser_);
     }
 
   return result ;
 }
 
-bool ZMapDataSourceBIGBEDStruct::parseBodyLine(GError **error)
+int ZMapDataSourceStruct::lineNumber()
 {
-  bool result = false ;
-
-  GString *line = g_string_new(NULL) ;
-
-  if (readLine(line))
-    {
-      result = true ; // not end of file
-
-      // Currently this always returns a GFF line so process it as GFF.
-      if (!zMapGFFParseLine(parser_, line->str))
-        {
-          GError *g_error = zMapGFFGetError(parser_) ;
-
-          if (g_error)
-            {
-              // Check if we should terminate
-              if (zMapGFFTerminated(parser_))
-                result = false ;
-            }
-        }
-
-    }
-
-  return result ;
+  return zMapGFFGetLineNumber(parser_) ;
 }
 
-bool ZMapDataSourceBIGWIGStruct::parseBodyLine(GError **error)
+const char* ZMapDataSourceStruct::lineString()
 {
-  bool result = false ;
-
-  GString *line = g_string_new(NULL) ;
-
-  if (readLine(line))
-    {
-      result = true ; // not end of file
-
-      // Currently this always returns a GFF line so process it as GFF.
-      if (!zMapGFFParseLine(parser_, line->str))
-        {
-          GError *g_error = zMapGFFGetError(parser_) ;
-
-          if (g_error)
-            {
-              // Check if we should terminate
-              if (zMapGFFTerminated(parser_))
-                result = false ;
-            }
-        }
-
-    }
-
-  return result ;
+  return buffer_line_->str ;
 }
 
-#ifdef USE_HTSLIB
-bool ZMapDataSourceHTSStruct::parseBodyLine(GError **error)
+bool ZMapDataSourceStruct::endOfFile()
 {
-  bool result = false ;
-
-  GString *line = g_string_new(NULL) ;
-
-  if (readLine(line))
-    {
-      result = true ; // not end of file
-
-      // Currently this always returns a GFF line so process it as GFF.
-      if (!zMapGFFParseLine(parser_, line->str))
-        {
-          GError *g_error = zMapGFFGetError(parser_) ;
-
-          if (g_error)
-            {
-              // Check if we should terminate
-              if (zMapGFFTerminated(parser_))
-                result = false ;
-            }
-        }
-
-    }
-
-  return result ;
+  return buffer_line_->len == 0 ;
 }
 
-bool ZMapDataSourceBCFStruct::parseBodyLine(GError **error)
+bool ZMapDataSourceStruct::terminated()
 {
-  bool result = false ;
-
-  GString *line = g_string_new(NULL) ;
-
-  if (readLine(line))
-    {
-      result = true ; // not end of file
-
-      // Currently this always returns a GFF line so process it as GFF.
-      if (!zMapGFFParseLine(parser_, line->str))
-        {
-          GError *g_error = zMapGFFGetError(parser_) ;
-
-          if (g_error)
-            {
-              // Check if we should terminate
-              if (zMapGFFTerminated(parser_))
-                result = false ;
-            }
-        }
-
-    }
-
-  return result ;
+  return zMapGFFTerminated(parser_) ;
 }
 
-#endif // USE_HTSLIB
-
+void ZMapDataSourceStruct::setSequenceFlag()
+{
+  zMapGFFParserSetSequenceFlag(parser_);
+}
 
 /*
  * Create a ZMapDataSource object
@@ -1632,45 +1622,6 @@ ZMapDataSourceType zMapDataSourceGetType(ZMapDataSource data_source )
 {
   zMapReturnValIfFail(data_source, ZMapDataSourceType::UNK ) ;
   return data_source->type ;
-}
-
-
-
-/*
- * Read one line and return as string. Returns true if a line was read (false if no more input)
- *
- * (a) GIO reads a line of GFF which is of the form
- *                   "<fields>...<fields>\n"
- *     so we also have to remove the terminating newline.
- *
- * (b) Other types have to read a record and then convert
- *     that to GFF.
- *
- */
-gboolean zMapDataSourceReadLine (ZMapDataSource const data_source , GString * const pStr )
-{
-  gboolean result = FALSE ;
-  zMapReturnValIfFail(data_source && (data_source->type != ZMapDataSourceType::UNK) && pStr, result ) ;
-  
-  result = data_source->readLine(pStr) ;
-
-  return result ;
-}
-
-
-
-/*
- * Read one line from the body of the data and parse it.
- *
- */
-gboolean zMapDataSourceParseBodyLine(ZMapDataSource const data_source, GError **error)
-{
-  gboolean result = FALSE ;
-  zMapReturnValIfFail(data_source && (data_source->type != ZMapDataSourceType::UNK), result ) ;
-  
-  result = data_source->parseBodyLine(error) ;
-
-  return result ;
 }
 
 
