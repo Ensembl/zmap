@@ -743,7 +743,7 @@ bool ZMapDataSourceGIOStruct::gffVersion(int * const p_out_val)
   if ( !result || (cIOStatus != G_IO_STATUS_NORMAL)  || pError ||
        ((out_val != ZMAPGFF_VERSION_2) && (out_val != ZMAPGFF_VERSION_3)) )
     {
-      zMapLogCritical("Could not obtain GFF version from GIOChannel in zMapDataSourceGetGFFVersion(), %s", "") ;
+      zMapLogCritical("Could not obtain GFF version from GIOChannel in gffVersion(), %s", "") ;
       /* This is set to make sure that the calling program notices the error. */
       result = FALSE ;
     }
@@ -1625,19 +1625,6 @@ ZMapDataSourceType zMapDataSourceGetType(ZMapDataSource data_source )
 }
 
 
-
-/*
- * Get GFF version from the data source.
- */
-gboolean zMapDataSourceGetGFFVersion(ZMapDataSource const data_source, int * const p_out_val)
-{
-  gboolean result = FALSE ;
-
-  if (data_source)
-    result = data_source->gffVersion(p_out_val) ;
-
-  return result ;
-}
 
 /*
  * Inspect the filename string (might include the path on the front, but this is
