@@ -879,7 +879,7 @@ static void removeSourceCB(GtkWidget *widget, gpointer cb_data)
 
           if (error)
             {
-              zMapLogWarning("Error removing source '%s': %s", g_quark_to_string(source_name), error->message) ;
+              zMapWarning("Error removing source '%s': %s", g_quark_to_string(source_name), error->message) ;
               g_error_free(error) ;
               error = NULL ;
             }
