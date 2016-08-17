@@ -2254,13 +2254,13 @@ void trackhubSearchCB(GtkWidget *widget, gpointer cb_data)
   int col = 0 ;
 
   GtkWidget *search_entry = makeEntryWidget("Search text: ", "", 
-                                            "MANDATORY: Enter the query string to search for. This can be simple text, or more complex queries can be made using wildcards, regular expressions, logical and fuzzy operators, proximity searches and grouping. See the documentation at http://trackhubregistry.org/docs/search/advanced",
-                                            table, &row, col, col + 2, true, NULL, true) ;
-  GtkWidget *species_entry = makeEntryWidget("Species: ", "", "OPTIONAL: Enter the species",
+                                            "OPTIONAL: Enter the query string to search for. This is case-insensitive can be simple text, or more complex queries can be made using wildcards, regular expressions, logical and fuzzy operators, proximity searches and grouping. See the documentation at http://trackhubregistry.org/docs/search/advanced",
+                                            table, &row, col, col + 2, false, NULL, true) ;
+  GtkWidget *species_entry = makeEntryWidget("Species: ", "", "OPTIONAL: Enter the species. Case sensitive, e.g. Homo sapiens",
                                              table, &row, col, col + 2, false, NULL, true) ;
-  GtkWidget *assembly_entry = makeEntryWidget("Assembly: ", "", "OPTIONAL: Enter the assembly",
+  GtkWidget *assembly_entry = makeEntryWidget("Assembly: ", "", "OPTIONAL: Enter the assembly. Case sensitive, e.g. GRCh38",
                                               table, &row, col, col + 2, false, NULL, true) ;
-  GtkWidget *hub_entry = makeEntryWidget("Hub: ", "", "OPTIONAL: Enter the hub name",
+  GtkWidget *hub_entry = makeEntryWidget("Hub: ", "", "OPTIONAL: Select the hub name. Case sensitive, e.g. AWG_Hub",
                                          table, &row, col, col + 2, false, NULL, true) ;
 
   /* Run the dialog */
