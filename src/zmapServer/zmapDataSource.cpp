@@ -1546,6 +1546,8 @@ bool ZMapDataSourceStruct::checkFeatures(bool &empty,
       // Unexpected error
       result = false ;
     }
+
+  return result ;
 }
 
 bool ZMapDataSourceStruct::getFeatures(ZMapFeatureBlock feature_block)
