@@ -859,20 +859,31 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::createPipeSource(const char *
 }
 
 
-/* Removet the source with the given name from our list. Sets the error if not found. */
+/* Remove the source with the given name from our list. Sets the error if not found. */
 void ZMapFeatureSequenceMapStructType::removeSource(const char *source_name_cstr, 
                                                     GError **error)
 {
-  string source_name(source_name_cstr) ;
+  if (source_name_cstr)
+    {
+      // must loop up on unique id
+      GQuark unique_id = zMapStyleCreateID(source_name_cstr) ;
 
-  if (sources && sources->find(source_name) != sources->end())
-    {
-      sources->erase(source_name) ;
-    }
-  else
-    {
-      g_set_error(error, g_quark_from_string("ZMap"), 99,
-                  "Source '%s' does not exist", source_name_cstr) ;
+      string source_name(g_quark_to_string(unique_id)) ;
+
+      if (sources && sources->find(source_name) != sources->end())
+        {
+          sources->erase(source_name) ;
+        }
+      else if (getSource(source_name_cstr))
+        {
+          g_set_error(error, g_quark_from_string("ZMap"), 99, 
+                      "Cannot delete a child source") ;
+        }
+      else
+        {
+          g_set_error(error, g_quark_from_string("ZMap"), 99,
+                      "Source '%s' does not exist", source_name_cstr) ;
+        }
     }
 }
 
