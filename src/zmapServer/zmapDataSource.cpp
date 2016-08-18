@@ -854,7 +854,7 @@ bool ZMapDataSourceGIOStruct::gffVersion(int * const p_out_val)
 }
 
 
-bool ZMapDataSourceGIOStruct::checkHeader(string &err_msg, bool &empty_or_eof)
+bool ZMapDataSourceGIOStruct::checkHeader(string &err_msg, bool &empty_or_eof, const bool sequence_server)
 {
   bool result = false ;
 
@@ -866,6 +866,12 @@ bool ZMapDataSourceGIOStruct::checkHeader(string &err_msg, bool &empty_or_eof)
   GError *error = NULL ;
 
   empty_or_eof = false ;    // gets set to true if file is empty or we hit EOF while reading header
+
+  /*
+   * reset done flag for seq else skip the data
+   */
+  if (sequence_server)
+    zMapGFFParserSetSequenceFlag(parser_);
 
   while ((more_data = readLine()))
     {
@@ -940,7 +946,7 @@ bool ZMapDataSourceGIOStruct::checkHeader(string &err_msg, bool &empty_or_eof)
   return result ;
 }
 
-bool ZMapDataSourceBEDStruct::checkHeader(std::string &err_msg, bool &empty_or_eof)
+bool ZMapDataSourceBEDStruct::checkHeader(std::string &err_msg, bool &empty_or_eof, const bool sequence_server)
 {
   // We can't easily check in advance what sequences are in the file so just allow it and filter
   // when we come to parse the individual lines.
@@ -949,7 +955,7 @@ bool ZMapDataSourceBEDStruct::checkHeader(std::string &err_msg, bool &empty_or_e
 
 /* Read the header info from the bigBed file and return true if it contains the required sequence
  * name */
-bool ZMapDataSourceBIGBEDStruct::checkHeader(std::string &err_msg, bool &empty_or_eof)
+bool ZMapDataSourceBIGBEDStruct::checkHeader(std::string &err_msg, bool &empty_or_eof, const bool sequence_server)
 {
   bool result = false ;
   zMapReturnValIfFail(isOpen(), result) ;
@@ -993,7 +999,7 @@ bool ZMapDataSourceBIGBEDStruct::checkHeader(std::string &err_msg, bool &empty_o
 
 /* Read the header info from the bigBed file and return true if it contains the required sequence
  * name */
-bool ZMapDataSourceBIGWIGStruct::checkHeader(std::string &err_msg, bool &empty_or_eof)
+bool ZMapDataSourceBIGWIGStruct::checkHeader(std::string &err_msg, bool &empty_or_eof, const bool sequence_server)
 {
   bool result = false ;
   zMapReturnValIfFail(isOpen(), result) ;
@@ -1043,7 +1049,7 @@ bool ZMapDataSourceBIGWIGStruct::checkHeader(std::string &err_msg, bool &empty_o
  * hts_hdr = sam_hdr_read() ;
  * Returns TRUE if reference sequence name found in BAM file header.
  */
-bool ZMapDataSourceHTSStruct::checkHeader(std::string &err_msg, bool &empty_or_eof)
+bool ZMapDataSourceHTSStruct::checkHeader(std::string &err_msg, bool &empty_or_eof, const bool sequence_server)
 {
   bool result = false ;
   zMapReturnValIfFail(isOpen(), result) ;
@@ -1081,7 +1087,7 @@ bool ZMapDataSourceHTSStruct::checkHeader(std::string &err_msg, bool &empty_or_e
   return result ;
 }
 
-bool ZMapDataSourceBCFStruct::checkHeader(std::string &err_msg, bool &empty_or_eof)
+bool ZMapDataSourceBCFStruct::checkHeader(std::string &err_msg, bool &empty_or_eof, const bool sequence_server)
 {
   bool result = false ;
   zMapReturnValIfFail(isOpen(), result) ;
@@ -1616,11 +1622,6 @@ void ZMapDataSourceStruct::parserInit(GHashTable *featureset_2_column,
 void ZMapDataSourceStruct::parserFinalise(bool free_on_destroy)
 {
   zMapGFFSetFreeOnDestroy(parser_, free_on_destroy) ;
-}
-
-void ZMapDataSourceStruct::setSequenceFlag()
-{
-  zMapGFFParserSetSequenceFlag(parser_);
 }
 
 void ZMapDataSourceStruct::setGffHeader()

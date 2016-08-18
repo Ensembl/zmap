@@ -750,16 +750,10 @@ static ZMapServerResponseType fileGetHeader(FileServer server)
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   zMapReturnValIfFail(server && server->data_source, result) ;
 
-  /*
-   * reset done flag for seq else skip the data
-   */
-  if (server->sequence_server)
-    server->data_source->setSequenceFlag() ;
-
   std::string err_msg ;
   bool empty_or_eof = false ;
 
-  if (server->data_source->checkHeader(err_msg, empty_or_eof))
+  if (server->data_source->checkHeader(err_msg, empty_or_eof, server->sequence_server))
     {
       result = ZMAP_SERVERRESPONSE_OK ;
     }
