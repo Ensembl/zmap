@@ -777,51 +777,21 @@ static ZMapServerResponseType fileGetHeader(FileServer server)
 // read any DNA data at the head of the stream and quit after error or ##end-dna
 static ZMapServerResponseType fileGetSequence(FileServer server)
 {
-  bool status = true ;
-  GError *error = NULL ;
   gboolean sequence_finished = false ;
+  std::string err_msg ;
 
   // read the sequence if it's there
   server->result = ZMAP_SERVERRESPONSE_OK;   // now we have data default is 'OK'
 
-  /* we have already read the first non header line in fileGetheader */
-  do
+  if (!server->data_source->parseSequence(sequence_finished, err_msg))
     {
+      if (!sequence_finished)
+        server->result = ZMAP_SERVERRESPONSE_UNSUPPORTED ;
+      else
+        server->result = ZMAP_SERVERRESPONSE_REQFAIL ;
 
-      if (!server->data_source->parseSequence(sequence_finished, &error) || sequence_finished)
-        break;
-
-      status = server->data_source->readLine() ;
-
-    } while (status);
-
-  if (error)
-    {
-      /* If the error was serious we stop processing and return the error,
-       * otherwise we just log the error. */
-      if (server->data_source->terminated())
-        {
-          server->result = ZMAP_SERVERRESPONSE_REQFAIL ;
-          setErrMsg(server, error->message) ;
-        }
-     else
-       {
-         char *err_msg ;
-
-          err_msg = g_strdup_printf("zMapGFFParseSequence() failed for line %d: %s - %s",
-                                    server->data_source->lineNumber(),
-                                    server->data_source->lineString(),
-                                    error->message) ;
-          setErrMsg(server, err_msg) ;
-          g_free(err_msg) ;
-
-          ZMAPSERVER_LOG(Critical, PROTOCOL_NAME, server->path, "%s", server->last_err_msg) ;
-        }
-      server->result = ZMAP_SERVERRESPONSE_REQFAIL;
-    }
-  else if (!sequence_finished)
-    {
-      server->result = ZMAP_SERVERRESPONSE_UNSUPPORTED;
+      setErrMsg(server, err_msg.c_str()) ;
+      ZMAPSERVER_LOG(Critical, PROTOCOL_NAME, server->path, "%s", server->last_err_msg) ;
     }
 
   return(server->result);

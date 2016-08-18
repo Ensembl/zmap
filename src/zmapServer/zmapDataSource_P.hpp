@@ -66,7 +66,7 @@ public:
   virtual bool readLine() = 0 ;
   virtual bool gffVersion(int * const p_out_val) ;
 
-  virtual bool parseSequence(gboolean &sequence_finished, GError **error) ;
+  virtual bool parseSequence(gboolean &sequence_finished, std::string &err_msg) ;
   virtual bool parseBodyLine(GError **error) ;
   virtual void parserInit(GHashTable *featureset_2_column, GHashTable *source_2_sourcedata, ZMapStyleTree &styles) ;
   virtual bool checkFeatures(bool &empty, std::string &err_msg) ;

@@ -1598,13 +1598,46 @@ bool ZMapDataSourceStruct::parseHeader(gboolean &done_header,
  * Parse sequence data from the source. Returns true if successful. Sets sequence_finished if
  * there is no more sequence to read.
  */
-bool ZMapDataSourceStruct::parseSequence(gboolean &sequence_finished, 
-                                         GError **error)
+bool ZMapDataSourceStruct::parseSequence(gboolean &sequence_finished, string &err_msg)
 {
-  bool result = zMapGFFParseSequence(parser_, buffer_line_->str, &sequence_finished) ;
+  bool result = true ;
 
-  if (!result && error)
-    *error = zMapGFFGetError(parser_) ;
+  bool more_data = true ;
+  GError *error = NULL ;
+
+  do
+    {
+      if (!zMapGFFParseSequence(parser_, buffer_line_->str, &sequence_finished) || sequence_finished)
+        break ;
+
+      more_data = readLine() ;
+
+    } while (more_data) ;
+
+  error = zMapGFFGetError(parser_) ;
+
+  if (error)
+    {
+      /* If the error was serious we stop processing and return the error,
+       * otherwise we just log the error. */
+      if (terminated())
+        {
+          err_msg = error->message ;
+        }
+     else
+       {
+         stringstream err_ss ;
+         err_ss << "zMapGFFParseSequence() failed for line " 
+                << lineNumber() << ": " << lineString() << " - " << error->message ;
+         err_msg = err_ss.str() ;
+        }
+
+      result = false ;
+    }
+  else if (!sequence_finished)
+    {
+      result = false ;
+    }
 
   return result ;
 }
