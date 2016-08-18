@@ -1040,18 +1040,21 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
               ++warning_count ;
             }
 
-          /* If there's a g_error and we should terminate then that indicates a fatal error */
+          /* Check if it's a fatal error */
           if (server->data_source->terminated())
             {
               get_features_data->result = ZMAP_SERVERRESPONSE_REQFAIL ;
 
-              setErrMsg(server, g_error->message) ;
+              setErrMsg(server, (g_error ? g_error->message : "<no error>")) ;
 
               break ;
             }
 
-          g_error_free(g_error) ;
-          g_error = NULL ;
+          if (g_error)
+            {
+              g_error_free(g_error) ;
+              g_error = NULL ;
+            }
         }
     } while (!end_of_file) ;
 
