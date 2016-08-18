@@ -69,7 +69,6 @@ public:
   virtual bool parseSequence(gboolean &sequence_finished, GError **error) ;
   virtual bool parseBodyLine(GError **error) ;
   virtual void parserInit(GHashTable *featureset_2_column, GHashTable *source_2_sourcedata, ZMapStyleTree &styles) ;
-  virtual void parserFinalise(bool free_on_destroy) ;
   virtual bool checkFeatures(bool &empty, std::string &err_msg) ;
   virtual bool getFeatures(ZMapFeatureBlock feature_block) ;
   virtual GList* getFeaturesets() ;

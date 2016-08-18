@@ -1634,11 +1634,6 @@ void ZMapDataSourceStruct::parserInit(GHashTable *featureset_2_column,
 }
 
 
-void ZMapDataSourceStruct::parserFinalise(bool free_on_destroy)
-{
-  zMapGFFSetFreeOnDestroy(parser_, free_on_destroy) ;
-}
-
 bool ZMapDataSourceStruct::checkFeatures(bool &empty, 
                                          string &err_msg)
 {
@@ -1672,7 +1667,13 @@ bool ZMapDataSourceStruct::checkFeatures(bool &empty,
 
 bool ZMapDataSourceStruct::getFeatures(ZMapFeatureBlock feature_block)
 {
-  return zMapGFFGetFeatures(parser_, feature_block) ;
+  bool result = zMapGFFGetFeatures(parser_, feature_block) ;
+
+  /* Make sure parser does _not_ free our data ! */
+  if (result)
+    zMapGFFSetFreeOnDestroy(parser_, FALSE) ;
+
+  return result ;
 }
 
 GList* ZMapDataSourceStruct::getFeaturesets()

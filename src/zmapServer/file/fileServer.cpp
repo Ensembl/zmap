@@ -898,7 +898,6 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
 
   FileServer server = get_features_data->server ;
   zMapReturnIfFail(server) ;
-  gboolean free_on_destroy = FALSE ;
 
   /*
    * Read lines from the source. We assume that the first line has already been read.
@@ -936,13 +935,11 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
 
 
   /* If we reached the end of the stream then all is fine, so return features... */
-  free_on_destroy = TRUE ;
   if (!more_data)
     {
       if (get_features_data->result == ZMAP_SERVERRESPONSE_OK
           && server->data_source->getFeatures(feature_block))
         {
-          free_on_destroy = FALSE ;    /* Make sure parser does _not_ free our data ! */
         }
       else
         {
@@ -961,8 +958,6 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
             }
         }
     }
-
-  server->data_source->parserFinalise(free_on_destroy) ;
 
   return ;
 }
