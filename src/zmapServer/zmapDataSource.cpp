@@ -1523,16 +1523,20 @@ bool ZMapDataSourceStruct::parseBodyLine(bool &end_of_file, GError **error)
 }
 
 
-bool ZMapDataSourceStruct::checkFeatures(bool &empty, 
-                                         string &err_msg,
-                                         GHashTable *featureset_2_column,
-                                         GHashTable *source_2_sourcedata,
-                                         ZMapStyleTree &styles)
+void ZMapDataSourceStruct::parserInit(GHashTable *featureset_2_column,
+                                      GHashTable *source_2_sourcedata,
+                                      ZMapStyleTree &styles)
 {
-  bool result = true ;
   zMapGFFParseSetSourceHash(parser_, featureset_2_column, source_2_sourcedata) ;
   zMapGFFParserInitForFeatures(parser_, &styles, FALSE) ;
   zMapGFFSetDefaultToBasic(parser_, TRUE);
+}
+
+
+bool ZMapDataSourceStruct::checkFeatures(bool &empty, 
+                                         string &err_msg)
+{
+  bool result = true ;
 
   int num_features = zMapGFFParserGetNumFeatures(parser_) ;
   int n_lines_bod = zMapGFFGetLineBod(parser_) ;

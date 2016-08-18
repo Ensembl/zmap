@@ -533,6 +533,8 @@ static ZMapServerResponseType getFeatures(void *server_in,
     {
       get_features_data.server = server ;
 
+      server->data_source->parserInit(server->featureset_2_column, server->source_2_sourcedata, styles) ;
+
       server->result = ZMAP_SERVERRESPONSE_OK ;
 
       /* Get block to parent mapping.  */
@@ -544,7 +546,7 @@ static ZMapServerResponseType getFeatures(void *server_in,
       bool empty = false ;
       std::string err_msg ;
 
-      if (!server->data_source->checkFeatures(empty, err_msg, server->featureset_2_column, server->source_2_sourcedata, styles))
+      if (!server->data_source->checkFeatures(empty, err_msg))
         result = server->result = ZMAP_SERVERRESPONSE_SOURCEERROR ;
       else if (empty)
         result = server->result = ZMAP_SERVERRESPONSE_SOURCEEMPTY ;
@@ -1048,12 +1050,6 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
               setErrMsg(server, (g_error ? g_error->message : "<no error>")) ;
 
               break ;
-            }
-
-          if (g_error)
-            {
-              g_error_free(g_error) ;
-              g_error = NULL ;
             }
         }
     } while (!end_of_file) ;

@@ -67,9 +67,8 @@ public:
   virtual bool gffVersion(int * const p_out_val) ;
 
   bool parseBodyLine(bool &end_of_file, GError **error) ;
-  bool checkFeatures(bool &empty, std::string &err_msg, 
-                     GHashTable *featureset_2_column, GHashTable *source_2_sourcedata,
-                     ZMapStyleTree &styles) ;
+  bool checkFeatures(bool &empty, std::string &err_msg) ;
+  void parserInit(GHashTable *featureset_2_column, GHashTable *source_2_sourcedata, ZMapStyleTree &styles) ;
   bool getFeatures(ZMapFeatureBlock feature_block) ;
   GList* getFeaturesets() ;
   ZMapSequence getSequence(GQuark seq_id, GError **error) ;
