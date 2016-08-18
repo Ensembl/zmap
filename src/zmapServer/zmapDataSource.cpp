@@ -853,19 +853,6 @@ bool ZMapDataSourceGIOStruct::gffVersion(int * const p_out_val)
     }
 }
 
-void ZMapDataSourceStruct::setGffHeader()
-{
-  /*
-   *  (i) Put in a fake header line to make it look to ZMap like something
-   *      has really been read from a GFF stream.
-   * (ii) Then what? Possibly check that the sequence is the same as what's
-   *      held by the server, and maybe set up a flag somewhere to require
-   *      remapping if it is not?
-   */
-  g_string_erase(buffer_line_, 0, -1) ;
-  g_string_insert(buffer_line_, 0, "##source-version ZMap-GFF-conversion") ;
-}
-
 
 bool ZMapDataSourceGIOStruct::checkHeader()
 {
@@ -1041,32 +1028,6 @@ bool ZMapDataSourceBCFStruct::checkHeader()
 }
 #endif
 
-
-bool ZMapDataSourceStruct::parseHeader(gboolean *done_header,
-                                       ZMapGFFHeaderState *header_state,
-                                       GError **error)
-{
-  bool result = zMapGFFParseHeader(parser_, buffer_line_->str, done_header, header_state) ;
-
-  if (!result && error)
-    {
-      *error = zMapGFFGetError(parser_) ;
-    }
-
-  return result ;
-}
-
-
-bool ZMapDataSourceStruct::parseSequence(gboolean *sequence_finished, 
-                                         GError **error)
-{
-  bool result = zMapGFFParseSequence(parser_, buffer_line_->str, sequence_finished) ;
-
-  if (!result && error)
-    *error = zMapGFFGetError(parser_) ;
-
-  return result ;
-}
 
 /*
  * Read a line from the GIO channel and remove the terminating
@@ -1503,21 +1464,39 @@ bool ZMapDataSourceBCFStruct::readLine()
 
 
 
-/*
- * Parse the current line and then read in the next line ready for the next time.
- */
-bool ZMapDataSourceStruct::parseBodyLine(bool &end_of_file, GError **error)
+bool ZMapDataSourceStruct::parseHeader(gboolean *done_header,
+                                       ZMapGFFHeaderState *header_state,
+                                       GError **error)
+{
+  bool result = zMapGFFParseHeader(parser_, buffer_line_->str, done_header, header_state) ;
+
+  if (!result && error)
+    {
+      *error = zMapGFFGetError(parser_) ;
+    }
+
+  return result ;
+}
+
+
+bool ZMapDataSourceStruct::parseSequence(gboolean *sequence_finished, 
+                                         GError **error)
+{
+  bool result = zMapGFFParseSequence(parser_, buffer_line_->str, sequence_finished) ;
+
+  if (!result && error)
+    *error = zMapGFFGetError(parser_) ;
+
+  return result ;
+}
+
+
+bool ZMapDataSourceStruct::parseBodyLine(GError **error)
 {
   bool result = zMapGFFParseLine(parser_, buffer_line_->str) ;
 
   if (!result && error)
     *error = zMapGFFGetError(parser_) ;
-
-  // read the next line 
-  if (!readLine())
-    {
-      end_of_file = true ;
-    }
 
   return result ;
 }
@@ -1532,6 +1511,29 @@ void ZMapDataSourceStruct::parserInit(GHashTable *featureset_2_column,
   zMapGFFSetDefaultToBasic(parser_, TRUE);
 }
 
+
+void ZMapDataSourceStruct::parserFinalise(bool free_on_destroy)
+{
+  zMapGFFSetFreeOnDestroy(parser_, free_on_destroy) ;
+}
+
+void ZMapDataSourceStruct::setSequenceFlag()
+{
+  zMapGFFParserSetSequenceFlag(parser_);
+}
+
+void ZMapDataSourceStruct::setGffHeader()
+{
+  /*
+   *  (i) Put in a fake header line to make it look to ZMap like something
+   *      has really been read from a GFF stream.
+   * (ii) Then what? Possibly check that the sequence is the same as what's
+   *      held by the server, and maybe set up a flag somewhere to require
+   *      remapping if it is not?
+   */
+  g_string_erase(buffer_line_, 0, -1) ;
+  g_string_insert(buffer_line_, 0, "##source-version ZMap-GFF-conversion") ;
+}
 
 bool ZMapDataSourceStruct::checkFeatures(bool &empty, 
                                          string &err_msg)
@@ -1574,11 +1576,6 @@ GList* ZMapDataSourceStruct::getFeaturesets()
   return zMapGFFGetFeaturesets(parser_) ;
 }
 
-void ZMapDataSourceStruct::finalise(bool free_on_destroy)
-{
-  zMapGFFSetFreeOnDestroy(parser_, free_on_destroy) ;
-}
-
 ZMapSequence ZMapDataSourceStruct::getSequence(GQuark seq_id, 
                                                GError **error)
 {
@@ -1612,10 +1609,6 @@ bool ZMapDataSourceStruct::terminated()
   return zMapGFFTerminated(parser_) ;
 }
 
-void ZMapDataSourceStruct::setSequenceFlag()
-{
-  zMapGFFParserSetSequenceFlag(parser_);
-}
 
 /*
  * Create a ZMapDataSource object

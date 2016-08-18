@@ -1027,12 +1027,12 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
   /* Keep track of how many warnings we log so we don't fill the log file with millions */
   int warning_count = 0;
   const int max_warnings = 1000;
-  bool end_of_file = false ;
+  bool more_data = false ;
   GError *g_error = NULL ;
 
   do
     {
-      if (!server->data_source->parseBodyLine(end_of_file, &g_error))
+      if (!server->data_source->parseBodyLine(&g_error))
         {
           /* Only log a warning if an error was given (the error may be null if no warning is
            * required and we need to be careful not to fill the log with millions of warnings) */
@@ -1052,12 +1052,12 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
               break ;
             }
         }
-    } while (!end_of_file) ;
+    } while ((more_data = server->data_source->readLine())) ;
 
 
   /* If we reached the end of the stream then all is fine, so return features... */
   free_on_destroy = TRUE ;
-  if (end_of_file)
+  if (!more_data)
     {
       if (get_features_data->result == ZMAP_SERVERRESPONSE_OK
           && server->data_source->getFeatures(feature_block))
@@ -1082,7 +1082,7 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
         }
     }
 
-  server->data_source->finalise(free_on_destroy) ;
+  server->data_source->parserFinalise(free_on_destroy) ;
 
   return ;
 }

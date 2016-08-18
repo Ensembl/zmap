@@ -66,22 +66,22 @@ public:
   virtual bool readLine() = 0 ;
   virtual bool gffVersion(int * const p_out_val) ;
 
-  bool parseBodyLine(bool &end_of_file, GError **error) ;
-  bool checkFeatures(bool &empty, std::string &err_msg) ;
-  void parserInit(GHashTable *featureset_2_column, GHashTable *source_2_sourcedata, ZMapStyleTree &styles) ;
-  bool getFeatures(ZMapFeatureBlock feature_block) ;
-  GList* getFeaturesets() ;
-  ZMapSequence getSequence(GQuark seq_id, GError **error) ;
-  bool parseHeader(gboolean *done_header, ZMapGFFHeaderState *header_state, GError **error) ;
-  bool parseSequence(gboolean *sequence_finished, GError **error) ;
-  int lineNumber() ;
-  const char *lineString() ;
-  bool endOfFile() ;
-  bool terminated() ;
-  void setSequenceFlag() ;
-  void finalise(bool free_on_destroy) ;
-  void setGffHeader() ;
-
+  virtual bool parseHeader(gboolean *done_header, ZMapGFFHeaderState *header_state, GError **error) ;
+  virtual bool parseSequence(gboolean *sequence_finished, GError **error) ;
+  virtual bool parseBodyLine(GError **error) ;
+  virtual void setSequenceFlag() ;
+  virtual void setGffHeader() ;
+  virtual void parserInit(GHashTable *featureset_2_column, GHashTable *source_2_sourcedata, ZMapStyleTree &styles) ;
+  virtual void parserFinalise(bool free_on_destroy) ;
+  virtual bool checkFeatures(bool &empty, std::string &err_msg) ;
+  virtual bool getFeatures(ZMapFeatureBlock feature_block) ;
+  virtual GList* getFeaturesets() ;
+  virtual ZMapSequence getSequence(GQuark seq_id, GError **error) ;
+  virtual int lineNumber() ;
+  virtual const char *lineString() ;
+  virtual bool endOfFile() ;
+  virtual bool terminated() ;
+  
   GError* error() ;
 
   ZMapDataSourceType type ;
