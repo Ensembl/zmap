@@ -948,6 +948,9 @@ bool ZMapDataSourceGIOStruct::checkHeader(string &err_msg, bool &empty_or_eof, c
 
 bool ZMapDataSourceBEDStruct::checkHeader(std::string &err_msg, bool &empty_or_eof, const bool sequence_server)
 {
+  g_string_erase(buffer_line_, 0, -1) ;
+  g_string_insert(buffer_line_, 0, "##source-version ZMap-GFF-conversion") ;
+
   // We can't easily check in advance what sequences are in the file so just allow it and filter
   // when we come to parse the individual lines.
   return true ;
@@ -959,6 +962,9 @@ bool ZMapDataSourceBIGBEDStruct::checkHeader(std::string &err_msg, bool &empty_o
 {
   bool result = false ;
   zMapReturnValIfFail(isOpen(), result) ;
+
+  g_string_erase(buffer_line_, 0, -1) ;
+  g_string_insert(buffer_line_, 0, "##source-version ZMap-GFF-conversion") ;
 
   if (errCatchStart(err_catch_))
     {
@@ -1003,6 +1009,9 @@ bool ZMapDataSourceBIGWIGStruct::checkHeader(std::string &err_msg, bool &empty_o
 {
   bool result = false ;
   zMapReturnValIfFail(isOpen(), result) ;
+
+  g_string_erase(buffer_line_, 0, -1) ;
+  g_string_insert(buffer_line_, 0, "##source-version ZMap-GFF-conversion") ;
 
   if (errCatchStart(err_catch_))
     {
@@ -1054,6 +1063,9 @@ bool ZMapDataSourceHTSStruct::checkHeader(std::string &err_msg, bool &empty_or_e
   bool result = false ;
   zMapReturnValIfFail(isOpen(), result) ;
 
+  g_string_erase(buffer_line_, 0, -1) ;
+  g_string_insert(buffer_line_, 0, "##source-version ZMap-GFF-conversion") ;
+
   // Read the HTS header and look a @SQ:<name> tag that matches the sequence
   // we are looking for.
   stringstream available_seqs;
@@ -1091,6 +1103,9 @@ bool ZMapDataSourceBCFStruct::checkHeader(std::string &err_msg, bool &empty_or_e
 {
   bool result = false ;
   zMapReturnValIfFail(isOpen(), result) ;
+
+  g_string_erase(buffer_line_, 0, -1) ;
+  g_string_insert(buffer_line_, 0, "##source-version ZMap-GFF-conversion") ;
 
   // Loop through all sequence names in the file and check for the one we want
   int nseqs = 0 ;
@@ -1622,19 +1637,6 @@ void ZMapDataSourceStruct::parserInit(GHashTable *featureset_2_column,
 void ZMapDataSourceStruct::parserFinalise(bool free_on_destroy)
 {
   zMapGFFSetFreeOnDestroy(parser_, free_on_destroy) ;
-}
-
-void ZMapDataSourceStruct::setGffHeader()
-{
-  /*
-   *  (i) Put in a fake header line to make it look to ZMap like something
-   *      has really been read from a GFF stream.
-   * (ii) Then what? Possibly check that the sequence is the same as what's
-   *      held by the server, and maybe set up a flag somewhere to require
-   *      remapping if it is not?
-   */
-  g_string_erase(buffer_line_, 0, -1) ;
-  g_string_insert(buffer_line_, 0, "##source-version ZMap-GFF-conversion") ;
 }
 
 bool ZMapDataSourceStruct::checkFeatures(bool &empty, 
