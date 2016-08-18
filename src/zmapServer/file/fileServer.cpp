@@ -545,7 +545,7 @@ static ZMapServerResponseType getFeatures(void *server_in,
       bool empty = false ;
       std::string err_msg ;
 
-      if (!server->data_source->checkFeatures(empty, err_msg))
+      if (!server->data_source->checkFeatureCount(empty, err_msg))
         result = server->result = ZMAP_SERVERRESPONSE_SOURCEERROR ;
       else if (empty)
         result = server->result = ZMAP_SERVERRESPONSE_SOURCEEMPTY ;
@@ -908,7 +908,7 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
   if (!more_data)
     {
       if (get_features_data->result == ZMAP_SERVERRESPONSE_OK
-          && server->data_source->getFeatures(feature_block))
+          && server->data_source->addFeaturesToBlock(feature_block))
         {
         }
       else

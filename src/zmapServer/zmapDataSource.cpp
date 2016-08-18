@@ -890,7 +890,7 @@ bool ZMapDataSourceGIOStruct::checkHeader(string &err_msg, bool &empty_or_eof, c
               if (!error)
                 {
                   stringstream err_ss ;
-                  err_ss << "parseHeader() failed with no GError for line " << lineNumber() << ": " << lineString() ;
+                  err_ss << "parseHeader() failed with no GError for line " << curLineNumber() << ": " << curLine() ;
                   err_msg = err_ss.str() ;
                 }
               else
@@ -904,7 +904,7 @@ bool ZMapDataSourceGIOStruct::checkHeader(string &err_msg, bool &empty_or_eof, c
                   else
                     {
                       stringstream err_ss ;
-                      err_ss << "parseHeader() failed for line " << lineNumber() << ": " << lineString() ;
+                      err_ss << "parseHeader() failed for line " << curLineNumber() << ": " << curLine() ;
                       err_msg = err_ss.str() ;
                     }
                 }
@@ -931,14 +931,14 @@ bool ZMapDataSourceGIOStruct::checkHeader(string &err_msg, bool &empty_or_eof, c
           else
             {
               stringstream err_ss ;
-              err_ss << "EOF reached while trying to read header, at line " << lineNumber() ;
+              err_ss << "EOF reached while trying to read header, at line " << curLineNumber() ;
               err_msg = err_ss.str() ;
             }
         }
       else
         {
           stringstream err_ss ;
-          err_ss << "Error in GFF header, at line " << lineNumber() ;
+          err_ss << "Error in GFF header, at line " << curLineNumber() ;
           err_msg = err_ss.str() ;
         }
     }
@@ -1628,7 +1628,7 @@ bool ZMapDataSourceStruct::parseSequence(gboolean &sequence_finished, string &er
        {
          stringstream err_ss ;
          err_ss << "zMapGFFParseSequence() failed for line " 
-                << lineNumber() << ": " << lineString() << " - " << error->message ;
+                << curLineNumber() << ": " << curLine() << " - " << error->message ;
          err_msg = err_ss.str() ;
         }
 
@@ -1640,6 +1640,19 @@ bool ZMapDataSourceStruct::parseSequence(gboolean &sequence_finished, string &er
     }
 
   return result ;
+}
+
+
+/*
+ * This sets some things up for the GFF parser and is required before calling parserBodyLine
+ */
+void ZMapDataSourceStruct::parserInit(GHashTable *featureset_2_column,
+                                      GHashTable *source_2_sourcedata,
+                                      ZMapStyleTree &styles)
+{
+  zMapGFFParseSetSourceHash(parser_, featureset_2_column, source_2_sourcedata) ;
+  zMapGFFParserInitForFeatures(parser_, &styles, FALSE) ;
+  zMapGFFSetDefaultToBasic(parser_, TRUE);
 }
 
 
@@ -1657,18 +1670,27 @@ bool ZMapDataSourceStruct::parseBodyLine(GError **error)
 }
 
 
-void ZMapDataSourceStruct::parserInit(GHashTable *featureset_2_column,
-                                      GHashTable *source_2_sourcedata,
-                                      ZMapStyleTree &styles)
+/*
+ * This should be called after parsing is finished. It adds the features that were parsed
+ * into the given block.
+ */
+bool ZMapDataSourceStruct::addFeaturesToBlock(ZMapFeatureBlock feature_block)
 {
-  zMapGFFParseSetSourceHash(parser_, featureset_2_column, source_2_sourcedata) ;
-  zMapGFFParserInitForFeatures(parser_, &styles, FALSE) ;
-  zMapGFFSetDefaultToBasic(parser_, TRUE);
+  bool result = zMapGFFGetFeatures(parser_, feature_block) ;
+
+  /* Make sure parser does _not_ free our data ! */
+  if (result)
+    zMapGFFSetFreeOnDestroy(parser_, FALSE) ;
+
+  return result ;
 }
 
 
-bool ZMapDataSourceStruct::checkFeatures(bool &empty, 
-                                         string &err_msg)
+/*
+ * This validates the number of features that were found and the length of sequence etc.
+ */
+bool ZMapDataSourceStruct::checkFeatureCount(bool &empty, 
+                                             string &err_msg)
 {
   bool result = true ;
 
@@ -1698,22 +1720,19 @@ bool ZMapDataSourceStruct::checkFeatures(bool &empty,
   return result ;
 }
 
-bool ZMapDataSourceStruct::getFeatures(ZMapFeatureBlock feature_block)
-{
-  bool result = zMapGFFGetFeatures(parser_, feature_block) ;
 
-  /* Make sure parser does _not_ free our data ! */
-  if (result)
-    zMapGFFSetFreeOnDestroy(parser_, FALSE) ;
-
-  return result ;
-}
-
+/*
+ * This returns the list of featureset names that were found in the file.
+ */
 GList* ZMapDataSourceStruct::getFeaturesets()
 {
   return zMapGFFGetFeaturesets(parser_) ;
 }
 
+
+/*
+ * This returns the dna/peptide sequence that was parsed from the file, if it contained any
+ */
 ZMapSequence ZMapDataSourceStruct::getSequence(GQuark seq_id, 
                                                GError **error)
 {
@@ -1727,21 +1746,36 @@ ZMapSequence ZMapDataSourceStruct::getSequence(GQuark seq_id,
   return result ;
 }
 
-int ZMapDataSourceStruct::lineNumber()
+/*
+ * Utility to return the current line number
+ */
+int ZMapDataSourceStruct::curLineNumber()
 {
   return zMapGFFGetLineNumber(parser_) ;
 }
 
-const char* ZMapDataSourceStruct::lineString()
+
+/*
+ * Utility to return the current line string
+ */
+const char* ZMapDataSourceStruct::curLine()
 {
   return buffer_line_->str ;
 }
 
+
+/*
+ * Returns true if the parser hit the end of the file
+ */
 bool ZMapDataSourceStruct::endOfFile()
 {
   return buffer_line_->len == 0 ;
 }
 
+
+/*
+ * Returns true if the parser quit with a fatal error
+ */
 bool ZMapDataSourceStruct::terminated()
 {
   return zMapGFFTerminated(parser_) ;

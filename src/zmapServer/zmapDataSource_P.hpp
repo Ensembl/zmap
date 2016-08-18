@@ -67,14 +67,12 @@ public:
   virtual bool gffVersion(int * const p_out_val) ;
 
   virtual bool parseSequence(gboolean &sequence_finished, std::string &err_msg) ;
-  virtual bool parseBodyLine(GError **error) ;
   virtual void parserInit(GHashTable *featureset_2_column, GHashTable *source_2_sourcedata, ZMapStyleTree &styles) ;
-  virtual bool checkFeatures(bool &empty, std::string &err_msg) ;
-  virtual bool getFeatures(ZMapFeatureBlock feature_block) ;
+  virtual bool parseBodyLine(GError **error) ;
+  virtual bool addFeaturesToBlock(ZMapFeatureBlock feature_block) ;
+  virtual bool checkFeatureCount(bool &empty, std::string &err_msg) ;
   virtual GList* getFeaturesets() ;
   virtual ZMapSequence getSequence(GQuark seq_id, GError **error) ;
-  virtual int lineNumber() ;
-  virtual const char *lineString() ;
   virtual bool endOfFile() ;
   virtual bool terminated() ;
   
@@ -84,7 +82,8 @@ public:
 
 protected:
   virtual bool parseHeader(gboolean &done_header, ZMapGFFHeaderState &header_state, GError **error) ;
-
+  virtual int curLineNumber() ;
+  virtual const char *curLine() ;
 
   GQuark source_name_ ;
   char *sequence_ ;
