@@ -106,7 +106,6 @@ static ZMapServerResponseType destroyConnection(void *server) ;
  * Other internal functions.
  */
 static ZMapServerResponseType fileGetHeader(FileServer server);
-static ZMapServerResponseType fileGetHeader_GIO(FileServer server) ;
 static ZMapServerResponseType fileGetSequence(FileServer server);
 
 static void getConfiguration(FileServer server) ;
@@ -744,117 +743,6 @@ static void getConfiguration(FileServer server)
 
 
 /*
- * Header for a normal GFF file accessed through GIO.
- */
-static ZMapServerResponseType fileGetHeader_GIO(FileServer server)
-{
-  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
-  bool status = true ;
-  GError *error = NULL ;
-  gboolean empty_file = TRUE,
-    done_header = FALSE ;
-  ZMapGFFHeaderState header_state = GFF_HEADER_NONE ;
-
-  zMapReturnValIfFail(server->data_source->type == ZMapDataSourceType::GIO, result) ;
-
-  /*
-   * Read lines from the source.
-   */
-  while ((status = server->data_source->readLine()))
-    {
-      empty_file = FALSE ;
-      result = ZMAP_SERVERRESPONSE_OK;
-
-      if (server->data_source->parseHeader(&done_header, &header_state, &error))
-        {
-          if (done_header)
-            break ;
-        }
-      else
-        {
-          if (!done_header)
-            {
-              if (!error)
-                {
-                  char *err_msg ;
-
-                  err_msg = g_strdup_printf("parseHeader() failed with no GError for line %d: %s",
-                                            server->data_source->lineNumber(),
-                                            server->data_source->lineString()) ;
-                  setErrMsg(server, err_msg) ;
-                  g_free(err_msg) ;
-
-                  ZMAPSERVER_LOG(Critical, PROTOCOL_NAME, server->path, "%s", server->last_err_msg) ;
-                }
-             else
-                {
-                  /* If the error was serious we stop processing and return the error,
-                   * otherwise we just log the error. */
-                  if (server->data_source->terminated())
-                    {
-                      result = ZMAP_SERVERRESPONSE_REQFAIL ;
-
-                      setErrMsg(server, error->message) ;
-                    }
-                  else
-                    {
-                      char *err_msg ;
-
-                      err_msg = g_strdup_printf("parseHeader() failed for line %d: %s",
-                                                server->data_source->lineNumber(),
-                                                server->data_source->lineString()) ;
-                      
-                      setErrMsg(server, err_msg) ;
-                      g_free(err_msg) ;
-
-                      ZMAPSERVER_LOG(Critical, PROTOCOL_NAME, server->path, "%s", server->last_err_msg) ;
-                    }
-                }
-
-              result = ZMAP_SERVERRESPONSE_REQFAIL ;
-            }
-
-          break ;
-        }
-
-    } ;
-
-
-  /* Sometimes the file contains nothing or only the gff header and no data, I don't know the reason for this
-   * but in this case there's no point in going further. */
-  if (header_state == GFF_HEADER_ERROR || empty_file)
-    {
-      char *err_msg ;
-
-      if (!status)
-        {
-          if (empty_file)
-            err_msg = g_strdup_printf("%s", "Empty file.") ;
-          else
-            err_msg = g_strdup_printf("EOF reached while trying to read header, at line %d",
-                                      server->data_source->lineNumber()) ;
-
-          result = ZMAP_SERVERRESPONSE_SOURCEERROR ;
-        }
-      else
-        {
-          err_msg = g_strdup_printf("Error in GFF header, at line %d",
-                                    server->data_source->lineNumber()) ;
-
-          result = ZMAP_SERVERRESPONSE_REQFAIL ;
-        }
-
-      setErrMsg(server, err_msg) ;
-      g_free(err_msg) ;
-
-      ZMAPSERVER_LOG(Critical, PROTOCOL_NAME, server->path, "%s", server->last_err_msg) ;
-    }
-
-  return result ;
-}
-
-
-/*
  * read the header data and exit when we get DNA or features or anything else.
  */
 static ZMapServerResponseType fileGetHeader(FileServer server)
@@ -862,30 +750,28 @@ static ZMapServerResponseType fileGetHeader(FileServer server)
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   zMapReturnValIfFail(server && server->data_source, result) ;
 
-  ZMapDataSourceType data_source_type = ZMapDataSourceType::UNK ;
-
   /*
    * reset done flag for seq else skip the data
    */
   if (server->sequence_server)
     server->data_source->setSequenceFlag() ;
 
-  /*
-   * Call different functions for different file types.
-   */
-  data_source_type = zMapDataSourceGetType(server->data_source) ;
-  if (data_source_type == ZMapDataSourceType::GIO)
+  std::string err_msg ;
+  bool empty_or_eof = false ;
+
+  if (server->data_source->checkHeader(err_msg, empty_or_eof))
     {
-      result = fileGetHeader_GIO(server) ;
-    }
-  else if (server->data_source->checkHeader())
-    {
-      server->data_source->setGffHeader() ;
       result = ZMAP_SERVERRESPONSE_OK ;
     }
-  else if (server->data_source->error())
+  else 
     {
-      setErrMsg(server, server->data_source->error()->message) ;
+      if (empty_or_eof)
+        result = ZMAP_SERVERRESPONSE_SOURCEERROR ;
+      else
+        result = ZMAP_SERVERRESPONSE_REQFAIL ;
+
+      setErrMsg(server, err_msg.c_str()) ;
+      ZMAPSERVER_LOG(Critical, PROTOCOL_NAME, server->path, "%s", server->last_err_msg) ;
     }
 
   return result ;
@@ -897,9 +783,9 @@ static ZMapServerResponseType fileGetHeader(FileServer server)
 // read any DNA data at the head of the stream and quit after error or ##end-dna
 static ZMapServerResponseType fileGetSequence(FileServer server)
 {
-  GIOStatus status ;
+  bool status = true ;
   GError *error = NULL ;
-  gboolean sequence_finished = FALSE;
+  gboolean sequence_finished = false ;
 
   // read the sequence if it's there
   server->result = ZMAP_SERVERRESPONSE_OK;   // now we have data default is 'OK'
@@ -908,12 +794,12 @@ static ZMapServerResponseType fileGetSequence(FileServer server)
   do
     {
 
-      if (!server->data_source->parseSequence(&sequence_finished, &error) || sequence_finished)
+      if (!server->data_source->parseSequence(sequence_finished, &error) || sequence_finished)
         break;
 
-      status = server->data_source->readLine() ? G_IO_STATUS_NORMAL : G_IO_STATUS_EOF ;
+      status = server->data_source->readLine() ;
 
-    } while ( status == G_IO_STATUS_NORMAL );
+    } while (status);
 
   if (error)
     {

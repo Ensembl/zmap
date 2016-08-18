@@ -854,14 +854,93 @@ bool ZMapDataSourceGIOStruct::gffVersion(int * const p_out_val)
 }
 
 
-bool ZMapDataSourceGIOStruct::checkHeader()
+bool ZMapDataSourceGIOStruct::checkHeader(string &err_msg, bool &empty_or_eof)
 {
-  // Shouldn't be called - this is currently handled in getFileHeader_GIO instead
-  zMapWarnIfReached() ;
-  return false ;
+  bool result = false ;
+
+  bool empty_file  = true ;  // set to true if file is completely empty
+  bool more_data = true ;    // remains true while there is more unread data in the file
+  boolean done_header = false ; // gets set to true if we successfully reach the end of the header
+
+  ZMapGFFHeaderState header_state = GFF_HEADER_NONE ;
+  GError *error = NULL ;
+
+  empty_or_eof = false ;    // gets set to true if file is empty or we hit EOF while reading header
+
+  while ((more_data = readLine()))
+    {
+      empty_file = false ;
+      result = true ;
+
+      if (parseHeader(done_header, header_state, &error))
+        {
+          if (done_header)
+            break ;
+        }
+      else
+        {
+          if (!done_header)
+            {
+              if (!error)
+                {
+                  stringstream err_ss ;
+                  err_ss << "parseHeader() failed with no GError for line " << lineNumber() << ": " << lineString() ;
+                  err_msg = err_ss.str() ;
+                }
+              else
+                {
+                  /* If the error was serious we stop processing and return the error,
+                   * otherwise we just log the error. */
+                  if (terminated())
+                    {
+                      err_msg = error->message ;
+                    }
+                  else
+                    {
+                      stringstream err_ss ;
+                      err_ss << "parseHeader() failed for line " << lineNumber() << ": " << lineString() ;
+                      err_msg = err_ss.str() ;
+                    }
+                }
+              
+              result = false ;
+            }
+
+          break ;
+        }
+    } ;
+
+  if (header_state == GFF_HEADER_ERROR || empty_file)
+    {
+      result = false ;
+      
+      if (!more_data)
+        {
+          empty_or_eof = true ;
+
+          if (empty_file)
+            {
+              err_msg = "Empty file." ;
+            }
+          else
+            {
+              stringstream err_ss ;
+              err_ss << "EOF reached while trying to read header, at line " << lineNumber() ;
+              err_msg = err_ss.str() ;
+            }
+        }
+      else
+        {
+          stringstream err_ss ;
+          err_ss << "Error in GFF header, at line " << lineNumber() ;
+          err_msg = err_ss.str() ;
+        }
+    }
+
+  return result ;
 }
 
-bool ZMapDataSourceBEDStruct::checkHeader()
+bool ZMapDataSourceBEDStruct::checkHeader(std::string &err_msg, bool &empty_or_eof)
 {
   // We can't easily check in advance what sequences are in the file so just allow it and filter
   // when we come to parse the individual lines.
@@ -870,7 +949,7 @@ bool ZMapDataSourceBEDStruct::checkHeader()
 
 /* Read the header info from the bigBed file and return true if it contains the required sequence
  * name */
-bool ZMapDataSourceBIGBEDStruct::checkHeader()
+bool ZMapDataSourceBIGBEDStruct::checkHeader(std::string &err_msg, bool &empty_or_eof)
 {
   bool result = false ;
   zMapReturnValIfFail(isOpen(), result) ;
@@ -906,12 +985,15 @@ bool ZMapDataSourceBIGBEDStruct::checkHeader()
       zMapLogWarning("Error checking header: %s", err_catch_->message->string);
     }
 
+  if (error_)
+    err_msg = error_->message ; 
+
   return result ;
 }
 
 /* Read the header info from the bigBed file and return true if it contains the required sequence
  * name */
-bool ZMapDataSourceBIGWIGStruct::checkHeader()
+bool ZMapDataSourceBIGWIGStruct::checkHeader(std::string &err_msg, bool &empty_or_eof)
 {
   bool result = false ;
   zMapReturnValIfFail(isOpen(), result) ;
@@ -947,6 +1029,9 @@ bool ZMapDataSourceBIGWIGStruct::checkHeader()
       zMapLogWarning("Error checking file header: %s", err_catch_->message->string);
     }
 
+  if (error_)
+    err_msg = error_->message ; 
+
   return result ;
 }
 
@@ -958,7 +1043,7 @@ bool ZMapDataSourceBIGWIGStruct::checkHeader()
  * hts_hdr = sam_hdr_read() ;
  * Returns TRUE if reference sequence name found in BAM file header.
  */
-bool ZMapDataSourceHTSStruct::checkHeader()
+bool ZMapDataSourceHTSStruct::checkHeader(std::string &err_msg, bool &empty_or_eof)
 {
   bool result = false ;
   zMapReturnValIfFail(isOpen(), result) ;
@@ -990,10 +1075,13 @@ bool ZMapDataSourceHTSStruct::checkHeader()
                   sequence_, available_seqs.str().c_str()) ;
     }
 
+  if (error_)
+    err_msg = error_->message ; 
+
   return result ;
 }
 
-bool ZMapDataSourceBCFStruct::checkHeader()
+bool ZMapDataSourceBCFStruct::checkHeader(std::string &err_msg, bool &empty_or_eof)
 {
   bool result = false ;
   zMapReturnValIfFail(isOpen(), result) ;
@@ -1023,6 +1111,9 @@ bool ZMapDataSourceBCFStruct::checkHeader()
                   "File header does not contain sequence '%s'. Available sequences in this file are: %s\n", 
                   sequence_, available_seqs.str().c_str()) ;
     }
+
+  if (error_)
+    err_msg = error_->message ; 
 
   return result ;
 }
@@ -1463,12 +1554,15 @@ bool ZMapDataSourceBCFStruct::readLine()
 #endif
 
 
-
-bool ZMapDataSourceStruct::parseHeader(gboolean *done_header,
-                                       ZMapGFFHeaderState *header_state,
+/*
+ * Parse a header line from the source. Returns true if successful. Sets done_header if there are
+ * no more header lines to read.
+ */
+bool ZMapDataSourceStruct::parseHeader(gboolean &done_header,
+                                       ZMapGFFHeaderState &header_state,
                                        GError **error)
 {
-  bool result = zMapGFFParseHeader(parser_, buffer_line_->str, done_header, header_state) ;
+  bool result = zMapGFFParseHeader(parser_, buffer_line_->str, &done_header, &header_state) ;
 
   if (!result && error)
     {
@@ -1479,10 +1573,14 @@ bool ZMapDataSourceStruct::parseHeader(gboolean *done_header,
 }
 
 
-bool ZMapDataSourceStruct::parseSequence(gboolean *sequence_finished, 
+/*
+ * Parse sequence data from the source. Returns true if successful. Sets sequence_finished if
+ * there is no more sequence to read.
+ */
+bool ZMapDataSourceStruct::parseSequence(gboolean &sequence_finished, 
                                          GError **error)
 {
-  bool result = zMapGFFParseSequence(parser_, buffer_line_->str, sequence_finished) ;
+  bool result = zMapGFFParseSequence(parser_, buffer_line_->str, &sequence_finished) ;
 
   if (!result && error)
     *error = zMapGFFGetError(parser_) ;
@@ -1491,6 +1589,9 @@ bool ZMapDataSourceStruct::parseSequence(gboolean *sequence_finished,
 }
 
 
+/*
+ * Parse a body line from the source. Returns true if successful.
+ */
 bool ZMapDataSourceStruct::parseBodyLine(GError **error)
 {
   bool result = zMapGFFParseLine(parser_, buffer_line_->str) ;

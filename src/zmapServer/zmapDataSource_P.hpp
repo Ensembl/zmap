@@ -62,12 +62,12 @@ public:
   virtual ~ZMapDataSourceStruct() ;
 
   virtual bool isOpen() = 0 ;
-  virtual bool checkHeader() = 0 ;
+  virtual bool checkHeader(std::string &err_msg, bool &empty_or_eof) = 0 ;
   virtual bool readLine() = 0 ;
   virtual bool gffVersion(int * const p_out_val) ;
 
-  virtual bool parseHeader(gboolean *done_header, ZMapGFFHeaderState *header_state, GError **error) ;
-  virtual bool parseSequence(gboolean *sequence_finished, GError **error) ;
+  virtual bool parseHeader(gboolean &done_header, ZMapGFFHeaderState &header_state, GError **error) ;
+  virtual bool parseSequence(gboolean &sequence_finished, GError **error) ;
   virtual bool parseBodyLine(GError **error) ;
   virtual void setSequenceFlag() ;
   virtual void setGffHeader() ;
@@ -111,7 +111,7 @@ public:
   ~ZMapDataSourceGIOStruct() ;
 
   bool isOpen() ;
-  bool checkHeader() ;
+  bool checkHeader(std::string &err_msg, bool &empty_or_eof) ;
   bool readLine() ;
   bool gffVersion(int * const p_out_val) ;
 
@@ -131,7 +131,7 @@ public:
   ~ZMapDataSourceBEDStruct() ;
 
   bool isOpen() ;
-  bool checkHeader() ;
+  bool checkHeader(std::string &err_msg, bool &empty_or_eof) ;
   bool readLine() ;
 
 private:
@@ -149,7 +149,7 @@ public:
   ~ZMapDataSourceBIGBEDStruct() ;
 
   bool isOpen() ;
-  bool checkHeader() ;
+  bool checkHeader(std::string &err_msg, bool &empty_or_eof) ;
   bool readLine() ;
 
 private:
@@ -169,7 +169,7 @@ public:
   ~ZMapDataSourceBIGWIGStruct() ;
 
   bool isOpen() ;
-  bool checkHeader() ;
+  bool checkHeader(std::string &err_msg, bool &empty_or_eof) ;
   bool readLine() ;
 
 private:
@@ -190,7 +190,7 @@ public:
                           const char *sequence, const int start, const int end) ;
   ~ZMapDataSourceHTSStruct() ;
   bool isOpen() ;
-  bool checkHeader() ;
+  bool checkHeader(std::string &err_msg, bool &empty_or_eof) ;
   bool readLine() ;
 
   htsFile *hts_file ;
@@ -212,7 +212,7 @@ public:
                           const char *sequence, const int start, const int end) ;
   ~ZMapDataSourceBCFStruct() ;
   bool isOpen() ;
-  bool checkHeader() ;
+  bool checkHeader(std::string &err_msg, bool &empty_or_eof) ;
   bool readLine() ;
 
   htsFile *hts_file ;
