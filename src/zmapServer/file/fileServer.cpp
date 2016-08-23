@@ -977,7 +977,7 @@ static void setErrMsg(FileServer server, const char *new_msg)
   if (server->last_err_msg)
     g_free(server->last_err_msg) ;
 
-  error_msg = g_strdup_printf("error: %s\nrequest: %s\n", new_msg, server->path) ;
+  error_msg = g_strdup_printf("error: %s", new_msg) ;
 
   server->last_err_msg = error_msg ;
 
