@@ -189,116 +189,6 @@ inline semaphore::native_handle_type semaphore::native_handle() {
 #define MAX_FILE_THREADS 10
 static semaphore semaphore_G(MAX_FILE_THREADS) ;
 
-void createGFFLine(GString *pStr, 
-                   const char *sequence,
-                   const char *source,
-                   const char *so_type,
-                   const int iStart,
-                   const int iEnd,
-                   const double dScore,
-                   const char cStrand_in,
-                   const char *pName_in,
-                   const bool haveTarget = false,
-                   const int iTargetStart = 0,
-                   const int iTargetEnd = 0)
-{
-  static const gssize string_start = 0 ;
-  static const char *sFormatName = "Name=%s;",
-    *sFormatTarget = "Target=%s;";
-  gboolean bHasTargetStrand = FALSE,
-    bHasNameAttribute = FALSE,
-    bHasTargetAttribute = FALSE ;
-  char *sGFFLine = NULL ;
-  char cPhase = '.',
-    cTargetStrand = '.' ;
-  GString *pStringTarget = NULL,
-    *pStringAttributes = NULL ;
-  char *pName = NULL ;
-
-  /*
-   * Erase current buffer contents
-   */
-  g_string_erase(pStr, string_start, -1) ;
-
-  /*
-   * Make sure we have a valid strand ('.' if n/a) 
-   */
-  char cStrand = cStrand_in ;
-  if (cStrand == '\0')
-    {
-      cStrand = '.' ;
-    }
-  else if (cStrand != '+' && cStrand != '-' && cStrand != '.')
-    {
-      zMapLogWarning("Invalid strand '%c' given for sequence %s:%d-%d", 
-                     cStrand_in, sequence, iStart, iEnd) ;
-      cStrand = '.' ;
-    }
-
-  /* 
-   * Escape the name string
-   */
-  pName = zMapGFFEscape(pName_in) ;
-
-  /*
-   * "Target" (and "Name") attribute
-   */
-  pStringTarget = g_string_new(NULL) ;
-
-  if (haveTarget && pName && strlen(pName))
-    {
-      bHasTargetAttribute = TRUE ;
-      g_string_append_printf(pStringTarget, "%s %i %i", pName, iTargetStart, iTargetEnd ) ;
-      bHasTargetStrand = TRUE ;
-      cTargetStrand = '+' ;
-
-      if (bHasTargetStrand)
-        g_string_append_printf(pStringTarget, " %c", cTargetStrand) ;
-    }
-
-  /*
-   * Construct attributes string.
-   */
-  pStringAttributes = g_string_new(NULL) ;
-  if (pName && strlen(pName))
-    {
-      bHasNameAttribute = TRUE ;
-      g_string_append_printf(pStringAttributes,
-                             sFormatName, pName ) ;
-    }
-  if (bHasTargetAttribute)
-    {
-      g_string_append_printf(pStringAttributes,
-                             sFormatTarget, pStringTarget->str ) ;
-    }
-
-  /*
-   * Construct GFF line.
-   */
-  sGFFLine = g_strdup_printf("%s\t%s\t%s\t%i\t%i\t%f\t%c\t%c\t%s",
-                             sequence,
-                             source,
-                             so_type,
-                             iStart, iEnd,
-                             dScore,
-                             cStrand,
-                             cPhase,
-                             pStringAttributes->str) ;
-  g_string_insert(pStr, string_start, sGFFLine ) ;
-
-  /*
-   * Clean up on finish
-   */
-  if (sGFFLine)
-    g_free(sGFFLine) ;
-  if (pStringTarget)
-    g_string_free(pStringTarget, TRUE) ;
-  if (pStringAttributes)
-    g_string_free(pStringAttributes, TRUE) ;
-  if (pName)
-    g_free(pName) ;
-}
-
 
 } // unnamed namespace
 
@@ -1280,20 +1170,6 @@ bool ZMapDataSourceBIGWIGStruct::readLine()
 
   if (cur_interval_)
     {
-      // Create a gff line for this feature
-      createGFFLine(buffer_line_,
-                    sequence_,
-                    g_quark_to_string(source_name_),
-                    ZMAP_BIGWIG_SO_TERM,
-                    cur_interval_->start,
-                    cur_interval_->end,
-                    cur_interval_->val,
-                    '.',
-                    NULL,
-                    false,
-                    0,
-                    0) ;
-
       result = true ;
     }
   else
@@ -1328,7 +1204,6 @@ bool ZMapDataSourceHTSStruct::readLine()
     bHasNameAttribute = FALSE,
     bHasCigarAttribute = FALSE,
     bHasTargetAttribute = FALSE ;
-  char *sGFFLine = NULL ;
   char cStrand = '\0',
     cPhase = '.',
     cTargetStrand = '.' ;
@@ -1340,9 +1215,8 @@ bool ZMapDataSourceHTSStruct::readLine()
     iTargetEnd = 0;
   uint32_t *pCigar = NULL ;
   double dScore = 0.0 ;
-  GString *pStringCigar = NULL,
-    *pStringTarget = NULL,
-    *pStringAttributes = NULL ;
+  stringstream ssCigar ;
+  const char *query_name = NULL ;
 
   /*
    * Initial error check.
@@ -1375,77 +1249,28 @@ bool ZMapDataSourceHTSStruct::readLine()
         {
           bHasCigarAttribute = TRUE ;
           pCigar = bam_get_cigar(hts_rec) ;
-          pStringCigar = g_string_new(NULL) ;
           for (iCigar=0; iCigar<nCigar; ++iCigar)
-              g_string_append_printf(pStringCigar, "%i%c", bam_cigar_oplen(pCigar[iCigar]), bam_cigar_opchr(pCigar[iCigar])) ;
+            ssCigar << bam_cigar_oplen(pCigar[iCigar]) << bam_cigar_opchr(pCigar[iCigar]) ;
         }
 
       /*
        * "Target" (and "Name") attribute
        */
-      pStringTarget = g_string_new(NULL) ;
       iTargetStart = 1 ;
       iTargetEnd = hts_rec->core.l_qseq ;
-      if (strlen(bam_get_qname(hts_rec)))
+      query_name = bam_get_qname(hts_rec) ;
+
+      if (query_name && strlen(query_name) > 0)
         {
           bHasTargetAttribute = TRUE ;
           bHasNameAttribute = TRUE ;
-          g_string_append_printf(pStringTarget, "%s %i %i", bam_get_qname(hts_rec), iTargetStart, iTargetEnd ) ;
           bHasTargetStrand = TRUE ;
           cTargetStrand = '+' ;
-          if (bHasTargetStrand)
-            g_string_append_printf(pStringTarget, " %c", cTargetStrand) ;
         }
-
-      /*
-       * Construct attributes string.
-       */
-      pStringAttributes = g_string_new(NULL) ;
-      if (bHasNameAttribute)
-        {
-          g_string_append_printf(pStringAttributes,
-                                 sFormatName, bam_get_qname(hts_rec) ) ;
-        }
-      if (bHasTargetAttribute)
-        {
-          g_string_append_printf(pStringAttributes,
-                                 sFormatTarget, pStringTarget->str ) ;
-        }
-      if (bHasCigarAttribute)
-        {
-          g_string_append_printf(pStringAttributes,
-                                 sFormatCigar, pStringCigar->str) ;
-        }
-
-      /*
-       * Construct GFF line.
-       */
-//sGFFLine = g_strdup_printf("%s\t%s\t%s\t%i\t%i\t%f\t%c\t%c\t%s",
-//                           sequence_,
-//                           g_quark_to_string(source_name_),
-//                           so_type,
-//                           iStart, iEnd,
-//                           dScore,
-//                           cStrand,
-//                           cPhase,
-//                           pStringAttributes->str) ;
-//g_string_insert(buffer_line_, string_start, sGFFLine ) ;
 
       cur_feature_data_ = ZMapDataSourceFeatureData(iStart, iEnd, dScore, cStrand, cPhase, 
                                                     bam_get_qname(hts_rec), iTargetStart, iTargetEnd,
-                                                    pStringCigar->str) ;
-
-      /*
-       * Clean up on finish
-       */
-      if (sGFFLine)
-        g_free(sGFFLine) ;
-      if (pStringCigar)
-        g_string_free(pStringCigar, TRUE) ;
-      if (pStringTarget)
-        g_string_free(pStringTarget, TRUE) ;
-      if (pStringAttributes)
-        g_string_free(pStringAttributes, TRUE) ;
+                                                    ssCigar.str().c_str()) ;
 
       /*
        * return value
@@ -1536,19 +1361,6 @@ bool ZMapDataSourceBCFStruct::readLine()
 
           cur_feature_data_ = ZMapDataSourceFeatureData(iStart, iEnd, 0.0, '.', '.', 
                                                         name, 0, 0) ;
-
-//          createGFFLine(buffer_line_, 
-//                        sequence_,
-//                        g_quark_to_string(source_name_),
-//                        so_term,
-//                        iStart,
-//                        iEnd,
-//                        0.0, 
-//                        '.', 
-//                        name, 
-//                        false, 
-//                        0, 
-//                        0) ;
 
           g_string_append_printf(buffer_line_, "ensembl_variation=%s;", var_str.c_str()) ;
 
