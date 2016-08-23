@@ -1537,7 +1537,7 @@ ZMapFeature ZMapDataSourceStruct::makeFeature(const char *sequence,
                                               const int end,
                                               const double score,
                                               const char strand_c,
-                                              const char *feature_name,
+                                              const char *feature_name_in,
                                               const bool have_target,
                                               const int query_start,
                                               const int query_end,
@@ -1545,8 +1545,14 @@ ZMapFeature ZMapDataSourceStruct::makeFeature(const char *sequence,
                                               GError **error)
 {
   ZMapFeature feature = NULL ;
+  zMapReturnValIfFail(sequence && so_type, feature) ;
+
   bool ok = true ;
   ZMapStrand strand = ZMAPSTRAND_NONE ;
+  const char *feature_name = feature_name_in ;
+
+  if (!feature_name)
+    feature_name = sequence ;
 
   if (strand_c == '+')
     strand = ZMAPSTRAND_FORWARD ;
