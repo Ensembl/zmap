@@ -111,7 +111,6 @@ public:
   virtual bool checkFeatureCount(bool &empty, std::string &err_msg) ;
   virtual GList* getFeaturesets() ;
   virtual ZMapSequence getSequence(GQuark seq_id, GError **error) ;
-  virtual bool endOfFile() ;
   virtual bool terminated() ;
 
   ZMapFeatureSet makeFeatureSet(const char *feature_name_id, GQuark feature_set_id, ZMapStyleMode feature_mode) ;
@@ -121,14 +120,12 @@ public:
                           const bool have_target = false, const int query_start = 0, const int query_end = 0,
                           ZMapStyleMode feature_mode = ZMAPSTYLE_MODE_INVALID, GError **error = NULL) ;
   
+  bool endOfFile() ;
   GError* error() ;
 
   ZMapDataSourceType type ;
 
 protected:
-  virtual bool parseHeader(gboolean &done_header, ZMapGFFHeaderState &header_state, GError **error) ;
-  virtual int curLineNumber() ;
-  virtual const char *curLine() ;
 
   GQuark source_name_ ;
   char *sequence_ ;
@@ -136,10 +133,10 @@ protected:
   int end_ ;
   GError *error_ ;
 
-  GString *buffer_line_ ;
   ZMapGFFParser parser_ ;
   ZMapFeatureSet feature_set_ ; // only used if all features go into same feature set
   int num_features_ ;           // counts how many features we have created
+  bool end_of_file_ ;           // set to true when there is no more to read
 
   GHashTable *featureset_2_column_ ;
   GHashTable *source_2_sourcedata_ ;
@@ -169,9 +166,14 @@ public:
   bool addFeaturesToBlock(ZMapFeatureBlock feature_block) ;
 
 private:
+  const char *curLine() ;
+  int curLineNumber() ;
+  bool parseHeader(gboolean &done_header, ZMapGFFHeaderState &header_state, GError **error) ;
+
   GIOChannel *io_channel ;
   int gff_version_ ;
   bool gff_version_set_ ;
+  GString *buffer_line_ ;
 } ;
 
 

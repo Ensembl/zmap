@@ -209,6 +209,7 @@ ZMapDataSourceStruct::ZMapDataSourceStruct(const GQuark source_name,
     parser_(NULL),
     feature_set_(NULL),
     num_features_(0),
+    end_of_file_(false),
     featureset_2_column_(NULL),
     source_2_sourcedata_(NULL),
     styles_(NULL)
@@ -217,10 +218,6 @@ ZMapDataSourceStruct::ZMapDataSourceStruct(const GQuark source_name,
 
   if (sequence)
     sequence_ = g_strdup(sequence) ;
-
-
-  buffer_line_ = g_string_sized_new(READBUFFER_SIZE) ;
-
 }
 
 ZMapDataSourceGIOStruct::ZMapDataSourceGIOStruct(const GQuark source_name, 
@@ -251,6 +248,8 @@ ZMapDataSourceGIOStruct::ZMapDataSourceGIOStruct(const GQuark source_name,
       zMapGFFSetFeatureClipCoords(parser_, start, end) ;
       zMapGFFSetFeatureClip(parser_, GFF_CLIP_ALL);
     }
+
+  buffer_line_ = g_string_sized_new(READBUFFER_SIZE) ;
 }
 
 ZMapDataSourceBEDStruct::ZMapDataSourceBEDStruct(const GQuark source_name, 
@@ -510,9 +509,6 @@ ZMapDataSourceStruct::~ZMapDataSourceStruct()
 
   if (parser_)
     zMapGFFDestroyParser(parser_) ;
-
-  if (buffer_line_)
-    g_string_free(buffer_line_, TRUE) ;
 }
 
 ZMapDataSourceGIOStruct::~ZMapDataSourceGIOStruct()
@@ -531,6 +527,9 @@ ZMapDataSourceGIOStruct::~ZMapDataSourceGIOStruct()
     {
       zMapLogCritical("Could not close GIOChannel in zMapDataSourceDestroy(), %s", "") ;
     }
+
+  if (buffer_line_)
+    g_string_free(buffer_line_, TRUE) ;
 }
 
 ZMapDataSourceBEDStruct::~ZMapDataSourceBEDStruct()
@@ -819,9 +818,6 @@ bool ZMapDataSourceGIOStruct::checkHeader(string &err_msg, bool &empty_or_eof, c
 
 bool ZMapDataSourceBEDStruct::checkHeader(std::string &err_msg, bool &empty_or_eof, const bool sequence_server)
 {
-  g_string_erase(buffer_line_, 0, -1) ;
-  g_string_insert(buffer_line_, 0, "##source-version ZMap-GFF-conversion") ;
-
   // We can't easily check in advance what sequences are in the file so just allow it and filter
   // when we come to parse the individual lines.
   return true ;
@@ -833,9 +829,6 @@ bool ZMapDataSourceBIGBEDStruct::checkHeader(std::string &err_msg, bool &empty_o
 {
   bool result = false ;
   zMapReturnValIfFail(isOpen(), result) ;
-
-  g_string_erase(buffer_line_, 0, -1) ;
-  g_string_insert(buffer_line_, 0, "##source-version ZMap-GFF-conversion") ;
 
   if (errCatchStart(err_catch_))
     {
@@ -880,9 +873,6 @@ bool ZMapDataSourceBIGWIGStruct::checkHeader(std::string &err_msg, bool &empty_o
 {
   bool result = false ;
   zMapReturnValIfFail(isOpen(), result) ;
-
-  g_string_erase(buffer_line_, 0, -1) ;
-  g_string_insert(buffer_line_, 0, "##source-version ZMap-GFF-conversion") ;
 
   if (errCatchStart(err_catch_))
     {
@@ -934,9 +924,6 @@ bool ZMapDataSourceHTSStruct::checkHeader(std::string &err_msg, bool &empty_or_e
   bool result = false ;
   zMapReturnValIfFail(isOpen(), result) ;
 
-  g_string_erase(buffer_line_, 0, -1) ;
-  g_string_insert(buffer_line_, 0, "##source-version ZMap-GFF-conversion") ;
-
   // Read the HTS header and look a @SQ:<name> tag that matches the sequence
   // we are looking for.
   stringstream available_seqs;
@@ -974,9 +961,6 @@ bool ZMapDataSourceBCFStruct::checkHeader(std::string &err_msg, bool &empty_or_e
 {
   bool result = false ;
   zMapReturnValIfFail(isOpen(), result) ;
-
-  g_string_erase(buffer_line_, 0, -1) ;
-  g_string_insert(buffer_line_, 0, "##source-version ZMap-GFF-conversion") ;
 
   // Loop through all sequence names in the file and check for the one we want
   int nseqs = 0 ;
@@ -1032,6 +1016,9 @@ bool ZMapDataSourceGIOStruct::readLine()
       buffer_line_->str[pos] = '\0';
     }
 
+  if (!result)
+    end_of_file_ = true ;
+
   return result ;
 }
 
@@ -1055,6 +1042,9 @@ bool ZMapDataSourceBEDStruct::readLine()
     {
       result = true ;
     }
+
+  if (!result)
+    end_of_file_ = true ;
   
   return result ;
 }
@@ -1134,6 +1124,9 @@ bool ZMapDataSourceBIGBEDStruct::readLine()
         }
     }
           
+  if (!result)
+    end_of_file_ = true ;
+
   return result ;
 }
 
@@ -1186,6 +1179,9 @@ bool ZMapDataSourceBIGWIGStruct::readLine()
         zMapLogWarning("Error cleaning up bigWig parser: %s", err_catch_->message->string);
     }
 
+  if (!result)
+    end_of_file_ = true ;
+
   return result ;
 }
 
@@ -1195,10 +1191,6 @@ bool ZMapDataSourceBIGWIGStruct::readLine()
  */
 bool ZMapDataSourceHTSStruct::readLine()
 {
-  static const gssize string_start = 0 ;
-  static const char *sFormatName = "Name=%s;",
-    *sFormatCigar = "cigar_bam=%s;",
-    *sFormatTarget = "Target=%s;";
   gboolean result = FALSE,
     bHasTargetStrand = FALSE,
     bHasNameAttribute = FALSE,
@@ -1223,10 +1215,6 @@ bool ZMapDataSourceHTSStruct::readLine()
    */
   zMapReturnValIfFail(hts_file && hts_hdr && hts_rec, result ) ;
 
-  /*
-   * Erase current buffer contents
-   */
-  g_string_erase(buffer_line_, string_start, -1) ;
 
   /*
    * Read line from HTS file and convert to GFF.
@@ -1278,6 +1266,9 @@ bool ZMapDataSourceHTSStruct::readLine()
       result = TRUE ;
     }
 
+  if (!result)
+    end_of_file_ = true ;
+
   return result ;
 }
 
@@ -1285,7 +1276,6 @@ bool ZMapDataSourceBCFStruct::readLine()
 {
   bool result = false ;
 
-  static const gssize string_start = 0 ;
   int iStart = 0,
     iEnd = 0 ;
 
@@ -1293,11 +1283,6 @@ bool ZMapDataSourceBCFStruct::readLine()
    * Initial error check.
    */
   zMapReturnValIfFail(hts_file && hts_hdr && hts_rec, result ) ;
-
-  /*
-   * Erase current buffer contents
-   */
-  g_string_erase(buffer_line_, string_start, -1) ;
 
   /*
    * Read line from HTS file and convert to GFF.
@@ -1362,11 +1347,12 @@ bool ZMapDataSourceBCFStruct::readLine()
           cur_feature_data_ = ZMapDataSourceFeatureData(iStart, iEnd, 0.0, '.', '.', 
                                                         name, 0, 0) ;
 
-          g_string_append_printf(buffer_line_, "ensembl_variation=%s;", var_str.c_str()) ;
-
           result = true ;
         }
     }
+
+  if (!result)
+    end_of_file_ = true ;
 
   return result ;
 }
@@ -1378,9 +1364,9 @@ bool ZMapDataSourceBCFStruct::readLine()
  * Parse a header line from the source. Returns true if successful. Sets done_header if there are
  * no more header lines to read.
  */
-bool ZMapDataSourceStruct::parseHeader(gboolean &done_header,
-                                       ZMapGFFHeaderState &header_state,
-                                       GError **error)
+bool ZMapDataSourceGIOStruct::parseHeader(gboolean &done_header,
+                                          ZMapGFFHeaderState &header_state,
+                                          GError **error)
 {
   bool result = zMapGFFParseHeader(parser_, buffer_line_->str, &done_header, &header_state) ;
 
@@ -1886,7 +1872,7 @@ ZMapSequence ZMapDataSourceStruct::getSequence(GQuark seq_id,
 /*
  * Utility to return the current line number
  */
-int ZMapDataSourceStruct::curLineNumber()
+int ZMapDataSourceGIOStruct::curLineNumber()
 {
   return zMapGFFGetLineNumber(parser_) ;
 }
@@ -1895,7 +1881,7 @@ int ZMapDataSourceStruct::curLineNumber()
 /*
  * Utility to return the current line string
  */
-const char* ZMapDataSourceStruct::curLine()
+const char* ZMapDataSourceGIOStruct::curLine()
 {
   return buffer_line_->str ;
 }
@@ -1906,7 +1892,7 @@ const char* ZMapDataSourceStruct::curLine()
  */
 bool ZMapDataSourceStruct::endOfFile()
 {
-  return buffer_line_->len == 0 ;
+  return end_of_file_ ;
 }
 
 
