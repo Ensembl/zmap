@@ -190,7 +190,6 @@ public:
   bool parseBodyLine(GError **error) ;
 
 private:
-  struct errCatch *err_catch_ ; // used by blatSrc library to catch errors
   struct bed* bed_features_ ;   // list of features read from the file
   struct bed* cur_feature_ ;    // current feature to process in the list of bed_features_
 } ;
@@ -209,7 +208,6 @@ public:
   bool parseBodyLine(GError **error) ;
 
 private:
-  struct errCatch *err_catch_ ;
   struct bbiFile *bbi_file_ ;
   struct lm *lm_;                        // Memory pool to hold returned list from bbi file
   struct bigBedInterval *list_ ;         // list of intervals returned from the file
@@ -231,7 +229,6 @@ public:
   bool parseBodyLine(GError **error) ;
 
 private:
-  struct errCatch *err_catch_ ;
   struct bbiFile *bbi_file_ ;
   struct lm *lm_; // Memory pool to hold returned list from bbi file
   struct bbiInterval *list_ ;

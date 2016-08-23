@@ -190,6 +190,77 @@ inline semaphore::native_handle_type semaphore::native_handle() {
 static semaphore semaphore_G(MAX_FILE_THREADS) ;
 
 
+// Utility class to do error handling for blatSrc library.
+// We must use this error handler for all calls to the library to make sure it doesn't abort.
+class BlatLibErrHandler
+{
+public:
+  BlatLibErrHandler() ;
+  ~BlatLibErrHandler() ;
+
+  bool errTry() ;
+  bool errCatch() ;
+  string errMsg() ;
+
+private:
+  struct errCatch *err_catch_ ;
+} ;
+
+BlatLibErrHandler::BlatLibErrHandler()
+  : err_catch_(NULL)
+{
+}
+
+BlatLibErrHandler::~BlatLibErrHandler()
+{
+  if (err_catch_)
+    {
+      errCatchFree(&err_catch_) ;
+      err_catch_ = NULL ;
+    }
+}
+
+// Initialises the handler. Returns true if ok.
+bool BlatLibErrHandler::errTry()
+{
+  bool result = false ;
+
+  if (err_catch_)
+    errCatchFree(&err_catch_) ;
+
+  err_catch_ = errCatchNew() ;
+
+  if (err_catch_)
+    result = errCatchStart(err_catch_) ;
+
+  return result ;
+}
+
+// Ends the handler. Returns true if there was an error.
+bool BlatLibErrHandler::errCatch()
+{
+  bool result = false ;
+
+  if (err_catch_)
+    {
+      errCatchEnd(err_catch_) ;
+      result = err_catch_->gotError ;
+    }
+
+  return result ;
+}
+
+// Returns the error message (empty string if no error)
+string BlatLibErrHandler::errMsg()
+{
+  string err_msg ;
+
+  if (err_catch_ && err_catch_->gotError)
+    err_msg = err_catch_->message->string ;
+
+  return err_msg ;
+}
+
 } // unnamed namespace
 
 
@@ -252,6 +323,8 @@ ZMapDataSourceGIOStruct::ZMapDataSourceGIOStruct(const GQuark source_name,
   buffer_line_ = g_string_sized_new(READBUFFER_SIZE) ;
 }
 
+
+
 ZMapDataSourceBEDStruct::ZMapDataSourceBEDStruct(const GQuark source_name, 
                                                  const char *file_name,
                                                  const char *open_mode,
@@ -264,10 +337,10 @@ ZMapDataSourceBEDStruct::ZMapDataSourceBEDStruct(const GQuark source_name,
   zMapReturnIfFail(file_name) ;
   type = ZMapDataSourceType::BED ;
 
-  // Set up error handler so that the library doesn't abort
-  err_catch_ = errCatchNew() ;
+  BlatLibErrHandler err_handler ;
+  string err_msg ;
 
-  if (errCatchStart(err_catch_))
+  if (err_handler.errTry())
     {
       // Open the file
       char *file_name_copy = g_strdup(file_name) ; // to avoid casting away const
@@ -275,12 +348,28 @@ ZMapDataSourceBEDStruct::ZMapDataSourceBEDStruct(const GQuark source_name,
       g_free(file_name_copy) ;
     }
 
-  errCatchEnd(err_catch_);
-  if (err_catch_->gotError)
+  bool is_err = err_handler.errCatch() ;
+
+  if (is_err)
     {
-      zMapLogWarning("Failed to open file: %s", err_catch_->message->string) ;
+      // Remember the original error message
+      err_msg = err_handler.errMsg() ;
+
+      if (strncasecmp(file_name, "http://", 7) == 0 && strlen(file_name) > 7 && err_handler.errTry())
+        {
+          char *file_name_copy = g_strdup_printf("https://%s", file_name + 7) ;
+          bed_features_ = bedLoadAll(file_name_copy) ;
+          g_free(file_name_copy) ;
+        }
+
+      is_err = err_handler.errCatch() ;
+    }
+
+  if (is_err)
+    {
+      zMapLogWarning("Failed to open file: %s", err_msg.c_str()) ;
       g_set_error(&error_, g_quark_from_string("ZMap"), 99, 
-                  "Failed to open file: %s", err_catch_->message->string) ;
+                  "Failed to open file: %s", err_msg.c_str()) ;
       bed_features_ = NULL ;
     }
 
@@ -316,23 +405,39 @@ ZMapDataSourceBIGBEDStruct::ZMapDataSourceBIGBEDStruct(const GQuark source_name,
   zMapReturnIfFail(file_name) ;
   type = ZMapDataSourceType::BIGBED ;
 
-  // Set up error handler so that the library doesn't abort
-  err_catch_ = errCatchNew() ;
+  BlatLibErrHandler err_handler ;
+  string err_msg ;
 
   // Open the file
-  if (errCatchStart(err_catch_))
+  if (err_handler.errTry())
     {
       char *file_name_copy = g_strdup(file_name) ; // to avoid casting away const
       bbi_file_ = bigBedFileOpen(file_name_copy);
       g_free(file_name_copy) ;
     }
 
-  errCatchEnd(err_catch_);
-  if (err_catch_->gotError)
+  bool is_err = err_handler.errCatch() ;
+
+  if (is_err)
     {
-      zMapLogWarning("Failed to open file: %s", err_catch_->message->string) ;
+      err_msg = err_handler.errMsg() ;
+
+      /* If it's http try again as https */
+      if (strncasecmp(file_name, "http://", 7) == 0 && strlen(file_name) > 7 && err_handler.errTry())
+        {
+          char *file_name_copy = g_strdup_printf("https://%s", file_name + 7) ;
+          bbi_file_ = bigBedFileOpen(file_name_copy) ;
+          g_free(file_name_copy) ;
+        }
+
+      is_err = err_handler.errCatch() ;
+    }
+
+  if (is_err)
+    {
+      zMapLogWarning("Failed to open file: %s", err_msg.c_str()) ;
       g_set_error(&error_, g_quark_from_string("ZMap"), 99, 
-                  "Failed to open file: %s", err_catch_->message->string) ;
+                  "Failed to open file: %s", err_msg.c_str()) ;
       bbi_file_ = NULL ;
     }
 
@@ -367,10 +472,10 @@ ZMapDataSourceBIGWIGStruct::ZMapDataSourceBIGWIGStruct(const GQuark source_name,
 {
   type = ZMapDataSourceType::BIGWIG ;
 
-  // Set up error handler so that the library doesn't abort
-  err_catch_ = errCatchNew() ;
+  BlatLibErrHandler err_handler ;
+  string err_msg ;
 
-  if (errCatchStart(err_catch_))
+  if (err_handler.errTry())
     {
       // Open the file
       char *file_name_copy = g_strdup(file_name) ; // to avoid casting away const
@@ -378,12 +483,28 @@ ZMapDataSourceBIGWIGStruct::ZMapDataSourceBIGWIGStruct(const GQuark source_name,
       g_free(file_name_copy) ;
     }
 
-  errCatchEnd(err_catch_);
-  if (err_catch_->gotError)
+  bool is_err = err_handler.errCatch() ;
+
+  if (is_err)
     {
-      zMapLogWarning("Failed to open file: %s", err_catch_->message->string) ;
+      err_msg = err_handler.errMsg() ;
+
+      /* If it's http try again as https */
+      if (strncasecmp(file_name, "http://", 7) == 0 && strlen(file_name) > 7 && err_handler.errTry())
+        {
+          char *file_name_copy = g_strdup_printf("https://%s", file_name + 7) ;
+          bbi_file_ = bigWigFileOpen(file_name_copy) ;
+          g_free(file_name_copy) ;
+        }
+
+      is_err = err_handler.errCatch() ;
+    }
+
+  if (is_err)
+    {
+      zMapLogWarning("Failed to open file: %s", err_msg.c_str()) ;
       g_set_error(&error_, g_quark_from_string("ZMap"), 99, 
-                  "Failed to open file: %s", err_catch_->message->string) ;
+                  "Failed to open file: %s", err_msg.c_str()) ;
       bbi_file_ = NULL ;
     }
 
@@ -549,9 +670,6 @@ ZMapDataSourceBEDStruct::~ZMapDataSourceBEDStruct()
       bedFreeList(&bed_features_) ;
       bed_features_ = NULL ;
     }
-
-  if (err_catch_)
-    errCatchFree(&err_catch_); 
 }
 
 ZMapDataSourceBIGBEDStruct::~ZMapDataSourceBIGBEDStruct()
@@ -561,9 +679,6 @@ ZMapDataSourceBIGBEDStruct::~ZMapDataSourceBIGBEDStruct()
       bigBedFileClose(&bbi_file_) ;
       bbi_file_ = NULL ;
     }
-
-  if (err_catch_)
-    errCatchFree(&err_catch_); 
 }
 
 ZMapDataSourceBIGWIGStruct::~ZMapDataSourceBIGWIGStruct()
@@ -573,9 +688,6 @@ ZMapDataSourceBIGWIGStruct::~ZMapDataSourceBIGWIGStruct()
       bigWigFileClose(&bbi_file_) ;
       bbi_file_ = NULL ;
     }
-
-  if (err_catch_)
-    errCatchFree(&err_catch_); 
 }
 
 
@@ -840,7 +952,9 @@ bool ZMapDataSourceBIGBEDStruct::checkHeader(std::string &err_msg, bool &empty_o
   bool result = false ;
   zMapReturnValIfFail(isOpen(), result) ;
 
-  if (errCatchStart(err_catch_))
+  BlatLibErrHandler err_handler ;
+  
+  if (err_handler.errTry())
     {
       // Get the list of sequences in the file and check whether our required sequence exists
       struct bbiChromInfo *chromList = bbiChromList(bbi_file_);
@@ -865,10 +979,9 @@ bool ZMapDataSourceBIGBEDStruct::checkHeader(std::string &err_msg, bool &empty_o
         }
     }
 
-  errCatchEnd(err_catch_);
-  if (err_catch_->gotError)
+  if (err_handler.errCatch())
     {
-      zMapLogWarning("Error checking header: %s", err_catch_->message->string);
+      zMapLogWarning("Error checking header: %s", err_handler.errMsg().c_str());
     }
 
   if (error_)
@@ -884,7 +997,9 @@ bool ZMapDataSourceBIGWIGStruct::checkHeader(std::string &err_msg, bool &empty_o
   bool result = false ;
   zMapReturnValIfFail(isOpen(), result) ;
 
-  if (errCatchStart(err_catch_))
+  BlatLibErrHandler err_handler ;
+
+  if (err_handler.errTry())
     {
       // Get the list of sequences in the file and check whether our required sequence exists
       struct bbiChromInfo *chromList = bbiChromList(bbi_file_);
@@ -909,10 +1024,9 @@ bool ZMapDataSourceBIGWIGStruct::checkHeader(std::string &err_msg, bool &empty_o
         }
     }
 
-  errCatchEnd(err_catch_);
-  if (err_catch_->gotError)
+  if (err_handler.errCatch())
     {
-      zMapLogWarning("Error checking file header: %s", err_catch_->message->string);
+      zMapLogWarning("Error checking file header: %s", err_handler.errMsg().c_str());
     }
 
   if (error_)
@@ -1066,6 +1180,8 @@ bool ZMapDataSourceBIGBEDStruct::readLine()
 {
   bool result = false ;
 
+  BlatLibErrHandler err_handler ;
+
   // Get the next feature in the list (or the first one if we haven't started yet)
   if (cur_interval_)
     {
@@ -1073,7 +1189,7 @@ bool ZMapDataSourceBIGBEDStruct::readLine()
     }
   else
     {
-      if (errCatchStart(err_catch_))
+      if (err_handler.errTry())
         {
           // First line. Initialise the query. 
           lm_ = lmInit(0); // Memory pool to hold returned list
@@ -1082,17 +1198,16 @@ bool ZMapDataSourceBIGBEDStruct::readLine()
           cur_interval_ = list_ ;
         }
 
-      errCatchEnd(err_catch_);
-      if (err_catch_->gotError)
+      if (err_handler.errCatch())
         {
           zMapLogWarning("Error initialising bigBed parser for '%s:%d-%d': %s",
-                         sequence_, start_, end_, err_catch_->message->string);
+                         sequence_, start_, end_, err_handler.errMsg().c_str());
         }
     }
 
   if (cur_interval_)
     {
-      if (errCatchStart(err_catch_))
+      if (err_handler.errTry())
         {
           // Extract the bed contents out of the "rest" of the line
           char *line = g_strdup_printf("%s\t%d\t%d\t%s", 
@@ -1111,26 +1226,24 @@ bool ZMapDataSourceBIGBEDStruct::readLine()
           result = true ;
         }
 
-      errCatchEnd(err_catch_);
-      if (err_catch_->gotError)
+      if (err_handler.errCatch())
         {
           zMapLogWarning("Error processing line '%s': %s", 
-                         cur_interval_->rest, err_catch_->message->string);
+                         cur_interval_->rest, err_handler.errMsg().c_str());
         }
     }
   else
     {
-      if (errCatchStart(err_catch_))
+      if (err_handler.errTry())
         {
           // Got to the end of the list, so clean up the lm (typically do this 
           // after each query)
           lmCleanup(&lm_);
         }
 
-      errCatchEnd(err_catch_);
-      if (err_catch_->gotError)
+      if (err_handler.errCatch())
         {
-          zMapLogWarning("Error cleaning up bigBed parser: %s", err_catch_->message->string);
+          zMapLogWarning("Error cleaning up bigBed parser: %s", err_handler.errMsg().c_str());
         }
     }
           
@@ -1147,6 +1260,8 @@ bool ZMapDataSourceBIGWIGStruct::readLine()
 {
   bool result = false ;
 
+  BlatLibErrHandler err_handler ;
+
   // Get the next feature in the list (or the first one if we haven't started yet)
   if (cur_interval_)
     {
@@ -1154,7 +1269,7 @@ bool ZMapDataSourceBIGWIGStruct::readLine()
     }
   else
     {
-      if (errCatchStart(err_catch_))
+      if (err_handler.errTry())
         {
           // First line. Initialise the query. 
           lm_ = lmInit(0); // Memory pool to hold returned list
@@ -1163,11 +1278,10 @@ bool ZMapDataSourceBIGWIGStruct::readLine()
           cur_interval_ = list_ ;
         }
 
-      errCatchEnd(err_catch_);
-      if (err_catch_->gotError)
+      if (err_handler.errCatch())
         {
           zMapLogWarning("Error initialising bigWig parser for '%s:%d-%d': %s", 
-                         sequence_, start_, end_, err_catch_->message->string);
+                         sequence_, start_, end_, err_handler.errMsg().c_str());
         }
     }
 
@@ -1177,16 +1291,15 @@ bool ZMapDataSourceBIGWIGStruct::readLine()
     }
   else
     {
-      if (errCatchStart(err_catch_))
+      if (err_handler.errTry())
         {
           // Got to the end of the list, so clean up the lm (typically do this 
           // after each query)
           lmCleanup(&lm_);
         }
 
-      errCatchEnd(err_catch_);
-      if (err_catch_->gotError)
-        zMapLogWarning("Error cleaning up bigWig parser: %s", err_catch_->message->string);
+      if (err_handler.errCatch())
+        zMapLogWarning("Error cleaning up bigWig parser: %s", err_handler.errMsg().c_str());
     }
 
   if (!result)
