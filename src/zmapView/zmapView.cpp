@@ -5577,7 +5577,7 @@ static gboolean getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature
           if (merge_results == ZMAPFEATURE_CONTEXT_NONE)
             {
               g_set_error(&connect_data->error, ZMAP_VIEW_ERROR, ZMAPVIEW_ERROR_CONTEXT_EMPTY,
-                          "Context merge failed because no new features found in new context.") ;
+                          "No new features found.") ;
 
               zMapLogWarning("%s", connect_data->error->message) ;
             }
