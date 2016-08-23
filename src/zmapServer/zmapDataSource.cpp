@@ -300,31 +300,6 @@ void createGFFLine(GString *pStr,
 }
 
 
-/* Create a GFF line from a BED struct */
-void createGFFLineFromBed(GString *str, 
-                          struct bed* bed_feature,
-                          const GQuark source_name,
-                          const char *so_term)
-{
-  zMapReturnIfFail(bed_feature) ;
-
-  createGFFLine(str,
-                bed_feature->chrom,
-                g_quark_to_string(source_name),
-                so_term,
-                bed_feature->chromStart + 1, // chromStart is 0-based
-                bed_feature->chromEnd,       // chromEnd is one past the last coord
-                bed_feature->score,
-                bed_feature->strand[0],
-                bed_feature->name,
-                true,
-                1,
-                bed_feature->chromEnd - bed_feature->chromStart + 1) ;
-
-}
-
-
-
 } // unnamed namespace
 
 
@@ -341,7 +316,12 @@ ZMapDataSourceStruct::ZMapDataSourceStruct(const GQuark source_name,
     start_(start),
     end_(end),
     error_(NULL),
-    parser_(NULL)
+    parser_(NULL),
+    feature_set_(NULL),
+    num_features_(0),
+    featureset_2_column_(NULL),
+    source_2_sourcedata_(NULL),
+    styles_(NULL)
 {
   semaphore_G.wait() ;
 
@@ -439,7 +419,8 @@ ZMapDataSourceBIGBEDStruct::ZMapDataSourceBIGBEDStruct(const GQuark source_name,
   : ZMapDataSourceStruct(source_name, sequence, start, end),
     lm_(NULL),
     list_(NULL),
-    cur_interval_(NULL)
+    cur_interval_(NULL),
+    cur_feature_(NULL)
 {
   zMapReturnIfFail(file_name) ;
   type = ZMapDataSourceType::BIGBED ;
@@ -1182,8 +1163,6 @@ bool ZMapDataSourceBEDStruct::readLine()
 
   if (cur_feature_)
     {
-      // Create a gff line for this feature
-      createGFFLineFromBed(buffer_line_, cur_feature_, source_name_, ZMAP_BED_SO_TERM) ;
       result = true ;
     }
   
@@ -1230,14 +1209,15 @@ bool ZMapDataSourceBIGBEDStruct::readLine()
                                        sequence_, cur_interval_->start, cur_interval_->end, cur_interval_->rest) ;
           char *row[bedKnownFields];
           int num_fields = chopByWhite(line, row, ArraySize(row)) ;
-          struct bed *bed_feature = bedLoadN(row, num_fields) ;
 
-          // Create a gff line for this feature
-          createGFFLineFromBed(buffer_line_, bed_feature, source_name_, ZMAP_BIGBED_SO_TERM) ;
+          // free previous feature, if there is one
+          if (cur_feature_)
+            bedFree(&cur_feature_) ;
+
+          cur_feature_ = bedLoadN(row, num_fields) ;
         
           // Clean up
           g_free(line) ;
-          bedFree(&bed_feature) ;
           result = true ;
         }
 
@@ -1440,16 +1420,20 @@ bool ZMapDataSourceHTSStruct::readLine()
       /*
        * Construct GFF line.
        */
-      sGFFLine = g_strdup_printf("%s\t%s\t%s\t%i\t%i\t%f\t%c\t%c\t%s",
-                                 sequence_,
-                                 g_quark_to_string(source_name_),
-                                 so_type,
-                                 iStart, iEnd,
-                                 dScore,
-                                 cStrand,
-                                 cPhase,
-                                 pStringAttributes->str) ;
-      g_string_insert(buffer_line_, string_start, sGFFLine ) ;
+//sGFFLine = g_strdup_printf("%s\t%s\t%s\t%i\t%i\t%f\t%c\t%c\t%s",
+//                           sequence_,
+//                           g_quark_to_string(source_name_),
+//                           so_type,
+//                           iStart, iEnd,
+//                           dScore,
+//                           cStrand,
+//                           cPhase,
+//                           pStringAttributes->str) ;
+//g_string_insert(buffer_line_, string_start, sGFFLine ) ;
+
+      cur_feature_data_ = ZMapDataSourceFeatureData(iStart, iEnd, dScore, cStrand, cPhase, 
+                                                    bam_get_qname(hts_rec), iTargetStart, iTargetEnd,
+                                                    pStringCigar->str) ;
 
       /*
        * Clean up on finish
@@ -1550,18 +1534,21 @@ bool ZMapDataSourceBCFStruct::readLine()
           else if (!snv)
             so_term = "substitution" ;
 
-          createGFFLine(buffer_line_, 
-                        sequence_,
-                        g_quark_to_string(source_name_),
-                        so_term,
-                        iStart,
-                        iEnd,
-                        0.0, 
-                        '.', 
-                        name, 
-                        false, 
-                        0, 
-                        0) ;
+          cur_feature_data_ = ZMapDataSourceFeatureData(iStart, iEnd, 0.0, '.', '.', 
+                                                        name, 0, 0) ;
+
+//          createGFFLine(buffer_line_, 
+//                        sequence_,
+//                        g_quark_to_string(source_name_),
+//                        so_term,
+//                        iStart,
+//                        iEnd,
+//                        0.0, 
+//                        '.', 
+//                        name, 
+//                        false, 
+//                        0, 
+//                        0) ;
 
           g_string_append_printf(buffer_line_, "ensembl_variation=%s;", var_str.c_str()) ;
 
@@ -1599,6 +1586,13 @@ bool ZMapDataSourceStruct::parseHeader(gboolean &done_header,
  * there is no more sequence to read.
  */
 bool ZMapDataSourceStruct::parseSequence(gboolean &sequence_finished, string &err_msg)
+{
+  // Base class does nothing
+  bool result = true ;
+  return result ;
+}
+
+bool ZMapDataSourceGIOStruct::parseSequence(gboolean &sequence_finished, string &err_msg)
 {
   bool result = true ;
 
@@ -1648,26 +1642,349 @@ bool ZMapDataSourceStruct::parseSequence(gboolean &sequence_finished, string &er
  */
 void ZMapDataSourceStruct::parserInit(GHashTable *featureset_2_column,
                                       GHashTable *source_2_sourcedata,
-                                      ZMapStyleTree &styles)
+                                      ZMapStyleTree *styles)
 {
+  featureset_2_column_ = featureset_2_column ;
+  source_2_sourcedata_ = source_2_sourcedata ;
+  styles_ = styles ;
+}
+
+void ZMapDataSourceGIOStruct::parserInit(GHashTable *featureset_2_column,
+                                         GHashTable *source_2_sourcedata,
+                                         ZMapStyleTree *styles)
+{
+  featureset_2_column_ = featureset_2_column ;
+  source_2_sourcedata_ = source_2_sourcedata ;
+  styles_ = styles ;
+
   zMapGFFParseSetSourceHash(parser_, featureset_2_column, source_2_sourcedata) ;
-  zMapGFFParserInitForFeatures(parser_, &styles, FALSE) ;
+  zMapGFFParserInitForFeatures(parser_, styles, FALSE) ;
   zMapGFFSetDefaultToBasic(parser_, TRUE);
+}
+
+ZMapFeatureSet ZMapDataSourceStruct::makeFeatureSet(const char *feature_name_id,
+                                                    GQuark feature_set_id,
+                                                    ZMapStyleMode feature_mode)
+{
+  ZMapFeatureSet feature_set = NULL ;
+
+  /*
+   * Now deal with the source -> data mapping referred to in the parser.
+   */
+  GQuark source_id = source_name_ ;
+  GQuark feature_style_id = 0 ;
+  ZMapFeatureSource source_data = NULL ;
+
+  if (source_2_sourcedata_)
+    {
+      if (!(source_data = (ZMapFeatureSource)g_hash_table_lookup(source_2_sourcedata_, GINT_TO_POINTER(source_id))))
+        {
+          source_data = g_new0(ZMapFeatureSourceStruct,1);
+          source_data->source_id = source_id;
+          source_data->source_text = source_id;
+
+          g_hash_table_insert(source_2_sourcedata_,GINT_TO_POINTER(source_id), source_data);
+
+          zMapLogMessage("Created source_data: %s", g_quark_to_string(source_id)) ;
+        }
+
+      if (source_data->style_id)
+        feature_style_id = zMapStyleCreateID((char *) g_quark_to_string(source_data->style_id)) ;
+      else
+        feature_style_id = zMapStyleCreateID((char *) g_quark_to_string(source_data->source_id)) ;
+
+      source_id = source_data->source_id ;
+      source_data->style_id = feature_style_id;
+      //zMapLogMessage("Style id = %s", g_quark_to_string(source_data->style_id)) ;
+    }
+  else
+    {
+      source_id = feature_style_id = zMapStyleCreateID((char*)g_quark_to_string(source_name_)) ;
+    }
+
+  ZMapFeatureTypeStyle feature_style = NULL ;
+
+  feature_style = zMapFindFeatureStyle(styles_, feature_style_id, feature_mode) ;
+
+  if (feature_style)
+    {
+      if (source_data)
+        source_data->style_id = feature_style_id;
+
+      styles_->add_style(feature_style) ;
+
+      if (source_data && feature_style->unique_id != feature_style_id)
+        source_data->style_id = feature_style->unique_id;
+
+      feature_set = zMapFeatureSetCreate((char*)g_quark_to_string(feature_set_id) , NULL) ;
+
+      zMapLogMessage("Created feature set: %s", g_quark_to_string(feature_set_id)) ;
+
+      feature_set->style = feature_style;
+    }
+  else
+    {
+      zMapLogWarning("Error creating feature %s (%s); no feature style found for %s",
+                     feature_name_id, g_quark_to_string(feature_set_id), g_quark_to_string(feature_style_id)) ;
+    }
+
+  return feature_set ;
+}
+
+
+ZMapFeature ZMapDataSourceStruct::makeFeature(const char *sequence,
+                                              const char *source,
+                                              const char *so_type,
+                                              const int start,
+                                              const int end,
+                                              const double score,
+                                              const char strand_c,
+                                              const char *feature_name,
+                                              const bool have_target,
+                                              const int query_start,
+                                              const int query_end,
+                                              ZMapStyleMode feature_mode,
+                                              GError **error)
+{
+  ZMapFeature feature = NULL ;
+  bool ok = true ;
+  ZMapStrand strand = ZMAPSTRAND_NONE ;
+
+  if (strand_c == '+')
+    strand = ZMAPSTRAND_FORWARD ;
+  else if (strand_c == '-')
+    strand = ZMAPSTRAND_REVERSE ;
+
+  GQuark unique_id = zMapFeatureCreateID(feature_mode,
+                                         feature_name,
+                                         strand,
+                                         start,
+                                         end,
+                                         query_start,
+                                         query_end) ;
+
+  // Create the feature set, if not already created
+  if (ok && !feature_set_)
+    {
+      feature_set_ = makeFeatureSet(feature_name,
+                                    g_quark_from_string(source),
+                                    feature_mode) ;
+
+      if (!feature_set_)
+        ok = false ;
+    }
+
+  // Ok, go ahead and create the feature
+  if (ok)
+    {
+      feature = zMapFeatureCreateEmpty(NULL) ;
+
+      if (!feature)
+        ok = false ;
+    }
+
+  if (ok)
+    {
+      ok = zMapFeatureAddStandardData(feature,
+                                      g_quark_to_string(unique_id),
+                                      feature_name,
+                                      sequence,
+                                      so_type,
+                                      feature_mode,
+                                      NULL,
+                                      start,
+                                      end,
+                                      true,
+                                      score, 
+                                      strand);
+    }
+
+  if (ok)
+    {
+      zMapFeatureSetAddFeature(feature_set_, feature);
+    }
+
+
+  if (ok)
+    {          
+      ++num_features_ ;
+    }
+  else
+    {
+      g_set_error(error, g_quark_from_string("ZMap"), 99, 
+                  "Error creating feature: %s (%d %d) on sequence %s", 
+                  feature_name, start, end, sequence) ;
+    }
+
+  return feature ;
 }
 
 
 /*
  * Parse a body line from the source. Returns true if successful.
  */
-bool ZMapDataSourceStruct::parseBodyLine(GError **error)
+bool ZMapDataSourceGIOStruct::parseBodyLine(bool &end_of_file, GError **error)
 {
+  // The buffer line has already been read by the functions that read the header etc. so parse it
+  // first and then read the next line ready for next time.
   bool result = zMapGFFParseLine(parser_, buffer_line_->str) ;
 
   if (!result && error)
     *error = zMapGFFGetError(parser_) ;
 
+  if (!readLine())
+    end_of_file = true ;
+
   return result ;
 }
+
+bool ZMapDataSourceBEDStruct::parseBodyLine(bool &end_of_file, GError **error)
+{
+  bool result = false ;
+
+  if (readLine())
+    {
+      makeFeature(cur_feature_->chrom,
+                  g_quark_to_string(source_name_),
+                  ZMAP_BED_SO_TERM,
+                  cur_feature_->chromStart + 1, //0-based
+                  cur_feature_->chromEnd,       //chromEnd is one past the last coord
+                  cur_feature_->score,
+                  cur_feature_->strand[0],
+                  cur_feature_->name,
+                  true,
+                  1,
+                  cur_feature_->chromEnd - cur_feature_->chromStart + 1,
+                  ZMAPSTYLE_MODE_BASIC,
+                  error) ;
+    }
+  else
+    {
+      end_of_file = true ;
+    }
+
+  return result ;
+}
+
+bool ZMapDataSourceBIGBEDStruct::parseBodyLine(bool &end_of_file, GError **error)
+{
+  bool result = false ;
+
+  if (readLine())
+    {
+      makeFeature(cur_feature_->chrom,
+                  g_quark_to_string(source_name_),
+                  ZMAP_BIGBED_SO_TERM,
+                  cur_feature_->chromStart + 1, //0-based
+                  cur_feature_->chromEnd,       //chromEnd is one past the last coord
+                  cur_feature_->score,
+                  cur_feature_->strand[0],
+                  cur_feature_->name,
+                  true,
+                  1,
+                  cur_feature_->chromEnd - cur_feature_->chromStart + 1,
+                  ZMAPSTYLE_MODE_BASIC,
+                  error) ;
+    }
+  else
+    {
+      end_of_file = true ;
+    }
+
+  return result ;
+}
+
+bool ZMapDataSourceBIGWIGStruct::parseBodyLine(bool &end_of_file, GError **error)
+{
+  bool result = false ;
+
+  if (readLine())
+    {
+      makeFeature(sequence_,
+                  g_quark_to_string(source_name_),
+                  ZMAP_BIGWIG_SO_TERM,
+                  cur_interval_->start,
+                  cur_interval_->end,
+                  cur_interval_->val,
+                  '.',
+                  NULL,
+                  false,
+                  0,
+                  0,
+                  ZMAPSTYLE_MODE_GRAPH,
+                  error) ;
+    }
+  else
+    {
+      end_of_file = true ;
+    }
+
+  return result ;
+}
+
+#ifdef USE_HTSLIB
+bool ZMapDataSourceHTSStruct::parseBodyLine(bool &end_of_file, GError **error)
+{
+  bool result = false ;
+
+  if (readLine())
+    {
+      //bool ok = loadAlignString(parser_base, ZMAPALIGN_FORMAT_CIGAR_BAM,
+      //                          gaps_onwards, &gaps,
+      //                          strand, start, end,
+      //                          query_strand, query_start, query_end) ;
+
+      makeFeature(sequence_,
+                  g_quark_to_string(source_name_),
+                  ZMAP_BAM_SO_TERM,
+                  cur_feature_data_.start_,
+                  cur_feature_data_.end_,
+                  cur_feature_data_.score_,
+                  cur_feature_data_.strand_c_,
+                  cur_feature_data_.query_name_.c_str(),
+                  !cur_feature_data_.query_name_.empty(),
+                  cur_feature_data_.query_start_,
+                  cur_feature_data_.query_end_,
+                  ZMAPSTYLE_MODE_ALIGNMENT,
+                  error) ;
+    }
+  else
+    {
+      end_of_file = true ;
+    }
+
+  return result ;
+}
+
+bool ZMapDataSourceBCFStruct::parseBodyLine(bool &end_of_file, GError **error)
+{
+  bool result = false ;
+
+  if (readLine())
+    {
+      makeFeature(sequence_,
+                  g_quark_to_string(source_name_),
+                  ZMAP_BCF_SO_TERM,
+                  cur_feature_data_.start_,
+                  cur_feature_data_.end_,
+                  cur_feature_data_.score_,
+                  cur_feature_data_.strand_c_,
+                  cur_feature_data_.query_name_.c_str(),
+                  !cur_feature_data_.query_name_.empty(),
+                  cur_feature_data_.query_start_,
+                  cur_feature_data_.query_end_,
+                  ZMAPSTYLE_MODE_ALIGNMENT,
+                  error) ;
+    }
+  else
+    {
+      end_of_file = true ;
+    }
+
+  return result ;
+}
+#endif // USE_HTSLIB
+
 
 
 /*
@@ -1675,6 +1992,14 @@ bool ZMapDataSourceStruct::parseBodyLine(GError **error)
  * into the given block.
  */
 bool ZMapDataSourceStruct::addFeaturesToBlock(ZMapFeatureBlock feature_block)
+{
+  if (feature_set_)
+    zMapFeatureBlockAddFeatureSet(feature_block, feature_set_);
+
+  return true ;
+}
+
+bool ZMapDataSourceGIOStruct::addFeaturesToBlock(ZMapFeatureBlock feature_block)
 {
   bool result = zMapGFFGetFeatures(parser_, feature_block) ;
 

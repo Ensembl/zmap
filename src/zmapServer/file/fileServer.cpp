@@ -532,7 +532,7 @@ static ZMapServerResponseType getFeatures(void *server_in,
     {
       get_features_data.server = server ;
 
-      server->data_source->parserInit(server->featureset_2_column, server->source_2_sourcedata, styles) ;
+      server->data_source->parserInit(server->featureset_2_column, server->source_2_sourcedata, &styles) ;
 
       server->result = ZMAP_SERVERRESPONSE_OK ;
 
@@ -876,12 +876,12 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
   /* Keep track of how many warnings we log so we don't fill the log file with millions */
   int warning_count = 0;
   const int max_warnings = 1000;
-  bool more_data = false ;
+  bool end_of_file = false ;
   GError *g_error = NULL ;
 
   do
     {
-      if (!server->data_source->parseBodyLine(&g_error))
+      if (!server->data_source->parseBodyLine(end_of_file, &g_error))
         {
           /* Only log a warning if an error was given (the error may be null if no warning is
            * required and we need to be careful not to fill the log with millions of warnings) */
@@ -901,11 +901,11 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
               break ;
             }
         }
-    } while ((more_data = server->data_source->readLine())) ;
+    } while (!end_of_file) ;
 
 
   /* If we reached the end of the stream then all is fine, so return features... */
-  if (!more_data)
+  if (end_of_file)
     {
       if (get_features_data->result == ZMAP_SERVERRESPONSE_OK
           && server->data_source->addFeaturesToBlock(feature_block))
