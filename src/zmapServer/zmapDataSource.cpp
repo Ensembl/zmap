@@ -279,6 +279,8 @@ ZMapDataSourceBEDStruct::ZMapDataSourceBEDStruct(const GQuark source_name,
   if (err_catch_->gotError)
     {
       zMapLogWarning("Failed to open file: %s", err_catch_->message->string) ;
+      g_set_error(&error_, g_quark_from_string("ZMap"), 99, 
+                  "Failed to open file: %s", err_catch_->message->string) ;
       bed_features_ = NULL ;
     }
 
@@ -329,6 +331,8 @@ ZMapDataSourceBIGBEDStruct::ZMapDataSourceBIGBEDStruct(const GQuark source_name,
   if (err_catch_->gotError)
     {
       zMapLogWarning("Failed to open file: %s", err_catch_->message->string) ;
+      g_set_error(&error_, g_quark_from_string("ZMap"), 99, 
+                  "Failed to open file: %s", err_catch_->message->string) ;
       bbi_file_ = NULL ;
     }
 
@@ -378,6 +382,8 @@ ZMapDataSourceBIGWIGStruct::ZMapDataSourceBIGWIGStruct(const GQuark source_name,
   if (err_catch_->gotError)
     {
       zMapLogWarning("Failed to open file: %s", err_catch_->message->string) ;
+      g_set_error(&error_, g_quark_from_string("ZMap"), 99, 
+                  "Failed to open file: %s", err_catch_->message->string) ;
       bbi_file_ = NULL ;
     }
 
@@ -426,7 +432,9 @@ ZMapDataSourceHTSStruct::ZMapDataSourceHTSStruct(const GQuark source_name,
     }
   else
     {
-      g_set_error(&error_, g_quark_from_string("ZMap"), 99, "Failed to open file") ;
+      zMapLogWarning("Failed to open file: %s", file_name) ;
+      g_set_error(&error_, g_quark_from_string("ZMap"), 99, 
+                  "Failed to open file: %s", file_name) ;
     }
 
 
@@ -474,7 +482,9 @@ ZMapDataSourceBCFStruct::ZMapDataSourceBCFStruct(const GQuark source_name,
     }
   else
     {
-      g_set_error(&error_, g_quark_from_string("ZMap"), 99, "Failed to open file") ;
+      zMapLogWarning("Failed to open file: %s", file_name) ;
+      g_set_error(&error_, g_quark_from_string("ZMap"), 99, 
+                  "Failed to open file: %s", file_name) ;
     }
 
 
