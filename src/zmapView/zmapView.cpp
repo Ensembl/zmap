@@ -65,7 +65,7 @@
 using namespace std ;
 
 
-#define SOURCE_FAILURE_WARNING_FORMAT "Error loading source(s).\n\nFirst source failure was: %s\n\nFurther source failures will not be reported. See the log file for details of any other failures."
+#define SOURCE_FAILURE_WARNING_FORMAT "Error loading source(s). First error was:\n\n%s\n\nFurther source failures will not be reported. See the log file for details of any other failures."
 
 /* Define thread debug messages, used in checkStateConnections() mostly. */
 #define THREAD_DEBUG_MSG_PREFIX " Reply from slave thread %s, "
