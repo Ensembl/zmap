@@ -1621,7 +1621,7 @@ ZMapFeature ZMapDataSourceStruct::makeFeature(const char *sequence,
 /*
  * Parse a body line from the source. Returns true if successful.
  */
-bool ZMapDataSourceGIOStruct::parseBodyLine(bool &end_of_file, GError **error)
+bool ZMapDataSourceGIOStruct::parseBodyLine(GError **error)
 {
   // The buffer line has already been read by the functions that read the header etc. so parse it
   // first and then read the next line ready for next time.
@@ -1630,13 +1630,12 @@ bool ZMapDataSourceGIOStruct::parseBodyLine(bool &end_of_file, GError **error)
   if (!result && error)
     *error = zMapGFFGetError(parser_) ;
 
-  if (!readLine())
-    end_of_file = true ;
+  readLine() ;
 
   return result ;
 }
 
-bool ZMapDataSourceBEDStruct::parseBodyLine(bool &end_of_file, GError **error)
+bool ZMapDataSourceBEDStruct::parseBodyLine(GError **error)
 {
   bool result = false ;
 
@@ -1656,15 +1655,11 @@ bool ZMapDataSourceBEDStruct::parseBodyLine(bool &end_of_file, GError **error)
                   ZMAPSTYLE_MODE_BASIC,
                   error) ;
     }
-  else
-    {
-      end_of_file = true ;
-    }
 
   return result ;
 }
 
-bool ZMapDataSourceBIGBEDStruct::parseBodyLine(bool &end_of_file, GError **error)
+bool ZMapDataSourceBIGBEDStruct::parseBodyLine(GError **error)
 {
   bool result = false ;
 
@@ -1684,15 +1679,11 @@ bool ZMapDataSourceBIGBEDStruct::parseBodyLine(bool &end_of_file, GError **error
                   ZMAPSTYLE_MODE_BASIC,
                   error) ;
     }
-  else
-    {
-      end_of_file = true ;
-    }
 
   return result ;
 }
 
-bool ZMapDataSourceBIGWIGStruct::parseBodyLine(bool &end_of_file, GError **error)
+bool ZMapDataSourceBIGWIGStruct::parseBodyLine(GError **error)
 {
   bool result = false ;
 
@@ -1712,16 +1703,12 @@ bool ZMapDataSourceBIGWIGStruct::parseBodyLine(bool &end_of_file, GError **error
                   ZMAPSTYLE_MODE_GRAPH,
                   error) ;
     }
-  else
-    {
-      end_of_file = true ;
-    }
 
   return result ;
 }
 
 #ifdef USE_HTSLIB
-bool ZMapDataSourceHTSStruct::parseBodyLine(bool &end_of_file, GError **error)
+bool ZMapDataSourceHTSStruct::parseBodyLine(GError **error)
 {
   bool result = false ;
 
@@ -1746,15 +1733,11 @@ bool ZMapDataSourceHTSStruct::parseBodyLine(bool &end_of_file, GError **error)
                   ZMAPSTYLE_MODE_ALIGNMENT,
                   error) ;
     }
-  else
-    {
-      end_of_file = true ;
-    }
 
   return result ;
 }
 
-bool ZMapDataSourceBCFStruct::parseBodyLine(bool &end_of_file, GError **error)
+bool ZMapDataSourceBCFStruct::parseBodyLine(GError **error)
 {
   bool result = false ;
 
@@ -1773,10 +1756,6 @@ bool ZMapDataSourceBCFStruct::parseBodyLine(bool &end_of_file, GError **error)
                   cur_feature_data_.query_end_,
                   ZMAPSTYLE_MODE_ALIGNMENT,
                   error) ;
-    }
-  else
-    {
-      end_of_file = true ;
     }
 
   return result ;

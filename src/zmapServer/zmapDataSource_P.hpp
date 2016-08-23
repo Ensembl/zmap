@@ -106,7 +106,7 @@ public:
 
   virtual bool parseSequence(gboolean &sequence_finished, std::string &err_msg) ;
   virtual void parserInit(GHashTable *featureset_2_column, GHashTable *source_2_sourcedata, ZMapStyleTree *styles) ;
-  virtual bool parseBodyLine(bool &end_of_file, GError **error) = 0 ;
+  virtual bool parseBodyLine(GError **error) = 0 ;
   virtual bool addFeaturesToBlock(ZMapFeatureBlock feature_block) ;
   virtual bool checkFeatureCount(bool &empty, std::string &err_msg) ;
   virtual GList* getFeaturesets() ;
@@ -162,7 +162,7 @@ public:
 
   bool parseSequence(gboolean &sequence_finished, std::string &err_msg) ;
   void parserInit(GHashTable *featureset_2_column, GHashTable *source_2_sourcedata, ZMapStyleTree *styles) ;
-  bool parseBodyLine(bool &end_of_file, GError **error) ;
+  bool parseBodyLine(GError **error) ;
   bool addFeaturesToBlock(ZMapFeatureBlock feature_block) ;
 
 private:
@@ -187,7 +187,7 @@ public:
   bool isOpen() ;
   bool checkHeader(std::string &err_msg, bool &empty_or_eof, const bool sequence_server) ;
   bool readLine() ;
-  bool parseBodyLine(bool &end_of_file, GError **error) ;
+  bool parseBodyLine(GError **error) ;
 
 private:
   struct errCatch *err_catch_ ; // used by blatSrc library to catch errors
@@ -206,7 +206,7 @@ public:
   bool isOpen() ;
   bool checkHeader(std::string &err_msg, bool &empty_or_eof, const bool sequence_server) ;
   bool readLine() ;
-  bool parseBodyLine(bool &end_of_file, GError **error) ;
+  bool parseBodyLine(GError **error) ;
 
 private:
   struct errCatch *err_catch_ ;
@@ -228,7 +228,7 @@ public:
   bool isOpen() ;
   bool checkHeader(std::string &err_msg, bool &empty_or_eof, const bool sequence_server) ;
   bool readLine() ;
-  bool parseBodyLine(bool &end_of_file, GError **error) ;
+  bool parseBodyLine(GError **error) ;
 
 private:
   struct errCatch *err_catch_ ;
@@ -250,7 +250,7 @@ public:
   bool isOpen() ;
   bool checkHeader(std::string &err_msg, bool &empty_or_eof, const bool sequence_server) ;
   bool readLine() ;
-  bool parseBodyLine(bool &end_of_file, GError **error) ;
+  bool parseBodyLine(GError **error) ;
 
   htsFile *hts_file ;
   /* bam header and record object */
@@ -276,7 +276,7 @@ public:
   bool isOpen() ;
   bool checkHeader(std::string &err_msg, bool &empty_or_eof, const bool sequence_server) ;
   bool readLine() ;
-  bool parseBodyLine(bool &end_of_file, GError **error) ;
+  bool parseBodyLine(GError **error) ;
 
   htsFile *hts_file ;
   /* bam header and record object */
