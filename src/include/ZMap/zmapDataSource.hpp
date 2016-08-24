@@ -65,8 +65,6 @@ ZMapDataSource zMapDataSourceCreate(const GQuark source_name, const char * const
 bool zMapDataSourceIsOpen(ZMapDataSource const source) ;
 bool zMapDataSourceDestroy( ZMapDataSource *source) ;
 ZMapDataSourceType zMapDataSourceGetType(ZMapDataSource source ) ;
-gboolean zMapDataSourceReadLine (ZMapDataSource const data_pipe , GString * const str) ;
-gboolean zMapDataSourceGetGFFVersion(ZMapDataSource const source, int * const out_val) ;
 ZMapDataSourceType zMapDataSourceTypeFromFilename(const char * const, GError **error_out = NULL) ;
 
 

@@ -65,6 +65,8 @@
 using namespace std ;
 
 
+#define SOURCE_FAILURE_WARNING_FORMAT "Error loading source(s). First error was:\n\n%s\n\nFurther source failures will not be reported. See the log file for details of any other failures."
+
 /* Define thread debug messages, used in checkStateConnections() mostly. */
 #define THREAD_DEBUG_MSG_PREFIX " Reply from slave thread %s, "
 
@@ -3543,9 +3545,11 @@ static gboolean checkStateConnections(ZMapView zmap_view)
               THREAD_DEBUG_MSG(thread, "cannot access reply from child thread - %s", err_msg) ;
 
               /* Warn the user ! */
-              if (view_con->show_warning)
-                zMapWarning("Source is being removed: Error was: %s\n\nSource: %s",
-                            (err_msg ? err_msg : "<no error message>"), view_con->url) ;
+              if (view_con->show_warning && !zMapViewGetDisablePopups(zmap_view))
+                {
+                  zMapWarning(SOURCE_FAILURE_WARNING_FORMAT, (err_msg ? err_msg : "<no error message>")) ;
+                  zMapViewSetDisablePopups(zmap_view, true) ;
+                }
 
               zMapLogCritical("Source \"%s\", cannot access reply from server thread,"
                               " error was: %s", view_con->url, (err_msg ? err_msg : "<no error message>")) ;
@@ -3729,15 +3733,10 @@ static gboolean checkStateConnections(ZMapView zmap_view)
                         /* Warn the user ! */
                         if (view_con->show_warning)
                           {
-                            if (view_con->show_warning)
+                            if (!zMapViewGetDisablePopups(zmap_view))
                               {
-                                if (!zMapViewGetDisablePopups(zmap_view))
-                                  {
-                                    zMapWarning("Error loading source(s).\n\nFirst source failure was: %s\n\nFurther source failures will not be reported. See the log file for details of any other failures.\n",
-                                                (err_msg ? err_msg : "<no error message>")) ;
-
-                                    zMapViewSetDisablePopups(zmap_view, true) ;
-                                  }
+                                zMapWarning(SOURCE_FAILURE_WARNING_FORMAT, (err_msg ? err_msg : "<no error message>")) ;
+                                zMapViewSetDisablePopups(zmap_view, true) ;
                               }
 
                             zMapLogWarning("Source is being cancelled: Error was: '%s'. Source: %s",
@@ -3772,8 +3771,12 @@ static gboolean checkStateConnections(ZMapView zmap_view)
                     if (step->on_fail != REQUEST_ONFAIL_CONTINUE)
                       {
                         /* Thread has failed for some reason and we should clean up. */
-                        if (err_msg && view_con->show_warning)
-                          zMapWarning("%s", err_msg) ;
+                        if (err_msg && view_con->show_warning && 
+                            !zMapViewGetDisablePopups(zmap_view))
+                          {
+                            zMapWarning(SOURCE_FAILURE_WARNING_FORMAT, (err_msg ? err_msg : "<no error>")) ;
+                            zMapViewSetDisablePopups(zmap_view, true) ;
+                          }
 
                         thread_has_died = TRUE ;
 
@@ -3966,10 +3969,11 @@ static gboolean checkStateConnections(ZMapView zmap_view)
                       if (view_con->show_warning && is_continue)
                         {
                           /* we get here at the end of a step list, prev errors not reported till now */
-                          zMapWarning("Data request failed: %s\n%s%s", err_msg,
-                                      ((connect_data->stderr_out && *connect_data->stderr_out)
-                                       ? "Server reports:\n" : ""),
-                                      connect_data->stderr_out) ;
+                          if (!zMapViewGetDisablePopups(zmap_view))
+                            {
+                              zMapWarning(SOURCE_FAILURE_WARNING_FORMAT, (err_msg ? err_msg : "<no error>")) ;
+                              zMapViewSetDisablePopups(zmap_view, true) ;
+                            }
                         }
 
                       zMapLogWarning("Thread %p failed, request = %s, empty sources now %d, failed sources now %d",
@@ -5573,7 +5577,7 @@ static gboolean getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature
           if (merge_results == ZMAPFEATURE_CONTEXT_NONE)
             {
               g_set_error(&connect_data->error, ZMAP_VIEW_ERROR, ZMAPVIEW_ERROR_CONTEXT_EMPTY,
-                          "Context merge failed because no new features found in new context.") ;
+                          "No new features found.") ;
 
               zMapLogWarning("%s", connect_data->error->message) ;
             }
