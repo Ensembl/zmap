@@ -1906,6 +1906,48 @@ GQuark zMapWindowGetFeaturesetContainerID(ZMapWindow window, GQuark featureset_i
 }
 
 
+/* Update the given style with values from the features it contains. This currently just updates
+ * the max score for graph styles and is used to set a sensible value for the default styles. */
+void zMapWindowUpdateStyleFromFeatures(ZMapWindow window, ZMapFeatureTypeStyle style)
+{
+  if (window && window->feature_context && style)
+    {
+      // Currently we only have anything to do for graph styles
+      if (style->mode == ZMAPSTYLE_MODE_GRAPH)
+        {
+          // Loop through all featuresets with this style and find the max score
+          bool changed = false ;
+          GList* featuresets = zMapStyleGetFeaturesets(style, (ZMapFeatureAny)window->feature_context) ;
+
+          for (GList *item = featuresets; item; item = item->next)
+            {
+              ZMapFeatureSet feature_set = (ZMapFeatureSet)(item->data) ;
+              double max_score = zMapFeatureSetGetMaxScore(feature_set) ;
+              
+              if (max_score > style->max_score)
+                {
+                  style->max_score = max_score ;
+                  changed = true ;
+                }
+            }
+
+          if (changed)
+            {
+              // Loop through all featuresets again and redraw them (must do this after the full loop
+              // above has completed so that the final max_score has been set).
+              for (GList *item = featuresets; item; item = item->next)
+                {
+                  ZMapFeatureSet feature_set = (ZMapFeatureSet)(item->data) ;
+                  zmapWindowRedrawFeatureSet(window, feature_set) ;
+                }
+
+              zmapWindowColOrderColumns(window) ;
+              zmapWindowFullReposition(window->feature_root_group, TRUE, "update style from features") ;
+            }
+        }
+    }
+}
+
 /* add or update an empty CanvasFeatureset that covers the group extent
  * Formerly all columns had foo backgrounds so they could be clicked on.
  * We could use existing CanvasFeaturesets to draw backgrounds but there's two problems:

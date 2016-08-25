@@ -58,6 +58,7 @@ graph-mode=histogram
 [style-graph]
 parent-style=histogram
 description=default graph mode
+max_score=0.0
 
 [style-line]
 description=wiggle plot, rebinned on zoom

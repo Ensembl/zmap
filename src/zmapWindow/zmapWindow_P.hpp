@@ -1717,7 +1717,7 @@ FooCanvasItem *zmapWindowFeatureFactoryRunSingle(GHashTable *ftoi_hash,
                                                  ZMapWindowContainerFeatures features_container,
                                                  FooCanvasItem * foo_featureset,
                                                  ZMapWindowFeatureStack     feature_stack);
-void zmapWindowRedrawFeatureSet(ZMapWindow window, ZMapFeatureSet featureset);
+void zMapWindowRedrawFeatureSet(ZMapWindow window, ZMapFeatureSet featureset);
 
 char *zmapWindowFeatureSetDescription(ZMapFeatureSet feature_set) ;
 char *zmapWindowFeatureSourceDescription(ZMapFeature feature) ;
@@ -1984,6 +1984,7 @@ GList* zmapWindowCoverageGetRelatedFeaturesets(ZMapFeatureContextMap context_map
                                                GList *req_list, bool unique_id) ;
 GList* zmapWindowCoverageGetRelatedFeaturesets(ZMapFeatureContextMap context_map, ZMapWindowContainerFeatureSet container_set,
                                                GList *req_list, bool unique_id) ;
+void zmapWindowRedrawFeatureSet(ZMapWindow window, ZMapFeatureSet featureset) ;
 
 /* Malcolms.... */
 void foo_bug_set(void *key, const char *id) ;

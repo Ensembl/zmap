@@ -1816,38 +1816,21 @@ bool ZMapDataSourceBIGWIGStruct::parseBodyLine(GError **error)
 {
   bool result = false ;
 
-  static double max_score = 0.0 ;
-
   if (readLine())
     {
-      ZMapFeature feature = makeFeature(sequence_,
-                                        g_quark_to_string(source_name_),
-                                        ZMAP_BIGWIG_SO_TERM,
-                                        cur_interval_->start,
-                                        cur_interval_->end,
-                                        cur_interval_->val,
-                                        '.',
-                                        NULL,
-                                        false,
-                                        0,
-                                        0,
-                                        ZMAPSTYLE_MODE_GRAPH,
-                                        error) ;
-
-      // The default style max score may not be appropriate. Calculate an overall max score for
-      // all created graph features and set that in the default style.
-      // gb10: It might be better to do this per source, in which case we'd need a separate style
-      // for each source.
-      if (cur_interval_->val > max_score)
-        {
-          max_score = cur_interval_->val ;
-
-          if (feature && feature->parent && 
-              ((ZMapFeatureSet)feature->parent)->style)
-            {
-              ((ZMapFeatureSet)feature->parent)->style->max_score = max_score ;
-            }
-        }
+      makeFeature(sequence_,
+                  g_quark_to_string(source_name_),
+                  ZMAP_BIGWIG_SO_TERM,
+                  cur_interval_->start,
+                  cur_interval_->end,
+                  cur_interval_->val,
+                  '.',
+                  NULL,
+                  false,
+                  0,
+                  0,
+                  ZMAPSTYLE_MODE_GRAPH,
+                  error) ;
     }
 
   return result ;

@@ -53,6 +53,7 @@ static void copy_to_new_featureset(gpointer key, gpointer hash_data, gpointer us
 static void findFeaturesRangeCB(gpointer key, gpointer value, gpointer user_data) ;
 static void findFeaturesNameCB(gpointer key, gpointer value, gpointer user_data) ;
 static void findFeaturesNameStrandCB(gpointer key, gpointer value, gpointer user_data) ;
+static void feature_get_max_score(gpointer key, gpointer hash_data, gpointer user_data) ;
 
 
 
@@ -251,6 +252,17 @@ void zMapFeatureSetDestroyFeatures(ZMapFeatureSet feature_set)
 }
 
 
+double zMapFeatureSetGetMaxScore(ZMapFeatureSet feature_set)
+{
+  double max_score = 0.0 ;  
+
+  if (feature_set && feature_set->features)
+    g_hash_table_foreach(feature_set->features, feature_get_max_score, &max_score) ;
+
+  return max_score ;
+}
+
+
 
 // 
 //                Internal routines
@@ -306,3 +318,14 @@ static void findFeaturesNameStrandCB(gpointer key, gpointer value, gpointer user
   return ;
 }
 
+/* A GHFunc() to calculate the max score for all features in a given hash table */
+static void feature_get_max_score(gpointer key, gpointer value, gpointer user_data)
+{
+  double *max_score = (double*)user_data ;
+  ZMapFeature feature = (ZMapFeature)value ;
+
+  if (max_score && feature && feature->score > *max_score)
+    *max_score = feature->score ;
+
+  return ;
+}
