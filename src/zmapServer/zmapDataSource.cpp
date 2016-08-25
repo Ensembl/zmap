@@ -1585,7 +1585,8 @@ void ZMapDataSourceGIOStruct::parserInit(GHashTable *featureset_2_column,
 
 ZMapFeatureSet ZMapDataSourceStruct::makeFeatureSet(const char *feature_name_id,
                                                     GQuark feature_set_id,
-                                                    ZMapStyleMode feature_mode)
+                                                    ZMapStyleMode feature_mode,
+                                                    const bool is_seq)
 {
   ZMapFeatureSet feature_set = NULL ;
 
@@ -1603,6 +1604,7 @@ ZMapFeatureSet ZMapDataSourceStruct::makeFeatureSet(const char *feature_name_id,
           source_data = g_new0(ZMapFeatureSourceStruct,1);
           source_data->source_id = source_id;
           source_data->source_text = source_id;
+          source_data->is_seq = is_seq ;
 
           g_hash_table_insert(source_2_sourcedata_,GINT_TO_POINTER(source_id), source_data);
 
@@ -1665,6 +1667,7 @@ ZMapFeature ZMapDataSourceStruct::makeFeature(const char *sequence,
                                               const int query_start,
                                               const int query_end,
                                               ZMapStyleMode feature_mode,
+                                              const bool is_seq,
                                               GError **error)
 {
   ZMapFeature feature = NULL ;
@@ -1695,7 +1698,8 @@ ZMapFeature ZMapDataSourceStruct::makeFeature(const char *sequence,
     {
       feature_set_ = makeFeatureSet(feature_name,
                                     g_quark_from_string(source),
-                                    feature_mode) ;
+                                    feature_mode,
+                                    is_seq) ;
 
       if (!feature_set_)
         ok = false ;
@@ -1782,6 +1786,7 @@ bool ZMapDataSourceBEDStruct::parseBodyLine(GError **error)
                   1,
                   cur_feature_->chromEnd - cur_feature_->chromStart + 1,
                   ZMAPSTYLE_MODE_BASIC,
+                  false,
                   error) ;
     }
 
@@ -1806,6 +1811,7 @@ bool ZMapDataSourceBIGBEDStruct::parseBodyLine(GError **error)
                   1,
                   cur_feature_->chromEnd - cur_feature_->chromStart + 1,
                   ZMAPSTYLE_MODE_BASIC,
+                  false,
                   error) ;
     }
 
@@ -1830,6 +1836,7 @@ bool ZMapDataSourceBIGWIGStruct::parseBodyLine(GError **error)
                   0,
                   0,
                   ZMAPSTYLE_MODE_GRAPH,
+                  true,
                   error) ;
     }
 
@@ -1860,6 +1867,7 @@ bool ZMapDataSourceHTSStruct::parseBodyLine(GError **error)
                   cur_feature_data_.query_start_,
                   cur_feature_data_.query_end_,
                   ZMAPSTYLE_MODE_ALIGNMENT,
+                  true,
                   error) ;
     }
 
@@ -1884,6 +1892,7 @@ bool ZMapDataSourceBCFStruct::parseBodyLine(GError **error)
                   cur_feature_data_.query_start_,
                   cur_feature_data_.query_end_,
                   ZMAPSTYLE_MODE_ALIGNMENT,
+                  false,
                   error) ;
     }
 
