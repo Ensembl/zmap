@@ -5917,9 +5917,9 @@ static void justDrawContext(ZMapView view, ZMapFeatureContext diff_context,
   if (connect_data && connect_data->loaded_features)
     {
       loaded_features = connect_data->loaded_features ;
-      zMapLogMessage("copied pointer of ConnectData LoadFeaturesDataStruct"
-                     " to pass to displayDataWindows(): %p -> %p",
-                     connect_data->loaded_features, loaded_features) ;
+      //zMapLogMessage("copied pointer of ConnectData LoadFeaturesDataStruct"
+      //               " to pass to displayDataWindows(): %p -> %p",
+      //               connect_data->loaded_features, loaded_features) ;
     }
 
   /* Signal the ZMap that there is work to be done. */
