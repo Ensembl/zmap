@@ -1592,7 +1592,7 @@ ZMapFeatureSet ZMapDataSourceStruct::makeFeatureSet(const char *feature_name_id,
   /*
    * Now deal with the source -> data mapping referred to in the parser.
    */
-  GQuark source_id = source_name_ ;
+  GQuark source_id = zMapStyleCreateIDFromID(source_name_) ;
   GQuark feature_style_id = 0 ;
   ZMapFeatureSource source_data = NULL ;
 
