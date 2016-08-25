@@ -1606,7 +1606,7 @@ ZMapFeatureSet ZMapDataSourceStruct::makeFeatureSet(const char *feature_name_id,
 
           g_hash_table_insert(source_2_sourcedata_,GINT_TO_POINTER(source_id), source_data);
 
-          zMapLogMessage("Created source_data: %s", g_quark_to_string(source_id)) ;
+          //zMapLogMessage("Created source_data: %s", g_quark_to_string(source_id)) ;
         }
 
       if (source_data->style_id)
