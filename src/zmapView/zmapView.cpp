@@ -3739,7 +3739,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
                                 zMapViewSetDisablePopups(zmap_view, true) ;
                               }
 
-                            zMapLogWarning("Source is being cancelled: Error was: '%s'. Source: %s",
+                            zMapLogWarning("Source failed with error: '%s'. Source: %s",
                                            (err_msg ? err_msg : "<no error message>"), view_con->url) ;
                           }
 
@@ -3977,11 +3977,11 @@ static gboolean checkStateConnections(ZMapView zmap_view)
                             }
                         }
 
-                      zMapLogWarning("Thread %p failed, request = %s, empty sources now %d, failed sources now %d",
-                                     thread,
-                                     request_type_str,
-                                     g_list_length(zmap_view->sources_empty),
-                                     g_list_length(zmap_view->sources_failed)) ;
+                      //zMapLogWarning("Thread %p failed, request = %s, empty sources now %d, failed sources now %d",
+                      //               thread,
+                      //               request_type_str,
+                      //               g_list_length(zmap_view->sources_empty),
+                      //               g_list_length(zmap_view->sources_failed)) ;
                     }
 
                   /* Record if features were loaded or if there was an error, if the latter
@@ -5578,9 +5578,9 @@ static gboolean getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature
           if (merge_results == ZMAPFEATURE_CONTEXT_NONE)
             {
               g_set_error(&connect_data->error, ZMAP_VIEW_ERROR, ZMAPVIEW_ERROR_CONTEXT_EMPTY,
-                          "No new features found.") ;
+                          "No new features found") ;
 
-              zMapLogWarning("%s", connect_data->error->message) ;
+              //zMapLogWarning("%s", connect_data->error->message) ;
             }
           else
             {
