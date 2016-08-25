@@ -3751,6 +3751,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
                         THREAD_DEBUG_MSG_FULL(thread, view_con, request_type, reply,
                                               "%s", "signalling child thread to die....") ;
                         zMapThreadKill(thread) ;
+                        thread_has_died = TRUE ; 
                       }
                     else
                       {
