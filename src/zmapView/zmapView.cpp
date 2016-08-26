@@ -3739,7 +3739,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
                                 zMapViewSetDisablePopups(zmap_view, true) ;
                               }
 
-                            zMapLogWarning("Source is being cancelled: Error was: '%s'. Source: %s",
+                            zMapLogWarning("Source failed with error: '%s'. Source: %s",
                                            (err_msg ? err_msg : "<no error message>"), view_con->url) ;
                           }
 
@@ -3751,6 +3751,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
                         THREAD_DEBUG_MSG_FULL(thread, view_con, request_type, reply,
                                               "%s", "signalling child thread to die....") ;
                         zMapThreadKill(thread) ;
+                        thread_has_died = TRUE ; 
                       }
                     else
                       {
@@ -3955,7 +3956,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
                   if (view_con->thread_status == THREAD_STATUS_FAILED)
                     {
-                      char *request_type_str = (char *)zMapServerReqType2ExactStr(request_type) ;
+                      //char *request_type_str = (char *)zMapServerReqType2ExactStr(request_type) ;
 
                       if (!err_msg)
                         {
@@ -3976,11 +3977,11 @@ static gboolean checkStateConnections(ZMapView zmap_view)
                             }
                         }
 
-                      zMapLogWarning("Thread %p failed, request = %s, empty sources now %d, failed sources now %d",
-                                     thread,
-                                     request_type_str,
-                                     g_list_length(zmap_view->sources_empty),
-                                     g_list_length(zmap_view->sources_failed)) ;
+                      //zMapLogWarning("Thread %p failed, request = %s, empty sources now %d, failed sources now %d",
+                      //               thread,
+                      //               request_type_str,
+                      //               g_list_length(zmap_view->sources_empty),
+                      //               g_list_length(zmap_view->sources_failed)) ;
                     }
 
                   /* Record if features were loaded or if there was an error, if the latter
@@ -5577,9 +5578,9 @@ static gboolean getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature
           if (merge_results == ZMAPFEATURE_CONTEXT_NONE)
             {
               g_set_error(&connect_data->error, ZMAP_VIEW_ERROR, ZMAPVIEW_ERROR_CONTEXT_EMPTY,
-                          "No new features found.") ;
+                          "No new features found") ;
 
-              zMapLogWarning("%s", connect_data->error->message) ;
+              //zMapLogWarning("%s", connect_data->error->message) ;
             }
           else
             {
@@ -5916,9 +5917,9 @@ static void justDrawContext(ZMapView view, ZMapFeatureContext diff_context,
   if (connect_data && connect_data->loaded_features)
     {
       loaded_features = connect_data->loaded_features ;
-      zMapLogMessage("copied pointer of ConnectData LoadFeaturesDataStruct"
-                     " to pass to displayDataWindows(): %p -> %p",
-                     connect_data->loaded_features, loaded_features) ;
+      //zMapLogMessage("copied pointer of ConnectData LoadFeaturesDataStruct"
+      //               " to pass to displayDataWindows(): %p -> %p",
+      //               connect_data->loaded_features, loaded_features) ;
     }
 
   /* Signal the ZMap that there is work to be done. */

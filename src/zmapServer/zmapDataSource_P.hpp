@@ -113,12 +113,14 @@ public:
   virtual ZMapSequence getSequence(GQuark seq_id, GError **error) ;
   virtual bool terminated() ;
 
-  ZMapFeatureSet makeFeatureSet(const char *feature_name_id, GQuark feature_set_id, ZMapStyleMode feature_mode) ;
+  ZMapFeatureSet makeFeatureSet(const char *feature_name_id, GQuark feature_set_id, 
+                                ZMapStyleMode feature_mode, const bool is_seq) ;
   ZMapFeature makeFeature(const char *sequence, const char *source, const char *so_type,
                           const int start, const int end, const double dScore,
                           const char strand_c, const char *feature_name,
                           const bool have_target = false, const int query_start = 0, const int query_end = 0,
-                          ZMapStyleMode feature_mode = ZMAPSTYLE_MODE_INVALID, GError **error = NULL) ;
+                          ZMapStyleMode feature_mode = ZMAPSTYLE_MODE_INVALID, const bool is_seq = false,
+                          GError **error = NULL) ;
   
   bool endOfFile() ;
   GError* error() ;

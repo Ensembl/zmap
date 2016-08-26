@@ -524,7 +524,7 @@ static ZMapServerResponseType getFeatures(void *server_in,
     {
       setErrMsg(server, "No features found.") ;
 
-      ZMAPSERVER_LOG(Warning, PROTOCOL_NAME, server->path, "%s", server->last_err_msg) ;
+      //ZMAPSERVER_LOG(Warning, PROTOCOL_NAME, server->path, "%s", server->last_err_msg) ;
 
       result = server->result = ZMAP_SERVERRESPONSE_SOURCEEMPTY ;
     }
@@ -553,7 +553,7 @@ static ZMapServerResponseType getFeatures(void *server_in,
       if (!err_msg.empty())
         {
           setErrMsg(server, "No features found.") ;
-          ZMAPSERVER_LOG(Warning, PROTOCOL_NAME, server->path, "%s", server->last_err_msg) ;
+          //ZMAPSERVER_LOG(Warning, PROTOCOL_NAME, server->path, "%s", server->last_err_msg) ;
         }
 
       /*
