@@ -53,7 +53,7 @@ static void copy_to_new_featureset(gpointer key, gpointer hash_data, gpointer us
 static void findFeaturesRangeCB(gpointer key, gpointer value, gpointer user_data) ;
 static void findFeaturesNameCB(gpointer key, gpointer value, gpointer user_data) ;
 static void findFeaturesNameStrandCB(gpointer key, gpointer value, gpointer user_data) ;
-static void feature_get_max_score(gpointer key, gpointer hash_data, gpointer user_data) ;
+static void update_style_from_feature(gpointer key, gpointer hash_data, gpointer user_data) ;
 
 
 
@@ -105,6 +105,43 @@ ZMapFeatureSet zMapFeatureSetIDCreate(GQuark original_id, GQuark unique_id,
 
   return feature_set ;
 }
+
+
+/* If this feature has a default style, update the style from values in the feature. Currently
+ * this just affects graph styles and updates the max_score to a sensible value based on all of
+ * the feature that get added. */
+bool zMapFeatureSetUpdateStyleFromFeature(ZMapFeature feature)
+{
+  bool changed = false ;
+
+  ZMapFeatureSet feature_set = (feature ? (ZMapFeatureSet)feature->parent : NULL) ;
+
+  // Currently only change default styles
+  if (feature_set && feature_set->style && feature_set->style->is_default)
+    {
+      // If this featureset has a graph style, set the max score in the style from the added features
+      if (feature_set->style->mode == ZMAPSTYLE_MODE_GRAPH && feature->score > feature_set->style->max_score)
+        {
+          changed = true ;
+          feature_set->style->max_score = feature->score ;
+        }
+    }
+
+  return changed ;
+}
+
+
+/* Update the feature set's style based on values in all of its features */
+bool zMapFeatureSetUpdateStyleFromFeatures(ZMapFeatureSet feature_set)
+{
+  bool changed = false ;
+  
+  if (feature_set && feature_set->features)
+    g_hash_table_foreach(feature_set->features, update_style_from_feature, &changed) ;
+
+  return changed ;
+}
+
 
 /* Feature must not be null to be added we need at least the feature id and probably should.
  * check for more.
@@ -252,18 +289,6 @@ void zMapFeatureSetDestroyFeatures(ZMapFeatureSet feature_set)
 }
 
 
-double zMapFeatureSetGetMaxScore(ZMapFeatureSet feature_set)
-{
-  double max_score = 0.0 ;  
-
-  if (feature_set && feature_set->features)
-    g_hash_table_foreach(feature_set->features, feature_get_max_score, &max_score) ;
-
-  return max_score ;
-}
-
-
-
 // 
 //                Internal routines
 //    
@@ -318,14 +343,14 @@ static void findFeaturesNameStrandCB(gpointer key, gpointer value, gpointer user
   return ;
 }
 
-/* A GHFunc() to calculate the max score for all features in a given hash table */
-static void feature_get_max_score(gpointer key, gpointer value, gpointer user_data)
+/* A GHFunc() to update a featureset style from a given feature */
+static void update_style_from_feature(gpointer key, gpointer value, gpointer user_data)
 {
-  double *max_score = (double*)user_data ;
+  bool *changed = (bool*)user_data ;
   ZMapFeature feature = (ZMapFeature)value ;
 
-  if (max_score && feature && feature->score > *max_score)
-    *max_score = feature->score ;
+  if (zMapFeatureSetUpdateStyleFromFeature(feature))
+    *changed = true ;
 
   return ;
 }

@@ -1986,6 +1986,9 @@ GList* zmapWindowCoverageGetRelatedFeaturesets(ZMapFeatureContextMap context_map
                                                GList *req_list, bool unique_id) ;
 void zmapWindowRedrawFeatureSet(ZMapWindow window, ZMapFeatureSet featureset) ;
 
+void zmapWindowUpdateStylesFromFeatures(ZMapWindow window) ;
+void zmapWindowUpdateStyleFromFeatures(ZMapWindow window, ZMapFeatureTypeStyle style) ;
+
 /* Malcolms.... */
 void foo_bug_set(void *key, const char *id) ;
 

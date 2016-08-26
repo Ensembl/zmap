@@ -325,8 +325,6 @@ static void addPredefined(ZMapStyleTree &styles, GHashTable **column_2_styles_in
 static void styleCB(gpointer key_id, gpointer data, gpointer user_data) ;
 
 static void invoke_merge_in_names(gpointer list_data, gpointer user_data);
-static void update_default_styles(gpointer list_data, gpointer user_data) ;
-static void update_default_style(ZMapFeatureTypeStyle style, gpointer user_data) ;
 
 static void sendViewLoaded(ZMapView zmap_view, LoadFeaturesData lfd) ;
 
@@ -1625,10 +1623,6 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig,
 
   if (ghash)
     g_hash_table_destroy(ghash);
-
-  // After adding new features, update the default styles from the features they contain,
-  // e.g. update the default graph style with a sensible score range.
-  g_list_foreach(view->window_list, update_default_styles, NULL);
 
   return ;
 }
@@ -4872,33 +4866,6 @@ static void invoke_merge_in_names(gpointer list_data, gpointer user_data)
   return ;
 }
 
-
-/* Called on a GList of ZMapViewWindow's. Updates the default styles from properties of the
- * features in that style and redraws the window. */
-static void update_default_styles(gpointer list_data, gpointer user_data)
-{
-  ZMapViewWindow view_window = (ZMapViewWindow)list_data ;
-  ZMapWindow window = zMapViewGetWindow(view_window) ;
-  zMapReturnIfFail(window) ;
-  
-  ZMapStyleTree *styles = zMapWindowGetStyles(window) ;
-
-  styles->foreach(update_default_style, window) ;
-}
-
-
-/* If this is a default style, update it from properties of the features in that style and redraw
- * the window. */
-static void update_default_style(ZMapFeatureTypeStyle style, gpointer user_data)
-{
-  ZMapWindow window = (ZMapWindow)user_data ;
-  zMapReturnIfFail(style && window) ;
-
-  if (style->is_default)
-    {
-      zMapWindowUpdateStyleFromFeatures(window, style) ;
-    }
-}
 
 
 /*#ifdef ED_G_NEVER_INCLUDE_THIS_CODE

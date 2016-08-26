@@ -3459,7 +3459,6 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
           zmapWindowDrawSplices(window, NULL, 0, 0) ;
         }
 
-
       /* Tell layer above that we have finished loading/displaying features. */
       (*(window_cbs_G->drawn_data))(window, window->app_data, window_data->loaded_cb_user_data, diff_context) ;
 

@@ -735,6 +735,4 @@ ZMapWindowDisplayCoordinates zMapWindowGetDisplayCoordinates(ZMapWindow window) 
 void zMapWindowSetFlag(ZMapWindow window, ZMapFlag flag, const gboolean value) ;
 gboolean zMapWindowGetFlag(ZMapWindow window, ZMapFlag flag) ;
 
-void zMapWindowUpdateStyleFromFeatures(ZMapWindow window, ZMapFeatureTypeStyle style) ;
-
 #endif /* !ZMAP_WINDOW_H */

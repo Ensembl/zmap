@@ -154,6 +154,8 @@ static void printFeatureSet(GQuark key_id, gpointer data, gpointer user_data) ;
 static void removeAllFeatures(ZMapWindow window, ZMapWindowContainerFeatureSet container_set) ;
 /*static void removeFeatureCB(gpointer key, gpointer value, gpointer user_data) ;*/
 
+static void updateDefaultStyleCB(ZMapFeatureTypeStyle style, gpointer user_data) ;
+
 
 /* Globals. */
 
@@ -1906,13 +1908,13 @@ GQuark zMapWindowGetFeaturesetContainerID(ZMapWindow window, GQuark featureset_i
 }
 
 
-/* Update the given style with values from the features it contains. This currently just updates
- * the max score for graph styles and is used to set a sensible value for the default styles. */
-void zMapWindowUpdateStyleFromFeatures(ZMapWindow window, ZMapFeatureTypeStyle style)
+/* Update the given style with values from the features it contains, e.g. the score range for
+ * graph styles. */
+void zmapWindowUpdateStyleFromFeatures(ZMapWindow window, ZMapFeatureTypeStyle style)
 {
   if (window && window->feature_context && style)
     {
-      // Currently we only have anything to do for graph styles
+      // Currently we only do anything for the default graph style
       if (style->mode == ZMAPSTYLE_MODE_GRAPH)
         {
           // Loop through all featuresets with this style and find the max score
@@ -1922,13 +1924,8 @@ void zMapWindowUpdateStyleFromFeatures(ZMapWindow window, ZMapFeatureTypeStyle s
           for (GList *item = featuresets; item; item = item->next)
             {
               ZMapFeatureSet feature_set = (ZMapFeatureSet)(item->data) ;
-              double max_score = zMapFeatureSetGetMaxScore(feature_set) ;
-              
-              if (max_score > style->max_score)
-                {
-                  style->max_score = max_score ;
-                  changed = true ;
-                }
+              if (zMapFeatureSetUpdateStyleFromFeatures(feature_set))
+                changed = true ;
             }
 
           if (changed)
@@ -1946,6 +1943,16 @@ void zMapWindowUpdateStyleFromFeatures(ZMapWindow window, ZMapFeatureTypeStyle s
             }
         }
     }
+}
+
+/* Update the default styles with values from the features they contain, e.g. set the score range
+ * for graph styles to a sensible value for the features loaded. */
+void zmapWindowUpdateStylesFromFeatures(ZMapWindow window)
+{
+  ZMapStyleTree *styles = zMapWindowGetStyles(window) ;
+
+  styles->foreach(updateDefaultStyleCB, window) ;
+
 }
 
 /* add or update an empty CanvasFeatureset that covers the group extent
@@ -2814,6 +2821,18 @@ static gboolean setColumnTooltip(FooCanvasItem *item, GdkEvent *event, gpointer 
 
 
 
+/* If this is a default style, update it from properties of the features in that style and redraw
+ * the window. */
+static void updateDefaultStyleCB(ZMapFeatureTypeStyle style, gpointer user_data)
+{
+  ZMapWindow window = (ZMapWindow)user_data ;
+  zMapReturnIfFail(style && window) ;
+
+  if (style->is_default)
+    {
+      zmapWindowUpdateStyleFromFeatures(window, style) ;
+    }
+}
 
 
 
@@ -3128,6 +3147,7 @@ static gboolean containerDestroyCB(FooCanvasItem *item, gpointer user_data)
 
   return result ;                                            /* ????? */
 }
+
 
 
 
