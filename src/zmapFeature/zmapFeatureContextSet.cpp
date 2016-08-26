@@ -110,36 +110,34 @@ ZMapFeatureSet zMapFeatureSetIDCreate(GQuark original_id, GQuark unique_id,
 /* If this feature has a default style, update the style from values in the feature. Currently
  * this just affects graph styles and updates the max_score to a sensible value based on all of
  * the feature that get added. */
-bool zMapFeatureSetUpdateStyleFromFeature(ZMapFeature feature)
+void zMapFeatureSetUpdateStyleFromFeature(ZMapFeature feature, ZMapFeatureTypeStyle style)
 {
-  bool changed = false ;
-
-  ZMapFeatureSet feature_set = (feature ? (ZMapFeatureSet)feature->parent : NULL) ;
-
   // Currently only change default styles
-  if (feature_set && feature_set->style && feature_set->style->is_default)
+  if (feature && style && style->is_default)
     {
-      // If this featureset has a graph style, set the max score in the style from the added features
-      if (feature_set->style->mode == ZMAPSTYLE_MODE_GRAPH && feature->score > feature_set->style->max_score)
+      // If this featureset has a graph style, set the min/max score in the style from the added features
+      if (style->mode == ZMAPSTYLE_MODE_GRAPH)
         {
-          changed = true ;
-          feature_set->style->max_score = feature->score ;
+          // we don't seem to handle negative scores? disallow for now...
+          if (feature->score > style->max_score && feature->score >= 0.0)
+            {
+              style->max_score = feature->score ;
+            }
+
+          if (feature->score < style->min_score && feature->score >= 0.0)
+            {
+              style->min_score = feature->score ;
+            }
         }
     }
-
-  return changed ;
 }
 
 
 /* Update the feature set's style based on values in all of its features */
-bool zMapFeatureSetUpdateStyleFromFeatures(ZMapFeatureSet feature_set)
+void zMapFeatureSetUpdateStyleFromFeatures(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style)
 {
-  bool changed = false ;
-  
   if (feature_set && feature_set->features)
-    g_hash_table_foreach(feature_set->features, update_style_from_feature, &changed) ;
-
-  return changed ;
+    g_hash_table_foreach(feature_set->features, update_style_from_feature, style) ;
 }
 
 
@@ -346,11 +344,10 @@ static void findFeaturesNameStrandCB(gpointer key, gpointer value, gpointer user
 /* A GHFunc() to update a featureset style from a given feature */
 static void update_style_from_feature(gpointer key, gpointer value, gpointer user_data)
 {
-  bool *changed = (bool*)user_data ;
+  ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)user_data ;
   ZMapFeature feature = (ZMapFeature)value ;
 
-  if (zMapFeatureSetUpdateStyleFromFeature(feature))
-    *changed = true ;
+  zMapFeatureSetUpdateStyleFromFeature(feature, style) ;
 
   return ;
 }

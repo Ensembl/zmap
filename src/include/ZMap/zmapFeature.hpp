@@ -1278,8 +1278,8 @@ ZMapFeature zMapFeatureSetGetFeatureByID(ZMapFeatureSet feature_set,
                                          GQuark feature_id);
 gboolean zMapFeatureSetRemoveFeature(ZMapFeatureSet feature_set, ZMapFeature feature) ;
 void zMapFeatureSetDestroyFeatures(ZMapFeatureSet feature_set) ;
-bool zMapFeatureSetUpdateStyleFromFeature(ZMapFeature feature) ;
-bool zMapFeatureSetUpdateStyleFromFeatures(ZMapFeatureSet feature_set) ;
+void zMapFeatureSetUpdateStyleFromFeature(ZMapFeature feature, ZMapFeatureTypeStyle style) ;
+void zMapFeatureSetUpdateStyleFromFeatures(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style) ;
 void     zMapFeatureSetDestroy(ZMapFeatureSet feature_set, gboolean free_data) ;
 void  zMapFeatureSetStyle(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style) ;
 char *zMapFeatureSetGetName(ZMapFeatureSet feature_set) ;
