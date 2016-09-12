@@ -165,6 +165,8 @@ static ZMapFeature makeFeature(EnsemblServer server,
                                const char *source,
                                const char *gene_source,
                                const char *biotype,
+                               const long start,
+                               const long end,
                                const int match_start,
                                const int match_end,
                                GetFeaturesData get_features_data,
@@ -174,7 +176,7 @@ static ZMapFeature makeFeature(EnsemblServer server,
 static ZMapFeature makeFeatureSimple(EnsemblServer server, SimpleFeature *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 static ZMapFeature makeFeatureBaseAlign(EnsemblServer server, BaseAlignFeature *rsf, ZMapHomolType homol_type, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 static ZMapFeature makeFeatureRepeat(EnsemblServer server, RepeatFeature *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
-static ZMapFeature makeFeatureTranscript(EnsemblServer server, Transcript *rsf, const char *gene_source, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block, set<GQuark> &transcript_ids) ;
+static ZMapFeature makeFeatureTranscript(EnsemblServer server, Transcript *rsf, const char *gene_source, const long start, const long end, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block, set<GQuark> &transcript_ids) ;
 static ZMapFeature makeFeaturePredictionTranscript(EnsemblServer server, PredictionTranscript *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 static ZMapFeature makeFeatureGene(EnsemblServer server, Gene *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block, set<GQuark> &transcript_ids) ;
 static void geneAddTranscripts(EnsemblServer server, Gene *rsf, const char *gene_source, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block, set<GQuark> &transcript_ids) ;
@@ -719,9 +721,16 @@ static gboolean getAllTranscripts(EnsemblServer server,
       Transcript *rsf = (Transcript*)SeqFeature_transform((SeqFeature*)sf, (char *)(server->coord_system), NULL, NULL);
 
       if (rsf)
-        makeFeatureTranscript(server, rsf, NULL, get_features_data, feature_block, transcript_ids) ;
+        {
+          const long start = SeqFeature_getStart((SeqFeature*)rsf) ;
+          const long end = SeqFeature_getEnd((SeqFeature*)rsf) ;
+
+          makeFeatureTranscript(server, rsf, NULL, start, end, get_features_data, feature_block, transcript_ids) ;
+        }
       else
-        printf("Failed to map feature '%s'\n", Transcript_getSeqRegionName(sf)) ;
+        {
+          printf("Failed to map feature '%s'\n", Transcript_getSeqRegionName(sf)) ;
+        }
 
       //      Object_decRefCount(rsf);
       //      free(rsf);
@@ -1124,6 +1133,9 @@ static ZMapFeature makeFeatureSimple(EnsemblServer server,
   const char *feature_name = NULL ;
   const char *source = NULL ;
 
+  const long start = SeqFeature_getStart((SeqFeature*)rsf) ;
+  const long end = SeqFeature_getEnd((SeqFeature*)rsf) ;
+
   Analysis *analysis = SeqFeature_getAnalysis((SeqFeature*)rsf) ;
 
   if (!feature_name || *feature_name == '\0')
@@ -1136,7 +1148,7 @@ static ZMapFeature makeFeatureSimple(EnsemblServer server,
     source = Analysis_getGFFSource(analysis) ;
 
   feature = makeFeature(server, (SeqFeature*)rsf, feature_name, feature_name, 
-                        feature_mode, source, NULL, NULL, 0, 0, 
+                        feature_mode, source, NULL, NULL, start, end, 0, 0, 
                         get_features_data, feature_block) ;
 
   return feature ;
@@ -1153,6 +1165,10 @@ static ZMapFeature makeFeatureRepeat(EnsemblServer server,
   ZMapStyleMode feature_mode = ZMAPSTYLE_MODE_BASIC ;
   const char *feature_name = NULL ;
   const char *source = NULL ;
+
+  const long start = SeqFeature_getStart((SeqFeature*)rsf) ;
+  const long end = SeqFeature_getEnd((SeqFeature*)rsf) ;
+
   RepeatConsensus *consensus = RepeatFeature_getConsensus(rsf) ;
   Analysis *analysis = SeqFeature_getAnalysis((SeqFeature*)rsf) ;
 
@@ -1166,7 +1182,7 @@ static ZMapFeature makeFeatureRepeat(EnsemblServer server,
     source = Analysis_getGFFSource(analysis) ;
 
   feature = makeFeature(server, (SeqFeature*)rsf, feature_name, feature_name, 
-                        feature_mode, source, NULL, NULL, 0, 0, 
+                        feature_mode, source, NULL, NULL, start, end, 0, 0, 
                         get_features_data, feature_block) ;
 
   return feature ;
@@ -1211,7 +1227,15 @@ static void geneAddTranscripts(EnsemblServer server,
       for (i = 0; i < Vector_getNumElement(transcripts); ++i)
         {
           Transcript *transcript = (Transcript*)Vector_getElementAt(transcripts, i);
-          makeFeatureTranscript(server, transcript, gene_source, get_features_data, feature_block, transcript_ids) ;
+
+          const int offset = server->zmap_start - 1 ;
+
+          const long start = Transcript_getStart(transcript) + offset ;
+          const long end = Transcript_getEnd(transcript) + offset ;
+
+          makeFeatureTranscript(server, transcript, 
+                                gene_source, start, end, 
+                                get_features_data, feature_block, transcript_ids) ;
         }
 
       //Vector_free(transcripts) ;
@@ -1222,6 +1246,8 @@ static void geneAddTranscripts(EnsemblServer server,
 static ZMapFeature makeFeatureTranscript(EnsemblServer server,
                                          Transcript *rsf,
                                          const char *gene_source,
+                                         const long start,
+                                         const long end,
                                          GetFeaturesData get_features_data,
                                          ZMapFeatureBlock feature_block,
                                          set<GQuark> &transcript_ids)
@@ -1252,7 +1278,7 @@ static ZMapFeature makeFeatureTranscript(EnsemblServer server,
         source = Analysis_getGFFSource(analysis) ;
 
       feature = makeFeature(server, (SeqFeature*)rsf, feature_name_id, feature_name, 
-                            feature_mode, source, gene_source, biotype, 0, 0, 
+                            feature_mode, source, gene_source, biotype, start, end, 0, 0, 
                             get_features_data, feature_block, &transcript_ids) ;
 
       if (feature)
@@ -1327,6 +1353,10 @@ static ZMapFeature makeFeaturePredictionTranscript(EnsemblServer server,
   const char *feature_name_id = NULL ;
   const char *feature_name = NULL ;
   const char *source = NULL ;
+
+  const long start = SeqFeature_getStart((SeqFeature*)rsf) ;
+  const long end = SeqFeature_getEnd((SeqFeature*)rsf) ;
+
   Analysis *analysis = SeqFeature_getAnalysis((SeqFeature*)rsf) ;
 
   feature_name = PredictionTranscript_getStableId(rsf);
@@ -1345,7 +1375,7 @@ static ZMapFeature makeFeaturePredictionTranscript(EnsemblServer server,
     source = featureGetSOTerm((SeqFeature*)rsf) ;
   
   feature = makeFeature(server, (SeqFeature*)rsf, feature_name_id, feature_name, 
-                        feature_mode, source, NULL, NULL, 0, 0, 
+                        feature_mode, source, NULL, NULL, start, end, 0, 0, 
                         get_features_data, feature_block) ;
 
   if (feature)
@@ -1417,8 +1447,12 @@ static ZMapFeature makeFeatureBaseAlign(EnsemblServer server,
                                         ZMapFeatureBlock feature_block)
 {
   ZMapFeature feature = NULL ;
-  Analysis *analysis = SeqFeature_getAnalysis((SeqFeature*)rsf) ;
   const char *source = NULL ;
+
+  const long start = SeqFeature_getStart((SeqFeature*)rsf) ;
+  const long end = SeqFeature_getEnd((SeqFeature*)rsf) ;
+
+  Analysis *analysis = SeqFeature_getAnalysis((SeqFeature*)rsf) ;
 
   /* Create the basic feature. We need to pass some alignment-specific fields */
   ZMapStyleMode feature_mode = ZMAPSTYLE_MODE_ALIGNMENT ;
@@ -1439,7 +1473,7 @@ static ZMapFeature makeFeatureBaseAlign(EnsemblServer server,
     source = BaseAlignFeature_getDbName((BaseAlignFeature*)rsf) ;
 
   feature = makeFeature(server, (SeqFeature*)rsf, feature_name_id, feature_name,
-                        feature_mode, source, NULL, NULL, match_start, match_end,
+                        feature_mode, source, NULL, NULL, start, end, match_start, match_end,
                         get_features_data, feature_block) ;
 
   if (feature)
@@ -1534,6 +1568,8 @@ static ZMapFeature makeFeature(EnsemblServer server,
                                const char *source,
                                const char *gene_source,
                                const char *biotype_in,
+                               const long start,
+                               const long end,
                                const int match_start,
                                const int match_end,
                                GetFeaturesData get_features_data,
@@ -1546,8 +1582,6 @@ static ZMapFeature makeFeature(EnsemblServer server,
   const char *feature_name = feature_name_in ;
   char *sequence = NULL ;
   const char *SO_accession = NULL ;
-  long start = 0 ;
-  long end = 0 ;
   gboolean has_score = TRUE ;
   double score = 0.0 ;
   ZMapStrand strand = ZMAPSTRAND_NONE ;
@@ -1568,8 +1602,6 @@ static ZMapFeature makeFeature(EnsemblServer server,
       if (!feature_name || *feature_name == '\0')
         feature_name = feature_name_id ;
 
-      start = SeqFeature_getStart(rsf) ;
-      end = SeqFeature_getEnd(rsf) ;
       has_score = TRUE ;
       score = SeqFeature_getScore(rsf) ;
 
