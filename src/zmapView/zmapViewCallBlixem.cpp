@@ -1196,36 +1196,17 @@ static gboolean setBlixemScope(ZMapBlixemData blixem_data, const bool features_f
 static gboolean makeTmpfiles(ZMapBlixemData blixem_data)
 {
   gboolean    status = FALSE ;
-  char *path = NULL,
-    *login = NULL,
-    *dir = NULL ;
+  char *dir = NULL ;
   if (!blixem_data)
     return status ;
   status = TRUE ;
 
-  if ((login = (char *)g_get_user_name()))
-    {
-      path = g_strdup_printf("/tmp/%s_ZMAP_BLIXEM/", login);
-    }
-  else
-    {
-      zMapShowMsg(ZMAP_MSG_WARNING, "Error: could not determine your login.");
-      status = FALSE;
-    }
+  dir = zMapGetTmpDir() ;
 
-  if (status)
+  if (!dir)
     {
-      if (!(dir = zMapGetDir(path, FALSE, TRUE)))
-        {
-          zMapShowMsg(ZMAP_MSG_WARNING, "Error: could not create temp directory for Blixem.") ;
-          status = FALSE;
-        }
-      else
-        {
-          status = setTmpPerms(dir, TRUE) ;
-        }
+      status = FALSE ;
     }
-
 
   /* Create the file to the hold the DNA in FastA format. */
   if (status)
@@ -1245,8 +1226,6 @@ static gboolean makeTmpfiles(ZMapBlixemData blixem_data)
  /*
   * These need to be freed once finished.
   */
- if (path)
-    g_free(path) ;
   if (dir)
     g_free(dir) ;
 

@@ -39,7 +39,6 @@
 
 #include <zmapUtils_P.hpp>
 
-
 static char *getRelOrAbsPath(char *path_in, gboolean home_relative) ;
 
 
@@ -113,6 +112,57 @@ char *zMapGetPath(char *path_in)
   path = getRelOrAbsPath(path_in, FALSE) ;
 
   return path ;
+}
+
+
+/* Get the zmap temp directory. This is used e.g. for storing temp gff files to send to blixem,
+ * temp cache location for processing BED files etc. */
+char *zMapGetTmpDir()
+{
+  static char *tmp_dir = NULL ;
+
+  if (!tmp_dir)
+    {
+      const char *login = (char *)g_get_user_name() ;
+
+      if (login)
+        {
+          char *path = g_strdup_printf("/tmp/zmap_%s/", login);
+
+          if (path)
+            {
+              tmp_dir = zMapGetDir(path, FALSE, TRUE) ;
+
+              if (tmp_dir)
+                {
+                  mode_t mode = (S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH) ;
+
+                  if (chmod(tmp_dir, mode) != 0)
+                    {
+                      zMapShowMsg(ZMAP_MSG_WARNING, "Error: could not set permissions on temp directory:  %s.", tmp_dir) ;
+                      g_free(tmp_dir) ;
+                      tmp_dir = NULL ;
+                    }
+                }
+              else
+                {
+                  zMapShowMsg(ZMAP_MSG_WARNING, "Program error: could not create tmp directory for path: %s", path);
+                }
+
+              g_free(path) ;
+            }
+          else
+            {
+              zMapShowMsg(ZMAP_MSG_WARNING, "Program error: could not create tmp directory path.");
+            }
+        }
+      else
+        {
+          zMapShowMsg(ZMAP_MSG_WARNING, "Error: could not create tmp directory: could not determine your login.");
+        }
+    }
+
+  return tmp_dir ;
 }
 
 
