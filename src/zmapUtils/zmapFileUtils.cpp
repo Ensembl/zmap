@@ -117,7 +117,7 @@ char *zMapGetPath(char *path_in)
 
 /* Get the zmap temp directory. This is used e.g. for storing temp gff files to send to blixem,
  * temp cache location for processing BED files etc. */
-char *zMapGetTmpDir()
+const char *zMapGetTmpDir()
 {
   static char *tmp_dir = NULL ;
 

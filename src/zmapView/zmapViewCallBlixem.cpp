@@ -1196,7 +1196,7 @@ static gboolean setBlixemScope(ZMapBlixemData blixem_data, const bool features_f
 static gboolean makeTmpfiles(ZMapBlixemData blixem_data)
 {
   gboolean    status = FALSE ;
-  char *dir = NULL ;
+  const char *dir = NULL ;
   if (!blixem_data)
     return status ;
   status = TRUE ;
@@ -1222,12 +1222,6 @@ static gboolean makeTmpfiles(ZMapBlixemData blixem_data)
         status = setTmpPerms(blixem_data->gff_file, FALSE) ;
     }
 
-
- /*
-  * These need to be freed once finished.
-  */
-  if (dir)
-    g_free(dir) ;
 
   return status ;
 }

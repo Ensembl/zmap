@@ -39,7 +39,16 @@
 #include <ZMap/zmapControl.hpp>
 #include <zmapApp_P.hpp>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
+#include <blatSrc/common.h>
+#include <blatSrc/udc.h>
+
+#ifdef __cplusplus
+}
+#endif
 
 
 static void initGnomeGTK(int argc, char *argv[]) ;
@@ -93,6 +102,17 @@ gboolean zmapMainMakeAppWindow(int argc, char *argv[], ZMapAppContext app_contex
   PangoFont *tmp_font = NULL ;
   PangoFontDescription *tmp_font_desc = NULL ;
   int log_size ;
+
+
+  // Set the temp cache diretory for processing BED files etc.
+  const char *tmp_dir = zMapGetTmpDir() ;
+
+  if (tmp_dir)
+    {
+      char *tmp_copy = g_strdup(tmp_dir) ;
+      udcSetDefaultDir(tmp_copy) ;
+      g_free(tmp_copy) ;
+    }
 
 
   /*             GTK initialisation              */
