@@ -279,6 +279,8 @@ GtkWidget *makePanel(GtkWidget *toplevel,
   main_data->default_type = default_type ;
   main_data->filename = NULL ;
 
+  main_data->registry.setDebug(true);
+
   if (toplevel)
     {
       main_data->toplevel = toplevel ;
