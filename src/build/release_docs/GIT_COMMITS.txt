@@ -1,9 +1,16 @@
 
-Git commits for  from commit "production" until commit "release/2.10.0"
+Git commits for  from commit "production" until commit "release/2.11.0"
 
-7fac72d 2016-06-20 Merge branch 'feature/trackhub' into develop
-85b58fe 2016-06-07 Change all usage of coord transform calls to call fixed funciton. - RT532732
-e54430c 2016-06-07 Make coord translating handle slice and chromosome views. - RT532732
+0627177 2016-09-12 Use user-specific temp dir for file cache - NEW FEATURE 'trackhub'
+9457118 2016-09-12 Change blixem tmp dir to /tmp/zmap_<uid>
+7f42dac 2016-08-26 Merge branch 'feature/trackhub' into develop
+34e0c2a 2016-08-24 Merge branch 'feature/trackhub' into develop
+eacad9a 2016-08-17 Merge branch 'feature/trackhub' into develop
+2750bcf 2016-08-15 Merge branch 'feature/trackhub' into develop
+8361397 2016-08-09 Merge branch 'feature/composite' into develop
+f82001b 2016-07-28 Add VirtualBox installation instructions - DOC
+34e1273 2016-07-26 bug fix to gff parser
+e34803f 2016-07-26 Add debug for addfeature bug - DEVELOP
 
 
 End of git commits
