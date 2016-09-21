@@ -619,7 +619,10 @@ void ZMapFeatureSequenceMapStructType::createSourceChildren(ZMapConfigSource sou
       if (trackdb_id)
         {
           string err_msg;
+
           gbtools::trackhub::Registry registry ;
+          registry.setDebug(true);
+
           gbtools::trackhub::TrackDb trackdb = registry.searchTrackDb(trackdb_id, err_msg) ;
 
           if (err_msg.empty())
