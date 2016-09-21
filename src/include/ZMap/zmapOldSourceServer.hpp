@@ -35,7 +35,7 @@
 
 #include <ZMap/zmapEnum.hpp>
 #include <ZMap/zmapUrl.hpp>
-#include <ZMap/zmapThreads.hpp>
+#include <ZMap/zmapThreadSource.hpp>
 #include <ZMap/zmapServerProtocol.hpp>
 
 
