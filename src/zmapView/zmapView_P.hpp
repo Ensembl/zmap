@@ -33,7 +33,7 @@
 
 #include <ZMap/zmapConfigStanzaStructs.hpp>
 #include <ZMap/zmapServerProtocol.hpp>
-#include <ZMap/zmapThreads.hpp>
+#include <ZMap/zmapThreadSource.hpp>
 #include <ZMap/zmapView.hpp>
 #include <ZMap/zmapWindow.hpp>
 #include <ZMap/zmapWindowNavigator.hpp>

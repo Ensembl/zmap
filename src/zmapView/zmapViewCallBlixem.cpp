@@ -53,7 +53,7 @@
 #include <ZMap/zmapConfigIni.hpp>
 #include <ZMap/zmapConfigDir.hpp>
 #include <ZMap/zmapConfigStrings.hpp>
-#include <ZMap/zmapThreads.hpp>
+#include <ZMap/zmapThreadSource.hpp>
 #include <ZMap/zmapGFF.hpp>
 #include <ZMap/zmapUrlUtils.hpp>
 #include <ZMap/zmapGFFStringUtils.hpp>

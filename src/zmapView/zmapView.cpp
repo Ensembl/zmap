@@ -2905,8 +2905,8 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
               /* Warn the user ! */
               if (view_con->show_warning)
-                zMapWarning("Source is being removed: Error was: %s\n\nSource: %s",
-                            (err_msg ? err_msg : "<no error message>"), zMapServerGetUrl(view_con)) ;
+                zMapWarning("Source \"%s\" is being removed, error was: %s\n",
+                            zMapServerGetUrl(view_con), (err_msg ? err_msg : "<no error message>")) ;
 
               zMapLogCritical("Source \"%s\", cannot access reply from server thread,"
                               " error was: %s", zMapServerGetUrl(view_con), (err_msg ? err_msg : "<no error message>")) ;
@@ -3248,10 +3248,15 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
               if (reply == ZMAPTHREAD_REPLY_QUIT && view_con->thread_status != THREAD_STATUS_FAILED)
                 {
+
+                  // segfaults because step is null but not sure how I caused that....
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
                   if (zMapStepGetRequest(step) == ZMAP_SERVERREQ_TERMINATE)  /* normal OK status in response */
                     {
                       view_con->thread_status = THREAD_STATUS_OK ;
                     }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+                  view_con->thread_status = THREAD_STATUS_OK ;
                 }
               else
                 {
@@ -4749,7 +4754,7 @@ static gboolean checkContinue(ZMapView zmap_view)
         void *app_data = zmap_view->app_data ;
         ZMapViewCallbackDestroyData destroy_data ;
 
-        zMapWarning("%s", "Cannot show ZMap because server connections have all died or been cancelled.") ;
+        zMapWarning("%s", "Cannot show ZMap because server connections have all died or been cancelled.\n") ;
         zMapLogWarning("%s", "Cannot show ZMap because server connections have all died or been cancelled.") ;
 
         zmap_view->state = ZMAPVIEW_DYING ;
