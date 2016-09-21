@@ -57,7 +57,7 @@ AX_CXX_COMPILE_STDCXX_0X()
 #
 AX_CHECK_OPENSSL()
 
-AC_CHECK_HEADERS([openssl.h], [HAVE_OPENSSL_HEADER=1])
+AC_CHECK_HEADERS([opensslv.h], [HAVE_OPENSSL_HEADER=1])
 AM_CONDITIONAL([HAVE_SSL], [ test -n "$HAVE_OPENSSL_HEADER" || test -n "$OPENSSL_INCLUDES" ])
 
 AM_COND_IF([HAVE_SSL], 
@@ -694,7 +694,8 @@ fi
 
 if test -z "$HAVE_SSL"
 then
-  echo " Warning: openssl is not installed so https access is disabled."
+  echo " Warning: openssl is not installed. ZMap will not be able to load"
+  echo " files from https locations (including via Track Hub)."
   echo
 fi
 
