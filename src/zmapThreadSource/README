@@ -1,0 +1,12 @@
+================================================================================   
+ZMapThreadSource
+
+A higher level representation of a thread connection to a data source.
+
+This code uses the low level calls in zmapThreadsLib to create and set up
+threads, to send requests and receive replies and to close and destroy them.
+
+The interface frees the app from having to know too much about the low level
+stuff.
+
+
