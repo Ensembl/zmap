@@ -35,11 +35,46 @@
 #include <glib.h>
 
 #include <ZMap/zmapEnum.hpp>
+#include <ZMap/zmapThreadSlave.hpp>
 
+
+
+
+
+// Thread debugging messages
+
+enum class ZMapThreadType {MASTER, SLAVE} ;
 
 /* We should have a function to access this global.... */
 /* debugging messages, TRUE for on... */
-extern gboolean zmap_thread_debug_G ;
+extern bool zmap_thread_debug_G ;
+
+
+#define ZMAPTHREAD_DEBUG_PREFIX " %s "
+
+#define ZMAPTHREAD_DEBUG_MSG(CALLER_THREAD_TYPE, CALLER_THREAD, CALLEE_THREAD_TYPE, CALLEE_THREAD, FORMAT_STR, ...) \
+  G_STMT_START                                                          \
+  {                                                                     \
+    if (zmap_thread_debug_G)                                            \
+      {                                                                 \
+        char *prefix_str ;                                              \
+                                                                        \
+        prefix_str = zmapThreadGetDebugPrefix(CALLER_THREAD_TYPE, CALLER_THREAD, \
+                                              CALLEE_THREAD_TYPE, CALLEE_THREAD) ; \
+                                                                        \
+        zMapDebugPrint(zmap_thread_debug_G, ZMAPTHREAD_DEBUG_PREFIX FORMAT_STR, \
+                       prefix_str, __VA_ARGS__) ;                       \
+                                                                        \
+        zMapLogMessage(ZMAPTHREAD_DEBUG_PREFIX FORMAT_STR, prefix_str, __VA_ARGS__) ; \
+                                                                        \
+        g_free((void *)prefix_str) ;                                    \
+      }                                                                 \
+  } G_STMT_END
+
+
+
+
+
 
 
 /* Requests to a slave thread. */
@@ -66,18 +101,12 @@ _(ZMAPTHREAD_REPLY_QUIT,       , "quit",             "Thread has terminated norm
 ZMAP_DEFINE_ENUM(ZMapThreadReply, ZMAP_THREAD_REPLY_LIST) ;
 
 
-/* Return codes from the handler function called by the slave thread to service a request. */
-#define ZMAP_THREAD_RETURNCODE_LIST(_)             \
-_(ZMAPTHREAD_RETURNCODE_INVALID,      , "invalid",        "Invalid return code. ", "") \
-_(ZMAPTHREAD_RETURNCODE_OK,           , "ok",             "OK. ", "") \
-_(ZMAPTHREAD_RETURNCODE_TIMEDOUT,     , "timed_out",      "Timed out. ", "") \
-_(ZMAPTHREAD_RETURNCODE_REQFAIL,      , "request_failed", "Request failed. ", "") \
-_(ZMAPTHREAD_RETURNCODE_SOURCEEMPTY,  , "source_empty",   "Source is empty ", "") \
-_(ZMAPTHREAD_RETURNCODE_BADREQ,       , "bad_request",    "Invalid request. ", "") \
-_(ZMAPTHREAD_RETURNCODE_SERVERDIED,   , "server_died",    "Server has died. ", "") \
-_(ZMAPTHREAD_RETURNCODE_QUIT,         , "server_quit",    "Server has quit. ", "")
 
-ZMAP_DEFINE_ENUM(ZMapThreadReturnCode, ZMAP_THREAD_RETURNCODE_LIST) ;
+// oh gosh...feels like it's in the wrong place.....investigate.....actually it just mimics 
+// ZMapServerResponseType which is pointless....sort this out....CRAZY....
+//
+
+
 
 
 /* The thread, one per connection, an opaque private type. */
@@ -85,9 +114,14 @@ typedef struct _ZMapThreadStruct *ZMapThread ;
 
 
 typedef void *(*ZMapThreadCreateFunc)(void *func_data) ;
-typedef ZMapThreadReturnCode (*ZMapSlaveRequestHandlerFunc)(void **slave_data, void *request_in, char **err_msg_out) ;
-typedef ZMapThreadReturnCode (*ZMapSlaveTerminateHandlerFunc)(void **slave_data, char **err_msg_out) ;
-typedef ZMapThreadReturnCode (*ZMapSlaveDestroyHandlerFunc)(void **slave_data) ;
+
+
+
+//temp....
+char *zmapThreadGetDebugPrefix(ZMapThreadType caller_thread_type, ZMapThread caller_thread,
+                               ZMapThreadType callee_thread_type, ZMapThread callee_thread) ;
+
+
 
 
 
@@ -98,28 +132,28 @@ ZMapThread zMapThreadCreate(bool new_interface,
                             ZMapSlaveRequestHandlerFunc req_handler_func,
                             ZMapSlaveTerminateHandlerFunc terminate_handler_func,
                             ZMapSlaveDestroyHandlerFunc destroy_handler_func) ;
-
 bool zMapThreadStart(ZMapThread thread, ZMapThreadCreateFunc create_func) ;
 
-void zMapThreadRequest(ZMapThread thread, void *request) ;
-gboolean zMapThreadGetReply(ZMapThread thread, ZMapThreadReply *state) ;
-void zMapThreadSetReply(ZMapThread thread, ZMapThreadReply state) ;
-gboolean zMapThreadGetReplyWithData(ZMapThread thread, ZMapThreadReply *state,
+bool zMapThreadRequest(ZMapThread thread, void *request) ;
+bool zMapThreadGetReply(ZMapThread thread, ZMapThreadReply *state) ;
+bool zMapThreadSetReply(ZMapThread thread, ZMapThreadReply state) ;
+bool zMapThreadGetReplyWithData(ZMapThread thread, ZMapThreadReply *state,
 				    void **data, char **err_msg) ;
 char *zMapThreadGetThreadID(ZMapThread thread) ;
 char *zMapThreadGetRequestString(ZMapThreadRequest signalled_state) ;
 char *zMapThreadGetReplyString(ZMapThreadReply signalled_state) ;
-gboolean zMapThreadExists(ZMapThread thread);
+bool zMapThreadExists(ZMapThread thread);
+bool zMapIsThreadFinished(ZMapThread thread) ;
 
 bool zMapThreadStop(ZMapThread thread) ;
-
 void zMapThreadKill(ZMapThread thread) ;
-void zMapThreadDestroy(ZMapThread thread) ;
+bool zMapThreadDestroy(ZMapThread thread) ;
+
+
 
 
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zMapThreadRequest2ExactStr, ZMapThreadRequest) ;
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zMapThreadReply2ExactStr, ZMapThreadReply) ;
-ZMAP_ENUM_AS_EXACT_STRING_DEC(zMapThreadReturnCode2ExactStr, ZMapThreadReturnCode) ;
 
 
 

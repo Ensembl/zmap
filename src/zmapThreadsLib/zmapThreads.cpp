@@ -27,12 +27,16 @@
  *              thread and a slave thread. This code knows nothing
  *              about what it is passing, it just handles the passing
  *              and returning of data.
- *              zMapThreads routines create, issue requests to, and destroy slave threads.
- *              On creation slave threads are given a routine that they will call whenever
- *              they receive a request. This routine handles the request and returns the
- *              result to the slave thread code which forwards it to the master thread.
+ *              zMapThreads routines create, issue requests to, and
+ *              destroy slave threads.
+ *              On creation slave threads are given a routine that
+ *              they will call whenever they receive a request. This
+ *              routine handles the request and returns the result
+ *              to the slave thread code which forwards it to the
+ *              master thread.
  *
  * Exported functions: See ZMap/zmapThread.h
+ *
  *-------------------------------------------------------------------
  */
 
@@ -50,7 +54,7 @@
 
 static ZMapThread createThread() ;
 static void destroyThread(ZMapThread thread) ;
-
+static GString *addThreadString(GString *str, ZMapThreadType thread_type, ZMapThread thread) ;
 
 
 //
@@ -58,10 +62,10 @@ static void destroyThread(ZMapThread thread) ;
 //
 
 /* Turn on/off all debugging messages for threads. */
-gboolean zmap_thread_debug_G = FALSE ;
+bool zmap_thread_debug_G = true ;
 
 
-/* For locking/unlocking of fork calls. */
+/* For locking/unlocking of fork calls.....should not be in this file....move.... */
 static pthread_mutex_t thread_fork_mutex_G = PTHREAD_MUTEX_INITIALIZER ;
 
 
@@ -86,82 +90,73 @@ ZMapThread zMapThreadCreate(bool new_interface,
                             ZMapSlaveDestroyHandlerFunc destroy_handler_func)
 {
   ZMapThread thread = NULL ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  pthread_t thread_id ;
-  pthread_attr_t thread_attr ;
-  int status = 0 ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
+  bool status = true ;
 
   thread = createThread() ;
 
-  thread->new_interface = new_interface ;
-  thread->req_handler_func = req_handler_func ;
-  thread->terminate_handler_func = terminate_handler_func ;
-  thread->destroy_handler_func = destroy_handler_func ;
+  ZMAPTHREAD_DEBUG_MSG(ZMapThreadType::MASTER, NULL, ZMapThreadType::SLAVE, thread, "%s", "Creating thread...") ;
 
-  /* ok to just set state here because we have not started the thread yet.... */
-  zmapCondVarCreate(&(thread->request)) ;
-  thread->request.state = ZMAPTHREAD_REQUEST_WAIT ;
-  thread->request.request = NULL ;
-
-  zmapVarCreate(&(thread->reply)) ;
-
-  thread->reply.state = ZMAPTHREAD_REPLY_WAIT ;
-  thread->reply.reply = NULL ;
-  thread->reply.error_msg = NULL ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* Set the new threads attributes so it will run "detached", we do not want anything from them.
-   * when they die, we want them to go away and release their resources. */
-  if (status == 0
-      && (status = pthread_attr_init(&thread_attr)) != 0)
+  if (status)
     {
-      zMapLogFatalSysErr(status, "%s", "Create thread attibutes") ;
+      if ((status = zmapCondVarCreate(&thread->request)))
+        {
+          thread->request.state = ZMAPTHREAD_REQUEST_WAIT ;
+          thread->request.request = NULL ;
+        }
     }
 
-  if (status == 0
-      && (status = pthread_attr_setdetachstate(&thread_attr, PTHREAD_CREATE_DETACHED)) != 0)
+  if (status)
     {
-      zMapLogFatalSysErr(status, "%s", "Set thread detached attibute") ;
+      if ((status = zmapVarCreate(&thread->reply)))
+        {
+          thread->reply.state = ZMAPTHREAD_REPLY_WAIT ;
+          thread->reply.reply = NULL ;
+          thread->reply.error_msg = NULL ;
+        }
     }
 
 
-  /* Create the new thread. */
-  if (status == 0
-      && (status = pthread_create(&thread_id, &thread_attr, create_func, (void *)thread)) != 0)
+  if (status)
     {
-      //      zMapLogFatalSysErr(status, "%s", "Thread creation") ;
-      zMapLogWarning("Failed to create thread: %s",g_strerror(status));	/* likely out of memory */
-    }
+      thread->new_interface = new_interface ;
+      thread->req_handler_func = req_handler_func ;
+      thread->terminate_handler_func = terminate_handler_func ;
+      thread->destroy_handler_func = destroy_handler_func ;
 
-  if (status == 0)
-    {
-      thread->thread_id = thread_id ;
+      thread->state = ThreadState::INIT ;
     }
   else
     {
-      /* Ok to just destroy thread here as the thread was not successfully created so
-       * there can be no complications with interactions with condvars in connect struct. */
+      // Something failed so clean up.
+
+      if (thread->request.state == ZMAPTHREAD_REQUEST_WAIT)
+        zmapCondVarDestroy(&thread->request) ;
+
+      
+      if (thread->reply.state == ZMAPTHREAD_REPLY_WAIT)
+        zmapVarDestroy(&thread->reply) ;
+
       destroyThread(thread) ;
+
       thread = NULL ;
     }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+  ZMAPTHREAD_DEBUG_MSG(ZMapThreadType::MASTER, NULL, ZMapThreadType::SLAVE, thread, "%s", "Created thread...") ;
 
   return thread ;
 }
 
-// if returns false then thread could not be started so app should destroy thread
-// struct. 
+// if false returned then thread could not be started and cannot be used again
+// so app should destroy thread struct. 
 bool zMapThreadStart(ZMapThread thread, ZMapThreadCreateFunc create_func)
 {
-  bool result = FALSE ;
-  pthread_t thread_id ;
+  bool result = false ;
   pthread_attr_t thread_attr ;
   int status = 0 ;
+
+  ZMAPTHREAD_DEBUG_MSG(ZMapThreadType::MASTER, NULL, ZMapThreadType::SLAVE, thread, "%s", "Starting thread...") ;
+
+  zMapReturnValIfFail((thread->state == ThreadState::INIT), false) ;
 
   /* Set the new threads attributes so it will run "detached", we do not want anything from them.
    * when they die, we want them to go away and release their resources. */
@@ -185,63 +180,103 @@ bool zMapThreadStart(ZMapThread thread, ZMapThreadCreateFunc create_func)
   /* Create the new thread. */
   if (status == 0)
     {
+      pthread_t thread_id ;
+
       if ((status = pthread_create(&thread_id, &thread_attr, create_func, (void *)thread)) != 0)
         {
-	  zMapLogCritical("Failed to create thread: %s", g_strerror(status));	/* likely out of memory */
+          // either out of memory or more likely exceeded system imposed user limit for thread creation.
+	  zMapLogCritical("Failed to create thread: %s", g_strerror(status)) ;
+        }
+      else
+        {
+          thread->thread_id = thread_id ;
         }
     }
 
-
   if (status == 0)
     {
-      thread->thread_id = thread_id ;
+      thread->state = ThreadState::CONNECTED ;
 
-      result = TRUE ;
+      result = true ;
     }
+  else
+    {
+      thread->state = ThreadState::FINISHED ;
+
+      result = false ;
+    }
+
+
+  ZMAPTHREAD_DEBUG_MSG(ZMapThreadType::MASTER, NULL, ZMapThreadType::SLAVE, thread, "%s", "Started thread...") ;
 
   return result ;
 }
 
 
 
-void zMapThreadRequest(ZMapThread thread, void *request)
+bool zMapThreadRequest(ZMapThread thread, void *request)
 {
-  if (thread->thread_id)
-    zmapCondVarSignal(&thread->request, ZMAPTHREAD_REQUEST_EXECUTE, request) ;
+  bool result = false ;
 
-  return ;
+  ZMAPTHREAD_DEBUG_MSG(ZMapThreadType::MASTER, NULL, ZMapThreadType::SLAVE, thread, "%s", "Sending request...") ;
+
+  if (thread->state == ThreadState::CONNECTED)
+    {
+      result = zmapCondVarSignal(&thread->request, ZMAPTHREAD_REQUEST_EXECUTE, request) ;
+    }
+
+  ZMAPTHREAD_DEBUG_MSG(ZMapThreadType::MASTER, NULL, ZMapThreadType::SLAVE, thread, "%s", "Sent request...") ;
+
+  return result ;
 }
 
 
-gboolean zMapThreadGetReply(ZMapThread thread, ZMapThreadReply *state)
-{
-  gboolean got_value = FALSE ;
 
-  got_value = zmapVarGetValue(&(thread->reply), state) ;
+// Get a reply from thread, note can still get reply even if thread is finished.
+bool zMapThreadGetReply(ZMapThread thread, ZMapThreadReply *state)
+{
+  bool got_value = false ;
+
+  ZMAPTHREAD_DEBUG_MSG(ZMapThreadType::MASTER, NULL, ZMapThreadType::SLAVE, thread, "%s", "Getting reply...") ;
+
+  if (thread->state == ThreadState::CONNECTED || thread->state == ThreadState::FINISHED)
+    got_value = zmapVarGetValue(&(thread->reply), state) ;
+
+  ZMAPTHREAD_DEBUG_MSG(ZMapThreadType::MASTER, NULL, ZMapThreadType::SLAVE, thread, "%s", "Got reply...") ;
 
   return got_value ;
 }
 
 
-
-void zMapThreadSetReply(ZMapThread thread, ZMapThreadReply state)
+bool zMapThreadGetReplyWithData(ZMapThread thread, ZMapThreadReply *state, void **data, char **err_msg)
 {
-  zmapVarSetValue(&(thread->reply), state) ;
+  bool got_value = false ;
 
-  return ;
-}
+  ZMAPTHREAD_DEBUG_MSG(ZMapThreadType::MASTER, NULL, ZMapThreadType::SLAVE, thread, "%s", "Getting reply with data...") ;
 
+  if (thread->state == ThreadState::CONNECTED || thread->state == ThreadState::FINISHED)
+    got_value = zmapVarGetValueWithData(&(thread->reply), state, data, err_msg) ;
 
-gboolean zMapThreadGetReplyWithData(ZMapThread thread, ZMapThreadReply *state,
-                                    void **data, char **err_msg)
-{
-  gboolean got_value = FALSE ;
-
-  got_value = zmapVarGetValueWithData(&(thread->reply), state, data, err_msg) ;
+  ZMAPTHREAD_DEBUG_MSG(ZMapThreadType::MASTER, NULL, ZMapThreadType::SLAVE, thread, "%s", "Got reply with data...") ;
 
   return got_value ;
 }
 
+
+// should only do with connected state ?
+bool zMapThreadSetReply(ZMapThread thread, ZMapThreadReply state)
+{
+  bool result = false ;
+
+  ZMAPTHREAD_DEBUG_MSG(ZMapThreadType::SLAVE, thread, ZMapThreadType::MASTER, NULL, "%s", "Setting reply...") ;
+
+  if (thread->state == ThreadState::CONNECTED || thread->state == ThreadState::FINISHED)
+    result = zmapVarSetValue(&(thread->reply), state) ;
+
+  ZMAPTHREAD_DEBUG_MSG(ZMapThreadType::SLAVE, thread, ZMapThreadType::MASTER, NULL, "%s", "Set reply...") ;
+
+  return result ;
+}
 
 
 /* Surely we can use the autoconf stuff for this.....sigh.....actually this may just be
@@ -260,19 +295,20 @@ char *zMapThreadGetThreadID(ZMapThread thread)
   const  char *format = "%d" ;
 #endif
 
-  if (thread->thread_id)
+  if (thread->state == ThreadState::CONNECTED)
     thread_id = g_strdup_printf(format, thread->thread_id) ;
 
   return thread_id ;
 }
 
 
-
-gboolean zMapThreadExists(ZMapThread thread)
+// If we think thread is connected and the pthread_kill() call tells us the thread exists then it
+// exists !!
+bool zMapThreadExists(ZMapThread thread)
 {
-  gboolean exists = FALSE ;
+  bool exists = FALSE ;
 
-  if (thread->thread_id)
+  if (thread->state == ThreadState::CONNECTED)
     {
       if (pthread_kill(thread->thread_id, 0) == 0)
         exists = TRUE ;
@@ -282,15 +318,104 @@ gboolean zMapThreadExists(ZMapThread thread)
 }
 
 
+bool zMapIsThreadFinished(ZMapThread thread)
+{
+  bool finished = false ;
+
+  if (thread->state == ThreadState::FINISHED)
+    finished = true ;
+
+  return finished ;
+}
+
+
+// Call from master to stop a thread, need to loop calling zMapIsThreadFinished() to see if
+// thread has finished.
 bool zMapThreadStop(ZMapThread thread)
 {
   bool result = false ;
 
-  if (thread->thread_id)
-    {
-      // WHAT WE NEED HERE IS CODE TO SEND A TERMINATE TO THE SLAVE THREAD.
+  ZMAPTHREAD_DEBUG_MSG(ZMapThreadType::MASTER, NULL, ZMapThreadType::SLAVE, thread, "%s", "Stopping thread...") ;
 
+  if (thread->state == ThreadState::CONNECTED)
+    {
+      // Marks thread so no requests can be made once we are here.
+      thread->state = ThreadState::FINISHING ;
+
+      // On receiving this the slave thread should exit but should use zMapThreadFinish() to
+      // indicate that it is doing so.
+      result = zmapCondVarSignal(&thread->request, ZMAPTHREAD_REQUEST_TERMINATE, NULL) ;
     }
+
+  ZMAPTHREAD_DEBUG_MSG(ZMapThreadType::MASTER, NULL, ZMapThreadType::SLAVE, thread, "%s", "Stopped thread...") ;
+
+  return result ;
+}
+
+
+// The final solution if all else fails, this function forces the thread to stop and clears up
+// without checking if anything worked. This may result in some small amount of dangling memory
+// (condvars or whatever) but that's better than having the thread hanging around.
+//
+// Kill the thread by cancelling it, as this will happen asynchronously we cannot release the threads
+// resources in this call.
+//
+// You still need to call zMapThreadDestroy() after this.
+//
+void zMapThreadKill(ZMapThread thread)
+{
+  int status ;
+
+  ZMAPTHREAD_DEBUG_MSG(ZMapThreadType::MASTER, NULL, ZMapThreadType::SLAVE, thread, "%s", "Killing thread...") ;
+
+  /* Unconditionally cancel the thread if it still exists. */
+  if ((thread->thread_id) && (pthread_kill(thread->thread_id, 0) == 0))
+    {
+      ZMAPTHREAD_DEBUG_MSG(ZMapThreadType::MASTER, NULL, ZMapThreadType::SLAVE, thread,
+                           "Issuing pthread_cancel on this thread (%s)", zMapThreadGetThreadID(thread)) ;
+
+      if ((status = pthread_cancel(thread->thread_id)) != 0)
+        {
+          zMapLogCriticalSysErr(status, "pthread_cancel() of thread %s failed", zMapThreadGetThreadID(thread)) ;
+        }
+
+      thread->thread_id = 0 ;
+    }
+
+  thread->state = ThreadState::FINISHED ;
+
+  ZMAPTHREAD_DEBUG_MSG(ZMapThreadType::MASTER, NULL, ZMapThreadType::SLAVE, thread, "%s", "Killed thread...") ;
+
+  return ;
+}
+
+
+// Destroy the thread if the created thread is gone.
+// Note this function takes no notice of any request/reply values, it just goes ahead and destroys
+// the thread.
+bool zMapThreadDestroy(ZMapThread thread)
+{
+  bool result = false ;
+
+  ZMAPTHREAD_DEBUG_MSG(ZMapThreadType::MASTER, NULL, ZMapThreadType::SLAVE, thread, "%s", "Destroying thread...") ;
+
+  if (thread->state == ThreadState::FINISHED)
+    {
+      bool var_destroy, cond_destroy ;
+
+      ZMAPTHREAD_DEBUG_MSG(ZMapThreadType::MASTER, NULL, ZMapThreadType::SLAVE, thread, "Destroying control block/condvar for this thread (%s)",
+                       zMapThreadGetThreadID(thread)) ;
+
+      var_destroy = zmapVarDestroy(&thread->reply) ;
+      cond_destroy = zmapCondVarDestroy(&(thread->request)) ;
+
+      destroyThread(thread) ;
+
+      if (var_destroy && cond_destroy)
+        result = true ;
+    }
+
+  ZMAPTHREAD_DEBUG_MSG(ZMapThreadType::MASTER, NULL, ZMapThreadType::SLAVE, thread, "%s", "Destroyed thread...") ;
 
   return result ;
 }
@@ -298,52 +423,17 @@ bool zMapThreadStop(ZMapThread thread)
 
 
 
-/* Kill the thread by cancelling it, as this will happen asynchronously we cannot release the threads
- * resources in this call. */
-void zMapThreadKill(ZMapThread thread)
-{
-  int status ;
 
-  ZMAPTHREAD_DEBUG(thread, "Issuing pthread_cancel on this thread (%s)", zMapThreadGetThreadID(thread)) ;
-
-  /* we could signal an exit here by setting a condvar of EXIT...but that might lead to
-   * deadlocks, think about this bit.. */
-
-  /* Signal the thread to cancel it */
-  if (thread->thread_id)
-    {
-      if ((status = pthread_cancel(thread->thread_id)) != 0)
-        {
-          zMapLogCritical("Cancel of thread %p failed: %s",
-                          thread->thread_id, g_strsignal(status)) ;
-        }
-
-      thread->thread_id = 0 ;
-    }
-
-  return ;
-}
-
-
-/* Kill the thread if necessary and release its resources. */
-void zMapThreadDestroy(ZMapThread thread)
-{
-  ZMAPTHREAD_DEBUG(thread, "Destroying control block/condvar for this thread (%s)", zMapThreadGetThreadID(thread)) ;
-
-  zmapVarDestroy(&thread->reply) ;
-  zmapCondVarDestroy(&(thread->request)) ;
-
-  destroyThread(thread) ;
-
-  return ;
-}
 
 
 
 /* These wierd macros create functions that will return string literals for each enum. */
 ZMAP_ENUM_AS_EXACT_STRING_FUNC(zMapThreadRequest2ExactStr, ZMapThreadRequest, ZMAP_THREAD_REQUEST_LIST) ;
 ZMAP_ENUM_AS_EXACT_STRING_FUNC(zMapThreadReply2ExactStr, ZMapThreadReply, ZMAP_THREAD_REPLY_LIST) ;
+
 ZMAP_ENUM_AS_EXACT_STRING_FUNC(zMapThreadReturnCode2ExactStr, ZMapThreadReturnCode, ZMAP_THREAD_RETURNCODE_LIST) ;
+
+
 
 
 
@@ -374,21 +464,6 @@ ZMAP_ENUM_AS_EXACT_STRING_FUNC(zMapThreadReturnCode2ExactStr, ZMapThreadReturnCo
 void zMapThreadForkLock(void)
 {
   int locked ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* shouldn't do this really....use the static initialisers..... */
-
-  static gboolean init = FALSE ;
-
-
-  if (!init)
-    {
-      init = TRUE ;
-      pthread_mutex_init(&thread_fork_mutex_G,NULL) ;
-    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
   locked = pthread_mutex_lock(&thread_fork_mutex_G) ;
 
@@ -433,6 +508,51 @@ void zMapThreadForkUnlock(void)
 
 
 
+/*
+ *                         Package routines
+ */
+
+
+// Only call from slave thread just before exitting to show we have quit, could be because we were
+// asked to quit or because we are quitting because we have finished or there was an error.
+void zmapThreadFinish(ZMapThread thread)
+{
+  ZMAPTHREAD_DEBUG_MSG(ZMapThreadType::SLAVE, thread, ZMapThreadType::MASTER, NULL, "%s", "Finishing thread...") ;
+
+  thread->thread_id = 0 ;
+
+  thread->state = ThreadState::FINISHED ;
+
+  ZMAPTHREAD_DEBUG_MSG(ZMapThreadType::SLAVE, thread, ZMapThreadType::MASTER, NULL, "%s", "Finished thread...") ;
+
+  return ;
+}
+
+
+// Produce a prefix for thread debugging strings giving caller and callee thread details:
+//
+//    "<Master | Slave <thread_id>> calling <Master | Slave <thread_id>>"
+//
+char *zmapThreadGetDebugPrefix(ZMapThreadType caller_thread_type, ZMapThread caller_thread,
+                               ZMapThreadType callee_thread_type, ZMapThread callee_thread)
+{
+  char *prefix = NULL ;
+  GString *prefix_str ;
+
+  prefix_str = g_string_sized_new(500) ;
+
+  prefix_str = addThreadString(prefix_str, caller_thread_type, caller_thread) ;
+
+  prefix_str = g_string_append(prefix_str, " to ") ;
+
+  prefix_str = addThreadString(prefix_str, callee_thread_type, callee_thread) ;
+
+  prefix = g_string_free(prefix_str, FALSE) ;
+
+  return prefix ;
+}
+
+
 
 /*
  *                         Internal routines
@@ -441,7 +561,7 @@ void zMapThreadForkUnlock(void)
 
 
 
-  static ZMapThread createThread()
+static ZMapThread createThread()
 {
   ZMapThread thread ;
 
@@ -473,4 +593,36 @@ static void destroyThread(ZMapThread thread)
   g_free(thread) ;
 
   return ;
+}
+
+
+
+// If thread_type == ZMapThreadType::MASTER adds "Master" to str other adds "Slave <thread_id>"
+//
+// Note if thread is master then thread arg is NULL.
+//
+static GString *addThreadString(GString *str, ZMapThreadType thread_type, ZMapThread thread)
+{
+  GString *result = str ;
+  pthread_t p_thread ;
+
+  if ((thread_type) == ZMapThreadType::MASTER)
+    {        
+      str = g_string_append(str, "Master ") ;
+
+      p_thread = pthread_self() ;
+    }
+  else
+    {
+      str = g_string_append(str, "Slave ") ;
+
+      p_thread = thread->thread_id ;
+    }
+
+  if (p_thread)
+    g_string_append_printf(str, "%lu", (unsigned long)p_thread) ;
+  else
+    str = g_string_append(str, "<NULL>") ;
+      
+  return result ;
 }

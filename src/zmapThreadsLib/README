@@ -1,5 +1,7 @@
 ================================================================================   
-threads
+Threads Lib
 
-Code to create and run threads and have them interact with the main zmapwindow
-code.
+Some basic routines for working with Threads. They are _not_ designed to be
+used directly by an application, they are used by the ThreadSource object
+which is the more high level and unified interface.
+
