@@ -119,7 +119,7 @@ pkgconfig_DATA = zmap.pc
 
 noinst_LTLIBRARIES = libZMapApp.la libZMap.la \
                      libZMapAppServices.la libZMapRemoteControl.la \
-                     libZMapDataSource.la libZMapThreads.la libZMapServer.la libZMapServers.la \
+                     libZMapDataSource.la libZMapThreadSource.la libZMapServer.la libZMapServers.la \
                      libZMapThreadsLib.la libZMapXML.la libZMapUtils.la \
                      libzmapfoocanvas.la 
 
@@ -147,8 +147,8 @@ libZMapRemoteControl_la_LIBADD  = zmapRemoteControl/libZMapRemoteControl.la
 libZMapDataSource_la_SOURCES = 
 libZMapDataSource_la_LIBADD  = zmapDataSource/libZMapDataSource.la
 
-libZMapThreads_la_SOURCES =
-libZMapThreads_la_LIBADD  = zmapThreads/libZMapThreads.la
+libZMapThreadSource_la_SOURCES =
+libZMapThreadSource_la_LIBADD  = zmapThreadSource/libZMapThreadSource.la
 
 libZMapServer_la_SOURCES = 
 libZMapServer_la_LIBADD  = zmapServer/libZMapServer.la
@@ -193,7 +193,7 @@ zmap_LDADD =                                                 \
 	$(top_builddir)/.libs/libZMapAppServices.a           \
 	$(top_builddir)/.libs/libZMapRemoteControl.a         \
 	$(top_builddir)/.libs/libZMapDataSource.a            \
-	$(top_builddir)/.libs/libZMapThreads.a               \
+	$(top_builddir)/.libs/libZMapThreadSource.a          \
 	$(top_builddir)/.libs/libZMapServer.a                \
 	$(top_builddir)/.libs/libZMapServers.a               \
 	$(top_builddir)/.libs/libZMapThreadsLib.a            \

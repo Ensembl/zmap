@@ -50,7 +50,9 @@ ZMap/zmapSkipList.hpp\
 ZMap/zmapString.hpp \
 ZMap/zmapStyle.hpp \
 ZMap/zmapStyleTree.hpp \
-ZMap/zmapThreads.hpp \
+ZMap/zmapThreadSlave.hpp \
+ZMap/zmapThreadSource.hpp \
+ZMap/zmapThreadsLib.hpp \
 ZMap/zmapUrl.hpp \
 ZMap/zmapUrlOptions.hpp \
 ZMap/zmapUrlUtils.hpp \

@@ -210,12 +210,12 @@ esac
 # replaces -DLINUX
 if test "$zmap_os_type" = "Linux" ; then
    AC_MSG_RESULT([Got OS type of LINUX])
-   AC_DEFINE(LINUX, [], [Operating System is LINUX.  See zmapThreads/zmapThreads_P.h])
+   AC_DEFINE(LINUX, [], [Operating System is LINUX.  See zmapThreadSource/zmapThreads_P.h])
 
 elif test "$zmap_os_type" = "darwin" ; then
 
    AC_MSG_RESULT([Got OS type of Darwin])
-   AC_DEFINE(DARWIN, [], [Operating System is DARWIN.  See zmapThreads/zmapThreads_P.h])
+   AC_DEFINE(DARWIN, [], [Operating System is DARWIN.  See zmapThreadSource/zmapThreads_P.h])
 
 fi
 
@@ -526,8 +526,8 @@ zmapGFF \
 zmapRemoteControl \
 zmapRemoteControl/remotetest \
 zmapServer \
+zmapThreadSource \
 zmapThreadsLib \
-zmapThreads \
 zmapUtils \
 zmapView \
 zmapWindow \
@@ -570,8 +570,8 @@ zmapServer/datastream/Makefile
 zmapServer/ensembl/Makefile
 zmapServer/file/Makefile
 zmapServer/pipe/Makefile
+zmapThreadSource/Makefile
 zmapThreadsLib/Makefile
-zmapThreads/Makefile
 zmapUtils/Makefile
 zmapUtils/tests/Makefile
 zmapView/Makefile
