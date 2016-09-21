@@ -42,7 +42,7 @@
 #include <ZMap/zmapUrl.hpp>
 #include <ZMap/zmapFeature.hpp>
 #include <ZMap/zmapFeatureLoadDisplay.hpp>
-#include <ZMap/zmapThreads.hpp>
+#include <ZMap/zmapThreadSource.hpp>
 
 
 namespace ZMapDataSource
@@ -106,7 +106,11 @@ namespace ZMapDataSource
 
     virtual bool SetError(const char *err_msg) = 0 ;
 
+    void SetThreadError(const char *err_msg) ;
+
     static void ReplyCallbackFunc(void *func_data) ;
+
+
 
     ZMapThreadSource::ThreadSource thread_ ;
 
@@ -127,7 +131,11 @@ namespace ZMapDataSource
 
     ZMapURL url_obj_ ;
 
+    const char *thread_err_msg_ ;
+
   } ;
+
+
 
 
   // Features request class - get features back from a data source.
@@ -163,9 +171,8 @@ namespace ZMapDataSource
 
     bool SetReply(ZMapFeatureContext context_inout, ZMapStyleTree *styles) ;
 
-    virtual bool SetError(const char *err_msg) ;
+    bool SetError(const char *err_msg) ;
     bool SetError(gint exit_code, const char *stderr) ;
-
 
     UserFeaturesCallBackFunc user_func_ ;
     void *user_data_ ;
@@ -180,6 +187,8 @@ namespace ZMapDataSource
 
 
   } ;
+
+
 
 
   // Sequence request class, currently very like the features class but this is likely to
@@ -216,7 +225,7 @@ namespace ZMapDataSource
 
     bool SetReply(ZMapFeatureContext context_inout, ZMapStyleTree *styles) ;
 
-    virtual bool SetError(const char *err_msg) ;
+    bool SetError(const char *err_msg) ;
     bool SetError(gint exit_code, const char *stderr) ;
 
     UserSequenceCallBackFunc user_func_ ;

@@ -33,16 +33,23 @@
 #include <string.h>
 
 #include <ZMap/zmapServerProtocol.hpp>
+#include <ZMap/zmapThreadSlave.hpp>
 #include <ZMap/zmapDataSlave.hpp>
+
 
 
 using namespace ZMapDataSource ;
 
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 static ZMapThreadReturnCode terminateServer(ZMapServer *server, char **err_msg_out) ;
 static ZMapThreadReturnCode destroyServer(ZMapServer *server) ;
 static ZMapThreadReturnCode thread_RC(ZMapServerResponseType code) ;
+
+
 
 static ZMapServerReqType getNextRequest(ZMapServerReqType curr_request, DataSourceRequestType type) ;
 
@@ -77,14 +84,27 @@ ZMapThreadReturnCode zmapDataSourceThreadRequestHandler(void **slave_data, void 
   ZMapStyleTree *styles = NULL ;
   DataSourceRequestType type = DataSourceRequestType::INVALID ;
 
-  zMapReturnValIfFail((!(*slave_data) && request_in && err_msg_out), ZMAPTHREAD_RETURNCODE_QUIT) ;
 
-
-
-  // Get all the params needed for the server calls.
-  if (!data_slave.GetServerInfo(*source, &config_file, &url_obj, &version_str)
-      || !data_slave.GetSequenceData(*source, &sequence_map, &start, &end))
+  if ((*slave_data) || !request_in || !err_msg_out)
     {
+      // Basic sanity check.
+      char *err_msg ;
+
+      err_msg = g_strdup_printf("Bad parameters to request handler: %s%s%s",
+                                ((*slave_data) ? " slave_data not NULL" : ""),
+                                (!request_in ? " no request_in param" : ""),
+                                (!err_msg_out ? " no err_msg_out param" : "")) ;
+
+      zMapLogWarning("%s", err_msg) ;
+
+      *err_msg_out = err_msg ;
+
+      thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
+    }
+  else if (!data_slave.GetServerInfo(*source, &config_file, &url_obj, &version_str)
+           || !data_slave.GetSequenceData(*source, &sequence_map, &start, &end))
+    {
+      // Get all the params needed for the server calls.
       char *err_msg ;
 
       // WE SHOULDN'T BE ABLE TO GET HERE.....AT ALL......
@@ -339,6 +359,9 @@ ZMapThreadReturnCode zmapDataSourceThreadRequestHandler(void **slave_data, void 
 
         }
 
+
+      // Here's the bit that's wrong.....the server_request should be returned separately from the
+      // thread_rc.....
 
       // Slightly hacky here unfortunately, but there's no clean 1:1 relationship in the
       // reply:threadrc relationship.

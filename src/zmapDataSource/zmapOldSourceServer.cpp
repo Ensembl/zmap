@@ -38,7 +38,7 @@
 
 #include <ZMap/zmapGLibUtils.hpp>
 #include <ZMap/zmapServerProtocol.hpp>
-#include <ZMap/zmapThreads.hpp>
+#include <ZMap/zmapThreadSource.hpp>
 
 #include <zmapOldSourceServer_P.hpp>
 
@@ -202,7 +202,7 @@ ZMapNewDataSource zMapServerCreateViewConnection(ZMapNewDataSource view_con,
 
       new_thread = new ThreadSource(false, req_handler_func, terminate_handler_func, destroy_handler_func) ;
 
-      if (!(new_thread->SlaveStartPoll()))
+      if (!(new_thread->ThreadStart()))
         {
           delete new_thread ;
         }

@@ -31,11 +31,13 @@
  *-------------------------------------------------------------------
  */
 
+#include <ZMap/zmap.hpp>
+
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
 
-#include <ZMap/zmapThreads.hpp>
+#include <ZMap/zmapThreadSource.hpp>
 #include <ZMap/zmapServerProtocol.hpp>
 #include <ZMap/zmapDataSlave.hpp>
 
@@ -100,7 +102,7 @@ namespace ZMapDataSource
   // Start polling, if this means we do too much polling we can have a function to start or do it
   // as part of the SendRequest....though that might induce some timing problems.
   //
-  if (!(thread_.SlaveStartPoll(ReplyCallbackFunc, this)))
+  if (!(thread_.ThreadStart(ReplyCallbackFunc, this)))
     throw runtime_error("Could not start slave polling.") ;
 
   state_ = DataSourceState::INIT ;
@@ -118,7 +120,7 @@ namespace ZMapDataSource
         user_func_ = user_func ;
         user_data_ = user_data ;
 
-        thread_.SendThreadRequest(this) ;
+        thread_.SendRequest(this) ;
 
         state_ = DataSourceState::WAITING ;
 
@@ -162,7 +164,7 @@ namespace ZMapDataSource
   }
 
 
-  // This should never be called....
+  // This should never be called....does this need to be defined...is pure virtual in header...
   bool DataSource::SetError(const char *stderr)
   {
     bool result = false ;
@@ -174,6 +176,17 @@ namespace ZMapDataSource
   }
 
 
+  // If we can't access our slave thread we unconditionally set error state with this.
+  void DataSource::SetThreadError(const char *err_msg)
+  {
+    cout << "in the base class SetThreadError()" << endl ;
+
+    thread_err_msg_ = err_msg ;
+
+    DataSource::state_ = DataSourceState::GOT_ERROR ;
+
+    return ;
+  }
 
 
   // NOTES:
@@ -198,8 +211,18 @@ namespace ZMapDataSource
   {
     DataSource *source = static_cast<DataSource *>(func_data) ;
 
-    // Reports an error if the passed in object is in wrong state, this should never happen.
+    // Will log an error as we shouldn't be called unless we got a reply or an error.
     zMapReturnIfFail(source->state_ == DataSourceState::GOT_REPLY || source->state_ == DataSourceState::GOT_ERROR) ;
+
+    // Check if the threadsource has failed...should get error from thread source....duh....
+    if (source->thread_.HasFailed())
+      {
+        char *err_msg ;
+
+        err_msg = g_strdup("thread has failed with a serious error, see log for details.") ;
+
+        source->SetThreadError(err_msg) ;
+      }
 
     // source may be deleted by user_callback so do not use it after this call.
     (source->user_func_)(source, source->user_data_) ;
@@ -212,8 +235,13 @@ namespace ZMapDataSource
   {
     cout << "in base destructor" << endl ;
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+    // ok...this is in the wrong place I think....the thread destructor will be called before the
+    // thread is stopped properly.....oh bother....
     // Clear up the thread.
-    thread_.SlaveStopPoll() ;
+    thread_.ThreadStop() ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
     url_free(url_obj_) ;
     url_obj_ = NULL ;
@@ -299,6 +327,8 @@ namespace ZMapDataSource
   bool DataSourceFeatures::SetError(const char *stderr)
   {
     bool result = false ;
+
+    // should throw if anything wrong with errmsg....
 
     if (DataSource::state_ == DataSourceState::WAITING)
       {

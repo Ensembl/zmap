@@ -32,8 +32,10 @@
 
 #include <string.h>
 
-#include <ZMap/zmapThreads.hpp>
+#include <ZMap/zmapThreadSource.hpp>
 #include <ZMap/zmapServerProtocol.hpp>
+
+#include <../zmapServer/zmapServer.hpp>
 
 
 
@@ -126,8 +128,26 @@ static ZMapThreadReturnCode threadTerminateHandler(void **slave_data, char **err
 
   server = (ZMapServer)*slave_data ;
 
-  thread_rc = terminateServer(&server, err_msg_out) ;
+  {
+    // debug info.....
+    ZMapServerReqGetServerInfo req_info ;
 
+    req_info = (ZMapServerReqGetServerInfo)zMapServerRequestCreate(ZMAP_SERVERREQ_GETSERVERINFO) ;
+
+    if (zMapServerGetServerInfo(server, req_info) == ZMAP_SERVERRESPONSE_OK)
+      {
+        zMapLogWarning("Terminate function called for: %s, %s, %s, %s",
+                       (req_info->data_format_out ? req_info->data_format_out : ""),
+                       (req_info->database_name_out ? req_info->database_name_out : ""),
+                       (req_info->database_title_out ? req_info->database_title_out : ""),
+                       (req_info->database_path_out  ? req_info->database_path_out  : "")) ;
+      }
+
+    zMapServerRequestDestroy((ZMapServerReqAny)req_info) ;
+  }
+
+  thread_rc = terminateServer(&server, err_msg_out) ;
+    
   *slave_data = server ;
 
   return thread_rc ;
@@ -143,6 +163,24 @@ static ZMapThreadReturnCode threadDestroyHandler(void **slave_data)
   zMapReturnValIfFail((slave_data), ZMAPTHREAD_RETURNCODE_BADREQ) ;
 
   server = (ZMapServer)*slave_data ;
+
+  {
+    // debug info.....
+    ZMapServerReqGetServerInfo req_info ;
+
+    req_info = (ZMapServerReqGetServerInfo)zMapServerRequestCreate(ZMAP_SERVERREQ_GETSERVERINFO) ;
+
+    if (zMapServerGetServerInfo(server, req_info) == ZMAP_SERVERRESPONSE_OK)
+      {
+        zMapLogWarning("Terminate function called for: %s, %s, %s, %s",
+                       (req_info->data_format_out ? req_info->data_format_out : ""),
+                       (req_info->database_name_out ? req_info->database_name_out : ""),
+                       (req_info->database_title_out ? req_info->database_title_out : ""),
+                       (req_info->database_path_out ? req_info->database_path_out  : "")) ;
+      }
+
+    zMapServerRequestDestroy((ZMapServerReqAny)req_info) ;
+  }
 
   thread_rc = destroyServer(&server) ;
 
