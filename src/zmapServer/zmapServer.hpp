@@ -36,7 +36,7 @@
 #include <ZMap/zmapFeature.hpp>
 #include <ZMap/zmapUrl.hpp>
 
-#include <zmapServerPrototype.hpp>
+#include <ZMap/zmapServerProtocol.hpp>
 
 
 

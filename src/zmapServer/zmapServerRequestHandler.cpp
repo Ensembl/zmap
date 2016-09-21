@@ -39,7 +39,7 @@
 
 #include <ZMap/zmapUtils.hpp>
 #include <ZMap/zmapGLibUtils.hpp>
-#include <ZMap/zmapThreads.hpp>
+#include <ZMap/zmapThreadSource.hpp>
 #include <ZMap/zmapServerProtocol.hpp>
 #include <zmapServer_P.hpp>
 #include <ZMap/zmapConfigIni.hpp>
@@ -74,11 +74,6 @@ typedef struct DrawableStructType
 static gboolean protocolGlobalInitFunc(ZMapProtocolInitList protocols, ZMapURL url,
                                        void **global_init_data) ;
 static int findProtocol(gconstpointer list_protocol, gconstpointer protocol) ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static ZMapThreadReturnCode thread_RC(ZMapServerResponseType code) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
 
 /* Set up the list, note the special pthread macro that makes sure mutex is set up before
