@@ -160,11 +160,10 @@ typedef struct _ZMapStruct
 							       to that windows parent widget
 							       (currently a frame). */
 
-  GError         *info;                 /* This is an object to hold a code
-                                         * and a message as info for the
-                                         * remote control simple IPC stuff */
 
-
+  GError         *info;                                     /* This is an object to hold a code
+                                                             * and a message as info for the
+                                                             * remote control simple IPC stuff */
 
   gulong map_handler ;					    /* Needed for disconnecting map handler cb. */
 

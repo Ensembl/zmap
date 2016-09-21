@@ -596,7 +596,7 @@ static void makeButtonBox(GtkWidget *toplevel, MainFrame main_frame)
  GtkDialog *dialog = GTK_DIALOG(toplevel) ;
 
   gtk_dialog_add_button(dialog, GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL) ;
-  gtk_dialog_add_button(dialog, GTK_STOCK_OPEN, GTK_RESPONSE_OK) ;
+  gtk_dialog_add_button(dialog, GTK_STOCK_APPLY, GTK_RESPONSE_OK) ;
 
   gtk_dialog_set_default_response(dialog, GTK_RESPONSE_OK) ;
 
