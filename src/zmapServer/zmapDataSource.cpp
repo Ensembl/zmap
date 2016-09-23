@@ -536,6 +536,8 @@ ZMapDataSourceHTSStruct::ZMapDataSourceHTSStruct(const GQuark source_name,
   : ZMapDataSourceStruct(source_name, sequence, start, end),
     hts_file(NULL),
     hts_hdr(NULL),
+    hts_idx(NULL),
+    hts_iter(NULL),
     hts_rec(NULL),
     so_type(NULL)
 {
@@ -1968,6 +1970,7 @@ bool ZMapDataSourceStruct::terminated()
 gboolean ZMapDataSourceStruct::init(const char *region_name, int start, int end)
 {
   // base class does nothing
+  return TRUE ;
 }
 
 
@@ -1992,6 +1995,7 @@ gboolean ZMapDataSourceHTSStruct::init(const char *region_name, int start, int e
               if (ref != hts_iter->tid || begRange != hts_iter->beg || endRange != hts_iter->end)
                 {
                   hts_itr_destroy(hts_iter);
+                  hts_iter = NULL ;
                 }
               else
                 {
