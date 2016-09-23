@@ -1192,26 +1192,55 @@ void applyCB(GtkWidget *widget, gpointer cb_data)
   gboolean ok = FALSE ;
   MainFrame main_frame = (MainFrame)cb_data ;
 
-  char *source_type = comboGetValue(main_frame->combo) ;
-
-  if (source_type)
+  // We must have a unique source name to be able to create the new source. If not, warn the user
+  // and don't continue.
+  if (main_frame && main_frame->name_widg)
     {
-      if (strcmp(source_type, SOURCE_TYPE_FILE) == 0)
-        {
-          ok = applyFile(main_frame) ;
-        }
-      else if (strcmp(source_type, SOURCE_TYPE_TRACKHUB) == 0)
-        {
-          ok = applyTrackhub(main_frame) ;
-        }
-#ifdef USE_ENSEMBL
-      else if (strcmp(source_type, SOURCE_TYPE_ENSEMBL) == 0)
-        {
-          ok = applyEnsembl(main_frame) ;
-        }
-#endif /* USE_ENSEMBL */
+      const char *source_name = gtk_entry_get_text(GTK_ENTRY(main_frame->name_widg)) ;
 
-      g_free(source_type) ;
+      if (main_frame->sequence_map->getSource(source_name))
+        {
+          zMapCritical("A source with name '%s' already exists; please enter a unique name", source_name) ;
+          ok = FALSE ;
+        }
+      else
+        {
+          ok = TRUE ;
+        }
+    }
+
+  if (ok)
+    {
+      char *source_type = comboGetValue(main_frame->combo) ;
+
+      if (source_type)
+        {
+          if (strcmp(source_type, SOURCE_TYPE_FILE) == 0)
+            {
+              ok = applyFile(main_frame) ;
+            }
+          else if (strcmp(source_type, SOURCE_TYPE_TRACKHUB) == 0)
+            {
+              ok = applyTrackhub(main_frame) ;
+            }
+#ifdef USE_ENSEMBL
+          else if (strcmp(source_type, SOURCE_TYPE_ENSEMBL) == 0)
+            {
+              ok = applyEnsembl(main_frame) ;
+            }
+#endif /* USE_ENSEMBL */
+          else
+            {
+              ok = FALSE ;
+            }
+
+          g_free(source_type) ;
+        }
+      else
+        {
+          zMapCritical("%s", "Please select the source type from the drop-down box") ;
+          ok = FALSE ;
+        }
     }
 
   if (ok)
