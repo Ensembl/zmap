@@ -99,6 +99,8 @@ public:
   ZMapDataSourceStruct(const GQuark source_name, const char *sequence, const int start, const int end) ;
   virtual ~ZMapDataSourceStruct() ;
 
+  virtual gboolean init(const char *region_name, int start, int end) ;
+
   virtual bool isOpen() = 0 ;
   virtual bool checkHeader(std::string &err_msg, bool &empty_or_eof, const bool sequence_server) = 0 ;
   virtual bool readLine() = 0 ;
@@ -246,6 +248,8 @@ public:
   ZMapDataSourceHTSStruct(const GQuark source_name, const char *file_name, const char *open_mode, 
                           const char *sequence, const int start, const int end) ;
   ~ZMapDataSourceHTSStruct() ;
+
+  gboolean init(const char *region_name, int start, int end) ;
   bool isOpen() ;
   bool checkHeader(std::string &err_msg, bool &empty_or_eof, const bool sequence_server) ;
   bool readLine() ;
@@ -254,6 +258,8 @@ public:
   htsFile *hts_file ;
   /* bam header and record object */
   bam_hdr_t *hts_hdr ;
+  hts_idx_t *hts_idx ;
+  hts_itr_t *hts_iter ;
   bam1_t *hts_rec ;
 
   /*
@@ -262,7 +268,9 @@ public:
   char *so_type ;
 
 private:
-  ZMapDataSourceFeatureData cur_feature_data_ ;
+  bool processRead() ;
+
+  ZMapDataSourceFeatureData cur_feature_data_ ;  
 } ;
 
 
