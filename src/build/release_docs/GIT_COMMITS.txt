@@ -1,6 +1,10 @@
 
 Git commits for  from commit "production" until commit "release/2.11.0"
 
+f427323 2016-09-23 Fix regression from de531ea - REGRESSION FIX
+18eff12 2016-09-23 Fix bug displaying reads with introns gaps (from a patch by Thibaut Hourlier) - BUG FIX
+e0f2d1f 2016-09-23 Add BAM index support (from a patch by Thibaut Hourlier) - NEW FEATURE 'BAM index'
+7b61f80 2016-09-16 Add environment and X11 to instructions - DOC
 0627177 2016-09-12 Use user-specific temp dir for file cache - NEW FEATURE 'trackhub'
 9457118 2016-09-12 Change blixem tmp dir to /tmp/zmap_<uid>
 7f42dac 2016-08-26 Merge branch 'feature/trackhub' into develop

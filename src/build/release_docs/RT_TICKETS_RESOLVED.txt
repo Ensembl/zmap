@@ -1,7 +1,7 @@
 
-Request Tracker Tickets Resolved from 05/07/2016 to 13/09/2016
+Request Tracker Tickets Resolved from 05/07/2016 to 23/09/2016
 
-[tviewsrv get_rt_tickets.sh (14:47:29)]  /software/bin/rt is there !!
+[tviewsrv get_rt_tickets.sh (18:30:59)]  /software/bin/rt is there !!
 ticket/538309
 id: ticket/538309
 Queue: zmap
@@ -19,6 +19,16 @@ Subject: Bad asserts in otter log from zmap.....
 Requestors: edgrif@sanger.ac.uk
 Owner: sm23
 Resolved: Tue Jul 26 15:08:51 2016
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
+ticket/542750
+id: ticket/542750
+Queue: zmap
+Subject: Patch for bam file index support and display of spliced reads 
+Requestors: thibaut@ebi.ac.uk
+Owner: edgrif
+Resolved: Fri Sep 23 17:55:11 2016
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
