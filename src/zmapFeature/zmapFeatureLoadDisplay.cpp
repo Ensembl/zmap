@@ -619,10 +619,21 @@ void ZMapFeatureSequenceMapStructType::createSourceChildren(ZMapConfigSource sou
       if (trackdb_id)
         {
           string err_msg;
-
           gbtools::trackhub::Registry registry ;
-          registry.setDebug(true);
 
+          // Set registry properties based on our config
+          registry.setDebug(getConfigBoolean(ZMAPSTANZA_APP_CURL_DEBUG));
+
+          char *proxy = getConfigString(ZMAPSTANZA_APP_PROXY) ;
+
+          if (proxy)
+            {
+              registry.setProxy(proxy);
+              g_free(proxy);
+              proxy = NULL ;
+            }
+
+          // Ok, search the registry for this track db
           gbtools::trackhub::TrackDb trackdb = registry.searchTrackDb(trackdb_id, err_msg) ;
 
           if (err_msg.empty())
@@ -1222,6 +1233,70 @@ bool ZMapFeatureSequenceMapStructType::runningUnderOtter()
     }      
 
   return is_otter ;
+}
+
+
+/* Utility to get the given config boolean from the config file in the sequence map, if there is
+ * one. Returns false if not found. */
+gboolean ZMapFeatureSequenceMapStructType::getConfigBoolean(const char *key_name,
+                                                            const char *stanza_name,
+                                                            const char *stanza_type)
+{
+  gboolean result = false ;
+
+  zMapReturnValIfFail(key_name && stanza_name && stanza_type, result) ;
+
+  ZMapConfigIniContext context = zMapConfigIniContextProvide(config_file) ;
+
+  if (context)
+    {
+      zMapConfigIniContextGetBoolean(context, stanza_name, stanza_type, key_name, &result) ;
+      zMapConfigIniContextDestroy(context);
+    }
+
+  return result ;
+}
+
+/* Utility to get the given config string from the config file in the sequence map, if there is
+ * one. The result should be free'd with g_free. Returns null if not found. */
+char* ZMapFeatureSequenceMapStructType::getConfigString(const char *key_name,
+                                                        const char *stanza_name,
+                                                        const char *stanza_type)
+{
+  char *result = NULL ;
+
+  zMapReturnValIfFail(key_name && stanza_name && stanza_type, result) ;
+
+  ZMapConfigIniContext context = zMapConfigIniContextProvide(config_file) ;
+
+  if (context)
+    {
+      zMapConfigIniContextGetString(context, stanza_name, stanza_type, key_name, &result) ;
+      zMapConfigIniContextDestroy(context);
+    }
+
+  return result ;
+}
+
+/* Utility to get the given config integer from the config file in the sequence map, if there is
+ * one. Returns 0 if not found. */
+int ZMapFeatureSequenceMapStructType::getConfigInt(const char *key_name,
+                                                   const char *stanza_name,
+                                                   const char *stanza_type)
+{
+  int result = 0 ;
+  
+  zMapReturnValIfFail(key_name && stanza_name && stanza_type, result) ;
+
+  ZMapConfigIniContext context = zMapConfigIniContextProvide(config_file) ;
+
+  if (context)
+    {
+      zMapConfigIniContextGetInt(context, stanza_name, stanza_type, key_name, &result) ;
+      zMapConfigIniContextDestroy(context);
+    }
+
+  return result ;
 }
 
 
