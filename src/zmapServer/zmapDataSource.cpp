@@ -2052,7 +2052,7 @@ bool ZMapDataSourceHTSStruct::processRead()
    * start, end, score and strand
    */
   iStart = hts_rec->core.pos+1;
-  iEnd   = iStart + hts_rec->core.l_qseq-1;
+  iEnd   = iStart;
   dScore = (double) hts_rec->core.qual ;
   cStrand = '+' ;
 
@@ -2064,9 +2064,16 @@ bool ZMapDataSourceHTSStruct::processRead()
     {
       bHasCigarAttribute = TRUE ;
       pCigar = bam_get_cigar(hts_rec) ;
+
       for (iCigar=0; iCigar<nCigar; ++iCigar)
-        ssCigar << bam_cigar_oplen(pCigar[iCigar]) << bam_cigar_opchr(pCigar[iCigar]) ;
+        {
+          ssCigar << bam_cigar_oplen(pCigar[iCigar]) << bam_cigar_opchr(pCigar[iCigar]) ;
+          iEnd += bam_cigar_oplen(pCigar[iCigar]) ;
+        }
     }
+
+  if (iEnd == iStart)
+    iEnd += hts_rec->core.l_qseq-1 ;
 
   /*
    * "Target" (and "Name") attribute
