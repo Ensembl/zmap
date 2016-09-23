@@ -279,7 +279,18 @@ GtkWidget *makePanel(GtkWidget *toplevel,
   main_data->default_type = default_type ;
   main_data->filename = NULL ;
 
-  main_data->registry.setDebug(true);
+  if (sequence_map)
+    {
+      main_data->registry.setDebug(sequence_map->getConfigBoolean(ZMAPSTANZA_APP_CURL_DEBUG));
+
+      char *proxy = sequence_map->getConfigString(ZMAPSTANZA_APP_PROXY) ;
+
+      if (proxy)
+        {
+          main_data->registry.setProxy(proxy);
+          g_free(proxy);
+        }
+    }
 
   if (toplevel)
     {

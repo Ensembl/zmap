@@ -41,6 +41,7 @@
 #include <ZMap/zmapStyle.hpp>
 #include <ZMap/zmapStyleTree.hpp>
 #include <ZMap/zmapConfigIni.hpp>
+#include <ZMap/zmapConfigStrings.hpp>
 
 
 class ZMapConfigSourceStruct ;
@@ -313,6 +314,13 @@ typedef struct ZMapFeatureSequenceMapStructType
   void removeSource(const char *source_name_cstr, GError **error) ;
 
   bool runningUnderOtter() ;
+
+  gboolean getConfigBoolean(const char *key_name, const char *stanza_name = ZMAPSTANZA_APP_CONFIG, 
+                            const char *stanza_type = ZMAPSTANZA_APP_CONFIG) ;
+  char* getConfigString(const char *key_name, const char *stanza_name = ZMAPSTANZA_APP_CONFIG, 
+                        const char *stanza_type = ZMAPSTANZA_APP_CONFIG) ;
+  int getConfigInt(const char *key_name, const char *stanza_name = ZMAPSTANZA_APP_CONFIG, 
+                   const char *stanza_type = ZMAPSTANZA_APP_CONFIG) ;
 
 private:
   void addSource(const std::string &source_name, ZMapConfigSourceStruct *source, GError **error) ;

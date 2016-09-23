@@ -131,7 +131,8 @@ static bool debug_loading_G = false ;                       // Use to turn debug
 
 
 /* Note that config_file can be null here - this returns a new context which has  
- * the config_read flag as false. */
+ * the config_read flag as false. file_type defaults to ZMAPCONFIG_FILE_NONE which means we will
+ * read all of the config file types in priority order. Specify a specific type to read only that type. */
 ZMapConfigIniContext zMapConfigIniContextProvide(const char *config_file, ZMapConfigIniFileType file_type)
 {
   ZMapConfigIniContext context = NULL ;
@@ -1649,6 +1650,7 @@ static ZMapConfigIniContextKeyEntry get_app_group_data(const char **stanza_name,
     { ZMAPSTANZA_APP_SESSION_COLOUR,           G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_APP_LOCALE,             G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_APP_COOKIE_JAR,         G_TYPE_STRING,  NULL, FALSE },
+    { ZMAPSTANZA_APP_PROXY,              G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_APP_PORT,               G_TYPE_INT,     NULL, FALSE },
     { ZMAPSTANZA_APP_PFETCH_MODE,        G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_APP_PFETCH_LOCATION,    G_TYPE_STRING,  NULL, FALSE },
