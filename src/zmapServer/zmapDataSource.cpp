@@ -546,6 +546,9 @@ ZMapDataSourceHTSStruct::ZMapDataSourceHTSStruct(const GQuark source_name,
   if (hts_file)
     hts_hdr = sam_hdr_read(hts_file) ;
 
+  if (hts_hdr)
+    hts_idx = sam_index_load(hts_file, file_name) ;
+
   hts_rec = bam_init1() ;
   if (hts_file && hts_hdr && hts_rec)
     {
@@ -700,6 +703,10 @@ ZMapDataSourceHTSStruct::~ZMapDataSourceHTSStruct()
     bam_destroy1(hts_rec) ;
   if (hts_hdr)
     bam_hdr_destroy(hts_hdr) ;
+  if (hts_idx)
+    hts_idx_destroy(hts_idx) ;
+  if (hts_iter)
+    hts_itr_destroy(hts_iter) ;
   if (so_type)
     g_free(so_type) ;
 }
@@ -1309,84 +1316,20 @@ bool ZMapDataSourceBIGWIGStruct::readLine()
 }
 
 #ifdef USE_HTSLIB
-/*
- * Read a record from a HTS file and turn it into GFFv3.
- */
 bool ZMapDataSourceHTSStruct::readLine()
 {
-  gboolean result = FALSE,
-    bHasTargetStrand = FALSE,
-    bHasNameAttribute = FALSE,
-    bHasCigarAttribute = FALSE,
-    bHasTargetAttribute = FALSE ;
-  char cStrand = '\0',
-    cPhase = '.',
-    cTargetStrand = '.' ;
-  int iStart = 0,
-    iEnd = 0,
-    iCigar = 0,
-    nCigar = 0,
-    iTargetStart = 0,
-    iTargetEnd = 0;
-  uint32_t *pCigar = NULL ;
-  double dScore = 0.0 ;
-  stringstream ssCigar ;
-  const char *query_name = NULL ;
+  bool result = false ;
 
-  /*
-   * Initial error check.
-   */
-  zMapReturnValIfFail(hts_file && hts_hdr && hts_rec, result ) ;
-
-
-  /*
-   * Read line from HTS file and convert to GFF.
-   */
-  if ( sam_read1(hts_file, hts_hdr, hts_rec) >= 0 )
+  if (hts_iter)
     {
-      /*
-       * start, end, score and strand
-       */
-      iStart = hts_rec->core.pos+1;
-      iEnd   = iStart + hts_rec->core.l_qseq-1;
-      dScore = (double) hts_rec->core.qual ;
-      cStrand = '+' ;
-
-      /*
-       * "cigar_bam" attribute
-       */
-      nCigar = hts_rec->core.n_cigar ;
-      if (nCigar)
+      if (bam_itr_next(hts_file, hts_iter, hts_rec) >= 0)
         {
-          bHasCigarAttribute = TRUE ;
-          pCigar = bam_get_cigar(hts_rec) ;
-          for (iCigar=0; iCigar<nCigar; ++iCigar)
-            ssCigar << bam_cigar_oplen(pCigar[iCigar]) << bam_cigar_opchr(pCigar[iCigar]) ;
+          result = processRead();
         }
-
-      /*
-       * "Target" (and "Name") attribute
-       */
-      iTargetStart = 1 ;
-      iTargetEnd = hts_rec->core.l_qseq ;
-      query_name = bam_get_qname(hts_rec) ;
-
-      if (query_name && strlen(query_name) > 0)
-        {
-          bHasTargetAttribute = TRUE ;
-          bHasNameAttribute = TRUE ;
-          bHasTargetStrand = TRUE ;
-          cTargetStrand = '+' ;
-        }
-
-      cur_feature_data_ = ZMapDataSourceFeatureData(iStart, iEnd, dScore, cStrand, cPhase, 
-                                                    bam_get_qname(hts_rec), iTargetStart, iTargetEnd,
-                                                    ssCigar.str().c_str()) ;
-
-      /*
-       * return value
-       */
-      result = TRUE ;
+    }
+  else if (sam_read1(hts_file, hts_hdr, hts_rec) >= 0)
+    {
+      result = processRead();
     }
 
   if (!result)
@@ -1556,7 +1499,6 @@ bool ZMapDataSourceGIOStruct::parseSequence(gboolean &sequence_finished, string 
 
   return result ;
 }
-
 
 /*
  * This sets some things up for the GFF parser and is required before calling parserBodyLine
@@ -2020,6 +1962,140 @@ bool ZMapDataSourceStruct::terminated()
 {
   return zMapGFFTerminated(parser_) ;
 }
+
+
+/* Functions to do any initialisation required at the start of each block of reads */
+gboolean ZMapDataSourceStruct::init(const char *region_name, int start, int end)
+{
+  // base class does nothing
+}
+
+
+#ifdef USE_HTSLIB
+gboolean ZMapDataSourceHTSStruct::init(const char *region_name, int start, int end)
+{
+  gboolean result = FALSE;
+  int begRange;
+  int endRange;
+  char region[128];
+  int ref;
+
+  ref = bam_name2id(hts_hdr, region_name);
+
+  if (ref >= 0)
+    {
+      sprintf(region,"%s:%i-%i", region_name, start, end);
+      if (hts_parse_reg(region, &begRange, &endRange) != NULL)
+        {
+          if (hts_iter)
+            {
+              if (ref != hts_iter->tid || begRange != hts_iter->beg || endRange != hts_iter->end)
+                {
+                  hts_itr_destroy(hts_iter);
+                }
+              else
+                {
+                  return TRUE;
+                }
+            }
+          hts_iter = sam_itr_queryi(hts_idx, ref, begRange, endRange);
+          result = TRUE;
+        }
+      else
+        {
+          fprintf(stderr, "Could not parse %s\n", region);
+        }
+    }
+  else
+    {
+      fprintf(stderr, "Invalid region %s\n", region_name);
+    }
+
+  return result;
+}
+
+
+/*
+ * Read a record from a HTS file and store it as the current_feature_data_
+ */
+bool ZMapDataSourceHTSStruct::processRead()
+{
+  gboolean result = FALSE,
+    bHasTargetStrand = FALSE,
+    bHasNameAttribute = FALSE,
+    bHasCigarAttribute = FALSE,
+    bHasTargetAttribute = FALSE ;
+  char cStrand = '\0',
+    cPhase = '.',
+    cTargetStrand = '.' ;
+  int iStart = 0,
+    iEnd = 0,
+    iCigar = 0,
+    nCigar = 0,
+    iTargetStart = 0,
+    iTargetEnd = 0;
+  uint32_t *pCigar = NULL ;
+  double dScore = 0.0 ;
+  stringstream ssCigar ;
+  const char *query_name = NULL ;
+
+  /*
+   * Initial error check.
+   */
+  zMapReturnValIfFail(hts_file && hts_hdr && hts_rec, result ) ;
+
+
+  /*
+   * Read line from HTS file and convert to GFF.
+   */
+  /*
+   * start, end, score and strand
+   */
+  iStart = hts_rec->core.pos+1;
+  iEnd   = iStart + hts_rec->core.l_qseq-1;
+  dScore = (double) hts_rec->core.qual ;
+  cStrand = '+' ;
+
+  /*
+   * "cigar_bam" attribute
+   */
+  nCigar = hts_rec->core.n_cigar ;
+  if (nCigar)
+    {
+      bHasCigarAttribute = TRUE ;
+      pCigar = bam_get_cigar(hts_rec) ;
+      for (iCigar=0; iCigar<nCigar; ++iCigar)
+        ssCigar << bam_cigar_oplen(pCigar[iCigar]) << bam_cigar_opchr(pCigar[iCigar]) ;
+    }
+
+  /*
+   * "Target" (and "Name") attribute
+   */
+  iTargetStart = 1 ;
+  iTargetEnd = hts_rec->core.l_qseq ;
+  query_name = bam_get_qname(hts_rec) ;
+
+  if (query_name && strlen(query_name) > 0)
+    {
+      bHasTargetAttribute = TRUE ;
+      bHasNameAttribute = TRUE ;
+      bHasTargetStrand = TRUE ;
+      cTargetStrand = '+' ;
+    }
+
+  cur_feature_data_ = ZMapDataSourceFeatureData(iStart, iEnd, dScore, cStrand, cPhase, 
+                                                bam_get_qname(hts_rec), iTargetStart, iTargetEnd,
+                                                ssCigar.str().c_str()) ;
+
+  /*
+   * return value
+   */
+  result = TRUE ;
+
+  return result ;
+}
+
+#endif //HTSLIB
 
 
 /*
