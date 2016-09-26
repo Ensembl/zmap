@@ -217,6 +217,7 @@ static gboolean createConnection(void **server_out,
   server->req_context = NULL ;
   server->sequence_map = NULL ;
   server->styles_file = NULL ;
+  server->format = g_quark_from_string(format) ;
   server->source_2_sourcedata = NULL ;
   server->featureset_2_column = NULL ;
 
@@ -338,6 +339,7 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
                                              (server->req_sequence ? g_quark_to_string(server->req_sequence) : NULL), 
                                              server->zmap_start,
                                              server->zmap_end,
+                                             server->format,
                                              &error) ;
 
   if (server->data_source != NULL )

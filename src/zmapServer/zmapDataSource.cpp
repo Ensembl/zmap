@@ -289,6 +289,51 @@ public:
   }
 };
 
+
+/* Determine the source type from the given file extension (e.g. "bigWig") */
+ZMapDataSourceType dataSourceTypeFromExtension(const string &file_ext, GError **error_out)
+{
+  ZMapDataSourceType type = ZMapDataSourceType::UNK ;
+
+  static const map<string, ZMapDataSourceType, caseInsensitiveCmp> file_extensions = 
+    {
+      {"gff",     ZMapDataSourceType::GIO}
+      ,{"gff3",   ZMapDataSourceType::GIO}
+      ,{"bed",    ZMapDataSourceType::BED}
+      ,{"bb",     ZMapDataSourceType::BIGBED}
+      ,{"bigBed", ZMapDataSourceType::BIGBED}
+      ,{"bw",     ZMapDataSourceType::BIGWIG}
+      ,{"bigWig", ZMapDataSourceType::BIGWIG}
+#ifdef USE_HTSLIB
+      ,{"sam",    ZMapDataSourceType::HTS}
+      ,{"bam",    ZMapDataSourceType::HTS}
+      ,{"cram",   ZMapDataSourceType::HTS}
+      ,{"vcf",    ZMapDataSourceType::BCF}
+      ,{"bcf",    ZMapDataSourceType::BCF}
+#endif
+    };
+
+  auto found_iter = file_extensions.find(file_ext) ;
+      
+  if (found_iter != file_extensions.end())
+    {
+      type = found_iter->second ;
+    }
+  else
+    {
+      string expected("");
+      for (auto iter = file_extensions.begin(); iter != file_extensions.end(); ++iter)
+        expected += " ." + iter->first ;
+
+      g_set_error(error_out, ZMAP_SERVER_ERROR, ZMAPSERVER_ERROR_UNKNOWN_EXTENSION,
+                  "Unrecognised file extension .'%s'. Expected one of:%s", 
+                  file_ext.c_str(), expected.c_str()) ;
+    }
+
+  return type ;
+}
+
+
 } // unnamed namespace
 
 
@@ -2145,6 +2190,7 @@ ZMapDataSource zMapDataSourceCreate(const GQuark source_name,
                                     const char *sequence,
                                     const int start,
                                     const int end,
+                                    const GQuark format,
                                     GError **error_out)
 {
   static const char * open_mode = "r" ;
@@ -2153,9 +2199,14 @@ ZMapDataSource zMapDataSourceCreate(const GQuark source_name,
   GError *error = NULL ;
   zMapReturnValIfFail(file_name && *file_name, data_source ) ;
 
-  source_type = zMapDataSourceTypeFromFilename(file_name, &error) ;
+  // If the file type (passed as the format) is known for this source, use that for the
+  // source_type. Otherwise, try to determine the file type from the filename
+  if (format)
+    source_type = zMapDataSourceTypeFromFormat(g_quark_to_string(format), &error) ;
+  else
+    source_type = zMapDataSourceTypeFromFilename(file_name, &error) ;
 
-  if (!error)
+  if (!error && source_type != ZMapDataSourceType::UNK)
     {
       switch (source_type)
         {
@@ -2185,6 +2236,11 @@ ZMapDataSource zMapDataSourceCreate(const GQuark source_name,
                       "Unexpected data source type for file '%s'", file_name) ;
           break ;
         }
+    }
+  else
+    {
+      g_set_error(&error, ZMAP_SERVER_ERROR, ZMAPSERVER_ERROR_UNKNOWN_TYPE,
+                  "Invalid file type '%s' for file '%s'", g_quark_to_string(format), file_name) ;
     }
 
   if (data_source)
@@ -2248,7 +2304,6 @@ ZMapDataSourceType zMapDataSourceGetType(ZMapDataSource data_source )
 }
 
 
-
 /*
  * Inspect the filename string (might include the path on the front, but this is
  * (ignored) for the extension to determine type:
@@ -2263,24 +2318,6 @@ ZMapDataSourceType zMapDataSourceGetType(ZMapDataSource data_source )
  */
 ZMapDataSourceType zMapDataSourceTypeFromFilename(const char * const file_name, GError **error_out)
 {
-  static const map<string, ZMapDataSourceType, caseInsensitiveCmp> file_extensions = 
-    {
-      {"gff",     ZMapDataSourceType::GIO}
-      ,{"gff3",   ZMapDataSourceType::GIO}
-      ,{"bed",    ZMapDataSourceType::BED}
-      ,{"bb",     ZMapDataSourceType::BIGBED}
-      ,{"bigBed", ZMapDataSourceType::BIGBED}
-      ,{"bw",     ZMapDataSourceType::BIGWIG}
-      ,{"bigWig", ZMapDataSourceType::BIGWIG}
-#ifdef USE_HTSLIB
-      ,{"sam",    ZMapDataSourceType::HTS}
-      ,{"bam",    ZMapDataSourceType::HTS}
-      ,{"cram",   ZMapDataSourceType::HTS}
-      ,{"vcf",    ZMapDataSourceType::BCF}
-      ,{"bcf",    ZMapDataSourceType::BCF}
-#endif
-    };
-
   static const char dot = '.' ;
   ZMapDataSourceType type = ZMapDataSourceType::UNK ;
   GError *error = NULL ;
@@ -2304,32 +2341,82 @@ ZMapDataSourceType zMapDataSourceTypeFromFilename(const char * const file_name, 
   if (pos)
     {
       string file_ext(pos) ;
-      auto found_iter = file_extensions.find(file_ext) ;
-      
-      if (found_iter != file_extensions.end())
-        {
-          type = found_iter->second ;
-        }
-      else
-        {
-          string expected("");
-          for (auto iter = file_extensions.begin(); iter != file_extensions.end(); ++iter)
-            expected += " ." + iter->first ;
-
-          g_set_error(&error, g_quark_from_string("ZMap"), 99,
-                      "Unrecognised file extension .'%s'. Expected one of:%s", 
-                      file_ext.c_str(), expected.c_str()) ;
-        }
+      type = dataSourceTypeFromExtension(file_ext, &error) ;
     }
   else
     {
-      g_set_error(&error, g_quark_from_string("ZMap"), 99,
+      g_set_error(&error, ZMAP_SERVER_ERROR, ZMAPSERVER_ERROR_UNKNOWN_EXTENSION,
                   "File name does not have an extension so cannot determine type: '%s'",
                   file_name) ;
     }
 
   if (error)
     g_propagate_error(error_out, error) ;
+
+  return type ;
+}
+
+
+/* Determine the format string from the given type. Must be the inverse of
+ * zMapDataSourceTypeFromFormat. Currently also used as a descriptive string for the user.  */
+string zMapDataSourceFormatFromType(ZMapDataSourceType &source_type)
+{
+  string result ;
+
+  switch (source_type)
+    {
+    case ZMapDataSourceType::GIO:    result = "GFF" ;    break ;
+    case ZMapDataSourceType::BED:    result = "Bed" ;    break ;
+    case ZMapDataSourceType::BIGBED: result = "bigBed" ; break ;
+    case ZMapDataSourceType::BIGWIG: result = "bigWig" ; break ;
+#ifdef USE_HTSLIB
+    case ZMapDataSourceType::HTS:    result = "BAM/SAM/CRAM" ;    break ;
+    case ZMapDataSourceType::BCF:    result = "BCF/VCF" ;    break ;
+#endif
+
+    default:
+      zMapWarnIfReached() ;
+      break ;      
+    } ;
+
+  return result ;
+}
+
+
+/* Determine the source type from the given format. Must be the inverse of
+ * zMapDataSourceFormatFromType. */
+ZMapDataSourceType zMapDataSourceTypeFromFormat(const string &format, GError **error_out)
+{
+  ZMapDataSourceType type = ZMapDataSourceType::UNK ;
+
+  static const map<string, ZMapDataSourceType, caseInsensitiveCmp> format_to_type = 
+    {
+      {"GFF", ZMapDataSourceType::GIO}
+      ,{"Bed", ZMapDataSourceType::BED}
+      ,{"bigBed", ZMapDataSourceType::BIGBED}
+      ,{"bigWig", ZMapDataSourceType::BIGWIG}
+#ifdef USE_HTSLIB
+      ,{"BAM/SAM/CRAM",   ZMapDataSourceType::HTS}
+      ,{"BCF/VCF",    ZMapDataSourceType::BCF}
+#endif
+    };
+
+  auto found_iter = format_to_type.find(format) ;
+      
+  if (found_iter != format_to_type.end())
+    {
+      type = found_iter->second ;
+    }
+  else
+    {
+      string expected("");
+      for (auto iter = format_to_type.begin(); iter != format_to_type.end(); ++iter)
+        expected += " ." + iter->first ;
+
+      g_set_error(error_out, ZMAP_SERVER_ERROR, ZMAPSERVER_ERROR_UNKNOWN_EXTENSION,
+                  "Invalid format '%s'. Expected one of:%s", 
+                  format.c_str(), expected.c_str()) ;
+    }
 
   return type ;
 }

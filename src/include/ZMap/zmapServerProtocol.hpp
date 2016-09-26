@@ -97,6 +97,18 @@ ZMAP_DEFINE_ENUM(ZMapServerResponseType, ZMAP_SERVER_RESPONSE_LIST) ;
 ZMAP_DEFINE_ENUM(ZMapServerConnectStateType, ZMAP_SERVER_CONNECT_STATE_LIST) ;
 
 
+/*
+ * We follow glib convention in error domain naming:
+ *          "The error domain is called <NAMESPACE>_<MODULE>_ERROR"
+ */
+#define ZMAP_SERVER_ERROR g_quark_from_string("ZMAP_SERVER_ERROR")
+
+typedef enum
+{
+  ZMAPSERVER_ERROR_UNKNOWN_EXTENSION  // unknown file extension
+  ,ZMAPSERVER_ERROR_UNKNOWN_TYPE      // unknown file extension
+} ZMapAppError;
+
 
 
 /*

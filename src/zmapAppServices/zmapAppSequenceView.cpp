@@ -768,6 +768,7 @@ static void createNewSourceCB(const char *source_name,
                               const std::string &url, 
                               const char *featuresets,
                               const char *biotypes,
+                              const char *format,
                               gpointer user_data,
                               GError **error)
 {
@@ -777,7 +778,7 @@ static void createNewSourceCB(const char *source_name,
   ZMapFeatureSequenceMap sequence_map = main_data->orig_sequence_map ;
   GError *tmp_error = NULL ;
 
-  sequence_map->createSource(source_name, url, featuresets, biotypes, false, true, &tmp_error) ;
+  sequence_map->createSource(source_name, url, featuresets, biotypes, format, false, true, &tmp_error) ;
 
   /* Update the list of sources shown in the dialog to include the new source,
    * and add the new source to the current selection */
@@ -798,6 +799,7 @@ static void editSourceCB(const char *source_name,
                          const std::string &url, 
                          const char *featuresets,
                          const char *biotypes,
+                         const char *format,
                          gpointer user_data,
                          GError **error)
 {
@@ -807,7 +809,7 @@ static void editSourceCB(const char *source_name,
   ZMapFeatureSequenceMap sequence_map = main_data->orig_sequence_map ;
   GError *tmp_error = NULL ;
 
-  sequence_map->updateSource(source_name, url, featuresets, biotypes, &tmp_error) ;
+  sequence_map->updateSource(source_name, url, featuresets, biotypes, format, &tmp_error) ;
 
   /* Update the list of sources shown in the dialog to include the new source */
   if (!tmp_error)
