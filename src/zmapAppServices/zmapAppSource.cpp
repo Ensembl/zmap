@@ -51,6 +51,7 @@
 #include <ZMap/zmapUrl.hpp>
 #include <ZMap/zmapDataSource.hpp>
 #include <ZMap/zmapConfigStrings.hpp>
+#include <ZMap/zmapServerProtocol.hpp>
 
 #ifdef USE_ENSEMBL
 #include <ZMap/zmapEnsemblUtils.hpp>
@@ -1398,11 +1399,58 @@ static string constructPipeFileURL(MainFrame main_frame,
 }
 
 
+static ZMapDataSourceType promptForFileType()
+{
+  ZMapDataSourceType source_type = ZMapDataSourceType::UNK ;
+
+  GtkWidget *dialog = gtk_dialog_new_with_buttons("Search for Track Hubs",
+                                                  NULL,
+                                                  (GtkDialogFlags)(GTK_DIALOG_DESTROY_WITH_PARENT | GTK_DIALOG_MODAL),
+                                                  GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+                                                  GTK_STOCK_OK, GTK_RESPONSE_OK,
+                                                  NULL);
+
+  gtk_dialog_set_default_response(GTK_DIALOG(dialog), GTK_RESPONSE_OK) ;
+
+  GtkBox *content = GTK_BOX(GTK_DIALOG(dialog)->vbox) ;
+
+  if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_OK)
+    {
+      gtk_widget_destroy(dialog) ;
+    }
+
+  return source_type ;
+}
+
+
+static string formatFromSourceType(ZMapDataSourceType &source_type)
+{
+  string result ;
+
+  switch (source_type)
+    {
+    case ZMapDataSourceType::GIO:    result = "gio" ;    break ;
+    case ZMapDataSourceType::HTS:    result = "hts" ;    break ;
+    case ZMapDataSourceType::BCF:    result = "bcf" ;    break ;
+    case ZMapDataSourceType::BED:    result = "bed" ;    break ;
+    case ZMapDataSourceType::BIGBED: result = "bigbed" ; break ;
+    case ZMapDataSourceType::BIGWIG: result = "bigwig" ; break ;
+
+    case ZMapDataSourceType::UNK: 
+      zMapWarnIfReached() ;
+      break ;      
+    } ;
+
+  return result ;
+}
+
+
 /* Create a valid url for the given file (which should either be a filename on the local system
  * or a remote file url e.g. starting http:// */
 static string constructFileURL(MainFrame main_frame, 
                                const char *source_name,
                                const char *filename, 
+                               string &format,
                                GError **error)
 {
   string url("");
@@ -1410,12 +1458,20 @@ static string constructFileURL(MainFrame main_frame,
   GError *g_error = NULL ;
   ZMapDataSourceType source_type = zMapDataSourceTypeFromFilename(filename, &g_error) ;
 
+  if (g_error && g_error->code == ZMAPSERVER_ERROR_UNKNOWN_EXTENSION)
+    {
+      // We couldn't determine the file type from the extension. As the user instead.
+      source_type = promptForFileType() ;
+    }
+
   if (g_error)
     {
       g_propagate_error(error, g_error) ;
     }
   else
     {
+      format = formatFromSourceType(source_type) ;
+
       string err_msg;
 
       // Some file types currently have special treatment
@@ -1469,10 +1525,11 @@ gboolean applyFile(MainFrame main_frame)
   else
     {
       GError *tmp_error = NULL ;
-      string url = constructFileURL(main_frame, source_name, path, &tmp_error) ;
+      string format ;
+      string url = constructFileURL(main_frame, source_name, path, format, &tmp_error) ;
 
       if (!tmp_error)
-        (main_frame->user_func)(source_name, url, NULL, NULL, main_frame->user_data, &tmp_error) ;
+        (main_frame->user_func)(source_name, url, NULL, NULL, format.c_str(), main_frame->user_data, &tmp_error) ;
 
       if (tmp_error)
         zMapCritical("Failed to create new source: %s", tmp_error->message) ;
@@ -1589,7 +1646,7 @@ gboolean applyEnsembl(MainFrame main_frame)
             }
         }
 
-      (main_frame->user_func)(source_name, url, featuresets, biotypes, main_frame->user_data, &tmp_error) ;
+      (main_frame->user_func)(source_name, url, featuresets, biotypes, NULL, main_frame->user_data, &tmp_error) ;
 
       if (tmp_error)
         zMapCritical("Failed to create new source: %s", tmp_error->message) ;
@@ -2289,7 +2346,7 @@ gboolean applyTrackhub(MainFrame main_frame)
       std::stringstream url ;
       url << "trackhub:///" << trackdb_id ;
 
-      (main_frame->user_func)(source_name, url.str(), NULL, NULL, main_frame->user_data, &tmp_error) ;
+      (main_frame->user_func)(source_name, url.str(), NULL, NULL, NULL, main_frame->user_data, &tmp_error) ;
 
       if (tmp_error)
         zMapCritical("Failed to create new source: %s", tmp_error->message) ;

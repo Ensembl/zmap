@@ -45,8 +45,6 @@ enum class ZMapDataSourceType {GIO, HTS, BCF, BED, BIGBED, BIGWIG, UNK} ;
 
 
 
-
-
 /*
  * The rationale for this is that previously we were reading GFF data
  * only, always through a GIOChannel. Thus the abstraction of ZMapDataSource,

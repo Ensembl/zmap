@@ -289,6 +289,50 @@ public:
   }
 };
 
+
+/* Determine the source type from the given file extension (e.g. "bigWig") */
+ZMapDataSourceType dataSourceTypeFromExtension(const string &file_ext, GError **error_out)
+{
+  ZMapDataSourceType type = ZMapDataSourceType::UNK ;
+
+  static const map<string, ZMapDataSourceType, caseInsensitiveCmp> file_extensions = 
+    {
+      {"gff",     ZMapDataSourceType::GIO}
+      ,{"gff3",   ZMapDataSourceType::GIO}
+      ,{"bed",    ZMapDataSourceType::BED}
+      ,{"bb",     ZMapDataSourceType::BIGBED}
+      ,{"bigBed", ZMapDataSourceType::BIGBED}
+      ,{"bw",     ZMapDataSourceType::BIGWIG}
+      ,{"bigWig", ZMapDataSourceType::BIGWIG}
+#ifdef USE_HTSLIB
+      ,{"sam",    ZMapDataSourceType::HTS}
+      ,{"bam",    ZMapDataSourceType::HTS}
+      ,{"cram",   ZMapDataSourceType::HTS}
+      ,{"vcf",    ZMapDataSourceType::BCF}
+      ,{"bcf",    ZMapDataSourceType::BCF}
+#endif
+    };
+
+  auto found_iter = file_extensions.find(file_ext) ;
+      
+  if (found_iter != file_extensions.end())
+    {
+      type = found_iter->second ;
+    }
+  else
+    {
+      string expected("");
+      for (auto iter = file_extensions.begin(); iter != file_extensions.end(); ++iter)
+        expected += " ." + iter->first ;
+
+      g_set_error(error_out, ZMAP_SERVER_ERROR, ZMAPSERVER_ERROR_UNKNOWN_EXTENSION,
+                  "Unrecognised file extension .'%s'. Expected one of:%s", 
+                  file_ext.c_str(), expected.c_str()) ;
+    }
+
+  return type ;
+}
+
 } // unnamed namespace
 
 
@@ -2248,7 +2292,6 @@ ZMapDataSourceType zMapDataSourceGetType(ZMapDataSource data_source )
 }
 
 
-
 /*
  * Inspect the filename string (might include the path on the front, but this is
  * (ignored) for the extension to determine type:
@@ -2263,24 +2306,6 @@ ZMapDataSourceType zMapDataSourceGetType(ZMapDataSource data_source )
  */
 ZMapDataSourceType zMapDataSourceTypeFromFilename(const char * const file_name, GError **error_out)
 {
-  static const map<string, ZMapDataSourceType, caseInsensitiveCmp> file_extensions = 
-    {
-      {"gff",     ZMapDataSourceType::GIO}
-      ,{"gff3",   ZMapDataSourceType::GIO}
-      ,{"bed",    ZMapDataSourceType::BED}
-      ,{"bb",     ZMapDataSourceType::BIGBED}
-      ,{"bigBed", ZMapDataSourceType::BIGBED}
-      ,{"bw",     ZMapDataSourceType::BIGWIG}
-      ,{"bigWig", ZMapDataSourceType::BIGWIG}
-#ifdef USE_HTSLIB
-      ,{"sam",    ZMapDataSourceType::HTS}
-      ,{"bam",    ZMapDataSourceType::HTS}
-      ,{"cram",   ZMapDataSourceType::HTS}
-      ,{"vcf",    ZMapDataSourceType::BCF}
-      ,{"bcf",    ZMapDataSourceType::BCF}
-#endif
-    };
-
   static const char dot = '.' ;
   ZMapDataSourceType type = ZMapDataSourceType::UNK ;
   GError *error = NULL ;
@@ -2304,26 +2329,11 @@ ZMapDataSourceType zMapDataSourceTypeFromFilename(const char * const file_name, 
   if (pos)
     {
       string file_ext(pos) ;
-      auto found_iter = file_extensions.find(file_ext) ;
-      
-      if (found_iter != file_extensions.end())
-        {
-          type = found_iter->second ;
-        }
-      else
-        {
-          string expected("");
-          for (auto iter = file_extensions.begin(); iter != file_extensions.end(); ++iter)
-            expected += " ." + iter->first ;
-
-          g_set_error(&error, g_quark_from_string("ZMap"), 99,
-                      "Unrecognised file extension .'%s'. Expected one of:%s", 
-                      file_ext.c_str(), expected.c_str()) ;
-        }
+      type = dataSourceTypeFromExtension(file_ext, &error) ;
     }
   else
     {
-      g_set_error(&error, g_quark_from_string("ZMap"), 99,
+      g_set_error(&error, ZMAP_SERVER_ERROR, ZMAPSERVER_ERROR_UNKNOWN_EXTENSION,
                   "File name does not have an extension so cannot determine type: '%s'",
                   file_name) ;
     }
