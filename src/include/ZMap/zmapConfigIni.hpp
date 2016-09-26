@@ -62,7 +62,7 @@ typedef enum
   } ZMapConfigIniFileType ;
 
 
-typedef gpointer (*ZMapConfigIniUserDataCreateFunc)(void);
+typedef gpointer (*ZMapConfigIniUserDataCreateFunc)(gpointer data);
 typedef void (*ZMapConfigIniSetPropertyFunc)(char *current_stanza_name, const char *key, GType type,
 					     gpointer parent_data, GValue *property_value);
 
@@ -180,7 +180,7 @@ GList *zMapConfigIniContextGetListedStanzas(ZMapConfigIniContext context,
 
 // zmapConfigLoader.c
 
-ZMapConfigIniContext zMapConfigIniContextProvide(const char *config_file, ZMapConfigIniFileType file_type) ;
+ZMapConfigIniContext zMapConfigIniContextProvide(const char *config_file, ZMapConfigIniFileType file_type = ZMAPCONFIG_FILE_NONE) ;
 ZMapConfigIniContext zMapConfigIniContextProvideNamed(const char *config_file, const char *stanza_name, ZMapConfigIniFileType file_type) ;
 
 gboolean zMapConfigIniHasStanza(ZMapConfigIni config, const char *stanza_name, GKeyFile **which);

@@ -83,6 +83,7 @@ typedef struct _PipeServerStruct
   int gff_version ;                                         /* Cached because parser may be freed on error. */
   GString *gff_line ;
 
+  GQuark req_sequence ;
   gint zmap_start, zmap_end ;				    /* display coordinates of interesting region */
   ZMapFeatureContext req_context ;
   ZMapFeatureSequenceMap sequence_map ;

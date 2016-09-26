@@ -31,6 +31,7 @@
 #define ZMAP_FEATURE_H
 
 #include <gdk/gdkcolor.h>
+#include <mutex>
 
 #include <ZMap/zmapConfigStyleDefaults.hpp>
 #include <ZMap/zmapStyle.hpp>
@@ -1064,6 +1065,42 @@ typedef gboolean (*ZMapFeatureDumpFeatureFunc)(ZMapFeatureAny feature_any,
 
 
 
+// Singleton class to keep count of, and limit, the number of features loaded in zmap.
+// Use via the instance function e.g. ZMapFeatureCount::instance().hitLimit(error)
+class ZMapFeatureCount
+{
+public:
+  // Delete the methods we don't want
+  ZMapFeatureCount(ZMapFeatureCount const&) = delete ;
+  ZMapFeatureCount& operator=(ZMapFeatureCount const&) = delete ;
+
+  // Access the single instance
+  static ZMapFeatureCount& instance()
+  {
+    static ZMapFeatureCount instance ;
+    return instance ;
+  } ;
+
+  // Operators
+  void operator++() ;
+  void operator--() ;
+
+  // Set/query the limit and count
+  int getCount() const ;
+  int getLimit() const ;
+  void setLimit(const int max_features) ;
+  bool hitLimit(GError **error)  ;
+
+private:
+  // Private constructor
+  ZMapFeatureCount() ;
+
+  int max_features_ ;     // max number of allowed features
+  int loaded_features_ ;  // total features in memory
+  std::mutex mutex_ ;
+} ;
+
+
 
 
 /*
@@ -1105,13 +1142,15 @@ GQuark zMapFeatureCreateID(ZMapStyleMode feature_type,
 			   ZMapStrand strand,
                            int start, int end,
 			   int query_start, int query_end) ;
-ZMapFeature zMapFeatureCreateEmpty(void) ;
+bool zMapFeatureErrorIsFatal(GError **error) ;
+ZMapFeature zMapFeatureCreateEmpty(GError **error = NULL) ;
 ZMapFeature zMapFeatureCreateFromStandardData(const char *name, const char *sequence, const char *ontology,
 					      ZMapStyleMode feature_type,
                                               ZMapFeatureTypeStyle *style,
                                               int start, int end,
                                               gboolean has_score, double score,
-					      ZMapStrand strand) ;
+					      ZMapStrand strand,
+                                              GError **error = NULL) ;
 gboolean zMapFeatureAddStandardData(ZMapFeature feature, const char *feature_name_id, const char *name,
 				    const char *sequence, const char *ontology,
 				    ZMapStyleMode feature_type,
@@ -1239,6 +1278,8 @@ ZMapFeature zMapFeatureSetGetFeatureByID(ZMapFeatureSet feature_set,
                                          GQuark feature_id);
 gboolean zMapFeatureSetRemoveFeature(ZMapFeatureSet feature_set, ZMapFeature feature) ;
 void zMapFeatureSetDestroyFeatures(ZMapFeatureSet feature_set) ;
+void zMapFeatureSetUpdateStyleFromFeature(ZMapFeature feature, ZMapFeatureTypeStyle style) ;
+void zMapFeatureSetUpdateStyleFromFeatures(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style) ;
 void     zMapFeatureSetDestroy(ZMapFeatureSet feature_set, gboolean free_data) ;
 void  zMapFeatureSetStyle(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style) ;
 char *zMapFeatureSetGetName(ZMapFeatureSet feature_set) ;
@@ -1559,7 +1600,7 @@ int zMapFeatureVariationGetSections(const char *variation_str,
 /* rationalise these two..... */
 gint zMapFeatureCmp(gconstpointer a, gconstpointer b);
 gint zMapFeatureSortFeatures(gconstpointer a, gconstpointer b) ;
-ZMapFeature zMapFeatureShallowCopy(ZMapFeature src) ;
+ZMapFeature zMapFeatureShallowCopy(ZMapFeature src, GError **error = NULL) ;
 ZMapFeatureSet zMapFeatureSetShallowCopy(ZMapFeatureSet src) ;
 
 ZMapHomolType zMapFeatureSetGetHomolType(ZMapFeatureSet feature_set) ;
@@ -1570,7 +1611,7 @@ GList* zMapFeatureTranscriptGetEvidence(ZMapFeature feature) ;
 void zMapFeatureTranscriptSetEvidence(GList *evidence, gpointer data) ;
 GList* zMapFeatureTranscriptGetVariations(ZMapFeature feature) ;
 void zMapFeatureTranscriptSetVariations(ZMapFeature feature, GList *variations) ;
-ZMapFeature zMapFeatureTranscriptShallowCopy(ZMapFeature src) ;
+ZMapFeature zMapFeatureTranscriptShallowCopy(ZMapFeature src, GError **error = NULL) ;
 bool zMapFeatureTranscriptHasAlignParts(ZMapFeature feature) ;
 GArray *zMapFeatureTranscriptGetAlignParts(ZMapFeature feature, guint exon_index) ;
 

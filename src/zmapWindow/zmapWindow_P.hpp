@@ -1274,8 +1274,8 @@ gboolean zmapWindowZoomFromClipboard(ZMapWindow window, double curr_world_x, dou
 char *zmapWindowMakeColumnSelectionText(ZMapWindow window, double wx, double wy, ZMapWindowDisplayStyle display_style,
                                         ZMapWindowContainerFeatureSet selected_column) ;
 char *zmapWindowMakeFeatureSelectionTextFromFeature(ZMapWindow window,
-                                                    ZMapWindowDisplayStyle display_style, ZMapFeature feature) ;
-char *zmapWindowMakeFeatureSelectionTextFromSelection(ZMapWindow window, ZMapWindowDisplayStyle display_style) ;
+                                                    ZMapWindowDisplayStyle display_style, ZMapFeature feature, const gboolean expand_children = FALSE) ;
+char *zmapWindowMakeFeatureSelectionTextFromSelection(ZMapWindow window, ZMapWindowDisplayStyle display_style, const gboolean expand_children = FALSE) ;
 
 void zmapWindowGetMaxBoundsItems(ZMapWindow window, GList *items,
 				 double *rootx1, double *rooty1, double *rootx2, double *rooty2) ;
@@ -1717,7 +1717,7 @@ FooCanvasItem *zmapWindowFeatureFactoryRunSingle(GHashTable *ftoi_hash,
                                                  ZMapWindowContainerFeatures features_container,
                                                  FooCanvasItem * foo_featureset,
                                                  ZMapWindowFeatureStack     feature_stack);
-void zmapWindowRedrawFeatureSet(ZMapWindow window, ZMapFeatureSet featureset);
+void zMapWindowRedrawFeatureSet(ZMapWindow window, ZMapFeatureSet featureset);
 
 char *zmapWindowFeatureSetDescription(ZMapFeatureSet feature_set) ;
 char *zmapWindowFeatureSourceDescription(ZMapFeature feature) ;
@@ -1984,6 +1984,9 @@ GList* zmapWindowCoverageGetRelatedFeaturesets(ZMapFeatureContextMap context_map
                                                GList *req_list, bool unique_id) ;
 GList* zmapWindowCoverageGetRelatedFeaturesets(ZMapFeatureContextMap context_map, ZMapWindowContainerFeatureSet container_set,
                                                GList *req_list, bool unique_id) ;
+void zmapWindowRedrawFeatureSet(ZMapWindow window, ZMapFeatureSet featureset) ;
+
+void zmapWindowUpdateStyleFromFeatures(ZMapWindow window, ZMapFeatureTypeStyle style) ;
 
 /* Malcolms.... */
 void foo_bug_set(void *key, const char *id) ;

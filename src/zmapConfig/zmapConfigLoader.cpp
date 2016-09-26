@@ -91,11 +91,11 @@ static ZMapConfigIniContextKeyEntry get_style_group_data(const char **stanza_nam
 static ZMapConfigIniContextKeyEntry get_source_group_data(const char **stanza_name, const char **stanza_type);
 static ZMapConfigIniContextKeyEntry get_window_group_data(const char **stanza_name, const char **stanza_type);
 static ZMapConfigIniContextKeyEntry get_blixem_group_data(const char **stanza_name, const char **stanza_type);
-static gpointer create_config_source();
+static gpointer create_config_source(gpointer data);
 static void free_source_list_item(gpointer list_data, gpointer unused_data);
 static void source_set_property(char *current_stanza_name, const char *key, GType type,
 gpointer parent_data, GValue *property_value) ;
-static gpointer create_config_style() ;
+static gpointer create_config_style(gpointer data) ;
 static void style_set_property(char *current_stanza_name, const char *key, GType type,
        gpointer parent_data, GValue *property_value) ;
 static void free_style_list_item(gpointer list_data, gpointer unused_data)  ;
@@ -131,7 +131,8 @@ static bool debug_loading_G = false ;                       // Use to turn debug
 
 
 /* Note that config_file can be null here - this returns a new context which has  
- * the config_read flag as false. */
+ * the config_read flag as false. file_type defaults to ZMAPCONFIG_FILE_NONE which means we will
+ * read all of the config file types in priority order. Specify a specific type to read only that type. */
 ZMapConfigIniContext zMapConfigIniContextProvide(const char *config_file, ZMapConfigIniFileType file_type)
 {
   ZMapConfigIniContext context = NULL ;
@@ -1114,7 +1115,9 @@ std::map<GQuark, ZMapFeatureColumn> *zMapConfigIniGetColumns(ZMapConfigIniContex
 }
 
 
-/* Get the list of sources from the given config file / config string */
+/* Get the list of sources from the given config file / config string. Note that this should not
+ * be called directly - use ZMapFeatureSequenceMap::addSourcesFromConfig instead so that sources
+ * get added into the sources list. */
 GList *zMapConfigGetSources(const char *config_file, const char *config_str, char ** stylesfile)
 {
   GList *settings_list = NULL;
@@ -1505,7 +1508,7 @@ static void fetch_referenced_stanzas(gpointer list_data, gpointer user_data)
       full_data->object_create_func &&
       full_data->stanza)
     {
-      if ((full_data->current_object = (full_data->object_create_func)()))
+      if ((full_data->current_object = (full_data->object_create_func)(stanza_name)))
         {
           found = TRUE ;
 
@@ -1535,7 +1538,7 @@ static void fetchStanzas(FetchReferencedStanzas full_data, GKeyFile *key_file, c
 
   if (g_key_file_has_group(key_file, stanza_name) && (full_data->object_create_func))
     {
-      if ((full_data->current_object = (full_data->object_create_func)()))
+      if ((full_data->current_object = (full_data->object_create_func)(stanza_name)))
         {
           /* get stanza keys */
           g_list_foreach(full_data->stanza->keys, fill_stanza_key_value, full_data) ;
@@ -1647,6 +1650,7 @@ static ZMapConfigIniContextKeyEntry get_app_group_data(const char **stanza_name,
     { ZMAPSTANZA_APP_SESSION_COLOUR,           G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_APP_LOCALE,             G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_APP_COOKIE_JAR,         G_TYPE_STRING,  NULL, FALSE },
+    { ZMAPSTANZA_APP_PROXY,              G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_APP_PORT,               G_TYPE_INT,     NULL, FALSE },
     { ZMAPSTANZA_APP_PFETCH_MODE,        G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_APP_PFETCH_LOCATION,    G_TYPE_STRING,  NULL, FALSE },
@@ -1761,7 +1765,7 @@ static ZMapConfigIniContextKeyEntry get_debug_group_data(const char **stanza_nam
 
 
 
-static gpointer create_config_style()
+static gpointer create_config_style(gpointer data)
 {
   gpointer config_struct = NULL ;
 
@@ -2120,12 +2124,14 @@ static void style_set_property(char *current_stanza_name, const char *key, GType
 
 
 
-static gpointer create_config_source()
+static gpointer create_config_source(gpointer data)
 {
   ZMapConfigSource src ;
+  const char *source_name = (const char*)data ;
 
-  src = g_new0(ZMapConfigSourceStruct, 1) ;
+  src = new ZMapConfigSourceStruct ;
 
+  src->name_ = g_quark_from_string(source_name) ;
   src->group = SOURCE_GROUP_START ;                         // default_value
 
   return src ;

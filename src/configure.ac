@@ -53,6 +53,20 @@ AX_CXX_COMPILE_STDCXX_0X()
 #    - a shell variable via AC_SUBST
 #
 
+# Check for openssl
+#
+AX_CHECK_OPENSSL()
+
+AC_CHECK_HEADERS([openssl.h], [HAVE_OPENSSL_HEADER=1])
+AM_CONDITIONAL([HAVE_SSL], [ test -n "$HAVE_OPENSSL_HEADER" || test -n "$OPENSSL_INCLUDES" ])
+
+AM_COND_IF([HAVE_SSL], 
+           [ echo 'openssl is available!' ])
+AM_COND_IF([HAVE_SSL], 
+           [AC_DEFINE([HAVE_SSL], [1], [Define to 1 if openssl is available])])
+AM_COND_IF([HAVE_SSL], 
+           [AC_SUBST([HAVE_SSL], [have_ssl])])
+
 
 # Check for aceconn
 #
@@ -87,7 +101,7 @@ AM_COND_IF([HAVE_MYSQL_LIB], [AC_SUBST([HAVE_MYSQL_LIB], ['mysql lib is availabl
 
 # Also need to check for headers - need mysql include directory in cflags or AC_CHECK_HEADERS
 # fails
-AM_COND_IF([HAVE_MYSQL_LIB], [[ CFLAGS="$CFLAGS $MYSQL_CFLAGS" ]])
+AM_COND_IF([HAVE_MYSQL_LIB], [[ CFLAGS="$MYSQL_CFLAGS $CFLAGS" ]])
 AC_CHECK_HEADERS([mysql.h], [HAVE_MYSQL_HEADER=1])
 
 AM_CONDITIONAL([HAVE_MYSQL], [ test -n "$HAVE_MYSQL_HEADER" && test -n "$HAVE_MYSQL_LIB" ])
@@ -675,6 +689,12 @@ fi
 if test -z "$HAVE_MYSQL"
 then
   echo " Warning: MySql is not installed so ensc-core access is disabled."
+  echo
+fi
+
+if test -z "$HAVE_SSL"
+then
+  echo " Warning: openssl is not installed so https access is disabled."
   echo
 fi
 

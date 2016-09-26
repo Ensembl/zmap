@@ -62,6 +62,7 @@ gboolean zMapServerGlobalInit(ZMapURL url, void **server_global_data_out)
   zMapReturnValIfFail((server_global_data_out), FALSE) ;
 
   zMapReturnValIfFail((url->scheme == SCHEME_FILE
+                       || url->scheme == SCHEME_TRACKHUB
                        || url->scheme == SCHEME_PIPE 
                        || url->scheme == SCHEME_HTTP 
                        || url->scheme == SCHEME_FTP
@@ -138,6 +139,7 @@ gboolean zMapServerGlobalInit(ZMapURL url, void **server_global_data_out)
 
 
 ZMapServerResponseType zMapServerCreateConnection(ZMapServer *server_out, void *global_data,
+                                                  GQuark source_name,
                                                   char *config_file,
                                                   ZMapURL url, char *format,
                                                   int timeout, char *version_str,
@@ -169,7 +171,7 @@ ZMapServerResponseType zMapServerCreateConnection(ZMapServer *server_out, void *
 
   if (result == ZMAP_SERVERRESPONSE_OK)
     {
-      if ((server->funcs->create)(&(server->server_conn), config_file, url, format,
+      if ((server->funcs->create)(&(server->server_conn), source_name, config_file, url, format,
                                   version_str, timeout, mutex))
         {
           zMapServerSetErrorMsg(server, NULL) ;

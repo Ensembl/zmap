@@ -204,6 +204,7 @@ void zMapSignalHandler(int sig_no) ;
 
 char *zMapGetDir(const char *directory_in, gboolean home_relative, gboolean make_dir) ;
 char *zMapGetFile(char *directory, const char *filename, gboolean make_file, const char *permissions, GError **error) ;
+const char *zMapGetTmpDir() ;
 char *zMapGetPath(char *path_in) ;
 char *zMapGetBasename(const char *path_in) ;
 char *zMapExpandFilePath(const char *path_in) ;

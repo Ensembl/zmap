@@ -37,11 +37,22 @@
 #include <ZMap/zmapFeatureLoadDisplay.hpp>
 
 
+/* Types of source available to add on the Create Source dialog */
+enum class ZMapAppSourceType
+{
+  NONE,
+  FILE, 
+#ifdef USE_ENSEMBL
+  ENSEMBL, 
+#endif
+  TRACKHUB
+} ;
+
 
 
 /* User callback function, called by zMapAppGetSequenceView code to return
  * a sequence, start, end and optionally config file specificed by user. */
-typedef void (*ZMapAppGetSequenceViewCB)(ZMapFeatureSequenceMap sequence_map, gpointer user_data) ;
+typedef void (*ZMapAppGetSequenceViewCB)(ZMapFeatureSequenceMap sequence_map, const bool recent_only, gpointer user_data) ;
 typedef void (*ZMapAppClosedSequenceViewCB)(GtkWidget *toplevel, gpointer user_data) ;
 
 /* User callback function, called by zMapAppCreateSource code */
@@ -55,12 +66,23 @@ gboolean zMapAppGetSequenceConfig(ZMapFeatureSequenceMap seq_map, GError **error
 GtkWidget *zMapAppGetSequenceView(ZMapAppGetSequenceViewCB user_func, gpointer user_data,
                                   ZMapAppClosedSequenceViewCB close_func, gpointer close_data,
                                   ZMapFeatureSequenceMap sequence_map, gboolean display_sequence) ;
+
 GtkWidget *zMapAppCreateSource(ZMapFeatureSequenceMap sequence_map, 
-                               ZMapAppCreateSourceCB user_func, gpointer user_data) ;
+                               ZMapAppCreateSourceCB user_func, gpointer user_data,
+                               ZMapAppClosedSequenceViewCB close_func, gpointer close_data,
+#ifdef USE_ENSEMBL
+                               ZMapAppSourceType default_type = ZMapAppSourceType::ENSEMBL
+#else
+                               ZMapAppSourceType default_type = ZMapAppSourceType::TRACKHUB
+#endif
+                               ) ;
+
 GtkWidget *zMapAppEditSource(ZMapFeatureSequenceMap sequence_map, ZMapConfigSource source,
                              ZMapAppCreateSourceCB user_func, gpointer user_data) ;
 GtkWidget *zMapCreateSequenceViewWidg(ZMapAppGetSequenceViewCB user_func, gpointer user_data,
-				      ZMapFeatureSequenceMap sequence_map, gboolean display_sequence) ;
+                                      ZMapFeatureSequenceMap sequence_map, 
+                                      gboolean display_sequence = TRUE, const gboolean import = FALSE,
+                                      GtkWidget *toplevel = NULL) ;
 void zMapAppMergeSequenceName(ZMapFeatureSequenceMap seq_map_inout, const char *sequence_name, 
                               const gboolean merge_details, GError **error) ;
 void zMapAppMergeSequenceCoords(ZMapFeatureSequenceMap seq_map, int start, int end, 

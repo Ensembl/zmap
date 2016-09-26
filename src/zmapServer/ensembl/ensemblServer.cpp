@@ -113,7 +113,7 @@ typedef struct DoAllAlignBlocksStructType
  * shouldn't change these prototypes without changing all the other server prototypes..... */
 static gboolean globalInit(void) ;
 static gboolean createConnection(void **server_out,
-                                 char *config_file, ZMapURL url, char *format,
+                                 GQuark source_name, char *config_file, ZMapURL url, char *format,
                                  char *version_str, int timeout, pthread_mutex_t *mutex) ;
 static ZMapServerResponseType openConnection(void *server, ZMapServerReqOpen req_open) ;
 static ZMapServerResponseType getInfo(void *server, ZMapServerReqGetServerInfo info) ;
@@ -147,13 +147,13 @@ static void setErrMsg(EnsemblServer server, char *new_msg) ;
 static void eachAlignment(gpointer key, gpointer data, gpointer user_data) ;
 static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data) ;
 
-static gboolean getAllSimpleFeatures(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
-static gboolean getAllDNAAlignFeatures(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
-static gboolean getAllDNAPepAlignFeatures(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
-static gboolean getAllRepeatFeatures(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
-static gboolean getAllTranscripts(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block, set<GQuark> &transcript_ids) ;
-static gboolean getAllPredictionTranscripts(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
-static gboolean getAllGenes(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block, set<GQuark> &transcript_ids) ;
+static gboolean getAllSimpleFeatures(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block, GError **error) ;
+static gboolean getAllDNAAlignFeatures(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block, GError **error) ;
+static gboolean getAllDNAPepAlignFeatures(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block, GError **error) ;
+static gboolean getAllRepeatFeatures(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block, GError **error) ;
+static gboolean getAllTranscripts(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block, set<GQuark> &transcript_ids, GError **error) ;
+static gboolean getAllPredictionTranscripts(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block, GError **error) ;
+static gboolean getAllGenes(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block, set<GQuark> &transcript_ids, GError **error) ;
 
 static const char* featureGetSOTerm(SeqFeature *rsf) ;
 
@@ -171,15 +171,16 @@ static ZMapFeature makeFeature(EnsemblServer server,
                                const int match_end,
                                GetFeaturesData get_features_data,
                                ZMapFeatureBlock feature_block,
+                               GError **error,
                                set<GQuark> *transcript_ids = NULL) ;
 
-static ZMapFeature makeFeatureSimple(EnsemblServer server, SimpleFeature *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
-static ZMapFeature makeFeatureBaseAlign(EnsemblServer server, BaseAlignFeature *rsf, ZMapHomolType homol_type, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
-static ZMapFeature makeFeatureRepeat(EnsemblServer server, RepeatFeature *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
-static ZMapFeature makeFeatureTranscript(EnsemblServer server, Transcript *rsf, const char *gene_source, const long start, const long end, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block, set<GQuark> &transcript_ids) ;
-static ZMapFeature makeFeaturePredictionTranscript(EnsemblServer server, PredictionTranscript *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
-static ZMapFeature makeFeatureGene(EnsemblServer server, Gene *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block, set<GQuark> &transcript_ids) ;
-static void geneAddTranscripts(EnsemblServer server, Gene *rsf, const char *gene_source, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block, set<GQuark> &transcript_ids) ;
+static ZMapFeature makeFeatureSimple(EnsemblServer server, SimpleFeature *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block, GError **error) ;
+static ZMapFeature makeFeatureBaseAlign(EnsemblServer server, BaseAlignFeature *rsf, ZMapHomolType homol_type, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block, GError **error) ;
+static ZMapFeature makeFeatureRepeat(EnsemblServer server, RepeatFeature *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block, GError **error) ;
+static ZMapFeature makeFeatureTranscript(EnsemblServer server, Transcript *rsf, const char *gene_source, const long start, const long end, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block, set<GQuark> &transcript_ids, GError **error) ;
+static ZMapFeature makeFeaturePredictionTranscript(EnsemblServer server, PredictionTranscript *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block, GError **error) ;
+static ZMapFeature makeFeatureGene(EnsemblServer server, Gene *rsf, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block, set<GQuark> &transcript_ids, GError **error) ;
+static void geneAddTranscripts(EnsemblServer server, Gene *rsf, const char *gene_source, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block, set<GQuark> &transcript_ids, GError **error) ;
 
 static void transcriptAddExons(EnsemblServer server, ZMapFeature feature, Vector *exons) ;
 
@@ -253,7 +254,7 @@ static gboolean globalInit(void)
 }
 
 static gboolean createConnection(void **server_out,
-                                 char *config_file, ZMapURL url, char *format,
+                                 GQuark source_name, char *config_file, ZMapURL url, char *format,
                                  char *version_str, int timeout, pthread_mutex_t *mutex)
 {
   gboolean result = FALSE ;
@@ -306,7 +307,7 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
 
   zMapReturnValIfFail(server && req_open && req_open->sequence_map, ZMAP_SERVERRESPONSE_REQFAIL) ;
 
-  server->sequence = g_strdup(req_open->sequence_map->sequence) ;
+  server->sequence = g_strdup(g_quark_to_string(req_open->req_sequence)) ;
   server->zmap_start = req_open->zmap_start ;
   server->zmap_end = req_open->zmap_end ;
 
@@ -487,7 +488,8 @@ static ZMapServerResponseType getFeatures(void *server_in, ZMapStyleTree &styles
 
 static gboolean getAllSimpleFeatures(EnsemblServer server,
                                      GetFeaturesData get_features_data,
-                                     ZMapFeatureBlock feature_block)
+                                     ZMapFeatureBlock feature_block,
+                                     GError **error)
 {
   gboolean result = TRUE ;
 
@@ -522,14 +524,26 @@ static gboolean getAllSimpleFeatures(EnsemblServer server,
       SimpleFeature *rsf = (SimpleFeature*)SeqFeature_transform((SeqFeature*)sf,  (char *)(server->coord_system), NULL ,NULL) ;
 
       if (rsf)
-        makeFeatureSimple(server, rsf, get_features_data, feature_block) ;
+        {
+          makeFeatureSimple(server, rsf, get_features_data, feature_block, error) ;
+
+          // If it's a fatal error creating the feature then don't try to create any more
+          if (zMapFeatureErrorIsFatal(error))
+            break ;
+        }
       else
-        printf("Failed to map feature '%s'\n", SimpleFeature_getDisplayLabel(sf));
+        {
+          printf("Failed to map feature '%s'\n", SimpleFeature_getDisplayLabel(sf));
+        }
 
       //          Object_decRefCount(rsf);
       //          free(rsf);
       //          Object_decRefCount(sf);
       //          free(sf);
+
+      // If it's a fatal error creating the feature then don't try to create any more
+      if (zMapFeatureErrorIsFatal(error))
+        break ;
     }
 
   return result;
@@ -537,7 +551,8 @@ static gboolean getAllSimpleFeatures(EnsemblServer server,
 
 static gboolean getAllDNAAlignFeatures(EnsemblServer server,
                                        GetFeaturesData get_features_data,
-                                       ZMapFeatureBlock feature_block)
+                                       ZMapFeatureBlock feature_block,
+                                       GError **error)
 {
   gboolean result = TRUE ;
 
@@ -571,9 +586,17 @@ static gboolean getAllDNAAlignFeatures(EnsemblServer server,
       DNAAlignFeature *rsf = (DNAAlignFeature*)SeqFeature_transform((SeqFeature*)sf, (char *)(server->coord_system), NULL, NULL);
 
       if (rsf)
-        makeFeatureBaseAlign(server, (BaseAlignFeature*)rsf, ZMAPHOMOL_N_HOMOL, get_features_data, feature_block) ;
+        {
+          makeFeatureBaseAlign(server, (BaseAlignFeature*)rsf, ZMAPHOMOL_N_HOMOL, get_features_data, feature_block, error) ;
+
+          // If it's a fatal error creating the feature then don't try to create any more
+          if (zMapFeatureErrorIsFatal(error))
+            break ;
+        }
       else
-        printf("Failed to map feature '%s'\n", BaseAlignFeature_getHitSeqName((BaseAlignFeature*)sf));
+        {
+          printf("Failed to map feature '%s'\n", BaseAlignFeature_getHitSeqName((BaseAlignFeature*)sf));
+        }
 
       //      Object_decRefCount(rsf);
       //      free(rsf);
@@ -586,7 +609,8 @@ static gboolean getAllDNAAlignFeatures(EnsemblServer server,
 
 static gboolean getAllDNAPepAlignFeatures(EnsemblServer server,
                                           GetFeaturesData get_features_data,
-                                          ZMapFeatureBlock feature_block)
+                                          ZMapFeatureBlock feature_block,
+                                          GError **error)
 {
   gboolean result = TRUE ;
 
@@ -620,9 +644,17 @@ static gboolean getAllDNAPepAlignFeatures(EnsemblServer server,
       DNAPepAlignFeature *rsf = (DNAPepAlignFeature*)SeqFeature_transform((SeqFeature*)sf, (char *)(server->coord_system), NULL, NULL);
 
       if (rsf)
-        makeFeatureBaseAlign(server, (BaseAlignFeature*)rsf, ZMAPHOMOL_X_HOMOL, get_features_data, feature_block) ;
+        {
+          makeFeatureBaseAlign(server, (BaseAlignFeature*)rsf, ZMAPHOMOL_X_HOMOL, get_features_data, feature_block, error) ;
+
+          // If it's a fatal error creating the feature then don't try to create any more
+          if (zMapFeatureErrorIsFatal(error))
+            break ;
+        }
       else
-        printf("Failed to map feature '%s'\n", BaseAlignFeature_getHitSeqName((BaseAlignFeature*)sf));
+        {
+          printf("Failed to map feature '%s'\n", BaseAlignFeature_getHitSeqName((BaseAlignFeature*)sf));
+        }
 
       //      Object_decRefCount(rsf);
       //      free(rsf);
@@ -636,7 +668,8 @@ static gboolean getAllDNAPepAlignFeatures(EnsemblServer server,
 
 static gboolean getAllRepeatFeatures(EnsemblServer server,
                                      GetFeaturesData get_features_data,
-                                     ZMapFeatureBlock feature_block)
+                                     ZMapFeatureBlock feature_block,
+                                     GError **error)
 {
   gboolean result = TRUE ;
 
@@ -670,9 +703,17 @@ static gboolean getAllRepeatFeatures(EnsemblServer server,
       RepeatFeature *rsf = (RepeatFeature*)SeqFeature_transform((SeqFeature*)sf, (char *)(server->coord_system), NULL, NULL);
 
       if (rsf)
-        makeFeatureRepeat(server, rsf, get_features_data, feature_block) ;
+        {
+          makeFeatureRepeat(server, rsf, get_features_data, feature_block, error) ;
+
+          // If it's a fatal error creating the feature then don't try to create any more
+          if (zMapFeatureErrorIsFatal(error))
+            break ;
+        }
       else
-        printf("Failed to map feature '%s'\n", RepeatConsensus_getName(RepeatFeature_getConsensus(sf)));
+        {
+          printf("Failed to map feature '%s'\n", RepeatConsensus_getName(RepeatFeature_getConsensus(sf)));
+        }
 
       //      Object_decRefCount(rsf);
       //      free(rsf);
@@ -687,7 +728,8 @@ static gboolean getAllRepeatFeatures(EnsemblServer server,
 static gboolean getAllTranscripts(EnsemblServer server,
                                   GetFeaturesData get_features_data,
                                   ZMapFeatureBlock feature_block,
-                                  set<GQuark> &transcript_ids)
+                                  set<GQuark> &transcript_ids,
+                                  GError **error)
 {
   gboolean result = TRUE ;
 
@@ -725,7 +767,11 @@ static gboolean getAllTranscripts(EnsemblServer server,
           const long start = SeqFeature_getStart((SeqFeature*)rsf) ;
           const long end = SeqFeature_getEnd((SeqFeature*)rsf) ;
 
-          makeFeatureTranscript(server, rsf, NULL, start, end, get_features_data, feature_block, transcript_ids) ;
+          makeFeatureTranscript(server, rsf, NULL, start, end, get_features_data, feature_block, transcript_ids, error) ;
+         
+          // If it's a fatal error creating the feature then don't try to create any more
+          if (zMapFeatureErrorIsFatal(error))
+            break ;
         }
       else
         {
@@ -744,7 +790,8 @@ static gboolean getAllTranscripts(EnsemblServer server,
 
 static gboolean getAllPredictionTranscripts(EnsemblServer server,
                                             GetFeaturesData get_features_data,
-                                            ZMapFeatureBlock feature_block)
+                                            ZMapFeatureBlock feature_block,
+                                            GError **error)
 {
   gboolean result = TRUE ;
 
@@ -778,9 +825,17 @@ static gboolean getAllPredictionTranscripts(EnsemblServer server,
       PredictionTranscript *rsf = (PredictionTranscript*)SeqFeature_transform((SeqFeature*)sf, (char *)(server->coord_system), NULL, NULL);
 
       if (rsf)
-        makeFeaturePredictionTranscript(server, rsf, get_features_data, feature_block) ;
+        {
+          makeFeaturePredictionTranscript(server, rsf, get_features_data, feature_block, error) ;
+
+          // If it's a fatal error creating the feature then don't try to create any more
+          if (zMapFeatureErrorIsFatal(error))
+            break ;
+        }
       else
-        printf("Failed to map feature '%s'\n", Transcript_getSeqRegionName(sf)) ;
+        {
+          printf("Failed to map feature '%s'\n", Transcript_getSeqRegionName(sf)) ;
+        }
 
       //      Object_decRefCount(rsf);
       //      free(rsf);
@@ -795,7 +850,8 @@ static gboolean getAllPredictionTranscripts(EnsemblServer server,
 static gboolean getAllGenes(EnsemblServer server,
                             GetFeaturesData get_features_data,
                             ZMapFeatureBlock feature_block,
-                            set<GQuark> &transcript_ids)
+                            set<GQuark> &transcript_ids,
+                            GError **error)
 {
   gboolean result = TRUE ;
 
@@ -832,9 +888,17 @@ static gboolean getAllGenes(EnsemblServer server,
       cs_name = NULL;
 
       if (rsf)
-        makeFeatureGene(server, rsf, get_features_data, feature_block, transcript_ids) ;
+        {
+          makeFeatureGene(server, rsf, get_features_data, feature_block, transcript_ids, error) ;
+
+          // If it's a fatal error creating the feature then don't try to create any more
+          if (zMapFeatureErrorIsFatal(error))
+            break ;
+        }
       else
-        printf("Failed to map feature '%s'\n", Gene_getExternalName(sf)) ;
+        {
+          printf("Failed to map feature '%s'\n", Gene_getExternalName(sf)) ;
+        }
 
       //      Object_decRefCount(rsf);
       //      free(rsf);
@@ -1125,7 +1189,8 @@ static const char* featureGetSOTerm(SeqFeature *rsf)
 static ZMapFeature makeFeatureSimple(EnsemblServer server,
                                      SimpleFeature *rsf,
                                      GetFeaturesData get_features_data,
-                                     ZMapFeatureBlock feature_block)
+                                     ZMapFeatureBlock feature_block,
+                                     GError **error)
 {
   ZMapFeature feature = NULL ;
 
@@ -1149,7 +1214,7 @@ static ZMapFeature makeFeatureSimple(EnsemblServer server,
 
   feature = makeFeature(server, (SeqFeature*)rsf, feature_name, feature_name, 
                         feature_mode, source, NULL, NULL, start, end, 0, 0, 
-                        get_features_data, feature_block) ;
+                        get_features_data, feature_block, error) ;
 
   return feature ;
 }
@@ -1158,7 +1223,8 @@ static ZMapFeature makeFeatureSimple(EnsemblServer server,
 static ZMapFeature makeFeatureRepeat(EnsemblServer server,
                                      RepeatFeature *rsf,
                                      GetFeaturesData get_features_data,
-                                     ZMapFeatureBlock feature_block)
+                                     ZMapFeatureBlock feature_block,
+                                     GError **error)
 {
   ZMapFeature feature = NULL ;
 
@@ -1183,7 +1249,7 @@ static ZMapFeature makeFeatureRepeat(EnsemblServer server,
 
   feature = makeFeature(server, (SeqFeature*)rsf, feature_name, feature_name, 
                         feature_mode, source, NULL, NULL, start, end, 0, 0, 
-                        get_features_data, feature_block) ;
+                        get_features_data, feature_block, error) ;
 
   return feature ;
 }
@@ -1193,7 +1259,8 @@ static ZMapFeature makeFeatureGene(EnsemblServer server,
                                    Gene *rsf,
                                    GetFeaturesData get_features_data,
                                    ZMapFeatureBlock feature_block,
-                                   set<GQuark> &transcript_ids)
+                                   set<GQuark> &transcript_ids, 
+                                   GError **error)
 {
   ZMapFeature feature = NULL ;
 
@@ -1206,7 +1273,7 @@ static ZMapFeature makeFeatureGene(EnsemblServer server,
   if (analysis && (!source || *source == '\0'))
     source = Analysis_getGFFSource(analysis) ;
 
-  geneAddTranscripts(server, rsf, source, get_features_data, feature_block, transcript_ids) ;
+  geneAddTranscripts(server, rsf, source, get_features_data, feature_block, transcript_ids, error) ;
 
   return feature ;
 }
@@ -1217,7 +1284,8 @@ static void geneAddTranscripts(EnsemblServer server,
                                const char *gene_source,
                                GetFeaturesData get_features_data, 
                                ZMapFeatureBlock feature_block,
-                               set<GQuark> &transcript_ids)
+                               set<GQuark> &transcript_ids,
+                               GError **error)
 {
   if (rsf)
     {
@@ -1235,7 +1303,7 @@ static void geneAddTranscripts(EnsemblServer server,
 
           makeFeatureTranscript(server, transcript, 
                                 gene_source, start, end, 
-                                get_features_data, feature_block, transcript_ids) ;
+                                get_features_data, feature_block, transcript_ids, error) ;
         }
 
       //Vector_free(transcripts) ;
@@ -1250,7 +1318,8 @@ static ZMapFeature makeFeatureTranscript(EnsemblServer server,
                                          const long end,
                                          GetFeaturesData get_features_data,
                                          ZMapFeatureBlock feature_block,
-                                         set<GQuark> &transcript_ids)
+                                         set<GQuark> &transcript_ids,
+                                         GError **error)
 {
   ZMapFeature feature = NULL ;
 
@@ -1279,7 +1348,7 @@ static ZMapFeature makeFeatureTranscript(EnsemblServer server,
 
       feature = makeFeature(server, (SeqFeature*)rsf, feature_name_id, feature_name, 
                             feature_mode, source, gene_source, biotype, start, end, 0, 0, 
-                            get_features_data, feature_block, &transcript_ids) ;
+                            get_features_data, feature_block, error, &transcript_ids) ;
 
       if (feature)
         {
@@ -1345,7 +1414,8 @@ static ZMapFeature makeFeatureTranscript(EnsemblServer server,
 static ZMapFeature makeFeaturePredictionTranscript(EnsemblServer server,
                                                    PredictionTranscript *rsf,
                                                    GetFeaturesData get_features_data,
-                                                   ZMapFeatureBlock feature_block)
+                                                   ZMapFeatureBlock feature_block,
+                                                   GError **error)
 {
   ZMapFeature feature = NULL ;
 
@@ -1376,7 +1446,7 @@ static ZMapFeature makeFeaturePredictionTranscript(EnsemblServer server,
   
   feature = makeFeature(server, (SeqFeature*)rsf, feature_name_id, feature_name, 
                         feature_mode, source, NULL, NULL, start, end, 0, 0, 
-                        get_features_data, feature_block) ;
+                        get_features_data, feature_block, error) ;
 
   if (feature)
     {
@@ -1444,7 +1514,8 @@ static ZMapFeature makeFeatureBaseAlign(EnsemblServer server,
                                         BaseAlignFeature *rsf,
                                         ZMapHomolType homol_type,
                                         GetFeaturesData get_features_data,
-                                        ZMapFeatureBlock feature_block)
+                                        ZMapFeatureBlock feature_block,
+                                        GError **error)
 {
   ZMapFeature feature = NULL ;
   const char *source = NULL ;
@@ -1474,7 +1545,7 @@ static ZMapFeature makeFeatureBaseAlign(EnsemblServer server,
 
   feature = makeFeature(server, (SeqFeature*)rsf, feature_name_id, feature_name,
                         feature_mode, source, NULL, NULL, start, end, match_start, match_end,
-                        get_features_data, feature_block) ;
+                        get_features_data, feature_block, error) ;
 
   if (feature)
     {
@@ -1574,6 +1645,7 @@ static ZMapFeature makeFeature(EnsemblServer server,
                                const int match_end,
                                GetFeaturesData get_features_data,
                                ZMapFeatureBlock feature_block,
+                               GError **error,
                                set<GQuark> *transcript_ids)
 {
   ZMapFeature feature = NULL ;
@@ -1647,30 +1719,33 @@ static ZMapFeature makeFeature(EnsemblServer server,
           if (feature_set)
             {
               /* ok, actually create the feature now */
-              feature = zMapFeatureCreateEmpty() ;
+              feature = zMapFeatureCreateEmpty(error) ;
 
               /* cast away const... ugh */
-              zMapFeatureAddStandardData(feature,
-                                         (char*)g_quark_to_string(unique_id),
-                                         (char*)feature_name,
-                                         sequence,
-                                         (char*)SO_accession,
-                                         feature_mode,
-                                         &feature_set->style,
-                                         start,
-                                         end,
-                                         has_score,
-                                         score,
-                                         strand) ;
+              if (feature)
+                {
+                  zMapFeatureAddStandardData(feature,
+                                             (char*)g_quark_to_string(unique_id),
+                                             (char*)feature_name,
+                                             sequence,
+                                             (char*)SO_accession,
+                                             feature_mode,
+                                             &feature_set->style,
+                                             start,
+                                             end,
+                                             has_score,
+                                             score,
+                                             strand) ;
 
-              //zMapLogMessage("Created feature: name %s, source %s, so %s, mode %d, start %d, end %d, score %f, strand %d",
-              //               feature_name, source, SO_accession, feature_mode, start, end, score, strand) ;
+                  //zMapLogMessage("Created feature: name %s, source %s, so %s, mode %d, start %d, end %d, score %f, strand %d",
+                  //               feature_name, source, SO_accession, feature_mode, start, end, score, strand) ;
 
-              /* add the new feature to the featureset */
-              ZMapFeature existing_feature = (ZMapFeature)g_hash_table_lookup(((ZMapFeatureAny)feature_set)->children, GINT_TO_POINTER(feature_name_id)) ;
+                  /* add the new feature to the featureset */
+                  ZMapFeature existing_feature = (ZMapFeature)g_hash_table_lookup(((ZMapFeatureAny)feature_set)->children, GINT_TO_POINTER(feature_name_id)) ;
 
-              if (!existing_feature)
-                zMapFeatureSetAddFeature(feature_set, feature) ;
+                  if (!existing_feature)
+                    zMapFeatureSetAddFeature(feature_set, feature) ;
+                }
             }
         }
     }
@@ -1781,6 +1856,23 @@ static void eachAlignment(gpointer key, gpointer data, gpointer user_data)
 }
 
 
+// Issue a warning if the error is set and frees the error. Returns true if it was a fatal error.
+static bool fatalError(GError **error)
+{
+  bool fatal_error = zMapFeatureErrorIsFatal(error) ;
+
+  if (error && *error)
+    {
+      zMapCritical("Error loading features for ensembl server: %s", (*error)->message) ;
+      g_error_free(*error) ;
+      *error = NULL ;
+
+    }
+
+  return fatal_error ;
+}
+
+
 /* Get features in a block */
 static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data)
 {
@@ -1792,11 +1884,22 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
     {
       pthread_mutex_lock(server->mutex) ;
 
-      getAllSimpleFeatures(server, get_features_data, feature_block) ;
-      getAllDNAAlignFeatures(server, get_features_data, feature_block) ;
-      getAllDNAPepAlignFeatures(server, get_features_data, feature_block) ;
-      getAllRepeatFeatures(server, get_features_data, feature_block) ;
-      getAllPredictionTranscripts(server, get_features_data, feature_block) ;
+      GError *g_error = NULL ; 
+
+      if (!fatalError(&g_error))
+        getAllSimpleFeatures(server, get_features_data, feature_block, &g_error) ;
+
+      if (!fatalError(&g_error))      
+        getAllDNAAlignFeatures(server, get_features_data, feature_block, &g_error) ;
+
+      if (!fatalError(&g_error))
+        getAllDNAPepAlignFeatures(server, get_features_data, feature_block, &g_error) ;
+
+      if (!fatalError(&g_error))
+        getAllRepeatFeatures(server, get_features_data, feature_block, &g_error) ;
+
+      if (!fatalError(&g_error))
+        getAllPredictionTranscripts(server, get_features_data, feature_block, &g_error) ;
 
       /* We get transcripts via the gene for genes whose logic_name is in the list of requested
        * featuresets. The transcript logic_name may be different to the gene logic_name so we
@@ -1806,8 +1909,11 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
        * therefore we can check all transcripts from there. We need to make sure that this won't cause
        * a performance problem, though. */
       set<GQuark> transcript_ids;
-      getAllGenes(server, get_features_data, feature_block, transcript_ids) ;
-      getAllTranscripts(server, get_features_data, feature_block, transcript_ids) ;
+      if (!fatalError(&g_error))
+        getAllGenes(server, get_features_data, feature_block, transcript_ids, &g_error) ;
+
+      if (!fatalError(&g_error))
+        getAllTranscripts(server, get_features_data, feature_block, transcript_ids, &g_error) ;
 
       pthread_mutex_unlock(server->mutex) ;
     }

@@ -44,6 +44,26 @@
 #include <zmapFeature_P.hpp>
 
 
+/*
+ * We follow glib convention in error domain naming:
+ *          "The error domain is called <NAMESPACE>_<MODULE>_ERROR"
+ */
+#define ZMAP_FEATURE_ERROR g_quark_from_string("ZMAP_FEATURE_ERROR")
+
+// Limit the maximum number of features zmap attempts to load. It's not good that we have to do
+// this but otherwise at the moment zmap will continue loading features until it falls over.
+#define ZMAP_MAX_FEATURES_HARD_LIMIT 1000000000
+
+
+/*
+ * Some error types for use in the view
+ */
+typedef enum
+{
+  ZMAPFEATURE_ERROR_FEATURE_LIMIT // reached max number of features allowed
+} ZMapFeatureError ;
+
+
 
 typedef struct
 {
@@ -83,6 +103,74 @@ typedef struct
 
 
 
+/*
+ *                          ZMapFeatureCount class
+ */
+
+
+// Constructor
+ZMapFeatureCount::ZMapFeatureCount()
+  : max_features_(ZMAP_MAX_FEATURES_HARD_LIMIT),
+    loaded_features_(0)
+{
+}
+
+// Increment/decrement operators change the number of loaded features
+void ZMapFeatureCount::operator++()
+{
+  mutex_.lock() ;
+  ++loaded_features_ ;
+  mutex_.unlock() ;
+}
+
+void ZMapFeatureCount::operator--()
+{
+  mutex_.lock() ;
+  --loaded_features_ ;
+  mutex_.unlock() ;
+}
+
+
+// Get the number of loaded features
+int ZMapFeatureCount::getCount() const
+{
+  return loaded_features_ ;
+}
+
+// Get the limit
+int ZMapFeatureCount::getLimit() const
+{
+  return max_features_ ;
+}
+
+// Set the limit
+void ZMapFeatureCount::setLimit(const int max_features)
+{
+  max_features_ = max_features ;
+}
+
+
+// Return true if we've reached limit.
+bool ZMapFeatureCount::hitLimit(GError **error) 
+{
+  bool result = false ;
+
+  mutex_.lock() ;
+  result = loaded_features_ >= max_features_ ;
+
+  if (result && error)
+    {
+      g_set_error(error, ZMAP_FEATURE_ERROR, ZMAPFEATURE_ERROR_FEATURE_LIMIT,
+                  "Exceeded maximum number of features (%d)! Further features will not be loaded until some are removed first.", 
+                  max_features_) ;
+    }
+
+  mutex_.unlock() ;
+  return result ;
+}
+
+
+
 
 /*
  *                               External interface routines.
@@ -98,18 +186,37 @@ typedef struct
  * via a simple new "create and add" function that merely calls both the create and
  * add functions from below. */
 
+/* Return true if the given error is a fatal error e.g. we have hit the feature limit and cannot
+ * create any more features (at least until the user has destroyed some) */
+bool zMapFeatureErrorIsFatal(GError **error)
+{
+  bool result = false ;
 
+  if (error && *error && (*error)->code == ZMAPFEATURE_ERROR_FEATURE_LIMIT)
+    result = true ;
+
+  return result ;
+}
 
 /* Returns a single feature correctly initialised to be a "NULL" feature. */
-ZMapFeature zMapFeatureCreateEmpty(void)
+ZMapFeature zMapFeatureCreateEmpty(GError **error)
 {
-  ZMapFeature feature ;
+  ZMapFeature feature = NULL ;
 
-  feature = (ZMapFeature)zmapFeatureAnyCreateFeature(ZMAPFEATURE_STRUCT_FEATURE, NULL,
-                                                     ZMAPFEATURE_NULLQUARK, ZMAPFEATURE_NULLQUARK,
-                                                     NULL) ;
-  feature->db_id = ZMAPFEATUREID_NULL ;
-  feature->mode = ZMAPSTYLE_MODE_INVALID ;
+  if (!ZMapFeatureCount::instance().hitLimit(error))
+    {
+      feature = (ZMapFeature)zmapFeatureAnyCreateFeature(ZMAPFEATURE_STRUCT_FEATURE, NULL,
+                                                         ZMAPFEATURE_NULLQUARK, ZMAPFEATURE_NULLQUARK,
+                                                         NULL) ;
+
+      ++ZMapFeatureCount::instance() ;
+    }
+
+  if (feature)
+    {
+      feature->db_id = ZMAPFEATUREID_NULL ;
+      feature->mode = ZMAPSTYLE_MODE_INVALID ;
+    }
 
   return feature ;
 }
@@ -127,12 +234,13 @@ ZMapFeature zMapFeatureCreateFromStandardData(const char *name, const char *sequ
                                               ZMapFeatureTypeStyle *style,
                                               int start, int end,
                                               gboolean has_score, double score,
-                                              ZMapStrand strand)
+                                              ZMapStrand strand,
+                                              GError **error)
 {
   ZMapFeature feature = NULL;
   gboolean good = FALSE;
 
-  if ((feature = zMapFeatureCreateEmpty()))
+  if ((feature = zMapFeatureCreateEmpty(error)))
     {
       char *feature_name_id = NULL;
 
@@ -405,6 +513,20 @@ gboolean zMapFeatureAddDescription(ZMapFeature feature, char *data )
 
   zMapReturnValIfFail(feature && data && *data, result ) ;
 
+  if (!data || !(*data))
+    {
+      char *feature_name ;
+      char *featureset_name ;
+
+      feature_name = zMapFeatureName((ZMapFeatureAny)feature) ;
+      featureset_name = zMapFeatureName(feature->parent) ;
+
+      zMapLogWarning("zMapFeatureAddDescription() failed, featureset: \"%s\", feature: \"%s\" with %s string",
+                     featureset_name, feature_name,
+                     (!data ? "NULL description" : "empty description")) ;
+      return FALSE ;
+    }
+
   if (feature->description)
     g_free(feature->description) ;
   feature->description = g_strdup(data) ;
@@ -521,6 +643,8 @@ void zMapFeatureDestroy(ZMapFeature feature)
     return ;
 
   zmapDestroyFeatureAnyWithChildren((ZMapFeatureAny)feature, FALSE) ;
+
+  --ZMapFeatureCount::instance() ;
 
   return ;
 }
@@ -676,46 +800,49 @@ gint zMapFeatureCmp(gconstpointer a, gconstpointer b)
 
 /* Make a shallow copy of the given feature. The caller should free the returned ZMapFeature
  * struct with zMapFeatureAnyDestroyShallow */
-ZMapFeature zMapFeatureShallowCopy(ZMapFeature src)
+ZMapFeature zMapFeatureShallowCopy(ZMapFeature src, GError **error)
 {
   ZMapFeature dest = NULL;
   zMapReturnValIfFail(src && src->mode != ZMAPSTYLE_MODE_INVALID, dest) ;
 
-  dest = zMapFeatureCreateEmpty() ;
+  dest = zMapFeatureCreateEmpty(error) ;
 
+  if (dest)
+    {
 #ifdef FEATURES_NEED_MAGIC
-  dest->magic = src->magic ;
+      dest->magic = src->magic ;
 #endif
 
-  dest->struct_type = src->struct_type ;
-  dest->parent = src->parent ;
-  dest->unique_id = src->unique_id ;
-  dest->original_id = src->original_id ;
-  dest->no_children = src->no_children ;
-  dest->flags.has_score = src->flags.has_score ;
-  dest->flags.has_boundary = src->flags.has_boundary ;
-  dest->flags.collapsed = src->flags.collapsed ;
-  dest->flags.squashed = src->flags.squashed ;
-  dest->flags.squashed_start = src->flags.squashed_start ;
-  dest->flags.squashed_end = src->flags.squashed_end ;
-  dest->flags.joined = src->flags.joined ;
-  dest->children = src->children ;
-  dest->composite = src->composite ;
-  dest->db_id = src->db_id ;
-  dest->mode = src->mode ;
-  dest->SO_accession = src->SO_accession ;
-  dest->style = src->style;
-  dest->x1 = src->x1 ;
-  dest->x2 = src->x2 ;
-  dest->strand = src->strand ;
-  dest->boundary_type = src->boundary_type ;
-  dest->score = src->score ;
-  dest->population = src->population;
-  dest->source_id = src->source_id ; 
-  dest->source_text = src->source_text ;
-  dest->description = src->description ;
-  dest->url = src->url ;
-  dest->feature = src->feature ;
+      dest->struct_type = src->struct_type ;
+      dest->parent = src->parent ;
+      dest->unique_id = src->unique_id ;
+      dest->original_id = src->original_id ;
+      dest->no_children = src->no_children ;
+      dest->flags.has_score = src->flags.has_score ;
+      dest->flags.has_boundary = src->flags.has_boundary ;
+      dest->flags.collapsed = src->flags.collapsed ;
+      dest->flags.squashed = src->flags.squashed ;
+      dest->flags.squashed_start = src->flags.squashed_start ;
+      dest->flags.squashed_end = src->flags.squashed_end ;
+      dest->flags.joined = src->flags.joined ;
+      dest->children = src->children ;
+      dest->composite = src->composite ;
+      dest->db_id = src->db_id ;
+      dest->mode = src->mode ;
+      dest->SO_accession = src->SO_accession ;
+      dest->style = src->style;
+      dest->x1 = src->x1 ;
+      dest->x2 = src->x2 ;
+      dest->strand = src->strand ;
+      dest->boundary_type = src->boundary_type ;
+      dest->score = src->score ;
+      dest->population = src->population;
+      dest->source_id = src->source_id ; 
+      dest->source_text = src->source_text ;
+      dest->description = src->description ;
+      dest->url = src->url ;
+      dest->feature = src->feature ;
+    }
 
   return dest ;
 }

@@ -53,6 +53,7 @@ static void copy_to_new_featureset(gpointer key, gpointer hash_data, gpointer us
 static void findFeaturesRangeCB(gpointer key, gpointer value, gpointer user_data) ;
 static void findFeaturesNameCB(gpointer key, gpointer value, gpointer user_data) ;
 static void findFeaturesNameStrandCB(gpointer key, gpointer value, gpointer user_data) ;
+static void update_style_from_feature(gpointer key, gpointer hash_data, gpointer user_data) ;
 
 
 
@@ -104,6 +105,41 @@ ZMapFeatureSet zMapFeatureSetIDCreate(GQuark original_id, GQuark unique_id,
 
   return feature_set ;
 }
+
+
+/* If this feature has a default style, update the style from values in the feature. Currently
+ * this just affects graph styles and updates the max_score to a sensible value based on all of
+ * the feature that get added. */
+void zMapFeatureSetUpdateStyleFromFeature(ZMapFeature feature, ZMapFeatureTypeStyle style)
+{
+  // Currently only change default styles
+  if (feature && style && style->is_default)
+    {
+      // If this featureset has a graph style, set the min/max score in the style from the added features
+      if (style->mode == ZMAPSTYLE_MODE_GRAPH)
+        {
+          // we don't seem to handle negative scores? disallow for now...
+          if (feature->score > style->max_score && feature->score >= 0.0)
+            {
+              style->max_score = feature->score ;
+            }
+
+          if (feature->score < style->min_score && feature->score >= 0.0)
+            {
+              style->min_score = feature->score ;
+            }
+        }
+    }
+}
+
+
+/* Update the feature set's style based on values in all of its features */
+void zMapFeatureSetUpdateStyleFromFeatures(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style)
+{
+  if (feature_set && feature_set->features)
+    g_hash_table_foreach(feature_set->features, update_style_from_feature, style) ;
+}
+
 
 /* Feature must not be null to be added we need at least the feature id and probably should.
  * check for more.
@@ -251,7 +287,6 @@ void zMapFeatureSetDestroyFeatures(ZMapFeatureSet feature_set)
 }
 
 
-
 // 
 //                Internal routines
 //    
@@ -306,3 +341,13 @@ static void findFeaturesNameStrandCB(gpointer key, gpointer value, gpointer user
   return ;
 }
 
+/* A GHFunc() to update a featureset style from a given feature */
+static void update_style_from_feature(gpointer key, gpointer value, gpointer user_data)
+{
+  ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)user_data ;
+  ZMapFeature feature = (ZMapFeature)value ;
+
+  zMapFeatureSetUpdateStyleFromFeature(feature, style) ;
+
+  return ;
+}

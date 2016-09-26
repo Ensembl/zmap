@@ -36,14 +36,17 @@
 
 #include <ZMap/zmap.hpp>
 
-#include <map>
 #include <string>
+#include <list>
+#include <map>
 
 #include <string.h>
 #include <sys/types.h>
 #include <signal.h>                                            /* kill() */
 #include <glib.h>
 #include <gtk/gtk.h>
+
+#include <gbtools/gbtools.hpp>
 
 #include <ZMap/zmapUtils.hpp>
 #include <ZMap/zmapUtilsDebug.hpp>
@@ -59,9 +62,10 @@
 #include <zmapView_P.hpp>
 
 
+using namespace std ;
 
-#include <zmapView_P.hpp>
 
+#define SOURCE_FAILURE_WARNING_FORMAT "Error loading source(s). First error was:\n\n%s\n\nFurther source failures will not be reported. See the log file for details of any other failures."
 
 /* Define thread debug messages, used in checkStateConnections() mostly. */
 #define THREAD_DEBUG_MSG_PREFIX " Reply from slave thread %s, "
@@ -150,8 +154,15 @@ typedef struct ConnectionDataStructType
 
 
   /* Why are start/end separate...are they not in sequence_map ??? */
+  /* gb10: the request region may be different to the view region (in the sequence map) if
+     requesting e.g. from the mark. The sequence name may also be different if we're requesting
+     from a server where we need to look up the sequence using a different name, e.g. "chr1"
+     rather than "chr1-38". Maybe we could make a copy of the sequence map with these updated
+     values in it but I'm not sure that's any better (for most sources we don't need to change
+     them so will end up with many unnecessary copies of the sequence map) */
   ZMapFeatureSequenceMap sequence_map;
   gint start,end;
+  GQuark req_sequence;
 
   /* Move into loaded_features ? */
   GError *error;
@@ -242,17 +253,17 @@ static void freeDataRequest(ZMapServerReqAny req_any) ;
 static gboolean processGetSeqRequests(ZMapViewConnection view_con, ZMapServerReqAny req_any) ;
 
 static ZMapViewConnection createViewConnection(ZMapView zmap_view,
-                                           ZMapViewConnection view_con,
-                                           ZMapFeatureContext context,
-                                           char *url, char *format,
-                                           int timeout, char *version,
-                                           gboolean req_styles,
-                                           char *styles_file,
-                                           GList *req_featuresets,
-                                           GList *req_biotypes,
-                                           gboolean dna_requested,
-                                           gint start,gint end,
-                                           gboolean terminate);
+                                               ZMapViewConnection view_con,
+                                               ZMapFeatureContext context,
+                                               GQuark source_name, char *url, char *format,
+                                               int timeout, char *version,
+                                               gboolean req_styles,
+                                               char *styles_file,
+                                               GList *req_featuresets,
+                                               GList *req_biotypes,
+                                               gboolean dna_requested,
+                                               const char *req_sequence, gint start,gint end,
+                                               gboolean terminate);
 static void destroyViewConnection(ZMapView view, ZMapViewConnection view_conn) ;
 static void killGUI(ZMapView zmap_view) ;
 static void killConnections(ZMapView zmap_view) ;
@@ -357,6 +368,12 @@ static void viewSetUpStyles(ZMapView zmap_view, char *stylesfile) ;
 static void viewSetUpPredefinedColumns(ZMapView zmap_view, ZMapFeatureSequenceMap sequence_map) ;
 static gboolean viewSetUpServerConnections(ZMapView zmap_view, GList *settings_list, GError **error) ;
 
+static ZMapViewConnection zmapViewRequestServer(ZMapView view, ZMapViewConnection view_conn,
+                                                ZMapFeatureBlock block_orig, GList *req_featuresets, GList *req_biotypes,
+                                                ZMapConfigSource server,
+                                                const char *req_sequence, int req_start, int req__end,
+                                                gboolean dna_requested, gboolean terminate, gboolean show_warning) ;
+
 
 /*
  *                 Globals
@@ -390,7 +407,6 @@ ZMapWindowCallbacksStruct window_cbs_G =
 /* Turn on/off debugging output for thread handling especially in checkStateConnections().
  * Note, this var is used explicitly in the THREAD_DEBUG_MSG() macro. */
 static gboolean thread_debug_G = FALSE ;
-
 
 
 /*
@@ -632,10 +648,9 @@ gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view
       /* set the default stylesfile */
       stylesfile = zmap_view->view_sequence->stylesfile;
 
-      // get the stanza structs from ZMap config
+      zmap_view->view_sequence->addSourcesFromConfig(config_str, &stylesfile) ;
       settings_list = zmap_view->view_sequence->getSources() ;
 
-      zMapConfigGetSources(zmap_view->view_sequence->config_file, config_str, &stylesfile) ;
       viewSetUpStyles(zmap_view, stylesfile) ;
 
       /* read in a few ZMap stanzas giving column groups etc. */
@@ -1348,27 +1363,6 @@ void zMapViewShowLoadStatus(ZMapView view)
 }
 
 
-/* Hate this but Malcolm seems to have punctured the encapsulation in quite a few places.... */
-gboolean zMapViewRequestServer(ZMapView view,
-                               ZMapFeatureBlock block_orig, GList *req_featuresets, GList *req_biotypes,
-                               gpointer _server, /* ZMapConfigSource */
-                               int req_start, int req_end,
-                               gboolean dna_requested, gboolean terminate, gboolean show_warning)
-{
-  gboolean result = FALSE ;
-  ZMapViewConnection view_conn ;
-
-  if ((view_conn = zmapViewRequestServer(view, NULL,
-                                         block_orig, req_featuresets, req_biotypes,
-                                         _server, /* ZMapConfigSource */
-                                         req_start, req_end,
-                                         dna_requested, terminate, show_warning)))
-    result = TRUE ;
-
-  return result ;
-}
-
-
 
 /*
  *                      Package external routines
@@ -1390,7 +1384,8 @@ gboolean zMapViewRequestServer(ZMapView view,
 void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, 
                           GList *req_sources, GList *req_biotypes,
                           ZMapConfigSource server,
-                          int features_start, int features_end,
+                          const char *req_sequence, int features_start, int features_end,
+                          const bool thread_fail_silent,
                           gboolean group_flag, gboolean make_new_connection, gboolean terminate)
 {
   GList * sources = NULL;
@@ -1430,17 +1425,17 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig,
           dna_requested = TRUE ;
         }
 
-      view_conn = zmapViewRequestServer(view, NULL, block_orig, req_sources, req_biotypes, (gpointer) server,
-                                        req_start, req_end, dna_requested, terminate, !view->thread_fail_silent);
+      view_conn = zmapViewRequestServer(view, NULL, block_orig, req_sources, req_biotypes, server,
+                                        req_sequence, req_start, req_end, dna_requested, terminate, !thread_fail_silent);
       if(view_conn)
         requested = TRUE;
     }
   else
     {
-      /* OH DEAR...THINK WE MIGHT NEED THE CONFIG FILE HERE TOO.... */
-
-     /* mh17: this is tedious to do for each request esp on startup */
-      sources = zMapConfigGetSources(view->view_sequence->config_file, NULL, NULL) ;
+      /* mh17: this is tedious to do for each request esp on startup */
+      /* gb10: this hash table could be part of ZMapFeatureSequenceMap to avoid having
+       * to recreate it each time */
+      sources = view->view_sequence->getSources(true) ;
       ghash = getFeatureSourceHash(sources);
 
       for ( ; req_sources ; req_sources = g_list_next(req_sources))
@@ -1597,9 +1592,9 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig,
 
 
               view_conn = zmapViewRequestServer(view, view_conn, block_orig, req_featuresets, req_biotypes,
-                                                (gpointer)server, req_start, req_end,
+                                                server, req_sequence, req_start, req_end,
                                                 dna_requested,
-                                                (!existing && terminate), !view->thread_fail_silent) ;
+                                                (!existing && terminate), !thread_fail_silent) ;
 
               if(view_conn)
                 requested = TRUE;
@@ -1625,9 +1620,6 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig,
 
       zMapViewShowLoadStatus(view);
     }
-
-  if (sources)
-    zMapConfigSourcesFreeList(sources);
 
   if (ghash)
     g_hash_table_destroy(ghash);
@@ -1857,19 +1849,15 @@ void zmapViewEraseFeatures(ZMapView view, ZMapFeatureContext context, GList **fe
  * called from zmapViewConnect() to handle autoconfigured file servers,
  * which cannot be delayed as there's no way to fit these into the columns dialog as it currrently exists
  */
-ZMapViewConnection zmapViewRequestServer(ZMapView view, ZMapViewConnection view_conn,
-                                         ZMapFeatureBlock block_orig, GList *req_featuresets, GList *req_biotypes,
-                                         gpointer _server, /* ZMapConfigSource */
-                                         int req_start, int req_end,
-                                         gboolean dna_requested, gboolean terminate, gboolean show_warning)
+static ZMapViewConnection zmapViewRequestServer(ZMapView view, ZMapViewConnection view_conn,
+                                                ZMapFeatureBlock block_orig, GList *req_featuresets, GList *req_biotypes,
+                                                ZMapConfigSource server,
+                                                const char *req_sequence, int req_start, int req_end,
+                                                gboolean dna_requested, gboolean terminate, gboolean show_warning)
 {
   ZMapFeatureContext context ;
   ZMapFeatureBlock block ;
   gboolean is_pipe ;
-
-  /* UM....this looks like you haven't arranged the code properly...something for investigation.... */
-  /* things you have to do to get round scope and headers... */
-  ZMapConfigSource server = (ZMapConfigSource) _server ;
 
 
   /* Copy the original context from the target block upwards setting feature set names
@@ -1903,10 +1891,14 @@ ZMapViewConnection zmapViewRequestServer(ZMapView view, ZMapViewConnection view_
   zMapStartTimer("LoadFeatureSet", g_quark_to_string(GPOINTER_TO_UINT(req_featuresets->data)));
 
   /* force pipe servers to terminate, to fix mis-config error that causes a crash (RT 223055) */
-  is_pipe = g_str_has_prefix(server->url,"pipe://");
+  is_pipe = 
+    g_str_has_prefix(server->url,"pipe://") ||
+    g_str_has_prefix(server->url,"file://") ||
+    g_str_has_prefix(server->url,"http://") ||
+    g_str_has_prefix(server->url,"https://") ;
 
   if ((view_conn = createViewConnection(view, view_conn,
-                                        context, server->url,
+                                        context, server->name_, server->url,
                                         (char *)server->format,
                                         server->timeout,
                                         (char *)server->version,
@@ -1915,7 +1907,7 @@ ZMapViewConnection zmapViewRequestServer(ZMapView view, ZMapViewConnection view_
                                         req_featuresets,
                                         req_biotypes,
                                         dna_requested,
-                                        req_start,req_end,
+                                        req_sequence, req_start,req_end,
                                         terminate || is_pipe)))
     {
       /* Why does this need reiniting ? */
@@ -1990,14 +1982,54 @@ void zmapViewResetWindows(ZMapView zmap_view, gboolean revcomp)
 }
 
 
+/* Utility called by zMapViewSetUpServerConnection to do any scheme-specific set up for the given
+ * server. This updates the terminate flag. Returns true if the source should be loaded. */
+static bool setUpServerConnectionByScheme(ZMapView zmap_view,
+                                          ZMapConfigSource current_server,
+                                          bool &terminate,
+                                          GError **error)
+{
+  bool result = true ;
+  ZMapURL zmap_url = url_parse(current_server->url, NULL);
+  terminate = FALSE ;
 
-/* Set up a connection to a single named server. Does nothing if the server is delayed.
- * Throws if there is a problem */
-void zMapViewSetUpServerConnection(ZMapView zmap_view, ZMapConfigSource current_server, GError **error)
+  /* URL may be empty for trackhub sources which are just parents of child data tracks */
+  if (zmap_url)
+    {
+      if (zmap_url->scheme == SCHEME_PIPE)
+        {
+          terminate = TRUE ;
+        }
+      else if (zmap_url->scheme == SCHEME_TRACKHUB)
+        {
+          // Don't load trackhub sources directly (they are just parent sources for child sources)
+          result = false ;
+        }
+    }
+  else
+    {
+      result = false ;
+    }
+
+  return result ;
+}
+
+
+/* Set up a connection to a single named server and load features for the given region.
+ * Optionally req_sequence can be given if the sequence name to look up in the server is different
+ * to that in the view.
+ * Does nothing if the server is delayed. Sets the error if there is a problem. */
+void zMapViewSetUpServerConnection(ZMapView zmap_view, 
+                                   ZMapConfigSource current_server, 
+                                   const char *req_sequence,
+                                   const int req_start,
+                                   const int req_end,
+                                   const bool thread_fail_silent,
+                                   GError **error)
 {
   zMapReturnIfFail(zmap_view && current_server) ;
 
-  gboolean terminate = TRUE;
+  bool terminate = true;
 
   if (!current_server->delayed)   // skip if delayed (we'll only request data when asked to)
     {
@@ -2032,13 +2064,33 @@ void zMapViewSetUpServerConnection(ZMapView zmap_view, ZMapConfigSource current_
               req_biotypes = zMapConfigString2QuarkGList(current_server->biotypes,FALSE) ;
             }
 
-          terminate = g_str_has_prefix(current_server->url,"pipe://");
-
-          zmapViewLoadFeatures(zmap_view, NULL, req_featuresets, req_biotypes, current_server,
-                               zmap_view->view_sequence->start, zmap_view->view_sequence->end,
-                               SOURCE_GROUP_START,TRUE, terminate) ;
+          if (setUpServerConnectionByScheme(zmap_view, current_server, terminate, error))
+            {
+              /* Load the features for the server */
+              zmapViewLoadFeatures(zmap_view, NULL, req_featuresets, req_biotypes, current_server,
+                                   req_sequence, req_start, req_end, thread_fail_silent,
+                                   SOURCE_GROUP_START,TRUE, terminate) ;
+            }
         }
     }
+}
+
+
+/* Set up a connection to a single named server and load features for the whole region.
+ * in the view. Does nothing if the server is delayed. Sets the error if there is a problem. */
+void zMapViewSetUpServerConnection(ZMapView zmap_view, 
+                                   ZMapConfigSource current_server, 
+                                   GError **error)
+{
+  zMapReturnIfFail(zmap_view) ;
+
+  zMapViewSetUpServerConnection(zmap_view, 
+                                current_server, 
+                                NULL,
+                                zmap_view->view_sequence->start,
+                                zmap_view->view_sequence->end,
+                                zmap_view->thread_fail_silent,
+                                error) ;
 }
 
 
@@ -2740,22 +2792,26 @@ static void getIniData(ZMapView view, char *config_str, GList *req_sources)
               }
           }
 
+        GList *seq_data_featuresets = NULL ;
+
         if(zMapConfigIniContextGetString(context,
                                          ZMAPSTANZA_APP_CONFIG,
                                          ZMAPSTANZA_APP_CONFIG,
                                          ZMAPSTANZA_APP_SEQ_DATA,&str))
           {
-            view->context_map.seq_data_featuresets = zMapConfigString2QuarkIDGList(str);
+            seq_data_featuresets = zMapConfigString2QuarkIDGList(str);
           }
 
         /* add a flag for each seq_data featureset */
-        for(iter = view->context_map.seq_data_featuresets; iter; iter = iter->next)
+        for(iter = seq_data_featuresets; iter; iter = iter->next)
           {
             gff_source = (ZMapFeatureSource)g_hash_table_lookup(source_2_sourcedata,iter->data);
             //zMapLogWarning("view is_seq: %s -> %p",g_quark_to_string(GPOINTER_TO_UINT(iter->data)),gff_source);
             if(gff_source)
               gff_source->is_seq = TRUE;
           }
+
+        g_list_free(seq_data_featuresets) ;
 
         view->context_map.source_2_sourcedata = source_2_sourcedata;
 
@@ -3213,6 +3269,7 @@ static ZMapView createZMapView(char *view_name, GList *sequences, void *app_data
 
   zmap_view->state = ZMAPVIEW_INIT ;
   zmap_view->busy = FALSE ;
+  zmap_view->disable_popups = false ;
 
 
   zmap_view->view_name = g_strdup(view_name) ;
@@ -3311,7 +3368,7 @@ static void destroyZMapView(ZMapView *zmap_view_out)
   {
 //      if(zmap_view->view_sequence->sequence)
 //           g_free(zmap_view->view_sequence->sequence);
-//      g_free(zmap_view->view_sequence) ;
+//      delete zmap_view->view_sequence ;
       zmap_view->view_sequence = NULL;
   }
 
@@ -3488,9 +3545,11 @@ static gboolean checkStateConnections(ZMapView zmap_view)
               THREAD_DEBUG_MSG(thread, "cannot access reply from child thread - %s", err_msg) ;
 
               /* Warn the user ! */
-              if (view_con->show_warning)
-                zMapWarning("Source is being removed: Error was: %s\n\nSource: %s",
-                            (err_msg ? err_msg : "<no error message>"), view_con->url) ;
+              if (view_con->show_warning && !zMapViewGetDisablePopups(zmap_view))
+                {
+                  zMapWarning(SOURCE_FAILURE_WARNING_FORMAT, (err_msg ? err_msg : "<no error message>")) ;
+                  zMapViewSetDisablePopups(zmap_view, true) ;
+                }
 
               zMapLogCritical("Source \"%s\", cannot access reply from server thread,"
                               " error was: %s", view_con->url, (err_msg ? err_msg : "<no error message>")) ;
@@ -3674,12 +3733,13 @@ static gboolean checkStateConnections(ZMapView zmap_view)
                         /* Warn the user ! */
                         if (view_con->show_warning)
                           {
-                            /* Don't bother the user if it's just that there were no features in
-                             * the source */
-                            if (err_code != ZMAPVIEW_ERROR_CONTEXT_EMPTY)
-                              zMapWarning("Error loading source.\n\n %s", (err_msg ? err_msg : "<no error message>")) ;
-                            
-                            zMapLogWarning("Source is being cancelled: Error was: '%s'. Source: %s",
+                            if (!zMapViewGetDisablePopups(zmap_view))
+                              {
+                                zMapWarning(SOURCE_FAILURE_WARNING_FORMAT, (err_msg ? err_msg : "<no error message>")) ;
+                                zMapViewSetDisablePopups(zmap_view, true) ;
+                              }
+
+                            zMapLogWarning("Source failed with error: '%s'. Source: %s",
                                            (err_msg ? err_msg : "<no error message>"), view_con->url) ;
                           }
 
@@ -3691,6 +3751,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
                         THREAD_DEBUG_MSG_FULL(thread, view_con, request_type, reply,
                                               "%s", "signalling child thread to die....") ;
                         zMapThreadKill(thread) ;
+                        thread_has_died = TRUE ; 
                       }
                     else
                       {
@@ -3711,8 +3772,12 @@ static gboolean checkStateConnections(ZMapView zmap_view)
                     if (step->on_fail != REQUEST_ONFAIL_CONTINUE)
                       {
                         /* Thread has failed for some reason and we should clean up. */
-                        if (err_msg && view_con->show_warning)
-                          zMapWarning("%s", err_msg) ;
+                        if (err_msg && view_con->show_warning && 
+                            !zMapViewGetDisablePopups(zmap_view))
+                          {
+                            zMapWarning(SOURCE_FAILURE_WARNING_FORMAT, (err_msg ? err_msg : "<no error>")) ;
+                            zMapViewSetDisablePopups(zmap_view, true) ;
+                          }
 
                         thread_has_died = TRUE ;
 
@@ -3891,7 +3956,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
                   if (view_con->thread_status == THREAD_STATUS_FAILED)
                     {
-                      char *request_type_str = (char *)zMapServerReqType2ExactStr(request_type) ;
+                      //char *request_type_str = (char *)zMapServerReqType2ExactStr(request_type) ;
 
                       if (!err_msg)
                         {
@@ -3905,17 +3970,18 @@ static gboolean checkStateConnections(ZMapView zmap_view)
                       if (view_con->show_warning && is_continue)
                         {
                           /* we get here at the end of a step list, prev errors not reported till now */
-                          zMapWarning("Data request failed: %s\n%s%s", err_msg,
-                                      ((connect_data->stderr_out && *connect_data->stderr_out)
-                                       ? "Server reports:\n" : ""),
-                                      connect_data->stderr_out) ;
+                          if (!zMapViewGetDisablePopups(zmap_view))
+                            {
+                              zMapWarning(SOURCE_FAILURE_WARNING_FORMAT, (err_msg ? err_msg : "<no error>")) ;
+                              zMapViewSetDisablePopups(zmap_view, true) ;
+                            }
                         }
 
-                      zMapLogWarning("Thread %p failed, request = %s, empty sources now %d, failed sources now %d",
-                                     thread,
-                                     request_type_str,
-                                     g_list_length(zmap_view->sources_empty),
-                                     g_list_length(zmap_view->sources_failed)) ;
+                      //zMapLogWarning("Thread %p failed, request = %s, empty sources now %d, failed sources now %d",
+                      //               thread,
+                      //               request_type_str,
+                      //               g_list_length(zmap_view->sources_empty),
+                      //               g_list_length(zmap_view->sources_failed)) ;
                     }
 
                   /* Record if features were loaded or if there was an error, if the latter
@@ -4067,6 +4133,7 @@ static gboolean dispatchContextRequests(ZMapViewConnection connection, ZMapServe
       ZMapServerReqOpen open = (ZMapServerReqOpen) req_any;
 
       open->sequence_map = connect_data->sequence_map;
+      open->req_sequence = connect_data->req_sequence;
       open->zmap_start = connect_data->start;
       open->zmap_end = connect_data->end;
       }
@@ -4816,13 +4883,14 @@ THE COMMENTS ETC ETC....HORRIBLE, HORRIBLE, HORRIBLE......
 static ZMapViewConnection createViewConnection(ZMapView zmap_view,
                                                ZMapViewConnection view_con,
                                                ZMapFeatureContext context,
-                                               char *server_url, char *format,
+                                               GQuark source_name, char *server_url, char *format,
                                                int timeout, char *version,
                                                gboolean req_styles,
                                                char *styles_file,
                                                GList *req_featuresets,
                                                GList *req_biotypes,
                                                gboolean dna_requested,
+                                               const char *req_sequence,
                                                gint features_start, gint features_end,
                                                gboolean terminate)
 {
@@ -4923,12 +4991,20 @@ static ZMapViewConnection createViewConnection(ZMapView zmap_view,
          coordinates were buried in blocks in the context supplied incidentally when requesting
          features after extracting other data from the server.  Obviously done to handle multiple
          blocks but it's another iso 7 violation  */
-
+      
       connect_data->start = features_start;
       connect_data->end = features_end;
 
       /* likewise this has to get copied through a series of data structs */
       connect_data->sequence_map = zmap_view->view_sequence;
+
+      /* gb10: also added the req_sequence here. This is non-null if the sequence name we need to
+         look up in the server is different to the sequence name in the view. Otherwise, use the
+         sequence name from the sequence map */
+      if (req_sequence)
+        connect_data->req_sequence = g_quark_from_string(req_sequence) ;
+      else if (zmap_view->view_sequence)
+        connect_data->req_sequence = g_quark_from_string(zmap_view->view_sequence->sequence) ;
 
       connect_data->display_after = ZMAP_SERVERREQ_FEATURES ;
 
@@ -4949,6 +5025,7 @@ static ZMapViewConnection createViewConnection(ZMapView zmap_view,
       if (!existing)
         {
           req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_CREATE,
+                                            source_name,
                                             zmap_view->view_sequence->config_file,
                                             urlObj, format, timeout, version) ;
           zmapViewStepListAddServerReq(view_con->step_list, view_con, ZMAP_SERVERREQ_CREATE, req_any, on_fail) ;
@@ -5501,9 +5578,9 @@ static gboolean getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature
           if (merge_results == ZMAPFEATURE_CONTEXT_NONE)
             {
               g_set_error(&connect_data->error, ZMAP_VIEW_ERROR, ZMAPVIEW_ERROR_CONTEXT_EMPTY,
-                          "Context merge failed because no new features found in new context.") ;
+                          "No new features found") ;
 
-              zMapLogWarning("%s", connect_data->error->message) ;
+              //zMapLogWarning("%s", connect_data->error->message) ;
             }
           else
             {
@@ -5840,9 +5917,9 @@ static void justDrawContext(ZMapView view, ZMapFeatureContext diff_context,
   if (connect_data && connect_data->loaded_features)
     {
       loaded_features = connect_data->loaded_features ;
-      zMapLogMessage("copied pointer of ConnectData LoadFeaturesDataStruct"
-                     " to pass to displayDataWindows(): %p -> %p",
-                     connect_data->loaded_features, loaded_features) ;
+      //zMapLogMessage("copied pointer of ConnectData LoadFeaturesDataStruct"
+      //               " to pass to displayDataWindows(): %p -> %p",
+      //               connect_data->loaded_features, loaded_features) ;
     }
 
   /* Signal the ZMap that there is work to be done. */
@@ -5944,7 +6021,7 @@ static void commandCB(ZMapWindow window, void *caller_data, void *window_data)
           }
 
         zmapViewLoadFeatures(view, get_data->block, get_data->feature_set_ids, NULL, NULL,
-                             req_start, req_end,
+                             NULL, req_start, req_end, view->thread_fail_silent,
                              SOURCE_GROUP_DELAYED, TRUE, FALSE) ;        /* don't terminate, need to keep alive for blixem */
 
         break ;
@@ -7123,3 +7200,12 @@ void updateContextColumnStyles(ZMapConfigIniContext context, ZMapConfigIniFileTy
 }
 
 
+bool zMapViewGetDisablePopups(ZMapView zmap_view)
+{
+  return zmap_view->disable_popups ;
+}
+
+void zMapViewSetDisablePopups(ZMapView zmap_view, const bool value)
+{
+  zmap_view->disable_popups = value ;
+}

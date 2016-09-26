@@ -155,6 +155,7 @@ static void removeAllFeatures(ZMapWindow window, ZMapWindowContainerFeatureSet c
 /*static void removeFeatureCB(gpointer key, gpointer value, gpointer user_data) ;*/
 
 
+
 /* Globals. */
 
 extern GTimer *view_timer_G ;
@@ -1906,6 +1907,35 @@ GQuark zMapWindowGetFeaturesetContainerID(ZMapWindow window, GQuark featureset_i
 }
 
 
+/* Update the given style with values from the features it contains, e.g. the score range for
+ * graph styles. */
+void zmapWindowUpdateStyleFromFeatures(ZMapWindow window, ZMapFeatureTypeStyle style)
+{
+  if (window && window->feature_context && style)
+    {
+      // Currently we only do anything for the default graph style
+      if (style->mode == ZMAPSTYLE_MODE_GRAPH)
+        {
+          // Loop through all featuresets with this style and find the max score
+          GList* featuresets = zMapStyleGetFeaturesets(style, (ZMapFeatureAny)window->feature_context) ;
+
+          // Reset init scores
+          if (featuresets)
+            {
+              style->max_score = 0.0 ;
+              style->min_score = 1000.0 ;
+            }
+
+          for (GList *item = featuresets; item; item = item->next)
+            {
+              ZMapFeatureSet feature_set = (ZMapFeatureSet)(item->data) ;
+
+              zMapFeatureSetUpdateStyleFromFeatures(feature_set, style) ;
+            }
+        }
+    }
+}
+
 /* add or update an empty CanvasFeatureset that covers the group extent
  * Formerly all columns had foo backgrounds so they could be clicked on.
  * We could use existing CanvasFeaturesets to draw backgrounds but there's two problems:
@@ -2773,10 +2803,6 @@ static gboolean setColumnTooltip(FooCanvasItem *item, GdkEvent *event, gpointer 
 
 
 
-
-
-
-
 /*
  *                       Menu functions.
  */
@@ -3086,6 +3112,7 @@ static gboolean containerDestroyCB(FooCanvasItem *item, gpointer user_data)
 
   return result ;                                            /* ????? */
 }
+
 
 
 
