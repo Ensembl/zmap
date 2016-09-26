@@ -38,6 +38,9 @@
 #include <glib.h>
 #include <mutex>
 #include <condition_variable>
+#include <algorithm>
+#include <cctype>
+#include <string>
 
 #include <ZMap/zmapUtils.hpp>
 #include <ZMap/zmapGLibUtils.hpp>
@@ -260,6 +263,31 @@ string BlatLibErrHandler::errMsg()
 
   return err_msg ;
 }
+
+
+/* Custom comparator for a map to make the key case-insensitive. This is a 'less' object,
+ * i.e. operator() returns true if the first argument is less than the second. */
+class caseInsensitiveCmp
+{
+public:
+  bool operator()(const std::string& a_in, const std::string& b_in) const 
+  {
+    bool result = false ;
+
+    std::string a(a_in) ;
+    std::string b(b_in) ;
+
+    for (int i = 0; i < a.length(); ++i)
+      a[i] = std::tolower(a[i]) ;
+
+    for (int i = 0; i < b.length(); ++i)
+      b[i] = std::tolower(b[i]) ;
+    
+    result = (a < b) ;
+
+    return result ;
+  }
+};
 
 } // unnamed namespace
 
@@ -2235,9 +2263,10 @@ ZMapDataSourceType zMapDataSourceGetType(ZMapDataSource data_source )
  */
 ZMapDataSourceType zMapDataSourceTypeFromFilename(const char * const file_name, GError **error_out)
 {
-  static const map<string, ZMapDataSourceType> file_extensions = 
+  static const map<string, ZMapDataSourceType, caseInsensitiveCmp> file_extensions = 
     {
       {"gff",     ZMapDataSourceType::GIO}
+      ,{"gff3",   ZMapDataSourceType::GIO}
       ,{"bed",    ZMapDataSourceType::BED}
       ,{"bb",     ZMapDataSourceType::BIGBED}
       ,{"bigBed", ZMapDataSourceType::BIGBED}
