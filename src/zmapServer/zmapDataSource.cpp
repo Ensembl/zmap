@@ -333,6 +333,7 @@ ZMapDataSourceType dataSourceTypeFromExtension(const string &file_ext, GError **
   return type ;
 }
 
+
 } // unnamed namespace
 
 
@@ -2189,6 +2190,7 @@ ZMapDataSource zMapDataSourceCreate(const GQuark source_name,
                                     const char *sequence,
                                     const int start,
                                     const int end,
+                                    const GQuark format,
                                     GError **error_out)
 {
   static const char * open_mode = "r" ;
@@ -2197,9 +2199,14 @@ ZMapDataSource zMapDataSourceCreate(const GQuark source_name,
   GError *error = NULL ;
   zMapReturnValIfFail(file_name && *file_name, data_source ) ;
 
-  source_type = zMapDataSourceTypeFromFilename(file_name, &error) ;
+  // If the file type (passed as the format) is known for this source, use that for the
+  // source_type. Otherwise, try to determine the file type from the filename
+  if (format)
+    source_type = zMapDataSourceTypeFromFormat(format) ;
+  else
+    source_type = zMapDataSourceTypeFromFilename(file_name, &error) ;
 
-  if (!error)
+  if (!error && source_type != ZMapDataSourceType::UNK)
     {
       switch (source_type)
         {
@@ -2229,6 +2236,11 @@ ZMapDataSource zMapDataSourceCreate(const GQuark source_name,
                       "Unexpected data source type for file '%s'", file_name) ;
           break ;
         }
+    }
+  else
+    {
+      g_set_error(&error, ZMAP_SERVER_ERROR, ZMAPSERVER_ERROR_UNKNOWN_TYPE,
+                  "Invalid file type '%s' for file '%s'", format, file_name) ;
     }
 
   if (data_source)
@@ -2340,6 +2352,67 @@ ZMapDataSourceType zMapDataSourceTypeFromFilename(const char * const file_name, 
 
   if (error)
     g_propagate_error(error_out, error) ;
+
+  return type ;
+}
+
+
+string zMapDataSourceFormatFromType(ZMapDataSourceType &source_type)
+{
+  string result ;
+
+  switch (source_type)
+    {
+    case ZMapDataSourceType::GIO:    result = "gio" ;    break ;
+    case ZMapDataSourceType::HTS:    result = "hts" ;    break ;
+    case ZMapDataSourceType::BCF:    result = "bcf" ;    break ;
+    case ZMapDataSourceType::BED:    result = "bed" ;    break ;
+    case ZMapDataSourceType::BIGBED: result = "bigbed" ; break ;
+    case ZMapDataSourceType::BIGWIG: result = "bigwig" ; break ;
+
+    case ZMapDataSourceType::UNK: 
+      zMapWarnIfReached() ;
+      break ;      
+    } ;
+
+  return result ;
+}
+
+
+/* Determine the source type from the given format (which is just a string version of the type
+ * e.g. "GIO") */
+ZMapDataSourceType zMapDataSourceTypeFromFormat(const string &format, GError **error_out)
+{
+  ZMapDataSourceType type = ZMapDataSourceType::UNK ;
+
+  static const map<string, ZMapDataSourceType, caseInsensitiveCmp> format_to_type = 
+    {
+      {"gio",     ZMapDataSourceType::GIO}
+      ,{"bed",    ZMapDataSourceType::BED}
+      ,{"bigbed",     ZMapDataSourceType::BIGBED}
+      ,{"bigwig", ZMapDataSourceType::BIGWIG}
+#ifdef USE_HTSLIB
+      ,{"hts",   ZMapDataSourceType::HTS}
+      ,{"bcf",    ZMapDataSourceType::BCF}
+#endif
+    };
+
+  auto found_iter = format_to_type.find(format) ;
+      
+  if (found_iter != format_to_type.end())
+    {
+      type = found_iter->second ;
+    }
+  else
+    {
+      string expected("");
+      for (auto iter = format_to_type.begin(); iter != format_to_type.end(); ++iter)
+        expected += " ." + iter->first ;
+
+      g_set_error(error_out, ZMAP_SERVER_ERROR, ZMAPSERVER_ERROR_UNKNOWN_EXTENSION,
+                  "Invalid format '%s'. Expected one of:%s", 
+                  format.c_str(), expected.c_str()) ;
+    }
 
   return type ;
 }

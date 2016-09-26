@@ -105,7 +105,8 @@ ZMAP_DEFINE_ENUM(ZMapServerConnectStateType, ZMAP_SERVER_CONNECT_STATE_LIST) ;
 
 typedef enum
 {
-  ZMAPSERVER_ERROR_UNKNOWN_EXTENSION // unknown file extension
+  ZMAPSERVER_ERROR_UNKNOWN_EXTENSION  // unknown file extension
+  ,ZMAPSERVER_ERROR_UNKNOWN_TYPE      // unknown file extension
 } ZMapAppError;
 
 

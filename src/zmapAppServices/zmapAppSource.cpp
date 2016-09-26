@@ -1423,28 +1423,6 @@ static ZMapDataSourceType promptForFileType()
 }
 
 
-static string formatFromSourceType(ZMapDataSourceType &source_type)
-{
-  string result ;
-
-  switch (source_type)
-    {
-    case ZMapDataSourceType::GIO:    result = "gio" ;    break ;
-    case ZMapDataSourceType::HTS:    result = "hts" ;    break ;
-    case ZMapDataSourceType::BCF:    result = "bcf" ;    break ;
-    case ZMapDataSourceType::BED:    result = "bed" ;    break ;
-    case ZMapDataSourceType::BIGBED: result = "bigbed" ; break ;
-    case ZMapDataSourceType::BIGWIG: result = "bigwig" ; break ;
-
-    case ZMapDataSourceType::UNK: 
-      zMapWarnIfReached() ;
-      break ;      
-    } ;
-
-  return result ;
-}
-
-
 /* Create a valid url for the given file (which should either be a filename on the local system
  * or a remote file url e.g. starting http:// */
 static string constructFileURL(MainFrame main_frame, 
@@ -1470,7 +1448,7 @@ static string constructFileURL(MainFrame main_frame,
     }
   else
     {
-      format = formatFromSourceType(source_type) ;
+      format = zMapDataSourceFormatFromType(source_type) ;
 
       string err_msg;
 

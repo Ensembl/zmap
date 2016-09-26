@@ -64,6 +64,9 @@ bool zMapDataSourceIsOpen(ZMapDataSource const source) ;
 bool zMapDataSourceDestroy( ZMapDataSource *source) ;
 ZMapDataSourceType zMapDataSourceGetType(ZMapDataSource source ) ;
 ZMapDataSourceType zMapDataSourceTypeFromFilename(const char * const, GError **error_out = NULL) ;
+std::string zMapDataSourceFormatFromType(ZMapDataSourceType &source_type) ;
+ZMapDataSourceType zMapDataSourceTypeFromFormat(const std::string &format, GError **error_out) ;
+
 
 
 

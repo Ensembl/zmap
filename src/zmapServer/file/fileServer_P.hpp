@@ -54,6 +54,7 @@ typedef struct FileServerStruct_
   char *data_dir ;                     /* default location for data files (using file://)) */
   char *last_err_msg ;
   char *styles_file ;
+  GQuark format ;
 
   GQuark req_sequence;
   int gff_version, zmap_start, zmap_end, exit_code ;
