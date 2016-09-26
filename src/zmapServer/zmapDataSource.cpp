@@ -2202,7 +2202,7 @@ ZMapDataSource zMapDataSourceCreate(const GQuark source_name,
   // If the file type (passed as the format) is known for this source, use that for the
   // source_type. Otherwise, try to determine the file type from the filename
   if (format)
-    source_type = zMapDataSourceTypeFromFormat(format) ;
+    source_type = zMapDataSourceTypeFromFormat(g_quark_to_string(format), &error) ;
   else
     source_type = zMapDataSourceTypeFromFilename(file_name, &error) ;
 
@@ -2240,7 +2240,7 @@ ZMapDataSource zMapDataSourceCreate(const GQuark source_name,
   else
     {
       g_set_error(&error, ZMAP_SERVER_ERROR, ZMAPSERVER_ERROR_UNKNOWN_TYPE,
-                  "Invalid file type '%s' for file '%s'", format, file_name) ;
+                  "Invalid file type '%s' for file '%s'", g_quark_to_string(format), file_name) ;
     }
 
   if (data_source)
@@ -2357,20 +2357,24 @@ ZMapDataSourceType zMapDataSourceTypeFromFilename(const char * const file_name, 
 }
 
 
+/* Determine the format string from the given type. Must be the inverse of
+ * zMapDataSourceTypeFromFormat. Currently also used as a descriptive string for the user.  */
 string zMapDataSourceFormatFromType(ZMapDataSourceType &source_type)
 {
   string result ;
 
   switch (source_type)
     {
-    case ZMapDataSourceType::GIO:    result = "gio" ;    break ;
-    case ZMapDataSourceType::HTS:    result = "hts" ;    break ;
-    case ZMapDataSourceType::BCF:    result = "bcf" ;    break ;
-    case ZMapDataSourceType::BED:    result = "bed" ;    break ;
-    case ZMapDataSourceType::BIGBED: result = "bigbed" ; break ;
-    case ZMapDataSourceType::BIGWIG: result = "bigwig" ; break ;
+    case ZMapDataSourceType::GIO:    result = "GFF" ;    break ;
+    case ZMapDataSourceType::BED:    result = "Bed" ;    break ;
+    case ZMapDataSourceType::BIGBED: result = "bigBed" ; break ;
+    case ZMapDataSourceType::BIGWIG: result = "bigWig" ; break ;
+#ifdef USE_HTSLIB
+    case ZMapDataSourceType::HTS:    result = "BAM/SAM/CRAM" ;    break ;
+    case ZMapDataSourceType::BCF:    result = "BCF/VCF" ;    break ;
+#endif
 
-    case ZMapDataSourceType::UNK: 
+    default:
       zMapWarnIfReached() ;
       break ;      
     } ;
@@ -2379,21 +2383,21 @@ string zMapDataSourceFormatFromType(ZMapDataSourceType &source_type)
 }
 
 
-/* Determine the source type from the given format (which is just a string version of the type
- * e.g. "GIO") */
+/* Determine the source type from the given format. Must be the inverse of
+ * zMapDataSourceFormatFromType. */
 ZMapDataSourceType zMapDataSourceTypeFromFormat(const string &format, GError **error_out)
 {
   ZMapDataSourceType type = ZMapDataSourceType::UNK ;
 
   static const map<string, ZMapDataSourceType, caseInsensitiveCmp> format_to_type = 
     {
-      {"gio",     ZMapDataSourceType::GIO}
-      ,{"bed",    ZMapDataSourceType::BED}
-      ,{"bigbed",     ZMapDataSourceType::BIGBED}
-      ,{"bigwig", ZMapDataSourceType::BIGWIG}
+      {"GFF", ZMapDataSourceType::GIO}
+      ,{"Bed", ZMapDataSourceType::BED}
+      ,{"bigBed", ZMapDataSourceType::BIGBED}
+      ,{"bigWig", ZMapDataSourceType::BIGWIG}
 #ifdef USE_HTSLIB
-      ,{"hts",   ZMapDataSourceType::HTS}
-      ,{"bcf",    ZMapDataSourceType::BCF}
+      ,{"BAM/SAM/CRAM",   ZMapDataSourceType::HTS}
+      ,{"BCF/VCF",    ZMapDataSourceType::BCF}
 #endif
     };
 

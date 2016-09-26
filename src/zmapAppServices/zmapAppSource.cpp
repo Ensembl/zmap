@@ -1414,10 +1414,56 @@ static ZMapDataSourceType promptForFileType()
 
   GtkBox *content = GTK_BOX(GTK_DIALOG(dialog)->vbox) ;
 
+  /* Create a combo box to choose the file type */
+  GtkComboBox *combo = NULL ;
+
+  GtkListStore *store = gtk_list_store_new(1, G_TYPE_STRING);
+  combo = GTK_COMBO_BOX(gtk_combo_box_new_with_model(GTK_TREE_MODEL(store)));
+
+  GtkCellRenderer *renderer = gtk_cell_renderer_text_new();
+  gtk_cell_layout_pack_start(GTK_CELL_LAYOUT(combo), renderer, FALSE);
+  gtk_cell_layout_set_attributes(GTK_CELL_LAYOUT(combo), renderer, "text", 0, NULL);
+
+  /* Add the rows to the combo box */
+  bool first = true ;
+
+  for (int type = (int)ZMapDataSourceType::NONE + 1; type < (int)ZMapDataSourceType::UNK; ++type)
+    {
+      ZMapDataSourceType type_t = (ZMapDataSourceType)type ;
+      string format = zMapDataSourceFormatFromType(type_t) ;
+
+      GtkTreeIter iter;
+      gtk_list_store_append(store, &iter);
+      gtk_list_store_set(store, &iter, 0, format.c_str(), -1);
+
+      if (first)
+        gtk_combo_box_set_active_iter(combo, &iter);
+
+      first = false ;
+    }
+
+
+  gtk_box_pack_start(content, gtk_label_new("Please select the file type for this file:"), FALSE, FALSE, 0);
+  gtk_box_pack_start(content, GTK_WIDGET(combo), FALSE, FALSE, 0);
+
+  gtk_widget_show_all(dialog) ;
+
   if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_OK)
     {
-      gtk_widget_destroy(dialog) ;
+      GtkTreeIter iter;
+      
+      if (gtk_combo_box_get_active_iter(GTK_COMBO_BOX(combo), &iter))
+        {
+          char *format = NULL ;
+          GtkTreeModel *model = gtk_combo_box_get_model(GTK_COMBO_BOX(combo));
+          gtk_tree_model_get(model, &iter, 0, &format, -1);
+          
+          if (format)
+            source_type = zMapDataSourceTypeFromFormat(format, NULL) ;
+        }
     }
+
+  gtk_widget_destroy(dialog) ;
 
   return source_type ;
 }
@@ -1438,8 +1484,14 @@ static string constructFileURL(MainFrame main_frame,
 
   if (g_error && g_error->code == ZMAPSERVER_ERROR_UNKNOWN_EXTENSION)
     {
+      g_error_free(g_error) ;
+      g_error = NULL ;
+
       // We couldn't determine the file type from the extension. As the user instead.
       source_type = promptForFileType() ;
+
+      if (source_type == ZMapDataSourceType::UNK)
+        g_set_error(&g_error, ZMAP_SERVER_ERROR, ZMAPSERVER_ERROR_UNKNOWN_TYPE, "Failed to determine file type") ;
     }
 
   if (g_error)
@@ -1468,7 +1520,7 @@ static string constructFileURL(MainFrame main_frame,
           url = constructPipeFileURL(main_frame, source_name, filename, source_type, err_msg) ;
           break ;
 
-        case ZMapDataSourceType::UNK:
+        default:
           // Shouldn't get here because g_error should have been set
           zMapWarnIfReached() ;
           break ;

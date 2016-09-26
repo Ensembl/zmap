@@ -41,7 +41,7 @@ typedef ZMapDataSourceStruct *ZMapDataSource ;
 /*
  * Enumeration to represent different source types.
  */
-enum class ZMapDataSourceType {GIO, HTS, BCF, BED, BIGBED, BIGWIG, UNK} ;
+enum class ZMapDataSourceType {NONE, GIO, HTS, BCF, BED, BIGBED, BIGWIG,  /*UNK always last*/UNK} ;
 
 
 
@@ -59,7 +59,7 @@ enum class ZMapDataSourceType {GIO, HTS, BCF, BED, BIGBED, BIGWIG, UNK} ;
  */
 ZMapDataSource zMapDataSourceCreate(const GQuark source_name, const char * const file_name, 
                                     const char *sequence, const int start, const int end, 
-                                    GError **error_out = NULL) ;
+                                    const GQuark format, GError **error_out = NULL) ;
 bool zMapDataSourceIsOpen(ZMapDataSource const source) ;
 bool zMapDataSourceDestroy( ZMapDataSource *source) ;
 ZMapDataSourceType zMapDataSourceGetType(ZMapDataSource source ) ;
