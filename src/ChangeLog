@@ -1,3 +1,59 @@
+2016-09-23  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix regression from de531ea - REGRESSION FIX
+ src/zmapServer/zmapDataSource.cpp | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+2016-09-23  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix bug displaying reads with introns gaps (from a patch by Thibaut Hourlier) - BUG FIX
+ src/zmapServer/zmapDataSource.cpp | 11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
+
+2016-09-23  Gemma Guest  <gb10@sanger.ac.uk>
+ Add BAM index support (from a patch by Thibaut Hourlier) - NEW FEATURE 'BAM index'
+ src/zmapServer/file/fileServer.cpp  | 110 ++++++++++--------
+ src/zmapServer/zmapDataSource.cpp   | 224 ++++++++++++++++++++++++------------
+ src/zmapServer/zmapDataSource_P.hpp |  10 +-
+ 3 files changed, 221 insertions(+), 123 deletions(-)
+
+2016-09-23  Gemma Guest  <gb10@sanger.ac.uk>
+ Ensure new source name is unique - WIP
+ src/zmapAppServices/zmapAppSource.cpp | 53 +++++++++++++++++++++++++++--------
+ 1 file changed, 41 insertions(+), 12 deletions(-)
+
+2016-09-23  Gemma Guest  <gb10@sanger.ac.uk>
+ Curl debug and proxy now taken from config file - WIP
+ src/include/ZMap/zmapConfigIni.hpp          |  2 +-
+ src/include/ZMap/zmapFeatureLoadDisplay.hpp |  8 +++
+ src/zmapAppServices/zmapAppSource.cpp       | 13 ++++-
+ src/zmapConfig/zmapConfigLoader.cpp         |  4 +-
+ src/zmapFeature/zmapFeatureLoadDisplay.cpp  | 78 +++++++++++++++++++++++++++++
+ 5 files changed, 102 insertions(+), 3 deletions(-)
+
+2016-09-16  Gemma Guest  <gb10@sanger.ac.uk>
+ Update release notes - Doc
+ docs/user/release_notes.shtml | 35 ++++++++++++++++++++++-------------
+ 1 file changed, 22 insertions(+), 13 deletions(-)
+
+2016-09-16  Gemma Guest  <gb10@sanger.ac.uk>
+ Add environment and X11 to instructions - DOC
+ src/INSTALL.VM    | 20 ++++++++++++++++++++
+ src/INSTALL.linux | 25 +++++++++++++++++++++++++
+ src/INSTALL.mac   | 30 ++++++++++++++++++++++++++++++
+ src/README        |  4 ++++
+ 4 files changed, 79 insertions(+)
+
+2016-09-15  Gemma Guest  <gb10@sanger.ac.uk>
+ Enable curl debug for trackhub - TRIVIAL
+ src/zmapAppServices/zmapAppSource.cpp | 2 ++
+ 1 file changed, 2 insertions(+)
+
+2016-09-13  zmap  <zmap@sanger.ac.uk>
+ ZMap version 2.10.2-147-g0627177 - Update RT and git commit reports
+ src/ChangeLog                                  | 1637 +++++++++++++-----------
+ src/build/release_docs/GIT_COMMITS.txt         |   15 +-
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt |   44 +-
+ 3 files changed, 895 insertions(+), 801 deletions(-)
+
 2016-09-12  Gemma Guest  <gb10@sanger.ac.uk>
  Use user-specific temp dir for file cache - NEW FEATURE 'trackhub'
  src/include/ZMap/zmapUtils.hpp      |  2 +-
