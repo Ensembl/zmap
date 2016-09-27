@@ -107,6 +107,21 @@ static const char * const ZMAP_BIGWIG_SO_TERM  = "score" ;
 #define READBUFFER_SIZE 2048
 
 
+/* Map the data-type to a user-friendly descriptive string (called 'format' just because that's
+ * the field name it gets passed around in) */
+const map<ZMapDataSourceType, string> data_source_type_formats_G = 
+  {
+    {ZMapDataSourceType::GIO, "GFF"}
+    ,{ZMapDataSourceType::BED, "BED"}
+    ,{ZMapDataSourceType::BIGBED, "bigBed"}
+    ,{ZMapDataSourceType::BIGWIG, "bigWig"}
+#ifdef USE_HTSLIB
+    ,{ZMapDataSourceType::HTS, "BAM/SAM/CRAM"}
+    ,{ZMapDataSourceType::BCF, "BCF/VCF"}
+#endif
+  };
+
+ 
 /* Need a semaphore to limit the number of threads.
  * From http://stackoverflow.com/questions/4792449/c0x-has-no-semaphores-how-to-synchronize-threads */
 
@@ -331,6 +346,39 @@ ZMapDataSourceType dataSourceTypeFromExtension(const string &file_ext, GError **
 
   return type ;
 }
+
+
+/* Functor for finding the data-source-type for a given 'format' or descriptive type string */
+class DataSourceTypeFormatCmp
+{
+public:
+  DataSourceTypeFormatCmp(const string &search_format)
+    : search_format_(search_format)
+  {};
+
+  bool operator()(const pair<ZMapDataSourceType, string> &iter)
+  {
+    bool result = false ;
+
+    string a(iter.second) ;
+    string b(search_format_) ;
+
+    // Convert to lowercase
+    for (int i = 0; i < a.length(); ++i)
+      a[i] = std::tolower(a[i]) ;
+
+    for (int i = 0; i < b.length(); ++i)
+      b[i] = std::tolower(b[i]) ;
+    
+    result = (a == b) ;
+
+    return result ;
+  };
+
+private:
+  string search_format_ ;
+} ;
+
 
 
 } // unnamed namespace
@@ -2361,22 +2409,10 @@ ZMapDataSourceType zMapDataSourceTypeFromFilename(const char * const file_name, 
 string zMapDataSourceFormatFromType(ZMapDataSourceType &source_type)
 {
   string result ;
+  auto iter = data_source_type_formats_G.find(source_type) ;
 
-  switch (source_type)
-    {
-    case ZMapDataSourceType::GIO:    result = "GFF" ;    break ;
-    case ZMapDataSourceType::BED:    result = "Bed" ;    break ;
-    case ZMapDataSourceType::BIGBED: result = "bigBed" ; break ;
-    case ZMapDataSourceType::BIGWIG: result = "bigWig" ; break ;
-#ifdef USE_HTSLIB
-    case ZMapDataSourceType::HTS:    result = "BAM/SAM/CRAM" ;    break ;
-    case ZMapDataSourceType::BCF:    result = "BCF/VCF" ;    break ;
-#endif
-
-    default:
-      zMapWarnIfReached() ;
-      break ;      
-    } ;
+  if (iter != data_source_type_formats_G.end())
+    result = iter->second ;
 
   return result ;
 }
@@ -2388,33 +2424,18 @@ ZMapDataSourceType zMapDataSourceTypeFromFormat(const string &format, GError **e
 {
   ZMapDataSourceType type = ZMapDataSourceType::UNK ;
 
-  static const map<string, ZMapDataSourceType, caseInsensitiveCmp> format_to_type = 
-    {
-      {"GFF", ZMapDataSourceType::GIO}
-      ,{"Bed", ZMapDataSourceType::BED}
-      ,{"bigBed", ZMapDataSourceType::BIGBED}
-      ,{"bigWig", ZMapDataSourceType::BIGWIG}
-#ifdef USE_HTSLIB
-      ,{"BAM/SAM/CRAM",   ZMapDataSourceType::HTS}
-      ,{"BCF/VCF",    ZMapDataSourceType::BCF}
-#endif
-    };
+  map<ZMapDataSourceType, string> type_formats = data_source_type_formats_G ;
 
-  auto found_iter = format_to_type.find(format) ;
+  auto found_iter = find_if(type_formats.begin(), type_formats.end(), DataSourceTypeFormatCmp(format)) ;
       
-  if (found_iter != format_to_type.end())
+  if (found_iter != type_formats.end())
     {
-      type = found_iter->second ;
+      type = found_iter->first ;
     }
   else
     {
-      string expected("");
-      for (auto iter = format_to_type.begin(); iter != format_to_type.end(); ++iter)
-        expected += " ." + iter->first ;
-
       g_set_error(error_out, ZMAP_SERVER_ERROR, ZMAPSERVER_ERROR_UNKNOWN_EXTENSION,
-                  "Invalid format '%s'. Expected one of:%s", 
-                  format.c_str(), expected.c_str()) ;
+                  "Invalid file format '%s'", format.c_str()) ;
     }
 
   return type ;

@@ -145,6 +145,7 @@ protected:
   GHashTable *featureset_2_column_ ;
   GHashTable *source_2_sourcedata_ ;
   ZMapStyleTree *styles_ ;
+
 } ;
 
 
