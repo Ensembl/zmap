@@ -46,10 +46,10 @@ typedef struct _ZMapServerStruct *ZMapServer ;
 
 gboolean zMapServerGlobalInit(ZMapURL url, void **server_global_data_out) ;
 ZMapServerResponseType zMapServerCreateConnection(ZMapServer *server_out, void *server_global_data,
-                                                  char *config_file,
+                                                  GQuark source_name, char *config_file,
                                                   ZMapURL url,
-                                                  char *version_str);
-
+                                                  char *version_str,
+                                                  pthread_mutex_t *mutex);
 ZMapServerResponseType zMapServerOpenConnection(ZMapServer server,ZMapServerReqOpen req_open) ;
 ZMapServerResponseType zMapServerGetServerInfo(ZMapServer server, ZMapServerReqGetServerInfo info) ;
 ZMapServerResponseType zMapServerFeatureSetNames(ZMapServer server,

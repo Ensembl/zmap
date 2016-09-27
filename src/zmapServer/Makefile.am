@@ -20,11 +20,26 @@ zmapServer.hpp \
 zmapServerPrototype.hpp \
 zmapServerRequestHandler.cpp \
 zmapServer_P.hpp \
-]$(NULL)
+zmapDataSource_P.hpp \
+zmapDataSource.cpp \
+$(NULL)
 
 libZMapServer_la_LIBADD  = 
 libZMapServer_la_CFLAGS  = $(INCLUDE_COMMON)
 libZMapServer_la_LDFLAGS = 
+
+
+if HAVE_SSL
+libZMapServer_la_LDFLAGS += \
+$(OPENSSL_LDFLAGS) \
+$(OPENSSL_LIBS) \
+$(NULL)
+
+libZMapServer_la_CFLAGS += \
+$(OPENSSL_INCLUDES) \
+$(NULL)
+endif
+
 
 libZMapServers_la_SOURCES = 
 

@@ -84,6 +84,8 @@ static struct scheme_data supported_schemes[] =
 
   { "ensembl://", DEFAULT_ENSEMBL_PORT, 1 },
 
+  { "trackhub://", DEFAULT_TRACKHUB_PORT, 1 },
+
   /* SCHEME_INVALID */
   { NULL,       -1,                 0 }
 };
@@ -969,8 +971,9 @@ ZMapURL url_parse (const char *url, int *error)
     }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-  /* My alternative version... */ /* mgh: added PIPE */
-  if ((scheme != SCHEME_FILE) && (scheme != SCHEME_PIPE) && host_b == host_e)
+  /* Check that the host is provided (unless not required, e.g. for file) */
+  if ((scheme != SCHEME_FILE) && (scheme != SCHEME_PIPE) && (scheme != SCHEME_TRACKHUB) &&
+      host_b == host_e)
     {
       error_code = PE_EMPTY_HOST;
       goto error;

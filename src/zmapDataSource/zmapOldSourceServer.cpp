@@ -84,6 +84,11 @@ typedef struct ZMapViewSessionServerStructType
       char *host ;
       int port ;
     } ensembl ;
+
+    struct
+    {
+      char *trackdb_id ;
+    } trackhub ;
   } scheme_data ;
 
 } ZMapViewSessionServerStruct ;
@@ -157,6 +162,11 @@ void zMapServerFormatSession(ZMapViewSessionServer server_data, GString *session
       {
         g_string_append_printf(session_text, "\tServer: %s\n\n", server_data->scheme_data.ensembl.host) ;
         g_string_append_printf(session_text, "\tPort: %d\n\n", server_data->scheme_data.ensembl.port) ;
+        break ;
+      }
+    case SCHEME_TRACKHUB:
+      {
+        g_string_append_printf(session_text, "\tTrackDb: %s\n\n", server_data->scheme_data.trackhub.trackdb_id) ;
         break ;
       }
     default:
@@ -342,6 +352,11 @@ void zmapViewSessionAddServer(ZMapViewSessionServer server_data, ZMapURL url, ch
         server_data->scheme_data.ensembl.port = url->port ;
         break ;
       }
+    case SCHEME_TRACKHUB:
+      {
+        server_data->scheme_data.trackhub.trackdb_id = g_strdup(url->query) ;
+        break;
+      }
     default:
       {
 	/* other schemes not currently supported so mark as invalid. */
@@ -381,6 +396,11 @@ void zmapViewSessionAddServerInfo(ZMapViewSessionServer session_data, ZMapServer
     case SCHEME_ENSEMBL:
       {
 
+        break ;
+      }
+    case SCHEME_TRACKHUB:
+      {
+        
         break ;
       }
     default:
@@ -434,6 +454,11 @@ static void freeServer(ZMapViewSessionServer server_data)
     case SCHEME_ENSEMBL:
       {
         g_free(server_data->scheme_data.ensembl.host) ;
+        break ;
+      }
+    case SCHEME_TRACKHUB:
+      {
+        g_free(server_data->scheme_data.trackhub.trackdb_id) ;
         break ;
       }
     default:

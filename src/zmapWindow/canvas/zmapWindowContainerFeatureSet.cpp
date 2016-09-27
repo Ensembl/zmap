@@ -1005,8 +1005,11 @@ gboolean zmapWindowContainerFeatureSetIsFrameSpecific(ZMapWindowContainerFeature
 
   zMapReturnValIfFail(container_set, frame_specific) ;
 
-  frame_mode = zMapStyleGetFrameMode(container_set->style);
-  frame_specific = zMapStyleIsFrameSpecific(container_set->style);
+  if (container_set->style)
+    {
+      frame_mode = zMapStyleGetFrameMode(container_set->style);
+      frame_specific = zMapStyleIsFrameSpecific(container_set->style);
+    }
 
   if(frame_mode_out)
     *frame_mode_out = frame_mode;

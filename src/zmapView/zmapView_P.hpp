@@ -126,8 +126,15 @@ typedef struct ZMapConnectionDataStructType
 
 
   /* Why are start/end separate...are they not in sequence_map ??? */
+  /* gb10: the request region may be different to the view region (in the sequence map) if
+     requesting e.g. from the mark. The sequence name may also be different if we're requesting
+     from a server where we need to look up the sequence using a different name, e.g. "chr1"
+     rather than "chr1-38". Maybe we could make a copy of the sequence map with these updated
+     values in it but I'm not sure that's any better (for most sources we don't need to change
+     them so will end up with many unnecessary copies of the sequence map) */
   ZMapFeatureSequenceMap sequence_map;
   gint start,end;
+  GQuark req_sequence;
 
   /* Move into loaded_features ? */
   GError *error;
@@ -328,6 +335,13 @@ typedef struct _ZMapViewStruct
    * file or from the first Save As operation. This is an array indexed on the type of export,
    * e.g. features/config/styles */
   GQuark save_file[ZMAPVIEW_EXPORT_NUM_TYPES] ;
+
+/* gb10: The user can get spammed with loads of messages if we have thousands of sources that all
+ * fail. For now, just add a simple hack to disable popup warnings after the first one. This gets
+ * reset each time the user does a new Import. Longer term the plan is that we will have a window
+ * where users can view source statuses so that we don't have to pop up messages at all. */
+  bool disable_popups ;
+
 } ZMapViewStruct ;
 
 
@@ -389,9 +403,10 @@ ZMapNewDataSource zmapViewRequestServer(ZMapView view, ZMapNewDataSource view_co
 					 gboolean dna_requested, gboolean terminate, gboolean show_warning) ;
 
 void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req_featuresets, GList *req_biotypes,
-			  ZMapConfigSource server,
-			  int features_start, int features_end,
-			  gboolean group, gboolean make_new_connection, gboolean terminate) ;
+                          ZMapConfigSource server,
+                          const char *req_sequence, int features_start, int features_end, 
+                          const bool thread_fail_silent,
+                          gboolean group, gboolean make_new_connection, gboolean terminate) ;
 
 GQuark zmapViewSrc2FSetGetID(GHashTable *source_2_featureset, char *source_name) ;
 GList *zmapViewSrc2FSetGetList(GHashTable *source_2_featureset, GList *source_list) ;

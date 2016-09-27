@@ -21,6 +21,7 @@ ZMap/zmapDAS.hpp \
 ZMap/zmapDNA.hpp \
 ZMap/zmapDataSlave.hpp \
 ZMap/zmapDataSource.hpp \
+ZMap/zmapDataStream.hpp \
 ZMap/zmapDraw.hpp \
 ZMap/zmapEnsemblUtils.hpp \
 ZMap/zmapEnum.hpp \
@@ -43,6 +44,7 @@ ZMap/zmapRemoteControl.hpp \
 ZMap/zmapRemoteProtocol.hpp \
 ZMap/zmapSeqBitmap.hpp \
 ZMap/zmapSequence.hpp \
+ZMap/zmapDataSource.hpp \
 ZMap/zmapServerProtocol.hpp \
 ZMap/zmapSO.hpp \
 ZMap/zmapSOParser.hpp \

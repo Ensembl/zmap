@@ -39,7 +39,16 @@
 #include <ZMap/zmapControl.hpp>
 #include <zmapApp_P.hpp>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
+#include <blatSrc/common.h>
+#include <blatSrc/udc.h>
+
+#ifdef __cplusplus
+}
+#endif
 
 
 static void initGnomeGTK(int argc, char *argv[]) ;
@@ -93,6 +102,17 @@ gboolean zmapMainMakeAppWindow(int argc, char *argv[], ZMapAppContext app_contex
   PangoFont *tmp_font = NULL ;
   PangoFontDescription *tmp_font_desc = NULL ;
   int log_size ;
+
+
+  // Set the temp cache diretory for processing BED files etc.
+  const char *tmp_dir = zMapGetTmpDir() ;
+
+  if (tmp_dir)
+    {
+      char *tmp_copy = g_strdup(tmp_dir) ;
+      udcSetDefaultDir(tmp_copy) ;
+      g_free(tmp_copy) ;
+    }
 
 
   /*             GTK initialisation              */
@@ -159,14 +179,14 @@ gboolean zmapMainMakeAppWindow(int argc, char *argv[], ZMapAppContext app_contex
 
   if (app_context->default_sequence)
     {
-      app_context->default_sequence->constructSources(NULL, NULL) ;
+      app_context->default_sequence->addSourcesFromConfig(NULL, NULL) ;
     }
 
   connect_frame = zmapMainMakeConnect(app_context, app_context->default_sequence) ;
   gtk_box_pack_start(GTK_BOX(vbox), connect_frame, TRUE, TRUE, 0);
 
   manage_frame = zmapMainMakeManage(app_context) ;
-  gtk_box_pack_start(GTK_BOX(vbox), manage_frame, TRUE, TRUE, 0);
+  gtk_box_pack_start(GTK_BOX(vbox), manage_frame, FALSE, TRUE, 0);
 
   quit_button = gtk_button_new_with_label("Quit") ;
   gtk_signal_connect(GTK_OBJECT(quit_button), "clicked",
@@ -235,7 +255,7 @@ gboolean zmapMainMakeAppWindow(int argc, char *argv[], ZMapAppContext app_contex
                   ZMapFeatureSequenceMap seq_map = (ZMapFeatureSequenceMap)(seq_map_item->data) ;
                   char *err_msg = NULL ;
 
-                  seq_map->constructSources(NULL, NULL) ;
+                  seq_map->addSourcesFromConfig(NULL, NULL) ;
 
                   zMapControlInsertView(zmap, seq_map, &err_msg) ;
 
@@ -399,7 +419,7 @@ static void destroyAppContext(ZMapAppContext app_context)
       if(app_context->default_sequence->sequence)
         g_free(app_context->default_sequence->sequence);
 
-      g_free(app_context->default_sequence);
+      delete app_context->default_sequence;
     }
   g_free(app_context) ;
 

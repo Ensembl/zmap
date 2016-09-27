@@ -93,7 +93,7 @@ static gboolean globalInit(void) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static gboolean createConnection(void **server_out,
-                                 char *config_file, ZMapURL url, char *format,
+                                 GQuark source_name, char *config_file, ZMapURL url, char *format,
                                  char *version_str, int timeout,
                                  pthread_mutex_t *mutex) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
@@ -242,7 +242,7 @@ static gboolean globalInit(void)
  */
 
 static gboolean createConnection(void **server_out,
-                                 char *config_file, ZMapURL url,
+                                 GQuark source_name, char *config_file, ZMapURL url,
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
                                  char *format,
@@ -253,7 +253,8 @@ static gboolean createConnection(void **server_out,
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 , int timeout_unused
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
+,
+                                 pthread_mutex_t *mutex_unused
 )
 {
   gboolean result = FALSE ;
@@ -397,6 +398,7 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
       GQuark file_quark = g_quark_from_string(filename) ;
       ZMapFeatureParserCache parser_cache = NULL ;
 
+      server->req_sequence = req_open->req_sequence ;
       server->zmap_start = req_open->zmap_start;
       server->zmap_end = req_open->zmap_end;
 
@@ -494,7 +496,7 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
                   if (!server->parser)
                     {
                       server->parser = zMapGFFCreateParser(server->gff_version,
-                                                           server->sequence_map->sequence,
+                                                           g_quark_to_string(server->req_sequence),
                                                            server->zmap_start, server->zmap_end) ;
                     }
 
@@ -1012,8 +1014,8 @@ static char *make_arg(PipeArg pipe_arg, const char *prefix, PipeServer server)
         q = g_strdup_printf("%s%s=%s",prefix,pipe_arg->arg,server->sequence_map->dataset);
       break;
     case PA_FLAG_SEQUENCE:
-      if (server->sequence_map->sequence)
-        q = g_strdup_printf("%s%s=%s",prefix,pipe_arg->arg,server->sequence_map->sequence);
+      if (g_quark_to_string(server->req_sequence))
+        q = g_strdup_printf("%s%s=%s",prefix,pipe_arg->arg, g_quark_to_string(server->req_sequence));
       break;
     default:
       zMapLogCritical("Bad pipe_arg->flag %d !!", pipe_arg->flag) ;
@@ -1431,6 +1433,10 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
       GError *gff_pipe_err = NULL ;
       gboolean first ;
 
+      /* Keep track of how many warnings we log so we don't fill the log file with millions */
+      int warning_count = 0;
+      const int max_warnings = 1000;
+
       /* The caller may only want a small part of the features in the stream so we set the
        * feature start/end from the block, not the gff stream start/end. */
       if (server->zmap_end)
@@ -1442,6 +1448,7 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
         }
 
       first = TRUE ;
+
       do
         {
           if (first)
@@ -1455,7 +1462,13 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
 
               error = zMapGFFGetError(parser) ;
 
-              ZMAPSERVER_LOG(Warning, server->protocol, server->script_path, "%s", error->message) ;
+              /* Only log a warning if an error was given (the error may be null if no warning is
+               * required and we need to be careful not to fill the log with millions of warnings) */
+              if (error && warning_count < max_warnings)
+                {
+                  ZMAPSERVER_LOG(Warning, server->protocol, server->script_path, "%s", error->message) ;
+                  ++warning_count ;
+                }
 
               /* If the error was serious we stop processing and return the error. */
               if (zMapGFFTerminated(parser))

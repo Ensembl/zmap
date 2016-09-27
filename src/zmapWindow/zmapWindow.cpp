@@ -269,7 +269,7 @@ static gboolean possiblyPopulateWithFullData(ZMapWindow window,
 
 
 static gboolean isColumnVisible(FooCanvasItem *item, gpointer user_data_unused) ;
-static gboolean checkItem(FooCanvasItem *item, gpointer user_data) ;
+//static gboolean checkItem(FooCanvasItem *item, gpointer user_data) ;
 
 
 static void popUpMenu(GdkEventKey *key_event, ZMapWindow window, FooCanvasItem *focus_item) ;
@@ -2256,7 +2256,7 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
     }
   else
     {
-      select.secondary_text = zmapWindowMakeFeatureSelectionTextFromSelection(window, display_style) ;
+      select.secondary_text = zmapWindowMakeFeatureSelectionTextFromSelection(window, display_style, TRUE) ;
     }
 
   /* this puts the DNA in the clipbaord */
@@ -3458,7 +3458,6 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
         {
           zmapWindowDrawSplices(window, NULL, 0, 0) ;
         }
-
 
       /* Tell layer above that we have finished loading/displaying features. */
       (*(window_cbs_G->drawn_data))(window, window->app_data, window_data->loaded_cb_user_data, diff_context) ;
@@ -6902,20 +6901,20 @@ static gboolean isColumnVisible(FooCanvasItem *item, gpointer user_data_unused)
 /* ACTUALLY THIS DOESN'T SEEM TO WORK PROPERLY ON THE FEATURE CHECK.... */
 /* A zmapWindowContainerItemTestCallback() that tests a canvas item to make sure it is visible
  * and optionally that it represents a feature. */
-static gboolean checkItem(FooCanvasItem *item, gpointer user_data)
-{
-  gboolean status = FALSE ;
-  gboolean check_for_feature = GPOINTER_TO_INT(user_data) ;
-  ZMapFeature feature = NULL ;
-
-  if (zmapWindowItemIsShown((FooCanvasItem *)(item))
-      && (!check_for_feature || (feature = zmapWindowItemGetFeature(item))))
-    status = TRUE ;
-
-  feature = zMapWindowCanvasItemGetFeature(item) ;
-
-  return status ;
-}
+//static gboolean checkItem(FooCanvasItem *item, gpointer user_data)
+//{
+//  gboolean status = FALSE ;
+//  gboolean check_for_feature = GPOINTER_TO_INT(user_data) ;
+//  ZMapFeature feature = NULL ;
+//
+//  if (zmapWindowItemIsShown((FooCanvasItem *)(item))
+//      && (!check_for_feature || (feature = zmapWindowItemGetFeature(item))))
+//    status = TRUE ;
+//
+//  feature = zMapWindowCanvasItemGetFeature(item) ;
+//
+//  return status ;
+//}
 
 
 

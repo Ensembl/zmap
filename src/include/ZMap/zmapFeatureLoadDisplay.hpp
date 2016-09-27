@@ -34,27 +34,18 @@
 
 #include <map>
 #include <list>
+#include <string>
+
+#include <gbtools/gbtools.hpp>
 
 #include <ZMap/zmapStyle.hpp>
 #include <ZMap/zmapStyleTree.hpp>
 #include <ZMap/zmapConfigIni.hpp>
 
-#include <string>
-#include <map>
 
-
-struct _ZMapConfigSourceStruct ;
+class ZMapConfigSourceStruct ;
 struct ZMapFeatureAnyStructType ;
 
-
-/* Possible file types for a file or pipe source */
-typedef enum
-  {
-    ZMAPSOURCE_FILE_NONE,
-    ZMAPSOURCE_FILE_GFF,
-    ZMAPSOURCE_FILE_BAM,
-    ZMAPSOURCE_FILE_BIGWIG
-  } ZMapSourceFileType;
 
 
 /* Overview:
@@ -209,14 +200,7 @@ typedef struct ZMapFeatureContextMapStructType
    * of this hash table? */
   GHashTable *source_2_sourcedata ;
 
-
-  /* This is a list BAM featureset unique id's (GQuark). It is only used to create the Blixem and
-   * ZMap right-click menus for short-read options. This info is also available via the is_seq
-   * member of the ZMapFeatureSource struct. */
-  /* gb10: I'm not sure how much those menus are used so maybe we should look into getting rid of
-   * them? Or look at using is_seq to construct these menus instead (if that's not too slow)? */
-  GList *seq_data_featuresets ;
-
+  
   /* This maps virtual featuresets to their lists of real featuresets. The reverse mapping is
    * provided by the maps_to field in the ZMapFeatureSource. 
    * Maps the virtual featureset unique_id (GQuark) to a GList of real featureset unique_ids
@@ -275,8 +259,9 @@ typedef struct ZMapFeatureParserCacheStructType
 
 
 /* Holds data about a sequence to be fetched.
- * Used for the 'default-sequence' from the config file or one loaded later
- * via a peer program, e.g. otterlace. */
+ * 
+ * Used for the 'default-sequence' from the config file or main window, or for a sequence loaded
+ * later via a peer program, e.g. otterlace. */
 typedef struct ZMapFeatureSequenceMapStructType
 {
   char *config_file ;
@@ -285,7 +270,7 @@ typedef struct ZMapFeatureSequenceMapStructType
   GHashTable *cached_parsers ; /* filenames (as GQuarks) mapped to cached info about GFF parsing that
                                 * is in progress (ZMapFeatureParserCache) if parsing has already been started */
 
-  std::map<std::string, _ZMapConfigSourceStruct*> *sources ;
+  std::map<std::string, ZMapConfigSourceStruct*> *sources ; /* map source name to struct */
 
   char *dataset ;                                           /* e.g. human */
   char *sequence ;                                          /* e.g. chr6-18 */
@@ -294,23 +279,31 @@ typedef struct ZMapFeatureSequenceMapStructType
   gboolean flags[ZMAPFLAG_NUM_FLAGS] ;
 
 
+  ZMapFeatureSequenceMapStructType() ;
+
   ZMapFeatureSequenceMapStructType* copy() ;
 
   gboolean getFlag(ZMapFlag flag) ;
   void setFlag(ZMapFlag flag, const gboolean value) ;
 
   ZMapConfigSource getSource(const std::string &source_name) ;
-  char* getSourceName(ZMapConfigSource source) ;
+  ZMapConfigSource getSource(const std::string &source_name, const std::string &url) ;
+  const char* getSourceName(ZMapConfigSource source) ;
   char* getSourceURL(const std::string &source_name) ;
-  GList* getSources() ;
-  void constructSources(const char *filename, const char *config_str, char **stylesfile) ;
-  void constructSources(const char *config_str, char **stylesfile) ;
+  GList* getSources(const bool include_children = true) ;
+  void getSourceChildren(ZMapConfigSource source, GList **result) ;
+  void addSourcesFromConfig(const char *filename, const char *config_str, char **stylesfile) ;
+  void addSourcesFromConfig(const char *config_str, char **stylesfile) ;
   bool updateContext(_ZMapConfigIniContextStruct *context, ZMapConfigIniFileType file_type) ;
 
   ZMapConfigSource createSource(const char *source_name, const char *url, 
-                                const char *featuresets, const char *biotypes, GError **error) ;
+                                const char *featuresets, const char *biotypes, 
+                                const bool is_child = false, const bool allow_duplicate = true,
+                                GError **error = NULL) ;
   ZMapConfigSource createSource(const char *source_name, const std::string &url, 
-                                const char *featuresets, const char *biotypes, GError **error) ;
+                                const char *featuresets, const char *biotypes, 
+                                const bool is_child = false, const bool allow_duplicate = true,
+                                GError **error = NULL) ;
   void updateSource(const char *source_name, const char *url, 
                     const char *featuresets, const char *biotypes, GError **error) ;
   void updateSource(const char *source_name, const std::string &url, 
@@ -319,8 +312,12 @@ typedef struct ZMapFeatureSequenceMapStructType
   ZMapConfigSource createPipeSource(const char *source_name, const char *file, const char *script, const char *args) ;
   void removeSource(const char *source_name_cstr, GError **error) ;
 
+  bool runningUnderOtter() ;
+
 private:
-  void addSource(const std::string &source_name, _ZMapConfigSourceStruct *source, GError **error) ;
+  void addSource(const std::string &source_name, ZMapConfigSourceStruct *source, GError **error) ;
+  void createSourceChildren(ZMapConfigSource source, GError **error = NULL) ;
+  void createTrackhubSourceChild(ZMapConfigSource parent_source, const gbtools::trackhub::Track &track) ;
 
 } ZMapFeatureSequenceMapStruct, *ZMapFeatureSequenceMap ;
 

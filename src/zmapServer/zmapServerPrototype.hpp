@@ -45,6 +45,7 @@
 typedef gboolean (*ZMapServerGlobalFunc)(void) ;
 
 typedef gboolean (*ZMapServerCreateFunc)(void **server_conn,
+                                         GQuark source_name,
 					 char *config_file,
 					 ZMapURL url,
                                          char *version_str) ;

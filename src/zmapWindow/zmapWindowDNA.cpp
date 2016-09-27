@@ -1053,6 +1053,8 @@ static void matches_to_features(gpointer list_data, gpointer user_data)
   if(!feature_set->style)
     feature_set->style = style;
 
+  GError *g_error = NULL ;
+
   current_feature = zMapFeatureCreateFromStandardData(current_match->match,
                                                       sequence,
                                                       ontology,
@@ -1060,12 +1062,21 @@ static void matches_to_features(gpointer list_data, gpointer user_data)
                                                       &feature_set->style,
                                                       start, end,
                                                       has_score, score,
-                                                      current_match->strand) ;
+                                                      current_match->strand,
+                                                      &g_error) ;
 
-  zMapFeatureSetAddFeature(feature_set, current_feature);
+  if (current_feature)
+    {
+      zMapFeatureSetAddFeature(feature_set, current_feature);
 
-  zMapFeatureAddText(current_feature, feature_set->original_id, ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME, style->description) ;
+      zMapFeatureAddText(current_feature, feature_set->original_id, ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME, style->description) ;
+    }
 
+  if (g_error)
+    {
+      zMapCritical("Error creating DNA match feature", g_error->message) ;
+      g_error_free(g_error) ;
+    }
 
   return ;
 }

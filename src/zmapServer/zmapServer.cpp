@@ -62,6 +62,7 @@ gboolean zMapServerGlobalInit(ZMapURL url, void **server_global_data_out)
   zMapReturnValIfFail((server_global_data_out), FALSE) ;
 
   zMapReturnValIfFail((url->scheme == SCHEME_FILE
+                       || url->scheme == SCHEME_TRACKHUB
                        || url->scheme == SCHEME_PIPE 
                        || url->scheme == SCHEME_HTTP 
                        || url->scheme == SCHEME_FTP
@@ -141,6 +142,7 @@ gboolean zMapServerGlobalInit(ZMapURL url, void **server_global_data_out)
 // error. What this means is that if the caller does not pass in server_out this code will
 // segfault, not a great design but there's not point in changing it now.
 ZMapServerResponseType zMapServerCreateConnection(ZMapServer *server_out, void *global_data,
+                                                  GQuark source_name,
                                                   char *config_file,
                                                   ZMapURL url,
 
@@ -211,7 +213,7 @@ ZMapServerResponseType zMapServerCreateConnection(ZMapServer *server_out, void *
 
   if (result == ZMAP_SERVERRESPONSE_OK)
     {
-      if ((server->funcs->create)(&(server->server_conn), config_file, url,
+      if ((server->funcs->create)(&(server->server_conn), source_name, config_file, url,
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
                                   format,
@@ -222,7 +224,7 @@ ZMapServerResponseType zMapServerCreateConnection(ZMapServer *server_out, void *
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 , timeout
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
+                                  , mutex
 ))
 
         {

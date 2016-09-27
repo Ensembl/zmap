@@ -36,13 +36,16 @@
 
 #include <ZMap/zmap.hpp>
 
-#include <map>
 #include <string>
+#include <list>
+#include <map>
 
 #include <string.h>
 #include <sys/types.h>
 #include <signal.h>                                            /* kill() */
 #include <glib.h>
+
+#include <gbtools/gbtools.hpp>
 
 #include <ZMap/zmapUtils.hpp>
 #include <ZMap/zmapUtilsDebug.hpp>
@@ -60,10 +63,12 @@
 #include <zmapView_P.hpp>
 
 
+using namespace std ;
 
 using namespace ZMapThreadSource ;
 
 
+#define SOURCE_FAILURE_WARNING_FORMAT "Error loading source(s). First error was:\n\n%s\n\nFurther source failures will not be reported. See the log file for details of any other failures."
 
 /* Define thread debug messages, used in checkStateConnections() mostly. */
 #define THREAD_DEBUG_MSG_PREFIX " Reply from slave thread %s, "
@@ -247,6 +252,12 @@ static gboolean zMapViewSortExons(ZMapFeatureContext diff_context) ;
 
 
 
+static ZMapViewConnection zmapViewRequestServer(ZMapView view, ZMapViewConnection view_conn,
+                                                ZMapFeatureBlock block_orig, GList *req_featuresets, GList *req_biotypes,
+                                                ZMapConfigSource server,
+                                                const char *req_sequence, int req_start, int req__end,
+                                                gboolean dna_requested, gboolean terminate, gboolean show_warning) ;
+
 
 /*
  *                 Globals
@@ -280,7 +291,6 @@ ZMapWindowCallbacksStruct window_cbs_G =
 /* Turn on/off debugging output for thread handling especially in checkStateConnections().
  * Note, this var is used explicitly in the THREAD_DEBUG_MSG() macro. */
 static gboolean thread_debug_G = FALSE ;
-
 
 
 /*
@@ -522,10 +532,9 @@ gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view
       /* set the default stylesfile */
       stylesfile = zmap_view->view_sequence->stylesfile;
 
-      // get the stanza structs from ZMap config
+      zmap_view->view_sequence->addSourcesFromConfig(config_str, &stylesfile) ;
       settings_list = zmap_view->view_sequence->getSources() ;
 
-      zMapConfigGetSources(zmap_view->view_sequence->config_file, config_str, &stylesfile) ;
       viewSetUpStyles(zmap_view, stylesfile) ;
 
       /* read in a few ZMap stanzas giving column groups etc. */
@@ -1238,7 +1247,6 @@ void zMapViewShowLoadStatus(ZMapView view)
 
 
 
-
 /*
  *                      Package external routines
  */
@@ -1497,6 +1505,16 @@ void zmapViewResetWindows(ZMapView zmap_view, gboolean revcomp)
 }
 
 
+/* Utility called by zMapViewSetUpServerConnection to do any scheme-specific set up for the given
+ * server. This updates the terminate flag. Returns true if the source should be loaded. */
+static bool setUpServerConnectionByScheme(ZMapView zmap_view,
+                                          ZMapConfigSource current_server,
+                                          bool &terminate,
+                                          GError **error)
+{
+  bool result = true ;
+  ZMapURL zmap_url = url_parse(current_server->url, NULL);
+  terminate = FALSE ;
 
 ZMapFeatureContextMergeCode zmapJustMergeContext(ZMapView view, ZMapFeatureContext *context_inout,
                                              ZMapFeatureContextMergeStats *merge_stats_out,
@@ -2374,22 +2392,26 @@ static void getIniData(ZMapView view, char *config_str, GList *req_sources)
               }
           }
 
+        GList *seq_data_featuresets = NULL ;
+
         if(zMapConfigIniContextGetString(context,
                                          ZMAPSTANZA_APP_CONFIG,
                                          ZMAPSTANZA_APP_CONFIG,
                                          ZMAPSTANZA_APP_SEQ_DATA,&str))
           {
-            view->context_map.seq_data_featuresets = zMapConfigString2QuarkIDGList(str);
+            seq_data_featuresets = zMapConfigString2QuarkIDGList(str);
           }
 
         /* add a flag for each seq_data featureset */
-        for(iter = view->context_map.seq_data_featuresets; iter; iter = iter->next)
+        for(iter = seq_data_featuresets; iter; iter = iter->next)
           {
             gff_source = (ZMapFeatureSource)g_hash_table_lookup(source_2_sourcedata,iter->data);
             //zMapLogWarning("view is_seq: %s -> %p",g_quark_to_string(GPOINTER_TO_UINT(iter->data)),gff_source);
             if(gff_source)
               gff_source->is_seq = TRUE;
           }
+
+        g_list_free(seq_data_featuresets) ;
 
         view->context_map.source_2_sourcedata = source_2_sourcedata;
 
@@ -2904,9 +2926,12 @@ static gboolean checkStateConnections(ZMapView zmap_view)
               THREAD_DEBUG_MSG(thread, "cannot access reply from child thread - %s", err_msg) ;
 
               /* Warn the user ! */
-              if (view_con->show_warning)
-                zMapWarning("Source \"%s\" is being removed, error was: %s\n",
-                            zMapServerGetUrl(view_con), (err_msg ? err_msg : "<no error message>")) ;
+              if (view_con->show_warning && !zMapViewGetDisablePopups(zmap_view))
+                {
+                  zMapWarning("Source \"%s\" is being removed, error was: %s\n",
+                              zMapServerGetUrl(view_con), (err_msg ? err_msg : "<no error message>")) ;
+                  zMapViewSetDisablePopups(zmap_view, true) ;
+                }
 
               zMapLogCritical("Source \"%s\", cannot access reply from server thread,"
                               " error was: %s", zMapServerGetUrl(view_con), (err_msg ? err_msg : "<no error message>")) ;
@@ -3090,13 +3115,15 @@ static gboolean checkStateConnections(ZMapView zmap_view)
                         /* Warn the user ! */
                         if (view_con->show_warning)
                           {
-                            /* Don't bother the user if it's just that there were no features in
-                             * the source */
-                            if (err_code != ZMAPVIEW_ERROR_CONTEXT_EMPTY)
-                              zMapWarning("Error loading source.\n\n %s", (err_msg ? err_msg : "<no error message>")) ;
-                            
-                            zMapLogWarning("Source is being cancelled: Error was: '%s'. Source: %s",
-                                           (err_msg ? err_msg : "<no error message>"), zMapServerGetUrl(view_con)) ;
+                            if (!zMapViewGetDisablePopups(zmap_view))
+                              {
+                                if (err_code != ZMAPVIEW_ERROR_CONTEXT_EMPTY)
+                                  zMapWarning(SOURCE_FAILURE_WARNING_FORMAT, (err_msg ? err_msg : "<no error message>")) ;
+                                zMapViewSetDisablePopups(zmap_view, true) ;
+                              }
+
+                            zMapLogWarning("Source failed with error: '%s'. Source: %s",
+                                           (err_msg ? err_msg : "<no error message>"), view_con->url) ;
                           }
 
                         THREAD_DEBUG_MSG_FULL(thread, view_con, request_type, reply,
@@ -3107,6 +3134,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
                         THREAD_DEBUG_MSG_FULL(thread, view_con, request_type, reply,
                                               "%s", "signalling child thread to die....") ;
                         zMapThreadKill(thread) ;
+                        thread_has_died = TRUE ; 
                       }
                     else
                       {
@@ -3127,8 +3155,12 @@ static gboolean checkStateConnections(ZMapView zmap_view)
                     if (zMapStepOnFailAction(step) != REQUEST_ONFAIL_CONTINUE)
                       {
                         /* Thread has failed for some reason and we should clean up. */
-                        if (err_msg && view_con->show_warning)
-                          zMapWarning("%s", err_msg) ;
+                        if (err_msg && view_con->show_warning && 
+                            !zMapViewGetDisablePopups(zmap_view))
+                          {
+                            zMapWarning(SOURCE_FAILURE_WARNING_FORMAT, (err_msg ? err_msg : "<no error>")) ;
+                            zMapViewSetDisablePopups(zmap_view, true) ;
+                          }
 
                         thread_has_died = TRUE ;
 
@@ -3310,7 +3342,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
                   if (view_con->thread_status == THREAD_STATUS_FAILED)
                     {
-                      char *request_type_str = (char *)zMapServerReqType2ExactStr(request_type) ;
+                      //char *request_type_str = (char *)zMapServerReqType2ExactStr(request_type) ;
 
                       if (!err_msg)
                         {
@@ -3324,17 +3356,18 @@ static gboolean checkStateConnections(ZMapView zmap_view)
                       if (view_con->show_warning && is_continue)
                         {
                           /* we get here at the end of a step list, prev errors not reported till now */
-                          zMapWarning("Data request failed: %s\n%s%s", err_msg,
-                                      ((connect_data->stderr_out && *connect_data->stderr_out)
-                                       ? "Server reports:\n" : ""),
-                                      connect_data->stderr_out) ;
+                          if (!zMapViewGetDisablePopups(zmap_view))
+                            {
+                              zMapWarning(SOURCE_FAILURE_WARNING_FORMAT, (err_msg ? err_msg : "<no error>")) ;
+                              zMapViewSetDisablePopups(zmap_view, true) ;
+                            }
                         }
 
-                      zMapLogWarning("Thread %p failed, request = %s, empty sources now %d, failed sources now %d",
-                                     thread,
-                                     request_type_str,
-                                     g_list_length(zmap_view->sources_empty),
-                                     g_list_length(zmap_view->sources_failed)) ;
+                      //zMapLogWarning("Thread %p failed, request = %s, empty sources now %d, failed sources now %d",
+                      //               thread,
+                      //               request_type_str,
+                      //               g_list_length(zmap_view->sources_empty),
+                      //               g_list_length(zmap_view->sources_failed)) ;
                     }
 
                   /* Record if features were loaded or if there was an error, if the latter
@@ -3512,6 +3545,7 @@ static ZMapView createZMapView(char *view_name, GList *sequences, void *app_data
 
   zmap_view->state = ZMAPVIEW_INIT ;
   zmap_view->busy = FALSE ;
+  zmap_view->disable_popups = false ;
 
 
   zmap_view->view_name = g_strdup(view_name) ;
@@ -4322,7 +4356,7 @@ static void commandCB(ZMapWindow window, void *caller_data, void *window_data)
           }
 
         zmapViewLoadFeatures(view, get_data->block, get_data->feature_set_ids, NULL, NULL,
-                             req_start, req_end,
+                             NULL, req_start, req_end, view->thread_fail_silent,
                              SOURCE_GROUP_DELAYED, TRUE, FALSE) ;        /* don't terminate, need to keep alive for blixem */
 
         break ;
@@ -5300,6 +5334,12 @@ void updateContextColumnStyles(ZMapConfigIniContext context, ZMapConfigIniFileTy
 }
 
 
+bool zMapViewGetDisablePopups(ZMapView zmap_view)
+{
+  return zmap_view->disable_popups ;
+}
 
-
-
+void zMapViewSetDisablePopups(ZMapView zmap_view, const bool value)
+{
+  zmap_view->disable_popups = value ;
+}

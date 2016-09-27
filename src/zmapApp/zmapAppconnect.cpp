@@ -41,7 +41,9 @@
 
 
 
-static void createThreadCB(ZMapFeatureSequenceMap sequence_map, gpointer user_data) ;
+static void createThreadCB(ZMapFeatureSequenceMap sequence_map, 
+                           const bool recent_only,
+                           gpointer user_data) ;
 
 
 
@@ -54,7 +56,7 @@ GtkWidget *zmapMainMakeConnect(ZMapAppContext app_context, ZMapFeatureSequenceMa
   GtkWidget *frame ;
 
 
-  frame = zMapCreateSequenceViewWidg(createThreadCB, app_context, sequence_map, TRUE) ;
+  frame = zMapCreateSequenceViewWidg(createThreadCB, app_context, sequence_map) ;
 
 
   return frame ;
@@ -147,7 +149,9 @@ gboolean zmapAppCreateZMap(ZMapAppContext app_context, ZMapFeatureSequenceMap se
  */
 
 
-static void createThreadCB(ZMapFeatureSequenceMap sequence_map, gpointer user_data)
+static void createThreadCB(ZMapFeatureSequenceMap sequence_map, 
+                           const bool recent_only,
+                           gpointer user_data)
 {
   ZMapAppContext app_context = (ZMapAppContext)user_data ;
   ZMap zmap = NULL ;

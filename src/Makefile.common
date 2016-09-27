@@ -23,7 +23,7 @@ $(NULL)
 # here would be the place to put them. Flags such optimising or debugging
 # are set up by the runconfig script so look there for details.
 # 
-AM_CXXFLAGS =    -std=c++0x
+AM_CXXFLAGS =    -std=c++11
 #
 #AM_LDFLAGS =     loader flags here
 

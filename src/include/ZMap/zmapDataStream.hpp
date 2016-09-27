@@ -1,4 +1,4 @@
-/*  File: zmapDataStream.h
+/*  File: zmapDataStream.hpp
  *  Author: Steve Miller (sm23@sanger.ac.uk)
  *  Copyright (c) 2006-2015: Genome Research Ltd.
  *-------------------------------------------------------------------
@@ -21,32 +21,28 @@
  * and was written by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
- *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk,
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
  *
  * Description:
- * 
+ * Exported functions:
  *-------------------------------------------------------------------
  */
 
-#ifndef DATA_STREAM_H
-#define DATA_STREAM_H
+#ifndef DATA_SOURCE_H
+#define DATA_SOURCE_H
 
 /*
  * Forward declaration of general source type.
  */
-typedef struct ZMapDataStreamStruct_ *ZMapDataStream ;
+class ZMapDataStreamStruct ;
+typedef ZMapDataStreamStruct *ZMapDataStream ;
 
 /*
  * Enumeration to represent different source types.
  */
-enum class ZMapDataStreamType {GIO, HTS, UNK} ;
+enum class ZMapDataStreamType {GIO, HTS, BCF, BED, BIGBED, BIGWIG, UNK} ;
 
-
-typedef struct ZMapDataStreamStruct_
-  {
-    ZMapDataStreamType type ;
-  } ZMapDataStreamStruct ;
 
 
 
@@ -54,24 +50,25 @@ typedef struct ZMapDataStreamStruct_
 /*
  * The rationale for this is that previously we were reading GFF data
  * only, always through a GIOChannel. Thus the abstraction of ZMapDataStream,
- * which has two types
+ * which has several types
  *
  *            ZMapDataStreamGIO       GIOChannel, synchronous OR asynchronous
- *            ZMapDataStreamHTS       HTS file, synchronous only
+ *            ZMapDataStreamHTS       HTS bam/sam/cram file, synchronous only
+ *            ZMapDataStreamBCF       HTS bcf/vcf file, synchronous only
+ *            ZMapDataStreamBED       blatSrc Bed file, synchronous only
+ *            ZMapDataStreamnBIGBED   blatSrc bigBed file, synchronous only
+ *            ZMapDataStreamBIGWIG    blatSrc bigWig file, synchronous only
  */
-ZMapDataStream zMapDataStreamCreate(const char * const file_name, GError **error_out = NULL) ;
-ZMapDataStream zMapDataStreamCreateFromGIO(GIOChannel * const io_channel) ;
-gboolean zMapDataStreamDestroy(ZMapDataStream *source) ;
-
-gboolean zMapDataStreamIsOpen(ZMapDataStream const source) ;
-const char *zMapDataStreamGetSequence(ZMapDataStream const source) ;
+ZMapDataStream zMapDataStreamCreate(const GQuark source_name, const char * const file_name, 
+                                    const char *sequence, const int start, const int end, 
+                                    GError **error_out = NULL) ;
+bool zMapDataStreamIsOpen(ZMapDataStream const source) ;
+bool zMapDataStreamDestroy( ZMapDataStream *source) ;
 ZMapDataStreamType zMapDataStreamGetType(ZMapDataStream source ) ;
-gboolean zMapDataStreamReadHTSHeader(ZMapDataStream source, const char *sequence) ;
-gboolean zMapDataStreamReadLine(ZMapDataStream const data_pipe , GString * const str) ;
-gboolean zMapDataStreamGetGFFVersion(ZMapDataStream const source, int * const out_val) ;
 ZMapDataStreamType zMapDataStreamTypeFromFilename(const char * const, GError **error_out = NULL) ;
 
 
 
-#endif /* DATA_STREAM_H */
+
+#endif
 

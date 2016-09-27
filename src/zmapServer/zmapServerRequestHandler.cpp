@@ -197,6 +197,7 @@ ZMapServerReqAny zMapServerRequestCreate(ZMapServerReqType request_type, ...)
       {
         ZMapServerReqCreate create = (ZMapServerReqCreate)req_any ;
 
+        create->source_name = va_arg(args, int) ;
         create->config_file = g_strdup(va_arg(args, char *)) ;
         create->url = va_arg(args, ZMapURL) ;
 
@@ -360,7 +361,8 @@ ZMapServerResponseType zMapServerRequest(ZMapServer *server_inout, ZMapServerReq
           }
         else
           {
-            if ((request->response = zMapServerCreateConnection(&server, global_init_data, create->config_file,
+            if ((request->response
+                 = zMapServerCreateConnection(&server, global_init_data, create->source_name, create->config_file,
                                                                 create->url,
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -372,7 +374,7 @@ ZMapServerResponseType zMapServerRequest(ZMapServer *server_inout, ZMapServerReq
                                                                 create->timeout,
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-                                                                create->version))
+                                                                create->version, mutex))
 
                 != ZMAP_SERVERRESPONSE_OK)
               {

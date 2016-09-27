@@ -44,13 +44,18 @@
 
 #include <ZMap/zmap.hpp>
 
+#include <sstream>
 #include <string.h>
+
 #include <ZMap/zmapUtils.hpp>
 #include <ZMap/zmapGLibUtils.hpp> /* zMap_g_hash_table_nth */
 #include <zmapWindow_P.hpp>
 #include <zmapWindowCanvasItem.hpp>
 #include <zmapWindowContainerUtils.hpp>
 #include <zmapWindowContainerFeatureSet_I.hpp>
+
+using std::stringstream ;
+
 
 #define XPAD 3
 #define YPAD 3
@@ -98,6 +103,8 @@ typedef struct
   GtkListStore *list_store ;              /* Stores list of featuresets */
 
   GtkWidget *stranded;
+  GtkWidget *min_score;
+  GtkWidget *max_score;
 
 
 } StyleChangeStruct, *StyleChange;
@@ -120,6 +127,8 @@ static void updateStyle(StyleChange my_data, ZMapFeatureTypeStyle style) ;
 
 static void createChildStyleCB(GtkButton *button, gpointer cb_data) ;
 static void updateFeaturesetListStore(StyleChange my_data) ;
+
+static void scoreCalulateCB(GtkButton *button, gpointer cb_data) ;
 
 
 /* Entry point to display the Edit Style dialog. Edits the given style or creates a new one with
@@ -159,7 +168,7 @@ void zMapWindowShowStyleDialog(ZMapWindow window,
   createToplevel(my_data) ;
 
   /* Create a table to lay out all the widgets in */
-  const int rows = 6 ;
+  const int rows = 7 ;
   const int cols = 5 ;
 
   GtkTable *table = GTK_TABLE(gtk_table_new(rows, cols, FALSE)) ;
@@ -275,7 +284,18 @@ gboolean zmapWindowStyleDialogSetStyle(ZMapWindow window, ZMapFeatureTypeStyle s
       g_list_foreach(my_data->cds_widgets, (GFunc)gtk_widget_hide_all, NULL) ;
     }
 
+  // set stranded status from style
   gtk_toggle_button_set_active((GtkToggleButton *) my_data->stranded, style->strand_specific);
+
+  // set min/max score from style
+  stringstream ss_min ;
+  ss_min << style->min_score ;
+  gtk_entry_set_text(GTK_ENTRY(my_data->min_score), ss_min.str().c_str()) ;
+
+  stringstream ss_max ;
+  ss_max << style->max_score ;
+  gtk_entry_set_text(GTK_ENTRY(my_data->max_score), ss_max.str().c_str()) ;
+
 
   return TRUE;
 }
@@ -815,8 +835,32 @@ static void createCDSColourWidgets(StyleChange my_data, GtkTable *table, int *ro
 /* Create widgets for other parameters */
 static void createOtherWidgets(StyleChange my_data, GtkTable *table, int *row)
 {
+  //
+  // Tick button to indicate whether features should be displayed stranded or not
+  //
   GtkWidget *button = my_data->stranded = gtk_check_button_new_with_label("Stranded");
   gtk_table_attach(table, button, 0, 1, *row, *row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD);
+  *row += 1 ;
+
+  //
+  // Text entries to enter max/min score and a button to calculate them from loaded features
+  //
+  GtkWidget *entry = NULL ;
+  gtk_table_attach(table, gtk_label_new("Score:"), 0, 1, *row, *row + 1, GTK_SHRINK, GTK_SHRINK, XPAD, YPAD);
+
+  entry = my_data->min_score = gtk_entry_new() ;
+  gtk_entry_set_width_chars(GTK_ENTRY(entry), 5) ;
+  gtk_table_attach(table, entry, 1, 2, *row, *row + 1, GTK_FILL, GTK_SHRINK, XPAD, YPAD);
+
+  entry = my_data->max_score = gtk_entry_new() ;
+  gtk_entry_set_width_chars(GTK_ENTRY(entry), 5) ;
+  gtk_table_attach(table, entry, 2, 3, *row, *row + 1, GTK_FILL, GTK_SHRINK, XPAD, YPAD);
+
+  GtkWidget *calc_btn = gtk_button_new_with_label("Auto") ;
+  gtk_widget_set_tooltip_text(calc_btn, "Use an automatic min/max score based on all features that use this style") ;
+  g_signal_connect(G_OBJECT(calc_btn), "clicked", G_CALLBACK(scoreCalulateCB), my_data) ;
+  gtk_table_attach(table, calc_btn, 3, 4, *row, *row + 1, GTK_FILL, GTK_SHRINK, XPAD, YPAD);
+
   *row += 1 ;
 
 
@@ -888,6 +932,22 @@ static void createChildStyleCB(GtkButton *button, gpointer cb_data)
   zMapWindowShowStyleDialog(my_data->window, my_data->style, TRUE, my_data->feature_set,
                             my_data->created_cb_func, my_data->cb_data) ;
   
+}
+
+/* Callback to calculate the score range based on features in the style */
+static void scoreCalulateCB(GtkButton *button, gpointer cb_data)
+{
+  StyleChange my_data = (StyleChange)cb_data ;
+
+  zmapWindowUpdateStyleFromFeatures(my_data->window, my_data->style) ;
+
+  stringstream min_ss;
+  min_ss << my_data->style->min_score ;
+  gtk_entry_set_text(GTK_ENTRY(my_data->min_score), min_ss.str().c_str()) ;
+      
+  stringstream max_ss;
+  max_ss << my_data->style->max_score ;
+  gtk_entry_set_text(GTK_ENTRY(my_data->max_score), max_ss.str().c_str()) ;
 }
 
 
@@ -1148,6 +1208,14 @@ static void updateStyle(StyleChange my_data, ZMapFeatureTypeStyle style)
   gboolean stranded = gtk_toggle_button_get_active((GtkToggleButton *) my_data->stranded) ;
   g_object_set(G_OBJECT(style), ZMAPSTYLE_PROPERTY_STRAND_SPECIFIC, stranded, NULL);
 
+  /* Set the min/max score. Note that these will be 0.0 if an invalid string is given */
+  const char *txt = gtk_entry_get_text(GTK_ENTRY(my_data->min_score)) ;
+  double min_score = strtod(txt, NULL) ;
+  g_object_set(G_OBJECT(style), ZMAPSTYLE_PROPERTY_MIN_SCORE, min_score, NULL);
+
+  txt = gtk_entry_get_text(GTK_ENTRY(my_data->max_score)) ;
+  double max_score = strtod(txt, NULL) ;
+  g_object_set(G_OBJECT(style), ZMAPSTYLE_PROPERTY_MAX_SCORE, max_score, NULL);
 
   /* Set the colours */
   GdkColor fill, border ;

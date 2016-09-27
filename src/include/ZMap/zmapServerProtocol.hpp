@@ -114,6 +114,7 @@ typedef struct ZMapServerReqCreateStructType
   ZMapServerReqType type ;
   ZMapServerResponseType response ;
 
+  GQuark source_name ;
   char *config_file ;
 
   ZMapURL url ;
@@ -130,6 +131,8 @@ typedef struct ZMapServerReqOpenStructType
   ZMapServerResponseType response ;
   gboolean sequence_server;         /* get DNA or not? */
   ZMapFeatureSequenceMap sequence_map;  /* which sequence + dataset */
+  GQuark req_sequence ;             /* sequence name to look up in the server (may be different
+                                       to that in sequence map) */
   gint zmap_start,zmap_end;         /* start, end coords based from 1 */
 } ZMapServerReqOpenStruct, *ZMapServerReqOpen ;
 

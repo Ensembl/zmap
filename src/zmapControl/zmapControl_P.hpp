@@ -147,6 +147,9 @@ typedef struct _ZMapStruct
   GtkWidget *import_file_dialog ;
 
 
+  /* New source dialog. */
+  GtkWidget *source_dialog ;
+
   /* The panes and views and current focus window. */
   GtkWidget *pane_vbox ;				    /* Is the parent of all the panes. */
 

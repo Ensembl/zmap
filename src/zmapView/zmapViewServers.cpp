@@ -71,6 +71,7 @@ static GHashTable *getFeatureSourceHash(GList *sources) ;
 
 static bool createStepList(ZMapView zmap_view, ZMapNewDataSource view_con, ZMapConnectionData connect_data,
                            ZMapURL urlObj, const char *format, int timeout, char *version,
+                           GQuark source_name,
                            ZMapFeatureContext context, GList *req_featuresets, GList *req_biotypes,
                            gboolean dna_requested, gboolean req_styles, char *styles_file,
                            gboolean terminate) ;
@@ -91,6 +92,10 @@ static gboolean viewGetFeatures(ZMapView zmap_view,
                                     ZMapServerReqGetFeatures feature_req, ZMapConnectionData connect_data) ;
 
 
+static bool setUpServerConnectionByScheme(ZMapView zmap_view,
+                                          ZMapConfigSource current_server,
+                                          bool &terminate,
+                                          GError **error) ;
 
 
 
@@ -104,7 +109,7 @@ static gboolean viewGetFeatures(ZMapView zmap_view,
 gboolean zMapViewRequestServer(ZMapView view,
                                ZMapFeatureBlock block_orig, GList *req_featuresets, GList *req_biotypes,
                                gpointer server, /* ZMapConfigSource */
-                               int req_start, int req_end,
+                               const char *req_sequence, int req_start, int req_end,
                                gboolean dna_requested, gboolean terminate, gboolean show_warning)
 {
   gboolean result = FALSE ;
@@ -113,7 +118,7 @@ gboolean zMapViewRequestServer(ZMapView view,
   if ((view_conn = zmapViewRequestServer(view, NULL,
                                          block_orig, req_featuresets, req_biotypes,
                                          server, /* ZMapConfigSource */
-                                         req_start, req_end,
+                                         req_sequence, req_start, req_end,
                                          dna_requested, terminate, show_warning)))
     result = TRUE ;
 
@@ -167,11 +172,13 @@ void zMapViewSetUpServerConnection(ZMapView zmap_view, ZMapConfigSource current_
               req_biotypes = zMapConfigString2QuarkGList(current_server->biotypes,FALSE) ;
             }
 
-          terminate = g_str_has_prefix(current_server->url,"pipe://");
-
-          zmapViewLoadFeatures(zmap_view, NULL, req_featuresets, req_biotypes, current_server,
-                               zmap_view->view_sequence->start, zmap_view->view_sequence->end,
-                               SOURCE_GROUP_START,TRUE, terminate) ;
+          if (setUpServerConnectionByScheme(zmap_view, current_server, terminate, error))
+            {
+              /* Load the features for the server */
+              zmapViewLoadFeatures(zmap_view, NULL, req_featuresets, req_biotypes, current_server,
+                                   req_sequence, zmap_view->view_sequence->start, zmap_view->view_sequence->end,
+                                   SOURCE_GROUP_START,TRUE, terminate) ;
+            }
         }
     }
 }
@@ -237,7 +244,7 @@ gboolean zmapViewSetUpServerConnections(ZMapView zmap_view, GList *settings_list
 void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, 
                           GList *req_sources, GList *req_biotypes,
                           ZMapConfigSource server,
-                          int features_start, int features_end,
+                          const char *req_sequence, int features_start, int features_end,
                           gboolean group_flag, gboolean make_new_connection, gboolean terminate)
 {
   GList * sources = NULL;
@@ -278,7 +285,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig,
         }
 
       view_conn = zmapViewRequestServer(view, NULL, block_orig, req_sources, req_biotypes, (gpointer) server,
-                                        req_start, req_end, dna_requested, terminate, !view->thread_fail_silent);
+                                        req_sequence, req_start, req_end, dna_requested, terminate, !view->thread_fail_silent);
       if(view_conn)
         requested = TRUE;
     }
@@ -448,7 +455,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig,
 
 
               view_conn = zmapViewRequestServer(view, view_conn, block_orig, req_featuresets, req_biotypes,
-                                                (gpointer)server, req_start, req_end,
+                                                (gpointer)server, req_sequence, req_start, req_end,
                                                 dna_requested,
                                                 (!existing && terminate), !view->thread_fail_silent) ;
 
@@ -495,7 +502,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig,
 ZMapNewDataSource zmapViewRequestServer(ZMapView view, ZMapNewDataSource view_conn,
                                         ZMapFeatureBlock block_orig, GList *req_featuresets, GList *req_biotypes,
                                         gpointer _server, /* ZMapConfigSource */
-                                        int req_start, int req_end,
+                                        const char *req_sequence, int req_start, int req_end,
                                         gboolean dna_requested, gboolean terminate, gboolean show_warning)
 {
   ZMapFeatureContext context ;
@@ -538,7 +545,11 @@ ZMapNewDataSource zmapViewRequestServer(ZMapView view, ZMapNewDataSource view_co
   zMapStartTimer("LoadFeatureSet", g_quark_to_string(GPOINTER_TO_UINT(req_featuresets->data)));
 
   /* force pipe servers to terminate, to fix mis-config error that causes a crash (RT 223055) */
-  is_pipe = g_str_has_prefix(server->url,"pipe://");
+  is_pipe =
+    g_str_has_prefix(server->url,"pipe://") ||
+    g_str_has_prefix(server->url,"file://") ||
+    g_str_has_prefix(server->url,"http://") ||
+    g_str_has_prefix(server->url,"https://");
 
 
   // ERROR HANDLING..........temp while I rearrange....
@@ -594,6 +605,14 @@ ZMapNewDataSource zmapViewRequestServer(ZMapView view, ZMapNewDataSource view_co
   /* likewise this has to get copied through a series of data structs */
   connect_data->sequence_map = view->view_sequence;
 
+  /* gb10: also added the req_sequence here. This is non-null if the sequence name we need to
+     look up in the server is different to the sequence name in the view. Otherwise, use the
+     sequence name from the sequence map */
+  if (req_sequence)
+    connect_data->req_sequence = g_quark_from_string(req_sequence) ;
+  else if (zmap_view->view_sequence)
+    connect_data->req_sequence = g_quark_from_string(zmap_view->view_sequence->sequence) ;
+
   connect_data->display_after = ZMAP_SERVERREQ_FEATURES ;
 
   /* This struct will needs to persist after the viewcon is gone so we can
@@ -625,6 +644,7 @@ ZMapNewDataSource zmapViewRequestServer(ZMapView view, ZMapNewDataSource view_co
       // Do we need all these args now too...?????
       createStepList(view, view_conn, connect_data,
                      urlObj, server->format, server->timeout, server->version,
+                     server->name_,
                      context, req_featuresets, req_biotypes,
                      dna_requested, server->req_styles, server->stylesfile,
                      terminate) ;
@@ -724,6 +744,39 @@ void zmapViewDestroyLoadFeatures(LoadFeaturesData loaded_features)
 //
 //             Internal routines
 //
+
+
+/* Utility called by zMapViewSetUpServerConnection to do any scheme-specific set up for the given
+ * server. This updates the terminate flag. Returns true if the source should be loaded. */
+static bool setUpServerConnectionByScheme(ZMapView zmap_view,
+                                          ZMapConfigSource current_server,
+                                          bool &terminate,
+                                          GError **error)
+{
+  bool result = true ;
+  ZMapURL zmap_url = url_parse(current_server->url, NULL);
+  terminate = FALSE ;
+
+  /* URL may be empty for trackhub sources which are just parents of child data tracks */
+  if (zmap_url)
+    {
+      if (zmap_url->scheme == SCHEME_PIPE)
+        {
+          terminate = TRUE ;
+        }
+      else if (zmap_url->scheme == SCHEME_TRACKHUB)
+        {
+          // Don't load trackhub sources directly (they are just parent sources for child sources)
+          result = false ;
+        }
+    }
+  else
+    {
+      result = false ;
+    }
+
+  return result ;
+}
 
 
 
@@ -827,6 +880,7 @@ static GHashTable *getFeatureSourceHash(GList *sources)
 
 static bool createStepList(ZMapView zmap_view, ZMapNewDataSource view_con, ZMapConnectionData connect_data,
                            ZMapURL urlObj, const char *format, int timeout, char *version,
+                           GQuark source_name,
                            ZMapFeatureContext context, GList *req_featuresets, GList *req_biotypes,
                            gboolean dna_requested, gboolean req_styles, char *styles_file,
                            gboolean terminate)
@@ -848,6 +902,7 @@ static bool createStepList(ZMapView zmap_view, ZMapNewDataSource view_con, ZMapC
 
   /* Set up this connection in the step list. */
   req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_CREATE,
+                                    source_name,
                                     zmap_view->view_sequence->config_file,
                                     urlObj, format, timeout, version) ;
   zmapViewStepListAddServerReq(connect_data->step_list, ZMAP_SERVERREQ_CREATE, req_any, on_fail) ;
@@ -935,6 +990,7 @@ static gboolean dispatchContextRequests(ZMapServerReqAny req_any, gpointer conne
       ZMapServerReqOpen open = (ZMapServerReqOpen) req_any;
 
       open->sequence_map = connect_data->sequence_map;
+      open->req_sequence = connect_data->req_sequence;
       open->zmap_start = connect_data->start;
       open->zmap_end = connect_data->end;
       }

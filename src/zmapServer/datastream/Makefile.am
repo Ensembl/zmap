@@ -9,7 +9,6 @@ noinst_LTLIBRARIES = libDataStream.la
 
 libDataStream_la_SOURCES = \
 zmapDataStream.cpp \
-zmapDataStream.hpp \
 zmapDataStream_P.hpp \
 $(NULL)
 
