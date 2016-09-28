@@ -180,7 +180,7 @@ GList *zMapConfigIniContextGetListedStanzas(ZMapConfigIniContext context,
 
 // zmapConfigLoader.c
 
-ZMapConfigIniContext zMapConfigIniContextProvide(const char *config_file, ZMapConfigIniFileType file_type) ;
+ZMapConfigIniContext zMapConfigIniContextProvide(const char *config_file, ZMapConfigIniFileType file_type = ZMAPCONFIG_FILE_NONE) ;
 ZMapConfigIniContext zMapConfigIniContextProvideNamed(const char *config_file, const char *stanza_name, ZMapConfigIniFileType file_type) ;
 
 gboolean zMapConfigIniHasStanza(ZMapConfigIni config, const char *stanza_name, GKeyFile **which);

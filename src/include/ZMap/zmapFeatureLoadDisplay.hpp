@@ -41,6 +41,7 @@
 #include <ZMap/zmapStyle.hpp>
 #include <ZMap/zmapStyleTree.hpp>
 #include <ZMap/zmapConfigIni.hpp>
+#include <ZMap/zmapConfigStrings.hpp>
 
 
 class ZMapConfigSourceStruct ;
@@ -298,21 +299,32 @@ typedef struct ZMapFeatureSequenceMapStructType
 
   ZMapConfigSource createSource(const char *source_name, const char *url, 
                                 const char *featuresets, const char *biotypes, 
+                                const char *format = NULL,
                                 const bool is_child = false, const bool allow_duplicate = true,
                                 GError **error = NULL) ;
   ZMapConfigSource createSource(const char *source_name, const std::string &url, 
                                 const char *featuresets, const char *biotypes, 
+                                const char *format = NULL,
                                 const bool is_child = false, const bool allow_duplicate = true,
                                 GError **error = NULL) ;
   void updateSource(const char *source_name, const char *url, 
-                    const char *featuresets, const char *biotypes, GError **error) ;
+                    const char *featuresets, const char *biotypes, 
+                    const char *format, GError **error) ;
   void updateSource(const char *source_name, const std::string &url, 
-                    const char *featuresets, const char *biotypes, GError **error) ;
+                    const char *featuresets, const char *biotypes, 
+                    const char *format, GError **error) ;
   ZMapConfigSource createFileSource(const char *source_name, const char *file) ;
   ZMapConfigSource createPipeSource(const char *source_name, const char *file, const char *script, const char *args) ;
   void removeSource(const char *source_name_cstr, GError **error) ;
 
   bool runningUnderOtter() ;
+
+  gboolean getConfigBoolean(const char *key_name, const char *stanza_name = ZMAPSTANZA_APP_CONFIG, 
+                            const char *stanza_type = ZMAPSTANZA_APP_CONFIG) ;
+  char* getConfigString(const char *key_name, const char *stanza_name = ZMAPSTANZA_APP_CONFIG, 
+                        const char *stanza_type = ZMAPSTANZA_APP_CONFIG) ;
+  int getConfigInt(const char *key_name, const char *stanza_name = ZMAPSTANZA_APP_CONFIG, 
+                   const char *stanza_type = ZMAPSTANZA_APP_CONFIG) ;
 
 private:
   void addSource(const std::string &source_name, ZMapConfigSourceStruct *source, GError **error) ;

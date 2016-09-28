@@ -38,6 +38,9 @@
 #include <glib.h>
 #include <mutex>
 #include <condition_variable>
+#include <algorithm>
+#include <cctype>
+#include <string>
 
 #include <ZMap/zmapUtils.hpp>
 #include <ZMap/zmapGLibUtils.hpp>
@@ -261,6 +264,75 @@ string BlatLibErrHandler::errMsg()
 
   return err_msg ;
 }
+
+/* Custom comparator for a map to make the key case-insensitive. This is a 'less' object,
+ * i.e. operator() returns true if the first argument is less than the second. */
+class caseInsensitiveCmp
+{
+public:
+  bool operator()(const std::string& a_in, const std::string& b_in) const 
+  {
+    bool result = false ;
+
+    std::string a(a_in) ;
+    std::string b(b_in) ;
+
+    for (int i = 0; i < a.length(); ++i)
+      a[i] = std::tolower(a[i]) ;
+
+    for (int i = 0; i < b.length(); ++i)
+      b[i] = std::tolower(b[i]) ;
+    
+    result = (a < b) ;
+
+    return result ;
+  }
+};
+
+
+/* Determine the source type from the given file extension (e.g. "bigWig") */
+ZMapDataSourceType dataSourceTypeFromExtension(const string &file_ext, GError **error_out)
+{
+  ZMapDataSourceType type = ZMapDataSourceType::UNK ;
+
+  static const map<string, ZMapDataSourceType, caseInsensitiveCmp> file_extensions = 
+    {
+      {"gff",     ZMapDataSourceType::GIO}
+      ,{"gff3",   ZMapDataSourceType::GIO}
+      ,{"bed",    ZMapDataSourceType::BED}
+      ,{"bb",     ZMapDataSourceType::BIGBED}
+      ,{"bigBed", ZMapDataSourceType::BIGBED}
+      ,{"bw",     ZMapDataSourceType::BIGWIG}
+      ,{"bigWig", ZMapDataSourceType::BIGWIG}
+#ifdef USE_HTSLIB
+      ,{"sam",    ZMapDataSourceType::HTS}
+      ,{"bam",    ZMapDataSourceType::HTS}
+      ,{"cram",   ZMapDataSourceType::HTS}
+      ,{"vcf",    ZMapDataSourceType::BCF}
+      ,{"bcf",    ZMapDataSourceType::BCF}
+#endif
+    };
+
+  auto found_iter = file_extensions.find(file_ext) ;
+      
+  if (found_iter != file_extensions.end())
+    {
+      type = found_iter->second ;
+    }
+  else
+    {
+      string expected("");
+      for (auto iter = file_extensions.begin(); iter != file_extensions.end(); ++iter)
+        expected += " ." + iter->first ;
+
+      g_set_error(error_out, ZMAP_SERVER_ERROR, ZMAPSERVER_ERROR_UNKNOWN_EXTENSION,
+                  "Unrecognised file extension .'%s'. Expected one of:%s", 
+                  file_ext.c_str(), expected.c_str()) ;
+    }
+
+  return type ;
+}
+
 
 } // unnamed namespace
 
@@ -537,6 +609,8 @@ ZMapDataStreamHTSStruct::ZMapDataStreamHTSStruct(const GQuark source_name,
   : ZMapDataStreamStruct(source_name, sequence, start, end),
     hts_file(NULL),
     hts_hdr(NULL),
+    hts_idx(NULL),
+    hts_iter(NULL),
     hts_rec(NULL),
     so_type(NULL)
 {
@@ -546,6 +620,9 @@ ZMapDataStreamHTSStruct::ZMapDataStreamHTSStruct(const GQuark source_name,
 
   if (hts_file)
     hts_hdr = sam_hdr_read(hts_file) ;
+
+  if (hts_hdr)
+    hts_idx = sam_index_load(hts_file, file_name) ;
 
   hts_rec = bam_init1() ;
   if (hts_file && hts_hdr && hts_rec)
@@ -701,6 +778,10 @@ ZMapDataStreamHTSStruct::~ZMapDataStreamHTSStruct()
     bam_destroy1(hts_rec) ;
   if (hts_hdr)
     bam_hdr_destroy(hts_hdr) ;
+  if (hts_idx)
+    hts_idx_destroy(hts_idx) ;
+  if (hts_iter)
+    hts_itr_destroy(hts_iter) ;
   if (so_type)
     g_free(so_type) ;
 }
@@ -1310,84 +1391,20 @@ bool ZMapDataStreamBIGWIGStruct::readLine()
 }
 
 #ifdef USE_HTSLIB
-/*
- * Read a record from a HTS file and turn it into GFFv3.
- */
-bool ZMapDataStreamHTSStruct::readLine()
+bool ZMapDataSourceHTSStruct::readLine()
 {
-  gboolean result = FALSE,
-    bHasTargetStrand = FALSE,
-    bHasNameAttribute = FALSE,
-    bHasCigarAttribute = FALSE,
-    bHasTargetAttribute = FALSE ;
-  char cStrand = '\0',
-    cPhase = '.',
-    cTargetStrand = '.' ;
-  int iStart = 0,
-    iEnd = 0,
-    iCigar = 0,
-    nCigar = 0,
-    iTargetStart = 0,
-    iTargetEnd = 0;
-  uint32_t *pCigar = NULL ;
-  double dScore = 0.0 ;
-  stringstream ssCigar ;
-  const char *query_name = NULL ;
+  bool result = false ;
 
-  /*
-   * Initial error check.
-   */
-  zMapReturnValIfFail(hts_file && hts_hdr && hts_rec, result ) ;
-
-
-  /*
-   * Read line from HTS file and convert to GFF.
-   */
-  if ( sam_read1(hts_file, hts_hdr, hts_rec) >= 0 )
+  if (hts_iter)
     {
-      /*
-       * start, end, score and strand
-       */
-      iStart = hts_rec->core.pos+1;
-      iEnd   = iStart + hts_rec->core.l_qseq-1;
-      dScore = (double) hts_rec->core.qual ;
-      cStrand = '+' ;
-
-      /*
-       * "cigar_bam" attribute
-       */
-      nCigar = hts_rec->core.n_cigar ;
-      if (nCigar)
+      if (bam_itr_next(hts_file, hts_iter, hts_rec) >= 0)
         {
-          bHasCigarAttribute = TRUE ;
-          pCigar = bam_get_cigar(hts_rec) ;
-          for (iCigar=0; iCigar<nCigar; ++iCigar)
-            ssCigar << bam_cigar_oplen(pCigar[iCigar]) << bam_cigar_opchr(pCigar[iCigar]) ;
+          result = processRead();
         }
-
-      /*
-       * "Target" (and "Name") attribute
-       */
-      iTargetStart = 1 ;
-      iTargetEnd = hts_rec->core.l_qseq ;
-      query_name = bam_get_qname(hts_rec) ;
-
-      if (query_name && strlen(query_name) > 0)
-        {
-          bHasTargetAttribute = TRUE ;
-          bHasNameAttribute = TRUE ;
-          bHasTargetStrand = TRUE ;
-          cTargetStrand = '+' ;
-        }
-
-      cur_feature_data_ = ZMapDataStreamFeatureData(iStart, iEnd, dScore, cStrand, cPhase, 
-                                                    bam_get_qname(hts_rec), iTargetStart, iTargetEnd,
-                                                    ssCigar.str().c_str()) ;
-
-      /*
-       * return value
-       */
-      result = TRUE ;
+    }
+  else if (sam_read1(hts_file, hts_hdr, hts_rec) >= 0)
+    {
+      result = processRead();
     }
 
   if (!result)
@@ -1557,7 +1574,6 @@ bool ZMapDataStreamGIOStruct::parseSequence(gboolean &sequence_finished, string 
 
   return result ;
 }
-
 
 /*
  * This sets some things up for the GFF parser and is required before calling parserBodyLine
@@ -2036,6 +2052,149 @@ bool ZMapDataStreamStruct::terminated()
 }
 
 
+/* Functions to do any initialisation required at the start of each block of reads */
+gboolean ZMapDataSourceStruct::init(const char *region_name, int start, int end)
+{
+  // base class does nothing
+  return TRUE ;
+}
+
+
+#ifdef USE_HTSLIB
+gboolean ZMapDataSourceHTSStruct::init(const char *region_name, int start, int end)
+{
+  gboolean result = FALSE;
+  int begRange;
+  int endRange;
+  char region[128];
+  int ref;
+
+  ref = bam_name2id(hts_hdr, region_name);
+
+  if (ref >= 0)
+    {
+      sprintf(region,"%s:%i-%i", region_name, start, end);
+      if (hts_parse_reg(region, &begRange, &endRange) != NULL)
+        {
+          if (hts_iter)
+            {
+              if (ref != hts_iter->tid || begRange != hts_iter->beg || endRange != hts_iter->end)
+                {
+                  hts_itr_destroy(hts_iter);
+                  hts_iter = NULL ;
+                }
+              else
+                {
+                  return TRUE;
+                }
+            }
+          hts_iter = sam_itr_queryi(hts_idx, ref, begRange, endRange);
+          result = TRUE;
+        }
+      else
+        {
+          fprintf(stderr, "Could not parse %s\n", region);
+        }
+    }
+  else
+    {
+      fprintf(stderr, "Invalid region %s\n", region_name);
+    }
+
+  return result;
+}
+
+
+/*
+ * Read a record from a HTS file and store it as the current_feature_data_
+ */
+bool ZMapDataSourceHTSStruct::processRead()
+{
+  gboolean result = FALSE,
+    bHasTargetStrand = FALSE,
+    bHasNameAttribute = FALSE,
+    bHasCigarAttribute = FALSE,
+    bHasTargetAttribute = FALSE ;
+  char cStrand = '\0',
+    cPhase = '.',
+    cTargetStrand = '.' ;
+  int iStart = 0,
+    iEnd = 0,
+    iCigar = 0,
+    nCigar = 0,
+    iTargetStart = 0,
+    iTargetEnd = 0;
+  uint32_t *pCigar = NULL ;
+  double dScore = 0.0 ;
+  stringstream ssCigar ;
+  const char *query_name = NULL ;
+
+  /*
+   * Initial error check.
+   */
+  zMapReturnValIfFail(hts_file && hts_hdr && hts_rec, result ) ;
+
+
+  /*
+   * Read line from HTS file and convert to GFF.
+   */
+  /*
+   * start, end, score and strand
+   */
+  iStart = hts_rec->core.pos+1;
+  iEnd   = iStart;
+  dScore = (double) hts_rec->core.qual ;
+  cStrand = '+' ;
+
+  /*
+   * "cigar_bam" attribute
+   */
+  nCigar = hts_rec->core.n_cigar ;
+  if (nCigar)
+    {
+      bHasCigarAttribute = TRUE ;
+      pCigar = bam_get_cigar(hts_rec) ;
+
+      for (iCigar=0; iCigar<nCigar; ++iCigar)
+        {
+          ssCigar << bam_cigar_oplen(pCigar[iCigar]) << bam_cigar_opchr(pCigar[iCigar]) ;
+          iEnd += bam_cigar_oplen(pCigar[iCigar]) ;
+        }
+    }
+
+  if (iEnd == iStart)
+    iEnd += hts_rec->core.l_qseq-1 ;
+
+  /*
+   * "Target" (and "Name") attribute
+   */
+  iTargetStart = 1 ;
+  iTargetEnd = hts_rec->core.l_qseq ;
+  query_name = bam_get_qname(hts_rec) ;
+
+  if (query_name && strlen(query_name) > 0)
+    {
+      bHasTargetAttribute = TRUE ;
+      bHasNameAttribute = TRUE ;
+      bHasTargetStrand = TRUE ;
+      cTargetStrand = '+' ;
+    }
+
+  cur_feature_data_ = ZMapDataSourceFeatureData(iStart, iEnd, dScore, cStrand, cPhase, 
+                                                bam_get_qname(hts_rec), iTargetStart, iTargetEnd,
+                                                ssCigar.str().c_str()) ;
+
+  /*
+   * return value
+   */
+  result = TRUE ;
+
+  return result ;
+}
+
+#endif //HTSLIB
+
+
 /*
  * Create a ZMapDataStream object
  */
@@ -2044,6 +2203,7 @@ ZMapDataStream zMapDataStreamCreate(const GQuark source_name,
                                     const char *sequence,
                                     const int start,
                                     const int end,
+                                    const GQuark format,
                                     GError **error_out)
 {
   static const char * open_mode = "r" ;
@@ -2052,9 +2212,14 @@ ZMapDataStream zMapDataStreamCreate(const GQuark source_name,
   GError *error = NULL ;
   zMapReturnValIfFail(file_name && *file_name, data_source ) ;
 
-  source_type = zMapDataStreamTypeFromFilename(file_name, &error) ;
+  // If the file type (passed as the format) is known for this source, use that for the
+  // source_type. Otherwise, try to determine the file type from the filename
+  if (format)
+    source_type = zMapDataSourceTypeFromFormat(g_quark_to_string(format), &error) ;
+  else
+    source_type = zMapDataSourceTypeFromFilename(file_name, &error) ;
 
-  if (!error)
+  if (!error && source_type != ZMapDataSourceType::UNK)
     {
       switch (source_type)
         {
@@ -2084,6 +2249,11 @@ ZMapDataStream zMapDataStreamCreate(const GQuark source_name,
                       "Unexpected data source type for file '%s'", file_name) ;
           break ;
         }
+    }
+  else
+    {
+      g_set_error(&error, ZMAP_SERVER_ERROR, ZMAPSERVER_ERROR_UNKNOWN_TYPE,
+                  "Invalid file type '%s' for file '%s'", g_quark_to_string(format), file_name) ;
     }
 
   if (data_source)
@@ -2147,7 +2317,6 @@ ZMapDataStreamType zMapDataStreamGetType(ZMapDataStream data_source )
 }
 
 
-
 /*
  * Inspect the filename string (might include the path on the front, but this is
  * (ignored) for the extension to determine type:
@@ -2162,23 +2331,6 @@ ZMapDataStreamType zMapDataStreamGetType(ZMapDataStream data_source )
  */
 ZMapDataStreamType zMapDataStreamTypeFromFilename(const char * const file_name, GError **error_out)
 {
-  static const map<string, ZMapDataStreamType> file_extensions = 
-    {
-      {"gff",     ZMapDataStreamType::GIO}
-      ,{"bed",    ZMapDataStreamType::BED}
-      ,{"bb",     ZMapDataStreamType::BIGBED}
-      ,{"bigBed", ZMapDataStreamType::BIGBED}
-      ,{"bw",     ZMapDataStreamType::BIGWIG}
-      ,{"bigWig", ZMapDataStreamType::BIGWIG}
-#ifdef USE_HTSLIB
-      ,{"sam",    ZMapDataStreamType::HTS}
-      ,{"bam",    ZMapDataStreamType::HTS}
-      ,{"cram",   ZMapDataStreamType::HTS}
-      ,{"vcf",    ZMapDataStreamType::BCF}
-      ,{"bcf",    ZMapDataStreamType::BCF}
-#endif
-    };
-
   static const char dot = '.' ;
   ZMapDataStreamType type = ZMapDataStreamType::UNK ;
   GError *error = NULL ;
@@ -2202,32 +2354,82 @@ ZMapDataStreamType zMapDataStreamTypeFromFilename(const char * const file_name, 
   if (pos)
     {
       string file_ext(pos) ;
-      auto found_iter = file_extensions.find(file_ext) ;
-      
-      if (found_iter != file_extensions.end())
-        {
-          type = found_iter->second ;
-        }
-      else
-        {
-          string expected("");
-          for (auto iter = file_extensions.begin(); iter != file_extensions.end(); ++iter)
-            expected += " ." + iter->first ;
-
-          g_set_error(&error, g_quark_from_string("ZMap"), 99,
-                      "Unrecognised file extension .'%s'. Expected one of:%s", 
-                      file_ext.c_str(), expected.c_str()) ;
-        }
+      type = dataSourceTypeFromExtension(file_ext, &error) ;
     }
   else
     {
-      g_set_error(&error, g_quark_from_string("ZMap"), 99,
+      g_set_error(&error, ZMAP_SERVER_ERROR, ZMAPSERVER_ERROR_UNKNOWN_EXTENSION,
                   "File name does not have an extension so cannot determine type: '%s'",
                   file_name) ;
     }
 
   if (error)
     g_propagate_error(error_out, error) ;
+
+  return type ;
+}
+
+
+/* Determine the format string from the given type. Must be the inverse of
+ * zMapDataSourceTypeFromFormat. Currently also used as a descriptive string for the user.  */
+string zMapDataSourceFormatFromType(ZMapDataSourceType &source_type)
+{
+  string result ;
+
+  switch (source_type)
+    {
+    case ZMapDataSourceType::GIO:    result = "GFF" ;    break ;
+    case ZMapDataSourceType::BED:    result = "Bed" ;    break ;
+    case ZMapDataSourceType::BIGBED: result = "bigBed" ; break ;
+    case ZMapDataSourceType::BIGWIG: result = "bigWig" ; break ;
+#ifdef USE_HTSLIB
+    case ZMapDataSourceType::HTS:    result = "BAM/SAM/CRAM" ;    break ;
+    case ZMapDataSourceType::BCF:    result = "BCF/VCF" ;    break ;
+#endif
+
+    default:
+      zMapWarnIfReached() ;
+      break ;      
+    } ;
+
+  return result ;
+}
+
+
+/* Determine the source type from the given format. Must be the inverse of
+ * zMapDataSourceFormatFromType. */
+ZMapDataSourceType zMapDataSourceTypeFromFormat(const string &format, GError **error_out)
+{
+  ZMapDataSourceType type = ZMapDataSourceType::UNK ;
+
+  static const map<string, ZMapDataSourceType, caseInsensitiveCmp> format_to_type = 
+    {
+      {"GFF", ZMapDataSourceType::GIO}
+      ,{"Bed", ZMapDataSourceType::BED}
+      ,{"bigBed", ZMapDataSourceType::BIGBED}
+      ,{"bigWig", ZMapDataSourceType::BIGWIG}
+#ifdef USE_HTSLIB
+      ,{"BAM/SAM/CRAM",   ZMapDataSourceType::HTS}
+      ,{"BCF/VCF",    ZMapDataSourceType::BCF}
+#endif
+    };
+
+  auto found_iter = format_to_type.find(format) ;
+      
+  if (found_iter != format_to_type.end())
+    {
+      type = found_iter->second ;
+    }
+  else
+    {
+      string expected("");
+      for (auto iter = format_to_type.begin(); iter != format_to_type.end(); ++iter)
+        expected += " ." + iter->first ;
+
+      g_set_error(error_out, ZMAP_SERVER_ERROR, ZMAPSERVER_ERROR_UNKNOWN_EXTENSION,
+                  "Invalid format '%s'. Expected one of:%s", 
+                  format.c_str(), expected.c_str()) ;
+    }
 
   return type ;
 }

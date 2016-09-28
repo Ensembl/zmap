@@ -6,6 +6,11 @@
 <body>
 <h2>ZMap - Release Notes</h2>
 
+<h4>Version 2.11.1</h4>
+<ul>
+  <li>Add .gff3 to list of supported filename extensions, and make extensions case-insensitive.
+</ul>
+  
 <h4>Version 2.11.0</h4>
 <ul>
   <li> Add track hub support. This uses the Ensembl Track Hub Registry. Users can search for existing track hubs in the registry, or register and view their own track hubs (requires an account on trackhubregistry.org).

@@ -534,11 +534,12 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::createSource(const char *sour
                                                                 const std::string &url, 
                                                                 const char *featuresets,
                                                                 const char *biotypes,
+                                                                const char *format,
                                                                 const bool is_child,
                                                                 const bool allow_duplicate,
                                                                 GError **error)
 {
-  return createSource(source_name, url.c_str(), featuresets, biotypes, is_child, error) ;
+  return createSource(source_name, url.c_str(), featuresets, biotypes, format, is_child, allow_duplicate, error) ;
 }
 
 
@@ -546,6 +547,7 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::createSource(const char *sour
                                                                 const char *url,
                                                                 const char *featuresets,
                                                                 const char *biotypes,
+                                                                const char *format,
                                                                 const bool is_child,
                                                                 const bool allow_duplicate,
                                                                 GError **error)
@@ -570,6 +572,9 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::createSource(const char *sour
 
       if (biotypes && *biotypes)
         source->biotypes = g_strdup(biotypes) ;
+
+      if (format && *format)
+        source->format = g_strdup(format) ;
 
       /* Add the new source to the view */
       std::string source_name_str(source_name) ;
@@ -619,10 +624,21 @@ void ZMapFeatureSequenceMapStructType::createSourceChildren(ZMapConfigSource sou
       if (trackdb_id)
         {
           string err_msg;
-
           gbtools::trackhub::Registry registry ;
-          registry.setDebug(true);
 
+          // Set registry properties based on our config
+          registry.setDebug(getConfigBoolean(ZMAPSTANZA_APP_CURL_DEBUG));
+
+          char *proxy = getConfigString(ZMAPSTANZA_APP_PROXY) ;
+
+          if (proxy)
+            {
+              registry.setProxy(proxy);
+              g_free(proxy);
+              proxy = NULL ;
+            }
+
+          // Ok, search the registry for this track db
           gbtools::trackhub::TrackDb trackdb = registry.searchTrackDb(trackdb_id, err_msg) ;
 
           if (err_msg.empty())
@@ -677,7 +693,9 @@ void ZMapFeatureSequenceMapStructType::createTrackhubSourceChild(ZMapConfigSourc
                                                  track.url().c_str(), 
                                                  parent_source->featuresets, 
                                                  parent_source->biotypes,
-                                                 true, false,
+                                                 track.fileType().c_str(),
+                                                 true,
+                                                 false,
                                                  &g_error) ;
 
       if (new_source && !g_error)
@@ -716,9 +734,10 @@ void ZMapFeatureSequenceMapStructType::createTrackhubSourceChild(ZMapConfigSourc
 void ZMapFeatureSequenceMapStructType::updateSource(const char *source_name, const std::string &url, 
                                                     const char *featuresets,
                                                     const char *biotypes,
+                                                    const char *format,
                                                     GError **error)
 {
-  return updateSource(source_name, url.c_str(), featuresets, biotypes, error) ;
+  return updateSource(source_name, url.c_str(), featuresets, biotypes, format, error) ;
 }
 
 
@@ -727,6 +746,7 @@ void ZMapFeatureSequenceMapStructType::updateSource(const char *source_name,
                                                     const char *url,
                                                     const char *featuresets,
                                                     const char *biotypes,
+                                                    const char *format,
                                                     GError **error)
 {
   ZMapConfigSource source = NULL ;
@@ -756,6 +776,14 @@ void ZMapFeatureSequenceMapStructType::updateSource(const char *source_name,
     }
   if (biotypes && *biotypes)
     source->biotypes = g_strdup(biotypes) ;
+
+  if (source->format)
+    {
+      g_free(source->format) ;
+      source->format = NULL ;
+    }
+  if (format && *format)
+    source->format = g_strdup(format) ;
 
   /* Indicate that there are changes that need saving */
   setFlag(ZMAPFLAG_SAVE_SOURCES, TRUE) ;
@@ -1222,6 +1250,70 @@ bool ZMapFeatureSequenceMapStructType::runningUnderOtter()
     }      
 
   return is_otter ;
+}
+
+
+/* Utility to get the given config boolean from the config file in the sequence map, if there is
+ * one. Returns false if not found. */
+gboolean ZMapFeatureSequenceMapStructType::getConfigBoolean(const char *key_name,
+                                                            const char *stanza_name,
+                                                            const char *stanza_type)
+{
+  gboolean result = false ;
+
+  zMapReturnValIfFail(key_name && stanza_name && stanza_type, result) ;
+
+  ZMapConfigIniContext context = zMapConfigIniContextProvide(config_file) ;
+
+  if (context)
+    {
+      zMapConfigIniContextGetBoolean(context, stanza_name, stanza_type, key_name, &result) ;
+      zMapConfigIniContextDestroy(context);
+    }
+
+  return result ;
+}
+
+/* Utility to get the given config string from the config file in the sequence map, if there is
+ * one. The result should be free'd with g_free. Returns null if not found. */
+char* ZMapFeatureSequenceMapStructType::getConfigString(const char *key_name,
+                                                        const char *stanza_name,
+                                                        const char *stanza_type)
+{
+  char *result = NULL ;
+
+  zMapReturnValIfFail(key_name && stanza_name && stanza_type, result) ;
+
+  ZMapConfigIniContext context = zMapConfigIniContextProvide(config_file) ;
+
+  if (context)
+    {
+      zMapConfigIniContextGetString(context, stanza_name, stanza_type, key_name, &result) ;
+      zMapConfigIniContextDestroy(context);
+    }
+
+  return result ;
+}
+
+/* Utility to get the given config integer from the config file in the sequence map, if there is
+ * one. Returns 0 if not found. */
+int ZMapFeatureSequenceMapStructType::getConfigInt(const char *key_name,
+                                                   const char *stanza_name,
+                                                   const char *stanza_type)
+{
+  int result = 0 ;
+  
+  zMapReturnValIfFail(key_name && stanza_name && stanza_type, result) ;
+
+  ZMapConfigIniContext context = zMapConfigIniContextProvide(config_file) ;
+
+  if (context)
+    {
+      zMapConfigIniContextGetInt(context, stanza_name, stanza_type, key_name, &result) ;
+      zMapConfigIniContextDestroy(context);
+    }
+
+  return result ;
 }
 
 

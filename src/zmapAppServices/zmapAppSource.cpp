@@ -51,6 +51,7 @@
 #include <ZMap/zmapUrl.hpp>
 #include <ZMap/zmapDataStream.hpp>
 #include <ZMap/zmapConfigStrings.hpp>
+#include <ZMap/zmapServerProtocol.hpp>
 
 #ifdef USE_ENSEMBL
 #include <ZMap/zmapEnsemblUtils.hpp>
@@ -279,7 +280,18 @@ GtkWidget *makePanel(GtkWidget *toplevel,
   main_data->default_type = default_type ;
   main_data->filename = NULL ;
 
-  main_data->registry.setDebug(true);
+  if (sequence_map)
+    {
+      main_data->registry.setDebug(sequence_map->getConfigBoolean(ZMAPSTANZA_APP_CURL_DEBUG));
+
+      char *proxy = sequence_map->getConfigString(ZMAPSTANZA_APP_PROXY) ;
+
+      if (proxy)
+        {
+          main_data->registry.setProxy(proxy);
+          g_free(proxy);
+        }
+    }
 
   if (toplevel)
     {
@@ -1181,26 +1193,55 @@ void applyCB(GtkWidget *widget, gpointer cb_data)
   gboolean ok = FALSE ;
   MainFrame main_frame = (MainFrame)cb_data ;
 
-  char *source_type = comboGetValue(main_frame->combo) ;
-
-  if (source_type)
+  // We must have a unique source name to be able to create the new source. If not, warn the user
+  // and don't continue.
+  if (main_frame && main_frame->name_widg)
     {
-      if (strcmp(source_type, SOURCE_TYPE_FILE) == 0)
-        {
-          ok = applyFile(main_frame) ;
-        }
-      else if (strcmp(source_type, SOURCE_TYPE_TRACKHUB) == 0)
-        {
-          ok = applyTrackhub(main_frame) ;
-        }
-#ifdef USE_ENSEMBL
-      else if (strcmp(source_type, SOURCE_TYPE_ENSEMBL) == 0)
-        {
-          ok = applyEnsembl(main_frame) ;
-        }
-#endif /* USE_ENSEMBL */
+      const char *source_name = gtk_entry_get_text(GTK_ENTRY(main_frame->name_widg)) ;
 
-      g_free(source_type) ;
+      if (main_frame->sequence_map->getSource(source_name))
+        {
+          zMapCritical("A source with name '%s' already exists; please enter a unique name", source_name) ;
+          ok = FALSE ;
+        }
+      else
+        {
+          ok = TRUE ;
+        }
+    }
+
+  if (ok)
+    {
+      char *source_type = comboGetValue(main_frame->combo) ;
+
+      if (source_type)
+        {
+          if (strcmp(source_type, SOURCE_TYPE_FILE) == 0)
+            {
+              ok = applyFile(main_frame) ;
+            }
+          else if (strcmp(source_type, SOURCE_TYPE_TRACKHUB) == 0)
+            {
+              ok = applyTrackhub(main_frame) ;
+            }
+#ifdef USE_ENSEMBL
+          else if (strcmp(source_type, SOURCE_TYPE_ENSEMBL) == 0)
+            {
+              ok = applyEnsembl(main_frame) ;
+            }
+#endif /* USE_ENSEMBL */
+          else
+            {
+              ok = FALSE ;
+            }
+
+          g_free(source_type) ;
+        }
+      else
+        {
+          zMapCritical("%s", "Please select the source type from the drop-down box") ;
+          ok = FALSE ;
+        }
     }
 
   if (ok)
@@ -1358,11 +1399,82 @@ static string constructPipeFileURL(MainFrame main_frame,
 }
 
 
+static ZMapDataSourceType promptForFileType()
+{
+  ZMapDataSourceType source_type = ZMapDataSourceType::UNK ;
+
+  GtkWidget *dialog = gtk_dialog_new_with_buttons("Search for Track Hubs",
+                                                  NULL,
+                                                  (GtkDialogFlags)(GTK_DIALOG_DESTROY_WITH_PARENT | GTK_DIALOG_MODAL),
+                                                  GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+                                                  GTK_STOCK_OK, GTK_RESPONSE_OK,
+                                                  NULL);
+
+  gtk_dialog_set_default_response(GTK_DIALOG(dialog), GTK_RESPONSE_OK) ;
+
+  GtkBox *content = GTK_BOX(GTK_DIALOG(dialog)->vbox) ;
+
+  /* Create a combo box to choose the file type */
+  GtkComboBox *combo = NULL ;
+
+  GtkListStore *store = gtk_list_store_new(1, G_TYPE_STRING);
+  combo = GTK_COMBO_BOX(gtk_combo_box_new_with_model(GTK_TREE_MODEL(store)));
+
+  GtkCellRenderer *renderer = gtk_cell_renderer_text_new();
+  gtk_cell_layout_pack_start(GTK_CELL_LAYOUT(combo), renderer, FALSE);
+  gtk_cell_layout_set_attributes(GTK_CELL_LAYOUT(combo), renderer, "text", 0, NULL);
+
+  /* Add the rows to the combo box */
+  bool first = true ;
+
+  for (int type = (int)ZMapDataSourceType::NONE + 1; type < (int)ZMapDataSourceType::UNK; ++type)
+    {
+      ZMapDataSourceType type_t = (ZMapDataSourceType)type ;
+      string format = zMapDataSourceFormatFromType(type_t) ;
+
+      GtkTreeIter iter;
+      gtk_list_store_append(store, &iter);
+      gtk_list_store_set(store, &iter, 0, format.c_str(), -1);
+
+      if (first)
+        gtk_combo_box_set_active_iter(combo, &iter);
+
+      first = false ;
+    }
+
+
+  gtk_box_pack_start(content, gtk_label_new("Please select the file type for this file:"), FALSE, FALSE, 0);
+  gtk_box_pack_start(content, GTK_WIDGET(combo), FALSE, FALSE, 0);
+
+  gtk_widget_show_all(dialog) ;
+
+  if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_OK)
+    {
+      GtkTreeIter iter;
+      
+      if (gtk_combo_box_get_active_iter(GTK_COMBO_BOX(combo), &iter))
+        {
+          char *format = NULL ;
+          GtkTreeModel *model = gtk_combo_box_get_model(GTK_COMBO_BOX(combo));
+          gtk_tree_model_get(model, &iter, 0, &format, -1);
+          
+          if (format)
+            source_type = zMapDataSourceTypeFromFormat(format, NULL) ;
+        }
+    }
+
+  gtk_widget_destroy(dialog) ;
+
+  return source_type ;
+}
+
+
 /* Create a valid url for the given file (which should either be a filename on the local system
  * or a remote file url e.g. starting http:// */
 static string constructFileURL(MainFrame main_frame, 
                                const char *source_name,
                                const char *filename, 
+                               string &format,
                                GError **error)
 {
   string url("");
@@ -1370,12 +1482,26 @@ static string constructFileURL(MainFrame main_frame,
   GError *g_error = NULL ;
   ZMapDataStreamType source_type = zMapDataStreamTypeFromFilename(filename, &g_error) ;
 
+  if (g_error && g_error->code == ZMAPSERVER_ERROR_UNKNOWN_EXTENSION)
+    {
+      g_error_free(g_error) ;
+      g_error = NULL ;
+
+      // We couldn't determine the file type from the extension. As the user instead.
+      source_type = promptForFileType() ;
+
+      if (source_type == ZMapDataSourceType::UNK)
+        g_set_error(&g_error, ZMAP_SERVER_ERROR, ZMAPSERVER_ERROR_UNKNOWN_TYPE, "Failed to determine file type") ;
+    }
+
   if (g_error)
     {
       g_propagate_error(error, g_error) ;
     }
   else
     {
+      format = zMapDataSourceFormatFromType(source_type) ;
+
       string err_msg;
 
       // Some file types currently have special treatment
@@ -1394,7 +1520,7 @@ static string constructFileURL(MainFrame main_frame,
           url = constructPipeFileURL(main_frame, source_name, filename, source_type, err_msg) ;
           break ;
 
-        case ZMapDataStreamType::UNK:
+        default:
           // Shouldn't get here because g_error should have been set
           zMapWarnIfReached() ;
           break ;
@@ -1429,10 +1555,11 @@ gboolean applyFile(MainFrame main_frame)
   else
     {
       GError *tmp_error = NULL ;
-      string url = constructFileURL(main_frame, source_name, path, &tmp_error) ;
+      string format ;
+      string url = constructFileURL(main_frame, source_name, path, format, &tmp_error) ;
 
       if (!tmp_error)
-        (main_frame->user_func)(source_name, url, NULL, NULL, main_frame->user_data, &tmp_error) ;
+        (main_frame->user_func)(source_name, url, NULL, NULL, format.c_str(), main_frame->user_data, &tmp_error) ;
 
       if (tmp_error)
         zMapCritical("Failed to create new source: %s", tmp_error->message) ;
@@ -1549,7 +1676,7 @@ gboolean applyEnsembl(MainFrame main_frame)
             }
         }
 
-      (main_frame->user_func)(source_name, url, featuresets, biotypes, main_frame->user_data, &tmp_error) ;
+      (main_frame->user_func)(source_name, url, featuresets, biotypes, NULL, main_frame->user_data, &tmp_error) ;
 
       if (tmp_error)
         zMapCritical("Failed to create new source: %s", tmp_error->message) ;
@@ -2249,7 +2376,7 @@ gboolean applyTrackhub(MainFrame main_frame)
       std::stringstream url ;
       url << "trackhub:///" << trackdb_id ;
 
-      (main_frame->user_func)(source_name, url.str(), NULL, NULL, main_frame->user_data, &tmp_error) ;
+      (main_frame->user_func)(source_name, url.str(), NULL, NULL, NULL, main_frame->user_data, &tmp_error) ;
 
       if (tmp_error)
         zMapCritical("Failed to create new source: %s", tmp_error->message) ;

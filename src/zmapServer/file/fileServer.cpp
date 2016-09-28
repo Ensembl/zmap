@@ -26,6 +26,7 @@
  *
  * Description:
  *
+
  * Exported functions: See ZMap/zmapServerPrototype.h
  *-------------------------------------------------------------------
  */
@@ -243,6 +244,7 @@ static gboolean createConnection(void **server_out,
   server->req_context = NULL ;
   server->sequence_map = NULL ;
   server->styles_file = NULL ;
+  server->format = g_quark_from_string(format) ;
   server->source_2_sourcedata = NULL ;
   server->featureset_2_column = NULL ;
 
@@ -364,6 +366,7 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
                                              (server->req_sequence ? g_quark_to_string(server->req_sequence) : NULL), 
                                              server->zmap_start,
                                              server->zmap_end,
+                                             server->format,
                                              &error) ;
 
   if (server->data_source != NULL )
@@ -811,15 +814,22 @@ static ZMapServerResponseType fileGetSequence(FileServer server)
   // read the sequence if it's there
   server->result = ZMAP_SERVERRESPONSE_OK;   // now we have data default is 'OK'
 
-  if (!server->data_source->parseSequence(sequence_finished, err_msg))
+  if (server->data_source->init(server->sequence_map->sequence, server->zmap_start, server->zmap_end))
     {
-      if (!sequence_finished)
-        server->result = ZMAP_SERVERRESPONSE_UNSUPPORTED ;
-      else
-        server->result = ZMAP_SERVERRESPONSE_REQFAIL ;
+      if (!server->data_source->parseSequence(sequence_finished, err_msg))
+        {
+          if (!sequence_finished)
+            server->result = ZMAP_SERVERRESPONSE_UNSUPPORTED ;
+          else
+            server->result = ZMAP_SERVERRESPONSE_REQFAIL ;
 
-      setErrMsg(server, err_msg.c_str()) ;
-      ZMAPSERVER_LOG(Critical, PROTOCOL_NAME, server->path, "%s", server->last_err_msg) ;
+          setErrMsg(server, err_msg.c_str()) ;
+          ZMAPSERVER_LOG(Critical, PROTOCOL_NAME, server->path, "%s", server->last_err_msg) ;
+        }
+    }
+  else
+    {
+      server->result = ZMAP_SERVERRESPONSE_REQFAIL ;
     }
 
   return(server->result);
@@ -897,63 +907,70 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
   FileServer server = get_features_data->server ;
   zMapReturnIfFail(server) ;
 
-  /*
-   * Read lines from the source. We assume that the first line has already been read.
-   */
+  if (server->data_source->init(server->sequence_map->sequence, server->zmap_start, server->zmap_end))
+    {
+      /*
+       * Read lines from the source. We assume that the first line has already been read.
+       */
   
-  /* Keep track of how many warnings we log so we don't fill the log file with millions */
-  int warning_count = 0;
-  const int max_warnings = 1000;
-  GError *g_error = NULL ;
+      /* Keep track of how many warnings we log so we don't fill the log file with millions */
+      int warning_count = 0;
+      const int max_warnings = 1000;
+      GError *g_error = NULL ;
 
-  do
+      do
+        {
+          if (!server->data_source->parseBodyLine(&g_error))
+            {
+              /* Only log a warning if an error was given (the error may be null if no warning is
+               * required and we need to be careful not to fill the log with millions of warnings) */
+              if (g_error && warning_count < max_warnings)
+                {
+                  ZMAPSERVER_LOG(Warning, PROTOCOL_NAME, server->path, "%s", g_error->message) ;
+                  ++warning_count ;
+                }
+
+              /* Check if it's a fatal error */
+              if (server->data_source->terminated())
+                {
+                  get_features_data->result = ZMAP_SERVERRESPONSE_REQFAIL ;
+
+                  setErrMsg(server, (g_error ? g_error->message : "<no error>")) ;
+
+                  break ;
+                }
+            }
+        } while (!server->data_source->endOfFile()) ;
+
+
+      /* If we reached the end of the stream then all is fine, so return features... */
+      if (server->data_source->endOfFile())
+        {
+          if (get_features_data->result == ZMAP_SERVERRESPONSE_OK
+              && server->data_source->addFeaturesToBlock(feature_block))
+            {
+            }
+          else
+            {
+              char *err_msg ;
+
+              /* If features not ok this has already been reported so just report
+               * if can't get features out of parser. */
+              if (get_features_data->result == ZMAP_SERVERRESPONSE_OK)
+                {
+                  err_msg = g_strdup("Cannot retrieve features from parser.") ;
+
+                  zMapLogWarning("Error in reading or getting features from stream \"%s\": ",
+                                 server->path, err_msg) ;
+
+                  setErrMsg(server, err_msg) ;
+                }
+            }
+        }
+    }
+  else
     {
-      if (!server->data_source->parseBodyLine(&g_error))
-        {
-          /* Only log a warning if an error was given (the error may be null if no warning is
-           * required and we need to be careful not to fill the log with millions of warnings) */
-          if (g_error && warning_count < max_warnings)
-            {
-              ZMAPSERVER_LOG(Warning, PROTOCOL_NAME, server->path, "%s", g_error->message) ;
-              ++warning_count ;
-            }
-
-          /* Check if it's a fatal error */
-          if (server->data_source->terminated())
-            {
-              get_features_data->result = ZMAP_SERVERRESPONSE_REQFAIL ;
-
-              setErrMsg(server, (g_error ? g_error->message : "<no error>")) ;
-
-              break ;
-            }
-        }
-    } while (!server->data_source->endOfFile()) ;
-
-
-  /* If we reached the end of the stream then all is fine, so return features... */
-  if (server->data_source->endOfFile())
-    {
-      if (get_features_data->result == ZMAP_SERVERRESPONSE_OK
-          && server->data_source->addFeaturesToBlock(feature_block))
-        {
-        }
-      else
-        {
-          char *err_msg ;
-
-          /* If features not ok this has already been reported so just report
-           * if can't get features out of parser. */
-          if (get_features_data->result == ZMAP_SERVERRESPONSE_OK)
-            {
-              err_msg = g_strdup("Cannot retrieve features from parser.") ;
-
-              zMapLogWarning("Error in reading or getting features from stream \"%s\": ",
-                             server->path, err_msg) ;
-
-              setErrMsg(server, err_msg) ;
-            }
-        }
+      server->result = ZMAP_SERVERRESPONSE_REQFAIL ;
     }
 
   return ;
