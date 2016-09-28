@@ -15,7 +15,6 @@ ZMap/zmapConfigStrings.hpp \
 ZMap/zmapConfigStanzaStructs.hpp \
 ZMap/zmapConfigStyleDefaults.hpp \
 ZMap/zmapControl.hpp \
-ZMap/zmapControlImportFile.hpp \
 ZMap/zmapDAS.hpp \
 ZMap/zmapDNA.hpp \
 ZMap/zmapDraw.hpp \
