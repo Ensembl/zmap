@@ -322,6 +322,8 @@ typedef struct ZMapFeatureSequenceMapStructType
   int getConfigInt(const char *key_name, const char *stanza_name = ZMAPSTANZA_APP_CONFIG, 
                    const char *stanza_type = ZMAPSTANZA_APP_CONFIG) ;
 
+  gbtools::trackhub::Registry getTrackhubRegistry() ;
+
 private:
   void addSource(const std::string &source_name, ZMapConfigSourceStruct *source, GError **error) ;
   void createSourceChildren(ZMapConfigSource source, GError **error = NULL) ;
