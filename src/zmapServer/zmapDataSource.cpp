@@ -107,21 +107,21 @@ static const char * const ZMAP_BIGWIG_SO_TERM  = "score" ;
 #define READBUFFER_SIZE 2048
 
 
-/* Map the data-type to a user-friendly descriptive string (called 'format' just because that's
- * the field name it gets passed around in) */
-const map<ZMapDataSourceType, string> data_source_type_formats_G = 
+/* Map of file types to a data-source types */
+const map<string, ZMapDataSourceType> file_type_to_source_type_G =
   {
-    {ZMapDataSourceType::GIO, "GFF"}
-    ,{ZMapDataSourceType::BED, "BED"}
-    ,{ZMapDataSourceType::BIGBED, "bigBed"}
-    ,{ZMapDataSourceType::BIGWIG, "bigWig"}
-#ifdef USE_HTSLIB
-    ,{ZMapDataSourceType::HTS, "BAM/SAM/CRAM"}
-    ,{ZMapDataSourceType::BCF, "BCF/VCF"}
-#endif
-  };
+    {"GFF",     ZMapDataSourceType::GIO}
+    ,{"Bed",    ZMapDataSourceType::BED}
+    ,{"bigBed", ZMapDataSourceType::BIGBED}
+    ,{"bigWig", ZMapDataSourceType::BIGWIG}
+    ,{"BAM",    ZMapDataSourceType::HTS}
+    ,{"SAM",    ZMapDataSourceType::HTS}
+    ,{"CRAM",   ZMapDataSourceType::HTS}
+    ,{"BCF",    ZMapDataSourceType::BCF}
+    ,{"VCF",    ZMapDataSourceType::BCF}
+  } ;
 
- 
+
 /* Need a semaphore to limit the number of threads.
  * From http://stackoverflow.com/questions/4792449/c0x-has-no-semaphores-how-to-synchronize-threads */
 
@@ -279,6 +279,20 @@ string BlatLibErrHandler::errMsg()
   return err_msg ;
 }
 
+
+
+// Utility to convert a std::string to lowercase
+string toLower(const string &s)
+{
+  string result(s) ;
+  
+  for (int i = 0; i < s.length(); ++i)
+    result[i] = std::tolower(result[i]) ;
+
+  return result ;
+}
+
+
 /* Custom comparator for a map to make the key case-insensitive. This is a 'less' object,
  * i.e. operator() returns true if the first argument is less than the second. */
 class caseInsensitiveCmp
@@ -288,14 +302,8 @@ public:
   {
     bool result = false ;
 
-    std::string a(a_in) ;
-    std::string b(b_in) ;
-
-    for (int i = 0; i < a.length(); ++i)
-      a[i] = std::tolower(a[i]) ;
-
-    for (int i = 0; i < b.length(); ++i)
-      b[i] = std::tolower(b[i]) ;
+    string a = toLower(a_in) ;
+    string b = toLower(b_in) ;
     
     result = (a < b) ;
 
@@ -346,39 +354,6 @@ ZMapDataSourceType dataSourceTypeFromExtension(const string &file_ext, GError **
 
   return type ;
 }
-
-
-/* Functor for finding the data-source-type for a given 'format' or descriptive type string */
-class DataSourceTypeFormatCmp
-{
-public:
-  DataSourceTypeFormatCmp(const string &search_format)
-    : search_format_(search_format)
-  {};
-
-  bool operator()(const pair<ZMapDataSourceType, string> &iter)
-  {
-    bool result = false ;
-
-    string a(iter.second) ;
-    string b(search_format_) ;
-
-    // Convert to lowercase
-    for (int i = 0; i < a.length(); ++i)
-      a[i] = std::tolower(a[i]) ;
-
-    for (int i = 0; i < b.length(); ++i)
-      b[i] = std::tolower(b[i]) ;
-    
-    result = (a == b) ;
-
-    return result ;
-  };
-
-private:
-  string search_format_ ;
-} ;
-
 
 
 } // unnamed namespace
@@ -2404,40 +2379,95 @@ ZMapDataSourceType zMapDataSourceTypeFromFilename(const char * const file_name, 
 }
 
 
-/* Determine the format string from the given type. Must be the inverse of
- * zMapDataSourceTypeFromFormat. Currently also used as a descriptive string for the user.  */
-string zMapDataSourceFormatFromType(ZMapDataSourceType &source_type)
+/* Determine the format string from the given type. The format string is a list of all file types
+ * of that format, e.g. for HTS, the format is "BAM/SAM/CRAM" */
+string zMapDataSourceFormatFromType(const ZMapDataSourceType &source_type)
 {
-  string result ;
-  auto iter = data_source_type_formats_G.find(source_type) ;
+  string format ;
 
-  if (iter != data_source_type_formats_G.end())
-    result = iter->second ;
+  // Create a map to cache the results
+  map<ZMapDataSourceType, string> cache ;
+
+  format = cache[source_type] ;
+
+  if (format.empty()) // not found
+    {
+      // Find all file types for this source type
+      for (auto &iter : file_type_to_source_type_G)
+        {
+          string file_type = iter.first ;
+
+          if (iter.second == source_type)
+            {
+              // Append them as "/"-separated string
+              if (!format.empty())
+                format += "/" ;
+
+              format += iter.first ;
+            }
+        }
+
+      // Cache the result
+      cache[source_type] = format ;
+    }
+
+  return format ;
+}
+
+
+/* Determine the source type from the given format string. This might be the inverse of
+ * zMapDataSourceFormatFromType (e.g. "BAM/SAM/CRAM"), or a file type string such as "SAM" or
+ * "bigWig 9" that we need to find a match for. */
+ZMapDataSourceType zMapDataSourceTypeFromFormat(const string &format, GError **error_out)
+{
+  ZMapDataSourceType result = ZMapDataSourceType::UNK ;
+
+  int found_match_len = 0 ;
+
+  // Loop through all file types
+  for (auto &iter : file_type_to_source_type_G)
+    {
+      string cur_file_type = iter.first ;
+      ZMapDataSourceType cur_source_type = iter.second ;
+
+      // First, construct the composite format string for the current source, and see if it
+      // matches the given format
+      string cur_format = zMapDataSourceFormatFromType(cur_source_type) ;
+
+      if (cur_format == format)
+        {
+          result = cur_source_type ;
+        }
+      else
+        {
+          // Convert to lowercase for case-insensitive search
+          string format_l = toLower(format) ;
+
+          // See if the format string contains this file type e.g. a format string of "bigWig 9"
+          // would contain the "bigWig" file type
+          string cur_file_type_l = toLower(cur_file_type) ;
+          size_t found_pos = format_l.find(cur_file_type_l) ;
+
+            if (found_pos != string::npos)
+              {
+                int cur_match_len = cur_file_type_l.length() ;
+
+                // If there is more than one match, prefer the longest one, e.g. if we match "bed"
+                // and "bigbed" then the result is "bigbed".
+                if (result == ZMapDataSourceType::UNK || cur_match_len > found_match_len)
+                  {
+                    result = cur_source_type ;
+                    found_match_len = cur_match_len ;
+                  }
+              }
+          }
+      }
+
+  if (result == ZMapDataSourceType::UNK)
+    {
+      g_set_error(error_out, ZMAP_SERVER_ERROR, ZMAPSERVER_ERROR_UNKNOWN_EXTENSION,
+                  "Unknown file type '%s'", format.c_str()) ;
+    }
 
   return result ;
 }
-
-
-/* Determine the source type from the given format. Must be the inverse of
- * zMapDataSourceFormatFromType. */
-ZMapDataSourceType zMapDataSourceTypeFromFormat(const string &format, GError **error_out)
-{
-  ZMapDataSourceType type = ZMapDataSourceType::UNK ;
-
-  map<ZMapDataSourceType, string> type_formats = data_source_type_formats_G ;
-
-  auto found_iter = find_if(type_formats.begin(), type_formats.end(), DataSourceTypeFormatCmp(format)) ;
-      
-  if (found_iter != type_formats.end())
-    {
-      type = found_iter->first ;
-    }
-  else
-    {
-      g_set_error(error_out, ZMAP_SERVER_ERROR, ZMAPSERVER_ERROR_UNKNOWN_EXTENSION,
-                  "Invalid file format '%s'", format.c_str()) ;
-    }
-
-  return type ;
-}
-
