@@ -277,10 +277,10 @@ public:
     std::string a(a_in) ;
     std::string b(b_in) ;
 
-    for (int i = 0; i < a.length(); ++i)
+    for (size_t i = 0; i < a.length(); ++i)
       a[i] = std::tolower(a[i]) ;
 
-    for (int i = 0; i < b.length(); ++i)
+    for (size_t i = 0; i < b.length(); ++i)
       b[i] = std::tolower(b[i]) ;
     
     result = (a < b) ;
@@ -291,25 +291,25 @@ public:
 
 
 /* Determine the source type from the given file extension (e.g. "bigWig") */
-ZMapDataSourceType dataSourceTypeFromExtension(const string &file_ext, GError **error_out)
+ZMapDataStreamType dataSourceTypeFromExtension(const string &file_ext, GError **error_out)
 {
-  ZMapDataSourceType type = ZMapDataSourceType::UNK ;
+  ZMapDataStreamType type = ZMapDataStreamType::UNK ;
 
-  static const map<string, ZMapDataSourceType, caseInsensitiveCmp> file_extensions = 
+  static const map<string, ZMapDataStreamType, caseInsensitiveCmp> file_extensions = 
     {
-      {"gff",     ZMapDataSourceType::GIO}
-      ,{"gff3",   ZMapDataSourceType::GIO}
-      ,{"bed",    ZMapDataSourceType::BED}
-      ,{"bb",     ZMapDataSourceType::BIGBED}
-      ,{"bigBed", ZMapDataSourceType::BIGBED}
-      ,{"bw",     ZMapDataSourceType::BIGWIG}
-      ,{"bigWig", ZMapDataSourceType::BIGWIG}
+      {"gff",     ZMapDataStreamType::GIO}
+      ,{"gff3",   ZMapDataStreamType::GIO}
+      ,{"bed",    ZMapDataStreamType::BED}
+      ,{"bb",     ZMapDataStreamType::BIGBED}
+      ,{"bigBed", ZMapDataStreamType::BIGBED}
+      ,{"bw",     ZMapDataStreamType::BIGWIG}
+      ,{"bigWig", ZMapDataStreamType::BIGWIG}
 #ifdef USE_HTSLIB
-      ,{"sam",    ZMapDataSourceType::HTS}
-      ,{"bam",    ZMapDataSourceType::HTS}
-      ,{"cram",   ZMapDataSourceType::HTS}
-      ,{"vcf",    ZMapDataSourceType::BCF}
-      ,{"bcf",    ZMapDataSourceType::BCF}
+      ,{"sam",    ZMapDataStreamType::HTS}
+      ,{"bam",    ZMapDataStreamType::HTS}
+      ,{"cram",   ZMapDataStreamType::HTS}
+      ,{"vcf",    ZMapDataStreamType::BCF}
+      ,{"bcf",    ZMapDataStreamType::BCF}
 #endif
     };
 
@@ -1391,7 +1391,7 @@ bool ZMapDataStreamBIGWIGStruct::readLine()
 }
 
 #ifdef USE_HTSLIB
-bool ZMapDataSourceHTSStruct::readLine()
+bool ZMapDataStreamHTSStruct::readLine()
 {
   bool result = false ;
 
@@ -1986,20 +1986,6 @@ GList* ZMapDataStreamStruct::getFeaturesets()
   return zMapGFFGetFeaturesets(parser_) ;
 }
 
-// Get the sequence from the stream if it's HTS.
-const char *zMapDataStreamGetSequence(ZMapDataStream const source)
-{
-#ifdef USE_HTSLIB
-  const char *sequence = (source->type == ZMapDataStreamType::HTS ? ((ZMapDataStreamHTSFile)source)->sequence : NULL) ;
-#else
-  const char *sequence = NULL ;
-#endif
-
-  return sequence ;
-}
-
-
-
 /*
  * This returns the dna/peptide sequence that was parsed from the file, if it contained any
  */
@@ -2053,7 +2039,7 @@ bool ZMapDataStreamStruct::terminated()
 
 
 /* Functions to do any initialisation required at the start of each block of reads */
-gboolean ZMapDataSourceStruct::init(const char *region_name, int start, int end)
+gboolean ZMapDataStreamStruct::init(const char *region_name, int start, int end)
 {
   // base class does nothing
   return TRUE ;
@@ -2061,7 +2047,7 @@ gboolean ZMapDataSourceStruct::init(const char *region_name, int start, int end)
 
 
 #ifdef USE_HTSLIB
-gboolean ZMapDataSourceHTSStruct::init(const char *region_name, int start, int end)
+gboolean ZMapDataStreamHTSStruct::init(const char *region_name, int start, int end)
 {
   gboolean result = FALSE;
   int begRange;
@@ -2108,7 +2094,7 @@ gboolean ZMapDataSourceHTSStruct::init(const char *region_name, int start, int e
 /*
  * Read a record from a HTS file and store it as the current_feature_data_
  */
-bool ZMapDataSourceHTSStruct::processRead()
+bool ZMapDataStreamHTSStruct::processRead()
 {
   gboolean result = FALSE,
     bHasTargetStrand = FALSE,
@@ -2180,7 +2166,7 @@ bool ZMapDataSourceHTSStruct::processRead()
       cTargetStrand = '+' ;
     }
 
-  cur_feature_data_ = ZMapDataSourceFeatureData(iStart, iEnd, dScore, cStrand, cPhase, 
+  cur_feature_data_ = ZMapDataStreamFeatureData(iStart, iEnd, dScore, cStrand, cPhase, 
                                                 bam_get_qname(hts_rec), iTargetStart, iTargetEnd,
                                                 ssCigar.str().c_str()) ;
 
@@ -2215,11 +2201,11 @@ ZMapDataStream zMapDataStreamCreate(const GQuark source_name,
   // If the file type (passed as the format) is known for this source, use that for the
   // source_type. Otherwise, try to determine the file type from the filename
   if (format)
-    source_type = zMapDataSourceTypeFromFormat(g_quark_to_string(format), &error) ;
+    source_type = zMapDataStreamTypeFromFormat(g_quark_to_string(format), &error) ;
   else
-    source_type = zMapDataSourceTypeFromFilename(file_name, &error) ;
+    source_type = zMapDataStreamTypeFromFilename(file_name, &error) ;
 
-  if (!error && source_type != ZMapDataSourceType::UNK)
+  if (!error && source_type != ZMapDataStreamType::UNK)
     {
       switch (source_type)
         {
@@ -2371,20 +2357,20 @@ ZMapDataStreamType zMapDataStreamTypeFromFilename(const char * const file_name, 
 
 
 /* Determine the format string from the given type. Must be the inverse of
- * zMapDataSourceTypeFromFormat. Currently also used as a descriptive string for the user.  */
-string zMapDataSourceFormatFromType(ZMapDataSourceType &source_type)
+ * zMapDataStreamTypeFromFormat. Currently also used as a descriptive string for the user.  */
+string zMapDataStreamFormatFromType(ZMapDataStreamType &source_type)
 {
   string result ;
 
   switch (source_type)
     {
-    case ZMapDataSourceType::GIO:    result = "GFF" ;    break ;
-    case ZMapDataSourceType::BED:    result = "Bed" ;    break ;
-    case ZMapDataSourceType::BIGBED: result = "bigBed" ; break ;
-    case ZMapDataSourceType::BIGWIG: result = "bigWig" ; break ;
+    case ZMapDataStreamType::GIO:    result = "GFF" ;    break ;
+    case ZMapDataStreamType::BED:    result = "Bed" ;    break ;
+    case ZMapDataStreamType::BIGBED: result = "bigBed" ; break ;
+    case ZMapDataStreamType::BIGWIG: result = "bigWig" ; break ;
 #ifdef USE_HTSLIB
-    case ZMapDataSourceType::HTS:    result = "BAM/SAM/CRAM" ;    break ;
-    case ZMapDataSourceType::BCF:    result = "BCF/VCF" ;    break ;
+    case ZMapDataStreamType::HTS:    result = "BAM/SAM/CRAM" ;    break ;
+    case ZMapDataStreamType::BCF:    result = "BCF/VCF" ;    break ;
 #endif
 
     default:
@@ -2397,20 +2383,20 @@ string zMapDataSourceFormatFromType(ZMapDataSourceType &source_type)
 
 
 /* Determine the source type from the given format. Must be the inverse of
- * zMapDataSourceFormatFromType. */
-ZMapDataSourceType zMapDataSourceTypeFromFormat(const string &format, GError **error_out)
+ * zMapDataStreamFormatFromType. */
+ZMapDataStreamType zMapDataStreamTypeFromFormat(const string &format, GError **error_out)
 {
-  ZMapDataSourceType type = ZMapDataSourceType::UNK ;
+  ZMapDataStreamType type = ZMapDataStreamType::UNK ;
 
-  static const map<string, ZMapDataSourceType, caseInsensitiveCmp> format_to_type = 
+  static const map<string, ZMapDataStreamType, caseInsensitiveCmp> format_to_type = 
     {
-      {"GFF", ZMapDataSourceType::GIO}
-      ,{"Bed", ZMapDataSourceType::BED}
-      ,{"bigBed", ZMapDataSourceType::BIGBED}
-      ,{"bigWig", ZMapDataSourceType::BIGWIG}
+      {"GFF", ZMapDataStreamType::GIO}
+      ,{"Bed", ZMapDataStreamType::BED}
+      ,{"bigBed", ZMapDataStreamType::BIGBED}
+      ,{"bigWig", ZMapDataStreamType::BIGWIG}
 #ifdef USE_HTSLIB
-      ,{"BAM/SAM/CRAM",   ZMapDataSourceType::HTS}
-      ,{"BCF/VCF",    ZMapDataSourceType::BCF}
+      ,{"BAM/SAM/CRAM",   ZMapDataStreamType::HTS}
+      ,{"BCF/VCF",    ZMapDataStreamType::BCF}
 #endif
     };
 

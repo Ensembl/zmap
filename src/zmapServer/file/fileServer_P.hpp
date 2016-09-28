@@ -31,9 +31,10 @@
 #ifndef FILE_SERVER_P_H
 #define FILE_SERVER_P_H
 
+#include <ZMap/zmapDataStream.hpp>
 
 #include <zmapServerPrototype.hpp>
-#include <zmapDataStream.hpp>
+#include <zmapDataStream_P.hpp>
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #include <zmapDataSource_P.hpp>

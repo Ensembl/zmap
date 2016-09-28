@@ -48,7 +48,8 @@ typedef gboolean (*ZMapServerCreateFunc)(void **server_conn,
                                          GQuark source_name,
 					 char *config_file,
 					 ZMapURL url,
-                                         char *version_str) ;
+                                         char *version_str,
+                                         pthread_mutex_t *mutex) ;
 
 typedef ZMapServerResponseType (*ZMapServerOpenFunc)(void *server_conn, ZMapServerReqOpen req_open) ;
 

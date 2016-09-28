@@ -155,7 +155,8 @@ ZMapServerResponseType zMapServerCreateConnection(ZMapServer *server_out, void *
                                                   int timeout,
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
- char *version_str)
+ char *version_str,
+                                         pthread_mutex_t *mutex)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   ZMapServer server ;

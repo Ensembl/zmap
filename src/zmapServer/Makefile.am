@@ -20,8 +20,6 @@ zmapServer.hpp \
 zmapServerPrototype.hpp \
 zmapServerRequestHandler.cpp \
 zmapServer_P.hpp \
-zmapDataSource_P.hpp \
-zmapDataSource.cpp \
 $(NULL)
 
 libZMapServer_la_LIBADD  = 

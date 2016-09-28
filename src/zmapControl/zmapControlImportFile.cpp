@@ -122,7 +122,7 @@ static void clearRecentSources(ZMapFeatureSequenceMap sequence_map) ;
  * with a optional start/end and various mapping parameters
  */
 void zMapControlImportFile(ZMapControlImportFileCB user_func, gpointer user_data,
-    ZMapFeatureSequenceMap sequence_map, int req_start, int req_end)
+                           ZMapFeatureSequenceMap sequence_map, int req_start, int req_end)
 {
   GtkWidget *toplevel ;
   gpointer seq_data = NULL ;

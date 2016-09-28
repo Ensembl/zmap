@@ -1399,9 +1399,9 @@ static string constructPipeFileURL(MainFrame main_frame,
 }
 
 
-static ZMapDataSourceType promptForFileType()
+static ZMapDataStreamType promptForFileType()
 {
-  ZMapDataSourceType source_type = ZMapDataSourceType::UNK ;
+  ZMapDataStreamType source_type = ZMapDataStreamType::UNK ;
 
   GtkWidget *dialog = gtk_dialog_new_with_buttons("Search for Track Hubs",
                                                   NULL,
@@ -1427,10 +1427,10 @@ static ZMapDataSourceType promptForFileType()
   /* Add the rows to the combo box */
   bool first = true ;
 
-  for (int type = (int)ZMapDataSourceType::NONE + 1; type < (int)ZMapDataSourceType::UNK; ++type)
+  for (int type = (int)ZMapDataStreamType::NONE + 1; type < (int)ZMapDataStreamType::UNK; ++type)
     {
-      ZMapDataSourceType type_t = (ZMapDataSourceType)type ;
-      string format = zMapDataSourceFormatFromType(type_t) ;
+      ZMapDataStreamType type_t = (ZMapDataStreamType)type ;
+      string format = zMapDataStreamFormatFromType(type_t) ;
 
       GtkTreeIter iter;
       gtk_list_store_append(store, &iter);
@@ -1459,7 +1459,7 @@ static ZMapDataSourceType promptForFileType()
           gtk_tree_model_get(model, &iter, 0, &format, -1);
           
           if (format)
-            source_type = zMapDataSourceTypeFromFormat(format, NULL) ;
+            source_type = zMapDataStreamTypeFromFormat(format, NULL) ;
         }
     }
 
@@ -1490,7 +1490,7 @@ static string constructFileURL(MainFrame main_frame,
       // We couldn't determine the file type from the extension. As the user instead.
       source_type = promptForFileType() ;
 
-      if (source_type == ZMapDataSourceType::UNK)
+      if (source_type == ZMapDataStreamType::UNK)
         g_set_error(&g_error, ZMAP_SERVER_ERROR, ZMAPSERVER_ERROR_UNKNOWN_TYPE, "Failed to determine file type") ;
     }
 
@@ -1500,7 +1500,7 @@ static string constructFileURL(MainFrame main_frame,
     }
   else
     {
-      format = zMapDataSourceFormatFromType(source_type) ;
+      format = zMapDataStreamFormatFromType(source_type) ;
 
       string err_msg;
 

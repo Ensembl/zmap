@@ -98,7 +98,7 @@ static gboolean createConnection(void **server_out,
                                  pthread_mutex_t *mutex) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 static gboolean createConnection(void **server_out,
-                                 char *config_file, ZMapURL url,
+                                 GQuark source_name, char *config_file, ZMapURL url,
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
                                  char *format,
@@ -109,7 +109,8 @@ static gboolean createConnection(void **server_out,
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 , int timeout
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
+,
+                                         pthread_mutex_t *mutex
 ) ;
 
 static ZMapServerResponseType openConnection(void *server, ZMapServerReqOpen req_open) ;

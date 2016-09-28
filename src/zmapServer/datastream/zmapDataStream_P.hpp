@@ -246,7 +246,7 @@ class ZMapDataStreamHTSStruct : public ZMapDataStreamStruct
 public:
   ZMapDataStreamHTSStruct(const GQuark source_name, const char *file_name, const char *open_mode, 
                           const char *sequence, const int start, const int end) ;
-  ~ZMapDataSourceHTSStruct() ;
+  ~ZMapDataStreamHTSStruct() ;
 
   gboolean init(const char *region_name, int start, int end) ;
   bool isOpen() ;
@@ -269,7 +269,7 @@ public:
 private:
   bool processRead() ;
 
-  ZMapDataSourceFeatureData cur_feature_data_ ;  
+  ZMapDataStreamFeatureData cur_feature_data_ ;  
 } ;
 
 
