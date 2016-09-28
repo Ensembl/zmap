@@ -34,6 +34,7 @@
 
 #include <ZMap/zmapView.hpp>
 #include <ZMap/zmapControl.hpp>
+#include <ZMap/zmapFeatureLoadDisplay.hpp>
 #include <zmapNavigator_P.hpp>                                /* WHY is this here ?? */
 
 
@@ -189,6 +190,9 @@ typedef struct
 #define VIEW_XREMOTE_WIDGET "view_xremote_widget"	    /* Key used for setting/getting view
 							       on xremote widget. */
 
+typedef void (*ZMapControlImportFileCB)(gpointer user_data) ;
+
+
 
 ZMapCallbacks zmapControlGetCallbacks(void) ;
 gboolean zmapControlWindowCreate (ZMap zmap, GdkCursor *normal_cursor) ;
@@ -245,6 +249,9 @@ void zmapControlWriteWindowIdFile(Window id, char *window_name);
 
 void zmapControlInfoOverwrite(void *data, int code, char *format, ...);
 void zmapControlInfoSet(void *data, int code, char *format, ...);
+
+void zmapControlImportFile(ZMapControlImportFileCB user_func, gpointer user_data,
+                           ZMapFeatureSequenceMap sequence_map, int req_start, int req_end) ;
 
 void zmapControlWindowSetStatus(ZMap zmap) ;
 void zmapControlWindowSetGUIState(ZMap zmap) ;

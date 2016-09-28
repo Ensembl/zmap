@@ -1,4 +1,4 @@
-/*  File: zmapControlImportFile.c
+/*  File: zmapControlImportFile.cpp
  *  Author: Malcolm Hinsley (mh17@sanger.ac.uk)
  *  Copyright (c) 2012-2015: Genome Research Ltd.
  *-------------------------------------------------------------------
@@ -20,7 +20,7 @@
  * This file is part of the ZMap genome database package
  * originally written by:
  *
- * Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
@@ -29,7 +29,7 @@
  *              user has chosen then this code calls the function
  *              provided by the caller to get the sequence displayed.
  *
- * Exported functions: See ZMap/zmapControlImportFile.h
+ * Exported functions: See zmapControl_P.hpp
  *
  * NOTE this file was initially copied from zmapAppSequenceView.c
  * and then tweaked. There may be some common code & functions
@@ -49,7 +49,6 @@
 #include <ZMap/zmapConfigIni.hpp>
 #include <ZMap/zmapConfigStanzaStructs.hpp>
 #include <ZMap/zmapConfigStrings.hpp>
-#include <ZMap/zmapControlImportFile.hpp>
 #include <ZMap/zmapFeatureLoadDisplay.hpp>
 #include <ZMap/zmapAppServices.hpp>
 #include <ZMap/zmapDataSource.hpp>
@@ -121,7 +120,7 @@ static void clearRecentSources(ZMapFeatureSequenceMap sequence_map) ;
 /* Display a dialog to get from the reader a file to be displayed
  * with a optional start/end and various mapping parameters
  */
-void zMapControlImportFile(ZMapControlImportFileCB user_func, gpointer user_data,
+void zmapControlImportFile(ZMapControlImportFileCB user_func, gpointer user_data,
                            ZMapFeatureSequenceMap sequence_map, int req_start, int req_end)
 {
   GtkWidget *toplevel ;
