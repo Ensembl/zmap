@@ -6,6 +6,11 @@
 <body>
 <h2>ZMap - Release Notes</h2>
 
+<h4>Version 2.11.3</h4>
+<ul>
+  <li>Fix a potential crash in trackhub functionality caused by empty error messages.
+</ul>
+
 <h4>Version 2.11.2</h4>
 <ul>
   <li>Fix a bug using trackhub support in the Otter Mac distribution due to incorrect cainfo location.
