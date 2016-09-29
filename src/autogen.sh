@@ -179,6 +179,8 @@ declare -A install=( [$aceconn_key]='maybe' [$ensc_core_key]='maybe' [$gb_tools_
 declare -A repos=( [$aceconn_key]='AceConn' [$ensc_core_key]='ensc-core' [$gb_tools_key]='gbtools'
     [$htslib_key]='htslib' [$zeromq_key]='zeromq_v3' )
 
+declare -A repos_url=( [$aceconn_key]="$git_host:$git_root/${repos[$aceconn_key]}" [$ensc_core_key]="$git_host:$git_root/${repos[$ensc_core_key]}" [$gb_tools_key]="$git_host:$git_root/${repos[$gb_tools_key]}" [$htslib_key]="$git_host:$git_root/${repos[$htslib_key]}" [$zeromq_key]="$git_host:$git_root/${repos[$zeromq_key]}" )
+
 declare -A dir=( [$aceconn_key]='AceConn' [$ensc_core_key]='ensc-core' [$gb_tools_key]='gbtools'
     [$htslib_key]='htslib' [$zeromq_key]='zeromq' )
 
@@ -293,7 +295,7 @@ for i in "${!install[@]}"
 
         if [[ ! -f "./${dir[$i]}/${test_file[$i]}" ]] ; then
 
-            fetch_lib "$git_host:$git_root/${repos[$i]}" "${dir[$i]}" "${branch[$i]}"
+            fetch_lib "${repos_url[$i]}" "${dir[$i]}" "${branch[$i]}"
 
         fi
 
