@@ -258,8 +258,11 @@ string BlatLibErrHandler::errMsg()
 {
   string err_msg ;
 
-  if (err_catch_ && err_catch_->gotError)
-    err_msg = err_catch_->message->string ;
+  if (err_catch_ && err_catch_->gotError && 
+      err_catch_->message && err_catch_->message->string)
+    {
+      err_msg = err_catch_->message->string ;
+    }
 
   return err_msg ;
 }
@@ -926,7 +929,7 @@ bool ZMapDataSourceGIOStruct::checkHeader(string &err_msg, bool &empty_or_eof, c
                 {
                   /* If the error was serious we stop processing and return the error,
                    * otherwise we just log the error. */
-                  if (terminated())
+                  if (terminated() && error->message)
                     {
                       err_msg = error->message ;
                     }
@@ -1021,7 +1024,7 @@ bool ZMapDataSourceBIGBEDStruct::checkHeader(std::string &err_msg, bool &empty_o
       zMapLogWarning("Error checking header: %s", err_handler.errMsg().c_str());
     }
 
-  if (error_)
+  if (error_ && error_->message)
     err_msg = error_->message ; 
 
   return result ;
@@ -1066,7 +1069,7 @@ bool ZMapDataSourceBIGWIGStruct::checkHeader(std::string &err_msg, bool &empty_o
       zMapLogWarning("Error checking file header: %s", err_handler.errMsg().c_str());
     }
 
-  if (error_)
+  if (error_ && error_->message)
     err_msg = error_->message ; 
 
   return result ;
@@ -1112,7 +1115,7 @@ bool ZMapDataSourceHTSStruct::checkHeader(std::string &err_msg, bool &empty_or_e
                   sequence_, available_seqs.str().c_str()) ;
     }
 
-  if (error_)
+  if (error_ && error_->message)
     err_msg = error_->message ; 
 
   return result ;
@@ -1149,7 +1152,7 @@ bool ZMapDataSourceBCFStruct::checkHeader(std::string &err_msg, bool &empty_or_e
                   sequence_, available_seqs.str().c_str()) ;
     }
 
-  if (error_)
+  if (error_ && error_->message)
     err_msg = error_->message ; 
 
   return result ;
@@ -1508,7 +1511,7 @@ bool ZMapDataSourceGIOStruct::parseSequence(gboolean &sequence_finished, string 
     {
       /* If the error was serious we stop processing and return the error,
        * otherwise we just log the error. */
-      if (terminated())
+      if (terminated() && error->message)
         {
           err_msg = error->message ;
         }
