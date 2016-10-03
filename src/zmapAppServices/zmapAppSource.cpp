@@ -111,6 +111,7 @@ typedef struct MainFrameStructName
   gpointer close_data ;
 
   ZMapAppSourceType default_type ;
+  bool edit_source ; // true if editing an existing source; false if creating a new source
 
   // General
   GtkWidget *name_widg ;
@@ -219,6 +220,7 @@ GtkWidget *makePanel(GtkWidget *toplevel,
                      ZMapAppClosedSequenceViewCB close_func,
                      gpointer close_data,
                      ZMapAppSourceType default_type,
+                     const bool edit_source,
                      MainFrame *main_data) ;
 GtkWidget *makeButtonBox(MainFrame main_data) ;
 void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data) ;
@@ -264,6 +266,7 @@ GtkWidget *makePanel(GtkWidget *toplevel,
                      ZMapAppClosedSequenceViewCB close_func,
                      gpointer close_data,
                      ZMapAppSourceType default_type,
+                     const bool edit_source,
                      MainFrame *main_data_out)
 {
   GtkWidget *frame = NULL ;
@@ -279,6 +282,7 @@ GtkWidget *makePanel(GtkWidget *toplevel,
   main_data->close_data = close_data ;
   main_data->default_type = default_type ;
   main_data->filename = NULL ;
+  main_data->edit_source = edit_source ;
 
   if (sequence_map)
     main_data->registry = sequence_map->getTrackhubRegistry() ;
@@ -1180,12 +1184,14 @@ void cancelCB(GtkWidget *widget, gpointer cb_data)
 /* Create the new source. */
 void applyCB(GtkWidget *widget, gpointer cb_data)
 {
-  gboolean ok = FALSE ;
   MainFrame main_frame = (MainFrame)cb_data ;
+  zMapReturnIfFail(main_frame) ;
 
-  // We must have a unique source name to be able to create the new source. If not, warn the user
-  // and don't continue.
-  if (main_frame && main_frame->name_widg)
+  gboolean ok = TRUE ;
+
+  // If creating a new source, we must have a unique source name to be able to create the source.
+  // If not, warn the user and don't continue.
+  if (!main_frame->edit_source && main_frame->name_widg)
     {
       const char *source_name = gtk_entry_get_text(GTK_ENTRY(main_frame->name_widg)) ;
 
@@ -2754,7 +2760,9 @@ GtkWidget *zMapAppCreateSource(ZMapFeatureSequenceMap sequence_map,
   gtk_container_border_width(GTK_CONTAINER(toplevel), 0) ;
 
   MainFrame main_data = NULL ;
-  container = makePanel(toplevel, &seq_data, sequence_map, user_func, user_data, close_func, close_data, default_type, &main_data) ;
+  container = makePanel(toplevel, &seq_data, sequence_map, 
+                        user_func, user_data, close_func, close_data, 
+                        default_type, false, &main_data) ;
 
   gtk_container_add(GTK_CONTAINER(toplevel), container) ;
   gtk_signal_connect(GTK_OBJECT(toplevel), "destroy",
@@ -2795,7 +2803,9 @@ GtkWidget *zMapAppEditSource(ZMapFeatureSequenceMap sequence_map,
   gtk_container_border_width(GTK_CONTAINER(toplevel), 0) ;
 
   MainFrame main_data = NULL ;
-  container = makePanel(toplevel, &seq_data, sequence_map, user_func, user_data, NULL, NULL, ZMapAppSourceType::NONE, &main_data) ;
+  container = makePanel(toplevel, &seq_data, sequence_map, 
+                        user_func, user_data, NULL, NULL, 
+                        ZMapAppSourceType::NONE, true, &main_data) ;
 
   gtk_container_add(GTK_CONTAINER(toplevel), container) ;
   gtk_signal_connect(GTK_OBJECT(toplevel), "destroy",

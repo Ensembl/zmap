@@ -1183,12 +1183,13 @@ static void saveSourcesToConfig(ZMapFeatureSequenceMap sequence_map,
       zMapConfigIniContextSetFile(context, file_type, output_file) ;
       zMapConfigIniContextCreateKeyFile(context, file_type) ;
 
-      sequence_map->updateContext(context, file_type) ;
+      if (sequence_map->updateContext(context, file_type))
+        {
+          zMapConfigIniContextSetUnsavedChanges(context, file_type, TRUE) ;
+          zMapConfigIniContextSave(context, file_type) ;
 
-      zMapConfigIniContextSetUnsavedChanges(context, file_type, TRUE) ;
-      zMapConfigIniContextSave(context, file_type) ;
-
-      sequence_map->setFlag(ZMAPFLAG_SAVE_SOURCES, FALSE) ;
+          sequence_map->setFlag(ZMAPFLAG_SAVE_SOURCES, FALSE) ;
+        }
 
       /* Destroy the context */
       zMapConfigIniContextDestroy(context) ;
