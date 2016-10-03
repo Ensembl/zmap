@@ -257,12 +257,14 @@ gboolean zMapViewExportConfig(ZMapView view, const ZMapViewExportType export_typ
 
 gboolean zMapViewCheckIfUnsaved(ZMapView zmap_view) ;
 
+// change to zMapViewRequestServer ??
+//
 void zMapViewSetUpServerConnection(ZMapView zmap_view, ZMapConfigSource current_server, GError **error) ;
 void zMapViewSetUpServerConnection(ZMapView zmap_view, ZMapConfigSource current_server, 
                                    const char *req_sequence, const int req_start, const int req_end, 
                                    const bool thread_fail_silent, GError **error) ;
-
 void zMapViewAddSource(ZMapView view, const std::string &source_name, ZMapConfigSource source, GError **error) ;
+
 
 bool zMapViewGetDisablePopups(ZMapView zmap_view) ;
 void zMapViewSetDisablePopups(ZMapView zmap_view, const bool value) ;

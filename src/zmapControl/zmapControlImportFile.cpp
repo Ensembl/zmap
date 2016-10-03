@@ -51,7 +51,7 @@
 #include <ZMap/zmapConfigStrings.hpp>
 #include <ZMap/zmapFeatureLoadDisplay.hpp>
 #include <ZMap/zmapAppServices.hpp>
-#include <ZMap/zmapDataSource.hpp>
+#include <ZMap/zmapDataStream.hpp>
 #include <zmapControl_P.hpp>
 
 
@@ -440,9 +440,9 @@ static void createSourceData(ZMapView view,
 
   if (context_map && sequence_map->runningUnderOtter() && zmap_url && zmap_url->path)
     {
-      ZMapDataSourceType source_type = zMapDataSourceTypeFromFilename(zmap_url->path, NULL) ;
+      ZMapDataStreamType source_type = zMapDataStreamTypeFromFilename(zmap_url->path, NULL) ;
 
-      if (source_type == ZMapDataSourceType::HTS || source_type == ZMapDataSourceType::BIGWIG)
+      if (source_type == ZMapDataStreamType::HTS || source_type == ZMapDataStreamType::BIGWIG)
         {
           const char *source_name = g_quark_to_string(source->name_) ;
           GQuark fset_id = zMapFeatureSetCreateID(source_name);

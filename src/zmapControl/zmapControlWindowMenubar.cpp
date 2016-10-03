@@ -381,6 +381,14 @@ static void exportCB(gpointer cb_data, guint callback_action, GtkWidget *window)
   return ;
 }
 
+static void controlImportFileCB(gpointer user_data)
+{
+  zMapWarning("controlImportFileCB not implemented","");
+  /* this is a callback to report something */
+
+  return ;
+}
+
 
 
 static void importCB(gpointer cb_data, guint callback_action, GtkWidget *window)
@@ -422,7 +430,7 @@ static void importCB(gpointer cb_data, guint callback_action, GtkWidget *window)
 
           /* need sequence_map to set default seq coords and map sequence name, and to store the
            * resulting ZMapConfigSource struct for the new source that is created */
-          zmapControlImportFile(zmap, sequence_map, start, end) ;
+          zmapControlImportFile(controlImportFileCB, cb_data, sequence_map, start, end);
         }
     }
 

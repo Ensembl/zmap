@@ -339,7 +339,7 @@ void zMapServerRequestDestroy(ZMapServerReqAny request)
 // General request/reply routine to interface to zmapServer interface.
 // Calls the appropriate server routine for the request and returns its reply.
 // 
-ZMapServerResponseType zMapServerRequest(ZMapServer *server_inout, pthread_mutex_t *mutex, ZMapServerReqAny request, char **err_msg_out)
+ZMapServerResponseType zMapServerRequest(ZMapServer *server_inout, ZMapServerReqAny request, char **err_msg_out)
 {
   ZMapServerResponseType reply = ZMAP_SERVERRESPONSE_OK ;
   ZMapServer server = *server_inout ;                       // NULL on create connection call.
@@ -374,7 +374,7 @@ ZMapServerResponseType zMapServerRequest(ZMapServer *server_inout, pthread_mutex
                                                                 create->timeout,
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-                                                                create->version, mutex))
+                                                                create->version, create->mutex))
 
                 != ZMAP_SERVERRESPONSE_OK)
               {

@@ -252,11 +252,15 @@ static gboolean zMapViewSortExons(ZMapFeatureContext diff_context) ;
 
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static ZMapViewConnection zmapViewRequestServer(ZMapView view, ZMapViewConnection view_conn,
                                                 ZMapFeatureBlock block_orig, GList *req_featuresets, GList *req_biotypes,
                                                 ZMapConfigSource server,
                                                 const char *req_sequence, int req_start, int req__end,
                                                 gboolean dna_requested, gboolean terminate, gboolean show_warning) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 /*
@@ -1505,16 +1509,6 @@ void zmapViewResetWindows(ZMapView zmap_view, gboolean revcomp)
 }
 
 
-/* Utility called by zMapViewSetUpServerConnection to do any scheme-specific set up for the given
- * server. This updates the terminate flag. Returns true if the source should be loaded. */
-static bool setUpServerConnectionByScheme(ZMapView zmap_view,
-                                          ZMapConfigSource current_server,
-                                          bool &terminate,
-                                          GError **error)
-{
-  bool result = true ;
-  ZMapURL zmap_url = url_parse(current_server->url, NULL);
-  terminate = FALSE ;
 
 ZMapFeatureContextMergeCode zmapJustMergeContext(ZMapView view, ZMapFeatureContext *context_inout,
                                              ZMapFeatureContextMergeStats *merge_stats_out,
@@ -3123,7 +3117,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
                               }
 
                             zMapLogWarning("Source failed with error: '%s'. Source: %s",
-                                           (err_msg ? err_msg : "<no error message>"), view_con->url) ;
+                                           (err_msg ? err_msg : "<no error message>"), zMapServerGetUrl(view_con)) ;
                           }
 
                         THREAD_DEBUG_MSG_FULL(thread, view_con, request_type, reply,
