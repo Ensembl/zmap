@@ -152,8 +152,7 @@ typedef gboolean (*ParseMethodNamesFunc)(AcedbServer server, char *method_str_in
 static gboolean globalInit(void) ;
 static gboolean createConnection(void **server_out,
 				 GQuark source_name, char *config_file, ZMapURL url, char *format,
-                                 char *version_str, int timeout,
-                                 pthread_mutex_t *mutex) ;
+                                 char *version_str, int timeout) ;
 static ZMapServerResponseType openConnection(void *server, ZMapServerReqOpen req_open) ;
 static ZMapServerResponseType getInfo(void *server, ZMapServerReqGetServerInfo info) ;
 static ZMapServerResponseType getFeatureSetNames(void *server,
@@ -300,8 +299,7 @@ static gboolean globalInit(void)
 
 static gboolean createConnection(void **server_out,
 				 GQuark source_name, char *config_file, ZMapURL url, char *format,
-                                 char *version_str, int timeout,
-                                 pthread_mutex_t *mutex_unused)
+                                 char *version_str, int timeout)
 {
   gboolean result = FALSE ;
   GError *error = NULL ;

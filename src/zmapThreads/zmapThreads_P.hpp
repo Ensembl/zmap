@@ -101,10 +101,6 @@ typedef struct _ZMapThreadStruct
   /* User registered routine to destroy/clean up thread if it needs to exit abnormally. */
   ZMapThreadDestroyHandler destroy_func ;
 
-  /* Mutex used by the ensembl server to lock calls to the non-thread-safe ensc-core library.
-   * We must create the mutex here so we can lock across all threads. */
-  pthread_mutex_t *mutex ;
-
 } ZMapThreadStruct ;
 
 

@@ -142,8 +142,7 @@ ZMapServerResponseType zMapServerCreateConnection(ZMapServer *server_out, void *
                                                   GQuark source_name,
                                                   char *config_file,
                                                   ZMapURL url, char *format,
-                                                  int timeout, char *version_str,
-                                                  pthread_mutex_t *mutex)
+                                                  int timeout, char *version_str)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   ZMapServer server ;
@@ -172,7 +171,7 @@ ZMapServerResponseType zMapServerCreateConnection(ZMapServer *server_out, void *
   if (result == ZMAP_SERVERRESPONSE_OK)
     {
       if ((server->funcs->create)(&(server->server_conn), source_name, config_file, url, format,
-                                  version_str, timeout, mutex))
+                                  version_str, timeout))
         {
           zMapServerSetErrorMsg(server, NULL) ;
           result = ZMAP_SERVERRESPONSE_OK ;

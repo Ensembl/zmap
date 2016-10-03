@@ -110,7 +110,6 @@ ZMAP_DEFINE_ENUM(ZMapThreadReturnCode, ZMAP_THREAD_RETURNCODE_LIST) ;
  * request is the request from the controlling thread
  * reply   is the reply from the slave code. */
 typedef ZMapThreadReturnCode (*ZMapThreadRequestHandlerFunc)(void **slave_data,
-                                                             pthread_mutex_t *mutex,
 							     void *request,
 							     void **reply, char **err_msg_out) ;
 

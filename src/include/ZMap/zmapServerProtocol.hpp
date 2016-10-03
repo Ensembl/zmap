@@ -339,7 +339,6 @@ ZMAP_ENUM_AS_EXACT_STRING_DEC(zMapServerReqType2ExactStr, ZMapServerReqType) ;
 ZMapServerReqAny zMapServerRequestCreate(ZMapServerReqType request_type, ...) ;
 void zMapServerRequestDestroy(ZMapServerReqAny request) ;
 ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
-                                              pthread_mutex_t *mutex,
 					      void *request_in, void **reply_out,
 					      char **err_msg_out) ;
 ZMapThreadReturnCode zMapServerTerminateHandler(void **slave_data, char **err_msg_out) ;

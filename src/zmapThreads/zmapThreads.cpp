@@ -61,10 +61,6 @@ gboolean zmap_thread_debug_G = FALSE ;
 /* For locking/unlocking of fork calls. */
 static pthread_mutex_t thread_fork_mutex_G = PTHREAD_MUTEX_INITIALIZER ;
 
-/* For locking/unlocking within a server. */
-static pthread_mutex_t thread_server_mutex_G = PTHREAD_MUTEX_INITIALIZER ;
-
-
 
 
 /* Creates a new thread. On creation the thread will wait indefinitely until given a request,
@@ -280,21 +276,6 @@ void zMapThreadForkLock(void)
 {
   int locked ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* shouldn't do this really....use the static initialisers..... */
-
-  static gboolean init = FALSE ;
-
-
-  if (!init)
-    {
-      init = TRUE ;
-      pthread_mutex_init(&thread_fork_mutex_G,NULL) ;
-    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
   locked = pthread_mutex_lock(&thread_fork_mutex_G) ;
 
   switch (locked)
@@ -350,20 +331,11 @@ static ZMapThread createThread(ZMapThreadRequestHandlerFunc handler_func,
 {
   ZMapThread thread ;
 
-  static gboolean init = FALSE ;
-
-  if (!init)
-    {
-      pthread_mutex_init(&thread_fork_mutex_G,NULL) ;
-      init = TRUE ;
-    }
-
   thread = g_new0(ZMapThreadStruct, 1) ;
 
   thread->handler_func = handler_func ;
   thread->terminate_func = terminate_func ;
   thread->destroy_func = destroy_func ;
-  thread->mutex = &thread_server_mutex_G ;
 
   return thread ;
 }

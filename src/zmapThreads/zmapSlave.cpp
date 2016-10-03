@@ -139,7 +139,7 @@ void *zmapNewThread(void *thread_args)
           zMapPrintTimer(NULL, "In thread, calling handler function") ;
 
           /* Call the registered slave handler function. */
-          slave_response = (*(thread->handler_func))(&(thread_cb->slave_data), thread->mutex, request, &reply, &slave_error) ;
+          slave_response = (*(thread->handler_func))(&(thread_cb->slave_data), request, &reply, &slave_error) ;
           zMapPrintTimer(NULL, "In thread, returned from handler function") ;
 
           ZMAPTHREAD_DEBUG(thread, "returned from server, response was %s....",
