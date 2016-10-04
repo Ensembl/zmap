@@ -179,7 +179,12 @@ declare -A install=( [$aceconn_key]='maybe' [$ensc_core_key]='maybe' [$gb_tools_
 declare -A repos=( [$aceconn_key]='AceConn' [$ensc_core_key]='ensc-core' [$gb_tools_key]='gbtools'
     [$htslib_key]='htslib' [$zeromq_key]='zeromq_v3' )
 
-declare -A repos_url=( [$aceconn_key]="$git_host:$git_root/${repos[$aceconn_key]}" [$ensc_core_key]="https://github.com/Ensembl/ensc-core.git" [$gb_tools_key]="$git_host:$git_root/${repos[$gb_tools_key]}" [$htslib_key]="https://github.com/samtools/htslib" [$zeromq_key]="$git_host:$git_root/${repos[$zeromq_key]}" )
+declare -A repos_url=( 
+    [$aceconn_key]="$git_host:$git_root/${repos[$aceconn_key]}" 
+    [$ensc_core_key]="https://github.com/Ensembl/ensc-core.git"
+    [$gb_tools_key]="$git_host:$git_root/${repos[$gb_tools_key]}"
+    [$htslib_key]="https://github.com/samtools/htslib"
+    [$zeromq_key]="$git_host:$git_root/${repos[$zeromq_key]}" )
 
 declare -A dir=( [$aceconn_key]='AceConn' [$ensc_core_key]='ensc-core' [$gb_tools_key]='gbtools'
     [$htslib_key]='htslib' [$zeromq_key]='zeromq' )

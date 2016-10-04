@@ -2919,8 +2919,11 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
               THREAD_DEBUG_MSG(thread, "cannot access reply from child thread - %s", err_msg) ;
 
-              /* Warn the user ! */
-              if (view_con->show_warning && !zMapViewGetDisablePopups(zmap_view))
+              /* Warn the user ! Note: I'm trying overriding show_warning for the create step as
+                 not showing a warning can mask a configuration error that the user should be
+                 warned about. */
+              if ((request_type == ZMAP_SERVERREQ_CREATE || view_con->show_warning)
+                  && !zMapViewGetDisablePopups(zmap_view))
                 {
                   zMapWarning("Source \"%s\" is being removed, error was: %s\n",
                               zMapServerGetUrl(view_con), (err_msg ? err_msg : "<no error message>")) ;
@@ -3106,8 +3109,11 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
                         /* Do not reset reply from slave, we need to wait for slave to reply
                          * to the cancel. */
-                        /* Warn the user ! */
-                        if (view_con->show_warning)
+
+                        /* Warn the user ! Note: I'm trying overriding show_warning for the create step as
+                           not showing a warning can mask a configuration error that the user should be
+                           warned about. */
+                        if (request_type == ZMAP_SERVERREQ_CREATE || view_con->show_warning)
                           {
                             if (!zMapViewGetDisablePopups(zmap_view))
                               {
