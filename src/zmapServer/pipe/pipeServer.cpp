@@ -109,8 +109,6 @@ static gboolean createConnection(void **server_out,
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 , int timeout
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-,
-                                         pthread_mutex_t *mutex
 ) ;
 
 static ZMapServerResponseType openConnection(void *server, ZMapServerReqOpen req_open) ;
@@ -254,8 +252,6 @@ static gboolean createConnection(void **server_out,
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 , int timeout_unused
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-,
-                                 pthread_mutex_t *mutex_unused
 )
 {
   gboolean result = FALSE ;

@@ -75,6 +75,22 @@ using namespace std;
 
 #define ENSEMBL_PROTOCOL_STR "Ensembl"                            /* For error messages. */
 
+
+// global struct for the ensembl data source, holds anything for which there needs to be just one
+// copy for all server instances.
+//
+typedef struct GlobalStructType
+{
+  pthread_mutex_t mutex ;                                   /* lock to protect ensc-core library
+                                                             * calls as they are not thread safe,
+                                                             * i.e. anything using dba, slice etc. */
+
+
+
+} GlobalStruct, *Global ;
+
+
+
 /* Data to pass to get-features callback function for each block */
 typedef struct GetFeaturesDataStructType
 {
@@ -131,7 +147,6 @@ static gboolean createConnection(void **server_out,
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 , int timeout
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-, pthread_mutex_t *mutex
 ) ;
 
 static ZMapServerResponseType openConnection(void *server, ZMapServerReqOpen req_open) ;
@@ -212,12 +227,13 @@ static char* getSequence(EnsemblServer server, const char *seq_name, long start,
 
 
 
+
+
 //
-//          Globals
+//              Globals
 //
 
-/* For locking/unlocking within a server. */
-static pthread_mutex_t thread_server_mutex_G = PTHREAD_MUTEX_INITIALIZER ;
+static GlobalStruct global_init_G ;
 
 
 
@@ -262,13 +278,27 @@ void ensemblGetServerFuncs(ZMapServerFuncs ensembl_funcs)
 static gboolean globalInit(void)
 {
   gboolean result = TRUE ;
+  Global global = &global_init_G ;
 
-  /* Initialise mysql. */
-  if (mysql_library_init(0, NULL, NULL))
+  /* Mutex used by the ensembl server to lock calls to the non-thread-safe ensc-core library.
+   * We must create the mutex here so we can lock across all threads. */
+  if (pthread_mutex_init(&(global->mutex), NULL) != 0)
     {
-      zMapLogCritical("%s", "Global initialisation of ensembl server failed.") ;
+      zMapLogCritical("%s", "Cannot initialise ensembl, pthread_mutex_init() failed.") ;
 
       result = FALSE ;
+    }
+
+  if (result)
+    {
+        
+      /* Initialise mysql. */
+      if (mysql_library_init(0, NULL, NULL))
+        {
+          zMapLogCritical("%s", "Global initialisation of ensembl server failed.") ;
+
+          result = FALSE ;
+        }
     }
 
   /* Initialise the ensembl C API */
@@ -302,47 +332,51 @@ static gboolean createConnection(void **server_out,
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 , int timeout
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-,
-                                         pthread_mutex_t *mutex
 )
 {
-  gboolean result = FALSE ;
+  gboolean result = TRUE ;
   EnsemblServer server ;
+  Global global = &global_init_G ;
 
   /* Always return a server struct as it contains error message stuff. */
   server = (EnsemblServer)g_new0(EnsemblServerStruct, 1) ;
   *server_out = (void *)server ;
 
   server->config_file = g_strdup(config_file) ;
-  server->mutex = &thread_server_mutex_G ;
 
-  server->host = g_strdup(url->host) ;
-  server->port = url->port ;
+  server->mutex = &(global->mutex) ;
 
-  if (url->user)
-    server->user = g_strdup(url->user) ;
-  else
-    server->user = g_strdup("anonymous") ;
 
-  if (url->passwd && url->passwd[0] && url->passwd[0] != '\0')
-    server->passwd = g_strdup(url->passwd) ;
-
-  server->db_name = zMapURLGetQueryValue(url->query, "db_name") ;
-  server->db_prefix = zMapURLGetQueryValue(url->query, "db_prefix") ;
-
-  if (server->host && server->db_name)
+  if (result)
     {
-      result = TRUE ;
-    }
-  else if (!server->host)
-    {
-      setErrMsg(server, g_strdup("Cannot create connection, required value 'host' is missing from source url")) ;
-      ZMAPSERVER_LOG(Message, ENSEMBL_PROTOCOL_STR, server->host, "%s", server->last_err_msg) ;
-    }
-  else if (!server->db_name)
-    {
-      setErrMsg(server, g_strdup("Cannot create connection, required value 'db_name' is missing from source url")) ;
-      ZMAPSERVER_LOG(Message, ENSEMBL_PROTOCOL_STR, server->host, "%s", server->last_err_msg) ;
+      server->host = g_strdup(url->host) ;
+      server->port = url->port ;
+
+      if (url->user)
+        server->user = g_strdup(url->user) ;
+      else
+        server->user = g_strdup("anonymous") ;
+
+      if (url->passwd && url->passwd[0] && url->passwd[0] != '\0')
+        server->passwd = g_strdup(url->passwd) ;
+
+      server->db_name = zMapURLGetQueryValue(url->query, "db_name") ;
+      server->db_prefix = zMapURLGetQueryValue(url->query, "db_prefix") ;
+
+      if (server->host && server->db_name)
+        {
+          result = TRUE ;
+        }
+      else if (!server->host)
+        {
+          setErrMsg(server, g_strdup("Cannot create connection, required value 'host' is missing from source url")) ;
+          ZMAPSERVER_LOG(Message, ENSEMBL_PROTOCOL_STR, server->host, "%s", server->last_err_msg) ;
+        }
+      else if (!server->db_name)
+        {
+          setErrMsg(server, g_strdup("Cannot create connection, required value 'db_name' is missing from source url")) ;
+          ZMAPSERVER_LOG(Message, ENSEMBL_PROTOCOL_STR, server->host, "%s", server->last_err_msg) ;
+        }
     }
 
   return result ;
@@ -1090,6 +1124,11 @@ static ZMapServerResponseType destroyConnection(void *server_in)
 
   if (server->last_err_msg)
     g_free(server->last_err_msg) ;
+
+  if (pthread_mutex_destroy(server->mutex) != 0)
+    ZMAPSERVER_LOG(Message, ENSEMBL_PROTOCOL_STR, server->host, "%s",
+                   "Cannot destroy connection cleanly, pthread_mutex_destroy() failed.") ;
+
 
   //if (server->slice)
   //  Slice_free(server->slice) ;

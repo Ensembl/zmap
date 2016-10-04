@@ -154,9 +154,8 @@ ZMapServerResponseType zMapServerCreateConnection(ZMapServer *server_out, void *
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
                                                   int timeout,
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
- char *version_str,
-                                         pthread_mutex_t *mutex)
+ char *version_str
+)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   ZMapServer server ;
@@ -225,7 +224,6 @@ ZMapServerResponseType zMapServerCreateConnection(ZMapServer *server_out, void *
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 , timeout
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-                                  , mutex
 ))
 
         {

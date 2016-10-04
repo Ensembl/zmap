@@ -108,6 +108,21 @@ static const char * const ZMAP_BIGWIG_SO_TERM  = "score" ;
 #define READBUFFER_SIZE 2048
 
 
+/* Map of file types to a data-source types */
+const map<string, ZMapDataStreamType> file_type_to_source_type_G =
+  {
+    {"GFF",     ZMapDataStreamType::GIO}
+    ,{"Bed",    ZMapDataStreamType::BED}
+    ,{"bigBed", ZMapDataStreamType::BIGBED}
+    ,{"bigWig", ZMapDataStreamType::BIGWIG}
+    ,{"BAM",    ZMapDataStreamType::HTS}
+    ,{"SAM",    ZMapDataStreamType::HTS}
+    ,{"CRAM",   ZMapDataStreamType::HTS}
+    ,{"BCF",    ZMapDataStreamType::BCF}
+    ,{"VCF",    ZMapDataStreamType::BCF}
+  } ;
+
+
 /* Need a semaphore to limit the number of threads.
  * From http://stackoverflow.com/questions/4792449/c0x-has-no-semaphores-how-to-synchronize-threads */
 
@@ -259,11 +274,28 @@ string BlatLibErrHandler::errMsg()
 {
   string err_msg ;
 
-  if (err_catch_ && err_catch_->gotError)
-    err_msg = err_catch_->message->string ;
+  if (err_catch_ && err_catch_->gotError && 
+      err_catch_->message && err_catch_->message->string)
+    {
+      err_msg = err_catch_->message->string ;
+    }
 
   return err_msg ;
 }
+
+
+
+// Utility to convert a std::string to lowercase
+string toLower(const string &s)
+{
+  string result(s) ;
+  
+  for (int i = 0; i < s.length(); ++i)
+    result[i] = std::tolower(result[i]) ;
+
+  return result ;
+}
+
 
 /* Custom comparator for a map to make the key case-insensitive. This is a 'less' object,
  * i.e. operator() returns true if the first argument is less than the second. */
@@ -274,14 +306,8 @@ public:
   {
     bool result = false ;
 
-    std::string a(a_in) ;
-    std::string b(b_in) ;
-
-    for (size_t i = 0; i < a.length(); ++i)
-      a[i] = std::tolower(a[i]) ;
-
-    for (size_t i = 0; i < b.length(); ++i)
-      b[i] = std::tolower(b[i]) ;
+    string a = toLower(a_in) ;
+    string b = toLower(b_in) ;
     
     result = (a < b) ;
 
@@ -971,7 +997,7 @@ bool ZMapDataStreamGIOStruct::checkHeader(string &err_msg, bool &empty_or_eof, c
                 {
                   /* If the error was serious we stop processing and return the error,
                    * otherwise we just log the error. */
-                  if (terminated())
+                  if (terminated() && error->message)
                     {
                       err_msg = error->message ;
                     }
@@ -1066,7 +1092,7 @@ bool ZMapDataStreamBIGBEDStruct::checkHeader(std::string &err_msg, bool &empty_o
       zMapLogWarning("Error checking header: %s", err_handler.errMsg().c_str());
     }
 
-  if (error_)
+  if (error_ && error_->message)
     err_msg = error_->message ; 
 
   return result ;
@@ -1111,7 +1137,7 @@ bool ZMapDataStreamBIGWIGStruct::checkHeader(std::string &err_msg, bool &empty_o
       zMapLogWarning("Error checking file header: %s", err_handler.errMsg().c_str());
     }
 
-  if (error_)
+  if (error_ && error_->message)
     err_msg = error_->message ; 
 
   return result ;
@@ -1157,7 +1183,7 @@ bool ZMapDataStreamHTSStruct::checkHeader(std::string &err_msg, bool &empty_or_e
                   sequence_, available_seqs.str().c_str()) ;
     }
 
-  if (error_)
+  if (error_ && error_->message)
     err_msg = error_->message ; 
 
   return result ;
@@ -1194,7 +1220,7 @@ bool ZMapDataStreamBCFStruct::checkHeader(std::string &err_msg, bool &empty_or_e
                   sequence_, available_seqs.str().c_str()) ;
     }
 
-  if (error_)
+  if (error_ && error_->message)
     err_msg = error_->message ; 
 
   return result ;
@@ -1553,7 +1579,7 @@ bool ZMapDataStreamGIOStruct::parseSequence(gboolean &sequence_finished, string 
     {
       /* If the error was serious we stop processing and return the error,
        * otherwise we just log the error. */
-      if (terminated())
+      if (terminated() && error->message)
         {
           err_msg = error->message ;
         }
@@ -2356,67 +2382,95 @@ ZMapDataStreamType zMapDataStreamTypeFromFilename(const char * const file_name, 
 }
 
 
-/* Determine the format string from the given type. Must be the inverse of
- * zMapDataStreamTypeFromFormat. Currently also used as a descriptive string for the user.  */
+/* Determine the format string from the given type. The format string is a list of all file types
+ * of that format, e.g. for HTS, the format is "BAM/SAM/CRAM" */
 string zMapDataStreamFormatFromType(ZMapDataStreamType &source_type)
 {
-  string result ;
+  string format ;
 
-  switch (source_type)
+  // Create a map to cache the results
+  map<ZMapDataStreamType, string> cache ;
+
+  format = cache[source_type] ;
+
+  if (format.empty()) // not found
     {
-    case ZMapDataStreamType::GIO:    result = "GFF" ;    break ;
-    case ZMapDataStreamType::BED:    result = "Bed" ;    break ;
-    case ZMapDataStreamType::BIGBED: result = "bigBed" ; break ;
-    case ZMapDataStreamType::BIGWIG: result = "bigWig" ; break ;
-#ifdef USE_HTSLIB
-    case ZMapDataStreamType::HTS:    result = "BAM/SAM/CRAM" ;    break ;
-    case ZMapDataStreamType::BCF:    result = "BCF/VCF" ;    break ;
-#endif
+      // Find all file types for this source type
+      for (auto &iter : file_type_to_source_type_G)
+        {
+          string file_type = iter.first ;
 
-    default:
-      zMapWarnIfReached() ;
-      break ;      
-    } ;
+          if (iter.second == source_type)
+            {
+              // Append them as "/"-separated string
+              if (!format.empty())
+                format += "/" ;
+
+              format += iter.first ;
+            }
+        }
+
+      // Cache the result
+      cache[source_type] = format ;
+    }
+
+  return format ;
+}
+
+
+/* Determine the source type from the given format string. This might be the inverse of
+ * zMapDataStreamFormatFromType (e.g. "BAM/SAM/CRAM"), or a file type string such as "SAM" or
+ * "bigWig 9" that we need to find a match for. */
+ZMapDataStreamType zMapDataStreamTypeFromFormat(const string &format, GError **error_out)
+{
+  ZMapDataStreamType result = ZMapDataStreamType::UNK ;
+
+  int found_match_len = 0 ;
+
+  // Loop through all file types
+  for (auto &iter : file_type_to_source_type_G)
+    {
+      string cur_file_type = iter.first ;
+      ZMapDataStreamType cur_source_type = iter.second ;
+
+      // First, construct the composite format string for the current source, and see if it
+      // matches the given format
+      string cur_format = zMapDataStreamFormatFromType(cur_source_type) ;
+
+      if (cur_format == format)
+        {
+          result = cur_source_type ;
+        }
+      else
+        {
+          // Convert to lowercase for case-insensitive search
+          string format_l = toLower(format) ;
+
+          // See if the format string contains this file type e.g. a format string of "bigWig 9"
+          // would contain the "bigWig" file type
+          string cur_file_type_l = toLower(cur_file_type) ;
+          size_t found_pos = format_l.find(cur_file_type_l) ;
+
+            if (found_pos != string::npos)
+              {
+                int cur_match_len = cur_file_type_l.length() ;
+
+                // If there is more than one match, prefer the longest one, e.g. if we match "bed"
+                // and "bigbed" then the result is "bigbed".
+                if (result == ZMapDataStreamType::UNK || cur_match_len > found_match_len)
+                  {
+                    result = cur_source_type ;
+                    found_match_len = cur_match_len ;
+                  }
+              }
+          }
+      }
+
+  if (result == ZMapDataStreamType::UNK)
+    {
+      g_set_error(error_out, ZMAP_SERVER_ERROR, ZMAPSERVER_ERROR_UNKNOWN_EXTENSION,
+                  "Unknown file type '%s'", format.c_str()) ;
+    }
 
   return result ;
 }
-
-
-/* Determine the source type from the given format. Must be the inverse of
- * zMapDataStreamFormatFromType. */
-ZMapDataStreamType zMapDataStreamTypeFromFormat(const string &format, GError **error_out)
-{
-  ZMapDataStreamType type = ZMapDataStreamType::UNK ;
-
-  static const map<string, ZMapDataStreamType, caseInsensitiveCmp> format_to_type = 
-    {
-      {"GFF", ZMapDataStreamType::GIO}
-      ,{"Bed", ZMapDataStreamType::BED}
-      ,{"bigBed", ZMapDataStreamType::BIGBED}
-      ,{"bigWig", ZMapDataStreamType::BIGWIG}
-#ifdef USE_HTSLIB
-      ,{"BAM/SAM/CRAM",   ZMapDataStreamType::HTS}
-      ,{"BCF/VCF",    ZMapDataStreamType::BCF}
-#endif
-    };
-
-  auto found_iter = format_to_type.find(format) ;
-      
-  if (found_iter != format_to_type.end())
-    {
-      type = found_iter->second ;
-    }
-  else
-    {
-      string expected("");
-      for (auto iter = format_to_type.begin(); iter != format_to_type.end(); ++iter)
-        expected += " ." + iter->first ;
-
-      g_set_error(error_out, ZMAP_SERVER_ERROR, ZMAPSERVER_ERROR_UNKNOWN_EXTENSION,
-                  "Invalid format '%s'. Expected one of:%s", 
-                  format.c_str(), expected.c_str()) ;
-    }
-
-  return type ;
-}
-

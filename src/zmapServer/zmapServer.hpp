@@ -48,8 +48,7 @@ gboolean zMapServerGlobalInit(ZMapURL url, void **server_global_data_out) ;
 ZMapServerResponseType zMapServerCreateConnection(ZMapServer *server_out, void *server_global_data,
                                                   GQuark source_name, char *config_file,
                                                   ZMapURL url,
-                                                  char *version_str,
-                                                  pthread_mutex_t *mutex);
+                                                  char *version_str);
 ZMapServerResponseType zMapServerOpenConnection(ZMapServer server,ZMapServerReqOpen req_open) ;
 ZMapServerResponseType zMapServerGetServerInfo(ZMapServer server, ZMapServerReqGetServerInfo info) ;
 ZMapServerResponseType zMapServerFeatureSetNames(ZMapServer server,

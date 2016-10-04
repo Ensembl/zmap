@@ -219,6 +219,7 @@ ZMapServerReqAny zMapServerRequestCreate(ZMapServerReqType request_type, ...)
         ZMapServerReqOpen open = (ZMapServerReqOpen)req_any ;
 
         open->sequence_server = va_arg(args,gboolean);
+
         break;
       }
 
@@ -355,7 +356,9 @@ ZMapServerResponseType zMapServerRequest(ZMapServer *server_inout, ZMapServerReq
          * function that should only be called once, only need to do this when setting up a server. */
         if (!protocolGlobalInitFunc(&protocol_init_G, create->url, &global_init_data))
           {
-            *err_msg_out = g_strdup_printf("Global Init failed for %s.", create->url->protocol) ;
+            *err_msg_out = g_strdup_printf("Global Init failed for datasource \"%s\","
+                                           " no connections of this type will be available.",
+                                           create->url->protocol) ;
 
             request->response = ZMAP_SERVERRESPONSE_REQFAIL ;
           }
@@ -374,7 +377,7 @@ ZMapServerResponseType zMapServerRequest(ZMapServer *server_inout, ZMapServerReq
                                                                 create->timeout,
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-                                                                create->version, create->mutex))
+                                                                create->version))
 
                 != ZMAP_SERVERRESPONSE_OK)
               {

@@ -29,8 +29,8 @@
  *-------------------------------------------------------------------
  */
 
-#ifndef DATA_SOURCE_H
-#define DATA_SOURCE_H
+#ifndef DATA_STREAM_H
+#define DATA_STREAM_H
 
 /*
  * Forward declaration of general source type.

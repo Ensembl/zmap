@@ -610,6 +610,37 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::createSource(const char *sour
 }
 
 
+/* Get a trackhub registry object for performing trackhub operations */
+gbtools::trackhub::Registry ZMapFeatureSequenceMapStructType::getTrackhubRegistry()
+{
+  gbtools::trackhub::Registry registry ;
+
+  // Set registry properties based on our config
+  registry.setDebug(getConfigBoolean(ZMAPSTANZA_APP_CURL_DEBUG));
+
+  char *proxy = getConfigString(ZMAPSTANZA_APP_PROXY) ;
+
+  if (proxy)
+    {
+      registry.setProxy(proxy);
+      g_free(proxy);
+      proxy = NULL ;
+    }
+
+  char *cainfo = getConfigString(ZMAPSTANZA_APP_CURL_CAINFO) ;
+
+  if (cainfo)
+    {
+      registry.setCainfo(cainfo);
+      g_free(cainfo);
+      cainfo = NULL ;
+    }
+    
+  return registry ;
+}
+
+
+
 /* Some sources (namely trackhub) may have child tracks. This function creates a source for each
  * child track. */
 void ZMapFeatureSequenceMapStructType::createSourceChildren(ZMapConfigSource source,
@@ -624,19 +655,7 @@ void ZMapFeatureSequenceMapStructType::createSourceChildren(ZMapConfigSource sou
       if (trackdb_id)
         {
           string err_msg;
-          gbtools::trackhub::Registry registry ;
-
-          // Set registry properties based on our config
-          registry.setDebug(getConfigBoolean(ZMAPSTANZA_APP_CURL_DEBUG));
-
-          char *proxy = getConfigString(ZMAPSTANZA_APP_PROXY) ;
-
-          if (proxy)
-            {
-              registry.setProxy(proxy);
-              g_free(proxy);
-              proxy = NULL ;
-            }
+          gbtools::trackhub::Registry registry = getTrackhubRegistry() ;
 
           // Ok, search the registry for this track db
           gbtools::trackhub::TrackDb trackdb = registry.searchTrackDb(trackdb_id, err_msg) ;
