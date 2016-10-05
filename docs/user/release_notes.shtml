@@ -6,6 +6,11 @@
 <body>
 <h2>ZMap - Release Notes</h2>
 
+<h4>Version 2.11.5</h4>
+<ul>
+  <li>Fix a bug displaying spliced reads - RT '542750'
+</ul>
+
 <h4>Version 2.11.4</h4>
 <ul>
   <li>Fix a problem where saving the configuration could write an empty file if no changes have been made.
