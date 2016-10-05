@@ -1639,8 +1639,10 @@ ZMapFeature ZMapDataSourceStruct::makeFeature(const char *sequence,
                                               const char strand_c,
                                               const char *feature_name_in,
                                               const bool have_target,
-                                              const int query_start,
-                                              const int query_end,
+                                              const int target_start,
+                                              const int target_end,
+                                              const char target_strand_c,
+                                              const char *cigar_string,
                                               ZMapStyleMode feature_mode,
                                               const bool is_seq,
                                               GError **error)
@@ -1650,6 +1652,7 @@ ZMapFeature ZMapDataSourceStruct::makeFeature(const char *sequence,
 
   bool ok = true ;
   ZMapStrand strand = ZMAPSTRAND_NONE ;
+  ZMapStrand target_strand = ZMAPSTRAND_NONE ;
   const char *feature_name = feature_name_in ;
 
   if (!feature_name)
@@ -1660,13 +1663,18 @@ ZMapFeature ZMapDataSourceStruct::makeFeature(const char *sequence,
   else if (strand_c == '-')
     strand = ZMAPSTRAND_REVERSE ;
 
+  if (target_strand_c == '+')
+    target_strand = ZMAPSTRAND_FORWARD ;
+  else if (strand_c == '-')
+    target_strand = ZMAPSTRAND_REVERSE ;
+
   GQuark unique_id = zMapFeatureCreateID(feature_mode,
                                          feature_name,
                                          strand,
                                          start,
                                          end,
-                                         query_start,
-                                         query_end) ;
+                                         target_start,
+                                         target_end) ;
 
   // Create the feature set, if not already created
   if (ok && !feature_set_)
@@ -1691,18 +1699,31 @@ ZMapFeature ZMapDataSourceStruct::makeFeature(const char *sequence,
 
   if (ok)
     {
-      ok = zMapFeatureAddStandardData(feature,
-                                      g_quark_to_string(unique_id),
-                                      feature_name,
-                                      sequence,
-                                      so_type,
-                                      feature_mode,
-                                      NULL,
-                                      start,
-                                      end,
-                                      true,
-                                      score, 
-                                      strand);
+      ok = zMapFeatureAddStandardData(feature, g_quark_to_string(unique_id), feature_name, 
+                                      sequence, so_type, feature_mode,
+                                      NULL, start, end, true, score, strand);
+    }
+
+  GArray *gaps = NULL ;
+
+  if (ok)
+    {
+      ok = zMapFeatureAlignmentString2Gaps(ZMAPALIGN_FORMAT_CIGAR_BAM,
+                                           strand, start, end,
+                                           target_strand, target_start, target_end,
+                                           (char*)cigar_string, &gaps) ;
+    }
+
+  if (ok)
+    {
+      int length = (target_end - target_start + 1) ;
+
+      ok = zMapFeatureAddAlignmentData(feature, g_quark_from_string(feature_name), score,
+                                       target_start, target_end, ZMAPHOMOL_N_HOMOL, length, 
+                                       target_strand, ZMAPPHASE_0, gaps, 
+                                       zMapStyleGetWithinAlignError(feature_set_->style), 
+                                       FALSE, NULL) ;
+
     }
 
   if (ok)
@@ -1760,6 +1781,8 @@ bool ZMapDataSourceBEDStruct::parseBodyLine(GError **error)
                   true,
                   1,
                   cur_feature_->chromEnd - cur_feature_->chromStart + 1,
+                  '.',
+                  NULL,
                   ZMAPSTYLE_MODE_BASIC,
                   false,
                   error) ;
@@ -1785,6 +1808,8 @@ bool ZMapDataSourceBIGBEDStruct::parseBodyLine(GError **error)
                   true,
                   1,
                   cur_feature_->chromEnd - cur_feature_->chromStart + 1,
+                  '.',
+                  NULL,
                   ZMAPSTYLE_MODE_BASIC,
                   false,
                   error) ;
@@ -1810,6 +1835,8 @@ bool ZMapDataSourceBIGWIGStruct::parseBodyLine(GError **error)
                   false,
                   0,
                   0,
+                  '.',
+                  NULL,
                   ZMAPSTYLE_MODE_GRAPH,
                   true,
                   error) ;
@@ -1837,10 +1864,12 @@ bool ZMapDataSourceHTSStruct::parseBodyLine(GError **error)
                   cur_feature_data_.end_,
                   cur_feature_data_.score_,
                   cur_feature_data_.strand_c_,
-                  cur_feature_data_.query_name_.c_str(),
-                  !cur_feature_data_.query_name_.empty(),
-                  cur_feature_data_.query_start_,
-                  cur_feature_data_.query_end_,
+                  cur_feature_data_.target_name_.c_str(),
+                  !cur_feature_data_.target_name_.empty(),
+                  cur_feature_data_.target_start_,
+                  cur_feature_data_.target_end_,
+                  cur_feature_data_.target_strand_c_,
+                  cur_feature_data_.cigar_.c_str(),
                   ZMAPSTYLE_MODE_ALIGNMENT,
                   true,
                   error) ;
@@ -1862,10 +1891,12 @@ bool ZMapDataSourceBCFStruct::parseBodyLine(GError **error)
                   cur_feature_data_.end_,
                   cur_feature_data_.score_,
                   cur_feature_data_.strand_c_,
-                  cur_feature_data_.query_name_.c_str(),
-                  !cur_feature_data_.query_name_.empty(),
-                  cur_feature_data_.query_start_,
-                  cur_feature_data_.query_end_,
+                  cur_feature_data_.target_name_.c_str(),
+                  !cur_feature_data_.target_name_.empty(),
+                  cur_feature_data_.target_start_,
+                  cur_feature_data_.target_end_,
+                  cur_feature_data_.target_strand_c_,
+                  cur_feature_data_.cigar_.c_str(), 
                   ZMAPSTYLE_MODE_ALIGNMENT,
                   false,
                   error) ;
@@ -2055,11 +2086,8 @@ gboolean ZMapDataSourceHTSStruct::init(const char *region_name, int start, int e
  */
 bool ZMapDataSourceHTSStruct::processRead()
 {
-  gboolean result = FALSE,
-    bHasTargetStrand = FALSE,
-    bHasNameAttribute = FALSE,
-    bHasCigarAttribute = FALSE,
-    bHasTargetAttribute = FALSE ;
+  gboolean result = FALSE ;
+  gboolean bHasCigarAttribute = FALSE ;
   char cStrand = '\0',
     cPhase = '.',
     cTargetStrand = '.' ;
@@ -2119,15 +2147,12 @@ bool ZMapDataSourceHTSStruct::processRead()
 
   if (query_name && strlen(query_name) > 0)
     {
-      bHasTargetAttribute = TRUE ;
-      bHasNameAttribute = TRUE ;
-      bHasTargetStrand = TRUE ;
       cTargetStrand = '+' ;
     }
 
   cur_feature_data_ = ZMapDataSourceFeatureData(iStart, iEnd, dScore, cStrand, cPhase, 
-                                                bam_get_qname(hts_rec), iTargetStart, iTargetEnd,
-                                                ssCigar.str().c_str()) ;
+                                                query_name, iTargetStart, iTargetEnd, cTargetStrand,
+                                                ssCigar.str().c_str(), ZMAPALIGN_FORMAT_CIGAR_BAM) ;
 
   /*
    * return value
