@@ -909,6 +909,13 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
 
                   break ;
                 }
+
+              if (g_error)
+                {
+                  // reset the error before continuing
+                  g_error_free(g_error) ;
+                  g_error = NULL ;
+                }
             }
         } while (!server->data_source->endOfFile()) ;
 

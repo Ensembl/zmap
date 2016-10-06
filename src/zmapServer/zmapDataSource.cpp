@@ -1706,7 +1706,7 @@ ZMapFeature ZMapDataSourceStruct::makeFeature(const char *sequence,
 
   GArray *gaps = NULL ;
 
-  if (ok)
+  if (ok && cigar_string)
     {
       ok = zMapFeatureAlignmentString2Gaps(ZMAPALIGN_FORMAT_CIGAR_BAM,
                                            strand, start, end,
@@ -1714,7 +1714,7 @@ ZMapFeature ZMapDataSourceStruct::makeFeature(const char *sequence,
                                            (char*)cigar_string, &gaps) ;
     }
 
-  if (ok)
+  if (ok && feature && feature->mode == ZMAPSTYLE_MODE_ALIGNMENT)
     {
       int length = (target_end - target_start + 1) ;
 
