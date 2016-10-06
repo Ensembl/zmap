@@ -193,7 +193,7 @@ declare -A test_file=( [$aceconn_key]='configure.ac' [$ensc_core_key]='src/Makef
     [$htslib_key]='Makefile' [$zeromq_key]='configure.in' )
 
 # can specify a specific branch name or tag here by using the -b arg:
-declare -A branch=( [$aceconn_key]='' [$ensc_core_key]='-b feature/no_tcmalloc' [$gb_tools_key]=''
+declare -A branch=( [$aceconn_key]='' [$ensc_core_key]='-b 0.1' [$gb_tools_key]=''
     [$htslib_key]='-b 1.3.2' [$zeromq_key]='' )
 
 
