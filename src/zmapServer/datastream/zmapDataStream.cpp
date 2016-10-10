@@ -106,7 +106,7 @@ static const char * const ZMAP_BIGBED_SO_TERM  = "sequence_feature" ;
 static const char * const ZMAP_BIGWIG_SO_TERM  = "score" ;
 #define ZMAP_CIGARSTRING_MAXLENGTH 2048
 #define READBUFFER_SIZE 2048
-
+#define BED_DEFAULT_FIELDS 3 // min number of fields in a BED file
 
 /* Map of file types to a data-source types */
 const map<string, ZMapDataStreamType> file_type_to_source_type_G =
@@ -429,12 +429,24 @@ ZMapDataStreamBEDStruct::ZMapDataStreamBEDStruct(const GQuark source_name,
                                                  const char *open_mode,
                                                  const char *sequence,
                                                  const int start,
-                                                 const int end)
+                                                 const int end,
+                                                 const GQuark format)
   : ZMapDataStreamStruct(source_name, sequence, start, end),
-    cur_feature_(NULL)
+    cur_feature_(NULL),
+    standard_fields_(BED_DEFAULT_FIELDS)
 {
   zMapReturnIfFail(file_name) ;
   type = ZMapDataStreamType::BED ;
+
+  if (format)
+    {
+      stringstream ss(g_quark_to_string(format)) ;
+      string tmp ;
+      int num_fields ;
+
+      if (ss >> tmp >> num_fields)
+        standard_fields_ = num_fields ;
+    }
 
   BlatLibErrHandler err_handler ;
   string err_msg ;
@@ -494,15 +506,27 @@ ZMapDataStreamBIGBEDStruct::ZMapDataStreamBIGBEDStruct(const GQuark source_name,
                                                        const char *open_mode,
                                                        const char *sequence,
                                                        const int start,
-                                                       const int end)
+                                                       const int end,
+                                                       const GQuark format)
   : ZMapDataStreamStruct(source_name, sequence, start, end),
     lm_(NULL),
     list_(NULL),
     cur_interval_(NULL),
-    cur_feature_(NULL)
+    cur_feature_(NULL),
+    standard_fields_(BED_DEFAULT_FIELDS)
 {
   zMapReturnIfFail(file_name) ;
   type = ZMapDataStreamType::BIGBED ;
+
+  if (format)
+    {
+      stringstream ss(g_quark_to_string(format)) ;
+      string tmp ;
+      int num_fields ;
+
+      if (ss >> tmp >> num_fields)
+        standard_fields_ = num_fields ;
+    }
 
   BlatLibErrHandler err_handler ;
   string err_msg ;
@@ -1698,6 +1722,63 @@ ZMapFeatureSet ZMapDataStreamStruct::makeFeatureSet(const char *feature_name_id,
 }
 
 
+// Utility to create a feature from a BED struct
+ZMapFeature ZMapDataStreamStruct::makeBEDFeature(struct bed *bed_feature, 
+                                                 const int standard_fields,
+                                                 const char *so_term,
+                                                 GError **error)
+{
+  ZMapStyleMode style = ZMAPSTYLE_MODE_BASIC ;
+
+  // BED files with 12 fields represent transcripts
+  if (standard_fields == 12)
+    {
+      so_term = "transcript" ;
+      style = ZMAPSTYLE_MODE_TRANSCRIPT ;
+    }
+
+  ZMapFeature feature = makeFeature(bed_feature->chrom,
+                                    g_quark_to_string(source_name_),
+                                    so_term,
+                                    bed_feature->chromStart + 1, //0-based
+                                    bed_feature->chromEnd,       //chromEnd is one past the last coord
+                                    bed_feature->score,
+                                    bed_feature->strand[0],
+                                    bed_feature->name,
+                                    true,
+                                    1,
+                                    bed_feature->chromEnd - bed_feature->chromStart + 1,
+                                    '.',
+                                    NULL,
+                                    style,
+                                    false,
+                                    error) ;
+
+  if (style == ZMAPSTYLE_MODE_TRANSCRIPT)
+    {
+      zMapFeatureTranscriptInit(feature);
+      zMapFeatureAddTranscriptStartEnd(feature, FALSE, 0, FALSE);
+
+      // If there is no CDS, the thickStart and thickEnd are usually set to chromStart
+      if (bed_feature->thickEnd != bed_feature->thickStart)
+        zMapFeatureAddTranscriptCDS(feature, TRUE, bed_feature->thickStart, bed_feature->thickEnd);
+
+      for (int i = 0; i < bed_feature->blockCount; ++i)
+        {
+          const int exon_start = bed_feature->chromStarts[i] + bed_feature->chromStart ;
+          const int exon_end = exon_start + bed_feature->blockSizes[i] ;
+          ZMapSpanStruct span = {exon_start, exon_end} ;
+
+          zMapFeatureAddTranscriptExonIntron(feature, &span, NULL) ;
+        }
+
+      zMapFeatureTranscriptRecreateIntrons(feature) ;
+    }
+
+  return feature ;
+}
+
+
 ZMapFeature ZMapDataStreamStruct::makeFeature(const char *sequence,
                                               const char *source,
                                               const char *so_type,
@@ -1832,28 +1913,14 @@ bool ZMapDataStreamGIOStruct::parseBodyLine(GError **error)
   return result ;
 }
 
+
 bool ZMapDataStreamBEDStruct::parseBodyLine(GError **error)
 {
   bool result = false ;
 
   if (readLine())
     {
-      makeFeature(cur_feature_->chrom,
-                  g_quark_to_string(source_name_),
-                  ZMAP_BED_SO_TERM,
-                  cur_feature_->chromStart + 1, //0-based
-                  cur_feature_->chromEnd,       //chromEnd is one past the last coord
-                  cur_feature_->score,
-                  cur_feature_->strand[0],
-                  cur_feature_->name,
-                  true,
-                  1,
-                  cur_feature_->chromEnd - cur_feature_->chromStart + 1,
-                  '.',
-                  NULL,
-                  ZMAPSTYLE_MODE_BASIC,
-                  false,
-                  error) ;
+      makeBEDFeature(cur_feature_, standard_fields_, ZMAP_BED_SO_TERM, error) ;
     }
 
   return result ;
@@ -1865,22 +1932,7 @@ bool ZMapDataStreamBIGBEDStruct::parseBodyLine(GError **error)
 
   if (readLine())
     {
-      makeFeature(cur_feature_->chrom,
-                  g_quark_to_string(source_name_),
-                  ZMAP_BIGBED_SO_TERM,
-                  cur_feature_->chromStart + 1, //0-based
-                  cur_feature_->chromEnd,       //chromEnd is one past the last coord
-                  cur_feature_->score,
-                  cur_feature_->strand[0],
-                  cur_feature_->name,
-                  true,
-                  1,
-                  cur_feature_->chromEnd - cur_feature_->chromStart + 1,
-                  '.',
-                  NULL,
-                  ZMAPSTYLE_MODE_BASIC,
-                  false,
-                  error) ;
+      makeBEDFeature(cur_feature_, standard_fields_, ZMAP_BIGBED_SO_TERM, error) ;
     }
 
   return result ;
@@ -2128,11 +2180,15 @@ gboolean ZMapDataStreamHTSStruct::init(const char *region_name, int start, int e
                 }
               else
                 {
-                  return TRUE;
+                  result = TRUE;
                 }
             }
-          hts_iter = sam_itr_queryi(hts_idx, ref, begRange, endRange);
-          result = TRUE;
+
+          if (!result && hts_idx)
+            {
+              hts_iter = sam_itr_queryi(hts_idx, ref, begRange, endRange);
+              result = TRUE;
+            }
         }
       else
         {
@@ -2264,10 +2320,10 @@ ZMapDataStream zMapDataStreamCreate(const GQuark source_name,
           data_source = new ZMapDataStreamGIOStruct(source_name, file_name, open_mode, sequence, start, end) ;
           break ;
         case ZMapDataStreamType::BED:
-          data_source = new ZMapDataStreamBEDStruct(source_name, file_name, open_mode, sequence, start, end) ;
+          data_source = new ZMapDataStreamBEDStruct(source_name, file_name, open_mode, sequence, start, end, format) ;
           break ;
         case ZMapDataStreamType::BIGBED:
-          data_source = new ZMapDataStreamBIGBEDStruct(source_name, file_name, open_mode, sequence, start, end) ;
+          data_source = new ZMapDataStreamBIGBEDStruct(source_name, file_name, open_mode, sequence, start, end, format) ;
           break ;
         case ZMapDataStreamType::BIGWIG:
           data_source = new ZMapDataStreamBIGWIGStruct(source_name, file_name, open_mode, sequence, start, end) ;

@@ -122,6 +122,8 @@ public:
 
   ZMapFeatureSet makeFeatureSet(const char *feature_name_id, GQuark feature_set_id, 
                                 ZMapStyleMode feature_mode, const bool is_seq) ;
+  ZMapFeature makeBEDFeature(struct bed *bed_feature, const int standard_fields, 
+                             const char *so_term, GError **error) ;
   ZMapFeature makeFeature(const char *sequence, const char *source, const char *so_type,
                           const int start, const int end, const double score,
                           const char strand_c, const char *feature_name_in,
@@ -129,7 +131,6 @@ public:
                           const char target_strand = '.', const char *cigar_string = NULL,
                           ZMapStyleMode feature_mode = ZMAPSTYLE_MODE_INVALID, 
                           const bool is_seq = false, GError **error = NULL) ;
-  
   bool endOfFile() ;
   GError* error() ;
 
@@ -192,7 +193,7 @@ class ZMapDataStreamBEDStruct : public ZMapDataStreamStruct
 {
 public:
   ZMapDataStreamBEDStruct(const GQuark source_name, const char *file_name, const char *open_mode, 
-                          const char *sequence, const int start, const int end) ;
+                          const char *sequence, const int start, const int end, const GQuark format) ;
   ~ZMapDataStreamBEDStruct() ;
 
   bool isOpen() ;
@@ -203,6 +204,7 @@ public:
 private:
   struct bed* bed_features_ ;   // list of features read from the file
   struct bed* cur_feature_ ;    // current feature to process in the list of bed_features_
+  int standard_fields_ ;
 } ;
 
 
@@ -210,7 +212,7 @@ class ZMapDataStreamBIGBEDStruct : public ZMapDataStreamStruct
 {
 public:
   ZMapDataStreamBIGBEDStruct(const GQuark source_name, const char *file_name, const char *open_mode, 
-                             const char *sequence, const int start, const int end) ;
+                             const char *sequence, const int start, const int end, const GQuark format) ;
   ~ZMapDataStreamBIGBEDStruct() ;
 
   bool isOpen() ;
@@ -224,6 +226,7 @@ private:
   struct bigBedInterval *list_ ;         // list of intervals returned from the file
   struct bigBedInterval *cur_interval_ ; // current interval from list_
   struct bed* cur_feature_ ;             // current feature from interval
+  int standard_fields_ ;
 } ;
 
 

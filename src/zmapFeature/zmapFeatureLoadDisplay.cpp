@@ -708,11 +708,21 @@ void ZMapFeatureSequenceMapStructType::createTrackhubSourceChild(ZMapConfigSourc
     {
       GError *g_error = NULL ;
 
+      // Create a "format" string which includes the number of fields e.g. "bigbed 12".  This is a
+      // bit of a hack - ideally we'd pass these through separately but it has to get passed
+      // through various callbacks to the server, so using the format string for now for
+      // expediency.
+      stringstream format_ss ;
+      if (!track.fileType().empty())
+        {
+          format_ss << track.fileType().c_str() << " " << track.fields() ;
+        }
+
       ZMapConfigSource new_source = createSource(track.name().c_str(),
                                                  track.url().c_str(), 
                                                  parent_source->featuresets, 
                                                  parent_source->biotypes,
-                                                 track.fileType().c_str(),
+                                                 format_ss.str().c_str(),
                                                  true,
                                                  false,
                                                  &g_error) ;
