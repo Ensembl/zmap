@@ -62,19 +62,23 @@ public:
                             const double score = 0.0,
                             const char strand_c = '.',
                             const char phase_c = '.',
-                            const std::string &query_name = "",
-                            const int query_start = 0,
-                            const int query_end = 0,
-                            const std::string &cigar = "")
+                            const std::string &target_name = "",
+                            const int target_start = 0,
+                            const int target_end = 0,
+                            const char target_strand_c = '.',
+                            const std::string &cigar = "",
+                            ZMapFeatureAlignFormat align_format = ZMAPALIGN_FORMAT_INVALID)
     : start_(start),
       end_(end),
       score_(score),
       strand_c_(strand_c),
       phase_c_(phase_c),
-      query_name_(query_name),
-      query_start_(query_start),
-      query_end_(query_end),
-      cigar_(cigar)
+      target_name_(target_name),
+      target_start_(target_start),
+      target_end_(target_end),
+      target_strand_c_(target_strand_c),
+      cigar_(cigar),
+      align_format_(align_format)
   {}
 
   int start_ ;
@@ -82,10 +86,12 @@ public:
   double score_ ;
   char strand_c_ ;
   char phase_c_ ;
-  std::string query_name_ ;
-  int query_start_ ;
-  int query_end_ ;
+  std::string target_name_ ;
+  int target_start_ ;
+  int target_end_ ;
+  int target_strand_c_ ;
   std::string cigar_ ;
+  ZMapFeatureAlignFormat align_format_ ;
 } ;
 
 
@@ -117,11 +123,12 @@ public:
   ZMapFeatureSet makeFeatureSet(const char *feature_name_id, GQuark feature_set_id, 
                                 ZMapStyleMode feature_mode, const bool is_seq) ;
   ZMapFeature makeFeature(const char *sequence, const char *source, const char *so_type,
-                          const int start, const int end, const double dScore,
-                          const char strand_c, const char *feature_name,
-                          const bool have_target = false, const int query_start = 0, const int query_end = 0,
-                          ZMapStyleMode feature_mode = ZMAPSTYLE_MODE_INVALID, const bool is_seq = false,
-                          GError **error = NULL) ;
+                          const int start, const int end, const double score,
+                          const char strand_c, const char *feature_name_in,
+                          const bool have_target = false, const int target_start = 0, const int target_end = 0, 
+                          const char target_strand = '.', const char *cigar_string = NULL,
+                          ZMapStyleMode feature_mode = ZMAPSTYLE_MODE_INVALID, 
+                          const bool is_seq = false, GError **error = NULL) ;
   
   bool endOfFile() ;
   GError* error() ;
