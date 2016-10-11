@@ -1,0 +1,14 @@
+================================================================================   
+ZMapDataSource
+
+
+This directory contains the code that interfaces to the data sources from which
+ZMap retrieves features for display.
+
+The directory contains "old/existing" interface code, zmapOldXXX, mostly
+called from zmapView code and a new object-based interface, zmapDataSourcexxx.
+
+The new code presents a considerably simplified interface which will gradually
+replace the old interface.
+
+

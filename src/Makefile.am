@@ -117,9 +117,11 @@ pkgconfig_DATA = zmap.pc
 # some of these are further combined into 'parent' libXXX.a files.
 #
 
-noinst_LTLIBRARIES = libZMapApp.la libZMap.la libZMapAppServices.la \
-                     libZMapThr.la libZMapRemoteControl.la libZMapXML.la libZMapUtils.la \
-                     libzmapfoocanvas.la libZMapServers.la
+noinst_LTLIBRARIES = libZMapApp.la libZMap.la \
+                     libZMapAppServices.la libZMapRemoteControl.la \
+                     libZMapDataSource.la libZMapThreadSource.la libZMapServer.la libZMapServers.la \
+                     libZMapThreadsLib.la libZMapXML.la libZMapUtils.la \
+                     libzmapfoocanvas.la 
 
 
 libZMapApp_la_SOURCES =
@@ -134,29 +136,34 @@ zmapFeature/libZMapFeature.la \
 zmapGFF/libZMapGFF.la         \
 zmapView/libZMapView.la       \
 zmapWindow/libZMapWindow.la   \
-zmapServer/libZMapServer.la   \
-zmapServer/libZMapServers.la  \
 $(NULL)
 
 libZMapAppServices_la_SOURCES = 
 libZMapAppServices_la_LIBADD  = zmapAppServices/libZMapAppServices.la
 
-libZMapThr_la_SOURCES =
-libZMapThr_la_LIBADD  =       \
-zmapThreads/libZMapThreads.la \
-$(NULL)
-
 libZMapRemoteControl_la_SOURCES = 
 libZMapRemoteControl_la_LIBADD  = zmapRemoteControl/libZMapRemoteControl.la
+
+libZMapDataSource_la_SOURCES = 
+libZMapDataSource_la_LIBADD  = zmapDataSource/libZMapDataSource.la
+
+libZMapThreadSource_la_SOURCES =
+libZMapThreadSource_la_LIBADD  = zmapThreadSource/libZMapThreadSource.la
+
+libZMapServer_la_SOURCES = 
+libZMapServer_la_LIBADD  = zmapServer/libZMapServer.la
+
+libZMapServers_la_SOURCES = 
+libZMapServers_la_LIBADD  = zmapServer/libZMapServers.la
+
+libZMapThreadsLib_la_SOURCES =
+libZMapThreadsLib_la_LIBADD  = zmapThreadsLib/libZMapThreadsLib.la
 
 libZMapXML_la_SOURCES = 
 libZMapXML_la_LIBADD  = zmapXML/libZMapXML.la
 
 libZMapUtils_la_SOURCES = 
 libZMapUtils_la_LIBADD  = zmapUtils/libZMapUtils.la
-
-libZMapServers_la_SOURCES = 
-libZMapServers_la_LIBADD  = zmapServer/libZMapServers.la
 
 libzmapfoocanvas_la_SOURCES =
 libzmapfoocanvas_la_LIBADD  = libzmapfoocanvas/libzmapfoocanvas.la
@@ -184,11 +191,14 @@ zmap_LDADD =                                                 \
 	$(top_builddir)/.libs/libZMapApp.a                   \
 	$(top_builddir)/.libs/libZMap.a                      \
 	$(top_builddir)/.libs/libZMapAppServices.a           \
-	$(top_builddir)/.libs/libZMapThr.a                   \
 	$(top_builddir)/.libs/libZMapRemoteControl.a         \
+	$(top_builddir)/.libs/libZMapDataSource.a            \
+	$(top_builddir)/.libs/libZMapThreadSource.a          \
+	$(top_builddir)/.libs/libZMapServer.a                \
+	$(top_builddir)/.libs/libZMapServers.a               \
+	$(top_builddir)/.libs/libZMapThreadsLib.a            \
 	$(top_builddir)/.libs/libZMapXML.a                   \
 	$(top_builddir)/.libs/libZMapUtils.a                 \
-	$(top_builddir)/.libs/libZMapServers.a               \
 	$(top_builddir)/.libs/libzmapfoocanvas.a 
 
 
@@ -366,25 +376,14 @@ maintainer-clean-local:
 	git checkout $(EXTERNAL_PLACEHOLDERS)
 	@echo 'maintainer-clean-local: Finished removing all external library files....'
 
-
-
-ZMAP_BUILD_FILES = $(top_builddir)/zmapApp/*.o $(top_builddir)/zmapAppServices/*.o $(top_builddir)/zmapConfig/*.o \
-$(top_builddir)/zmapControl/*.o $(top_builddir)/zmapDraw/*.o $(top_builddir)/zmapFeature/*.o \
-$(top_builddir)/zmapGFF/*.o $(top_builddir)/zmapManager/*.o $(top_builddir)/zmapRemoteControl/*.o \
-$(top_builddir)/zmapServer/*.o $(top_builddir)/zmapThreads/*.o $(top_builddir)/zmapUtils/*.o \
-$(top_builddir)/zmapView/*.o $(top_builddir)/zmapWindow/*.o $(top_builddir)/zmapXML/*.o
-
+# Removes all build files in the zmapXXX sub-directories in the build directory which
+# will result in zmap being rebuilt.
 zmap-clean:
-	@echo 'clean-zmap: cleaning up all generated zmap files....'
-	rm -f $(top_builddir)/.libs/libZMap*.a
-	rm -f $(top_builddir)/libZMap*.la
-	rm -f $(top_builddir)/zmap $(top_builddir)/remotecontrol
-	rm -f $(top_builddir)/zmap-zmapAppmain_c.o $(top_builddir)/remotecontrol-remotecontroltest.o $(top_builddir)/zmap.pc
-	rm -f $(top_builddir)/zmap*/lib* rm -rf $(top_builddir)/zmap*/.libs
-	rm -rf $(ZMAP_BUILD_FILES)
-	@echo 'clean-zmap: Finished cleaning up all generated zmap files.'
-
-
+	@echo 'Starting cleaning up all zmap build files....'
+	@for i in `ls -d $(top_builddir)/zmap*` ; \
+	do { if [ -d $$i ] ; then ( cd $(top_builddir)/$$i ; make clean ) ; fi ; } \
+	done
+	@echo 'Finished cleaning up all zmap build files.'
 
 mkdocdir:
 	@if test ! -d docs ; then \

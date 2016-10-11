@@ -27,15 +27,6 @@
  *
  *-------------------------------------------------------------------
  */
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-#ifdef __cplusplus
-extern "C" {
-#endif
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 #ifndef ZMAP_UTILS_GUI_H
 #define ZMAP_UTILS_GUI_H
 
@@ -573,16 +564,11 @@ GtkWidget *zMapGUINotebookCreateWidget(ZMapGuiNotebook notebook_spec) ;
 GtkWidget *zMapGUINotebookGetNoteBookWidg(GtkWidget *compound_note_widget) ;
 GtkWidget *zMapGUINotebookGetCurrChapterWidg(GtkWidget *compound_note_widget) ;
 
+
+
 gboolean zMapGUIXWindowChangeProperty(Display *x_display, Window x_window, char *property, char *change_to) ;
 
 
 
 #endif /* ZMAP_UTILS_GUI_H */
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-#ifdef __cplusplus
-}
-#endif
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 

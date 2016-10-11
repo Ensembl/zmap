@@ -1,4 +1,4 @@
-/*  File: zmapDataSource_P.h
+/*  File: zmapDataStream_P.h
  *  Author: Steve Miller (sm23@sanger.ac.uk)
  *  Copyright (c) 2006-2015: Genome Research Ltd.
  *-------------------------------------------------------------------
@@ -28,12 +28,11 @@
  * Exported functions:
  *-------------------------------------------------------------------
  */
+#ifndef DATA_STREAM_P_H
+#define DATA_STREAM_P_H
 
-#ifndef DATA_SOURCE_P_H
-#define DATA_SOURCE_P_H
 
-
-#include <ZMap/zmapDataSource.hpp>
+#include <ZMap/zmapDataStream.hpp>
 
 
 #ifdef USE_HTSLIB
@@ -55,10 +54,10 @@ struct errCatch ;
 /*
  * Utility class to store info about a feature
  */
-class ZMapDataSourceFeatureData
+class ZMapDataStreamFeatureData
 {
 public:
-  ZMapDataSourceFeatureData(const int start = 0,
+  ZMapDataStreamFeatureData(const int start = 0,
                             const int end = 0,
                             const double score = 0.0,
                             const char strand_c = '.',
@@ -99,11 +98,11 @@ public:
 /*
  * General source type
  */
-class ZMapDataSourceStruct
+class ZMapDataStreamStruct
 {
 public:
-  ZMapDataSourceStruct(const GQuark source_name, const char *sequence, const int start, const int end) ;
-  virtual ~ZMapDataSourceStruct() ;
+  ZMapDataStreamStruct(const GQuark source_name, const char *sequence, const int start, const int end) ;
+  virtual ~ZMapDataStreamStruct() ;
 
   virtual gboolean init(const char *region_name, int start, int end) ;
 
@@ -134,7 +133,7 @@ public:
   bool endOfFile() ;
   GError* error() ;
 
-  ZMapDataSourceType type ;
+  ZMapDataStreamType type ;
 
 protected:
 
@@ -160,12 +159,12 @@ protected:
  *  Full declarations of concrete types to represent the specific data sources types
  */
 
-class ZMapDataSourceGIOStruct : public ZMapDataSourceStruct
+class ZMapDataStreamGIOStruct : public ZMapDataStreamStruct
 {
 public:
-  ZMapDataSourceGIOStruct(const GQuark source_name, const char *file_name, const char *open_mode, 
+  ZMapDataStreamGIOStruct(const GQuark source_name, const char *file_name, const char *open_mode, 
                           const char *sequence, const int start, const int end) ;
-  ~ZMapDataSourceGIOStruct() ;
+  ~ZMapDataStreamGIOStruct() ;
 
   bool isOpen() ;
   bool checkHeader(std::string &err_msg, bool &empty_or_eof, const bool sequence_server) ;
@@ -189,12 +188,12 @@ private:
 } ;
 
 
-class ZMapDataSourceBEDStruct : public ZMapDataSourceStruct
+class ZMapDataStreamBEDStruct : public ZMapDataStreamStruct
 {
 public:
-  ZMapDataSourceBEDStruct(const GQuark source_name, const char *file_name, const char *open_mode, 
+  ZMapDataStreamBEDStruct(const GQuark source_name, const char *file_name, const char *open_mode, 
                           const char *sequence, const int start, const int end) ;
-  ~ZMapDataSourceBEDStruct() ;
+  ~ZMapDataStreamBEDStruct() ;
 
   bool isOpen() ;
   bool checkHeader(std::string &err_msg, bool &empty_or_eof, const bool sequence_server) ;
@@ -207,12 +206,12 @@ private:
 } ;
 
 
-class ZMapDataSourceBIGBEDStruct : public ZMapDataSourceStruct
+class ZMapDataStreamBIGBEDStruct : public ZMapDataStreamStruct
 {
 public:
-  ZMapDataSourceBIGBEDStruct(const GQuark source_name, const char *file_name, const char *open_mode, 
+  ZMapDataStreamBIGBEDStruct(const GQuark source_name, const char *file_name, const char *open_mode, 
                              const char *sequence, const int start, const int end) ;
-  ~ZMapDataSourceBIGBEDStruct() ;
+  ~ZMapDataStreamBIGBEDStruct() ;
 
   bool isOpen() ;
   bool checkHeader(std::string &err_msg, bool &empty_or_eof, const bool sequence_server) ;
@@ -228,12 +227,12 @@ private:
 } ;
 
 
-class ZMapDataSourceBIGWIGStruct : public ZMapDataSourceStruct
+class ZMapDataStreamBIGWIGStruct : public ZMapDataStreamStruct
 {
 public:
-  ZMapDataSourceBIGWIGStruct(const GQuark source_name, const char *file_name, const char *open_mode, 
+  ZMapDataStreamBIGWIGStruct(const GQuark source_name, const char *file_name, const char *open_mode, 
                              const char *sequence, const int start, const int end) ;
-  ~ZMapDataSourceBIGWIGStruct() ;
+  ~ZMapDataStreamBIGWIGStruct() ;
 
   bool isOpen() ;
   bool checkHeader(std::string &err_msg, bool &empty_or_eof, const bool sequence_server) ;
@@ -250,12 +249,12 @@ private:
 
 #ifdef USE_HTSLIB
 
-class ZMapDataSourceHTSStruct : public ZMapDataSourceStruct
+class ZMapDataStreamHTSStruct : public ZMapDataStreamStruct
 {
 public:
-  ZMapDataSourceHTSStruct(const GQuark source_name, const char *file_name, const char *open_mode, 
+  ZMapDataStreamHTSStruct(const GQuark source_name, const char *file_name, const char *open_mode, 
                           const char *sequence, const int start, const int end) ;
-  ~ZMapDataSourceHTSStruct() ;
+  ~ZMapDataStreamHTSStruct() ;
 
   gboolean init(const char *region_name, int start, int end) ;
   bool isOpen() ;
@@ -278,16 +277,16 @@ public:
 private:
   bool processRead() ;
 
-  ZMapDataSourceFeatureData cur_feature_data_ ;  
+  ZMapDataStreamFeatureData cur_feature_data_ ;  
 } ;
 
 
-class ZMapDataSourceBCFStruct : public ZMapDataSourceStruct
+class ZMapDataStreamBCFStruct : public ZMapDataStreamStruct
 {
 public:
-  ZMapDataSourceBCFStruct(const GQuark source_name, const char *file_name, const char *open_mode, 
+  ZMapDataStreamBCFStruct(const GQuark source_name, const char *file_name, const char *open_mode, 
                           const char *sequence, const int start, const int end) ;
-  ~ZMapDataSourceBCFStruct() ;
+  ~ZMapDataStreamBCFStruct() ;
   bool isOpen() ;
   bool checkHeader(std::string &err_msg, bool &empty_or_eof, const bool sequence_server) ;
   bool readLine() ;
@@ -305,22 +304,22 @@ public:
 
 private:
   int rid_ ; // stores the ref sequence id value used by bcf parser for our required sequence_
-  ZMapDataSourceFeatureData cur_feature_data_ ;
+  ZMapDataStreamFeatureData cur_feature_data_ ;
 } ;
 
 #endif
 
 
-typedef ZMapDataSourceGIOStruct *ZMapDataSourceGIO ;
-typedef ZMapDataSourceBEDStruct *ZMapDataSourceBED ;
-typedef ZMapDataSourceBIGBEDStruct *ZMapDataSourceBIGBED ;
-typedef ZMapDataSourceBIGWIGStruct *ZMapDataSourceBIGWIG ;
+typedef ZMapDataStreamGIOStruct *ZMapDataStreamGIO ;
+typedef ZMapDataStreamBEDStruct *ZMapDataStreamBED ;
+typedef ZMapDataStreamBIGBEDStruct *ZMapDataStreamBIGBED ;
+typedef ZMapDataStreamBIGWIGStruct *ZMapDataStreamBIGWIG ;
 #ifdef USE_HTSLIB
-typedef ZMapDataSourceHTSStruct *ZMapDataSourceHTS ;
-typedef ZMapDataSourceBCFStruct *ZMapDataSourceBCF ;
+typedef ZMapDataStreamHTSStruct *ZMapDataStreamHTS ;
+typedef ZMapDataStreamBCFStruct *ZMapDataStreamBCF ;
 #endif
 
 
 
 
-#endif
+#endif /* DATA_STREAM_P_H */

@@ -26,7 +26,7 @@
  * Description: Describes the interface between zmapServer, the generalised
  *              server interface and the underlying server specific
  *              implementation. Only specific server implementations should
- *              include this header, its not really for general consumption.
+ *              include this header, its not for general consumption.
  *
  *-------------------------------------------------------------------
  */
@@ -35,9 +35,7 @@
 
 #include <glib.h>
 
-#include <ZMap/zmapFeature.hpp>
 #include <ZMap/zmapServerProtocol.hpp>
-
 
 
 
@@ -49,8 +47,8 @@ typedef gboolean (*ZMapServerGlobalFunc)(void) ;
 typedef gboolean (*ZMapServerCreateFunc)(void **server_conn,
                                          GQuark source_name,
 					 char *config_file,
-					 ZMapURL url, char *format,
-                                         char *version_str, int timeout) ;
+					 ZMapURL url,
+                                         char *version_str) ;
 
 typedef ZMapServerResponseType (*ZMapServerOpenFunc)(void *server_conn, ZMapServerReqOpen req_open) ;
 

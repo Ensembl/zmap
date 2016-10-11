@@ -128,9 +128,27 @@ typedef struct DoAllAlignBlocksStructType
 /* These provide the interface functions for an ensembl server implementation, i.e. you
  * shouldn't change these prototypes without changing all the other server prototypes..... */
 static gboolean globalInit(void) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static gboolean createConnection(void **server_out,
-                                 GQuark source_name, char *config_file, ZMapURL url, char *format,
-                                 char *version_str, int timeout) ;
+                                 char *config_file, ZMapURL url,
+                                 char *format,
+                                 char *version_str, int timeout, pthread_mutex_t *mutex) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+static gboolean createConnection(void **server_out,
+                                 GQuark source_name, char *config_file, ZMapURL url,
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+                                 char *format,
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+                                 char *version_str
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+, int timeout
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+) ;
+
 static ZMapServerResponseType openConnection(void *server, ZMapServerReqOpen req_open) ;
 static ZMapServerResponseType getInfo(void *server, ZMapServerReqGetServerInfo info) ;
 static ZMapServerResponseType getFeatureSetNames(void *server,
@@ -206,6 +224,8 @@ static ZMapFeatureSet makeFeatureSet(const char *feature_name_id, GQuark feature
 
 static Slice* getSlice(EnsemblServer server, const char *seq_name, long start, long end, int strand) ;
 static char* getSequence(EnsemblServer server, const char *seq_name, long start, long end, int strand) ;
+
+
 
 
 
@@ -294,9 +314,25 @@ static gboolean globalInit(void)
   return result ;
 }
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static gboolean createConnection(void **server_out,
                                  GQuark source_name, char *config_file, ZMapURL url, char *format,
-                                 char *version_str, int timeout)
+                                 char *version_str, int timeout, pthread_mutex_t *mutex)
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+static gboolean createConnection(void **server_out,
+                                 GQuark source_name, char *config_file, ZMapURL url,
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+                                 char *format,
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+                                 char *version_str
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+, int timeout
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+)
 {
   gboolean result = TRUE ;
   EnsemblServer server ;

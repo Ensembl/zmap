@@ -1,4 +1,4 @@
-/*  File: zmapSlave_P.h
+/*  File: zmapDataSource_P.hpp
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2015: Genome Research Ltd.
  *-------------------------------------------------------------------
@@ -18,43 +18,23 @@
  * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
- * and was written by
- *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
- *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ * originally written by:
  *
- * Description: 
+ * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk,
+ *      Gemma Barson (Sanger Institute, UK) gb10@sanger.ac.uk
+ *
+ * Description: Private types etc for DataSource package.
+ *
  *-------------------------------------------------------------------
  */
-#ifndef ZMAP_SLAVE_P_H
-#define ZMAP_SLAVE_P_H
+#ifndef ZMAPDATASOURCE_P_H
+#define ZMAPDATASOURCE_P_H
 
-#include <glib.h>
-#include <ZMap/zmapThreads.hpp>
+#include <ZMap/zmapDataSource.hpp>
 
+ZMapThreadReturnCode zmapDataSourceThreadRequestHandler(void **slave_data, void *request_in, char **err_msg_out) ;
+ZMapThreadReturnCode zmapDataSourceThreadTerminateHandler(void **slave_data, char **err_msg_out) ;
+ZMapThreadReturnCode zmapDataSourceThreadDestroyHandler(void **slave_data) ;
 
-
-typedef struct
-{
-  ZMapThread thread ;
-  gboolean thread_died ;
-  gchar *initial_error ;				    /* Holds string description of first
-							       serious error that caused thread
-							       termination. */
-
-  void *slave_data ;					    /* Any state required by slave. */
-} zmapThreadCBstruct, *zmapThreadCB ;
-
-
-
-
-/* Error messages, needs some refining and changing now thread bit is more generalised. */
-#define ZMAPTHREAD_SLAVECREATE  "Thread creation failed"
-#define ZMAPTHREAD_SLAVEOPEN    "Thread open failed"
-#define ZMAPTHREAD_SLAVECONTEXT "Thread create context failed"
-#define ZMAPTHREAD_SLAVEREQUEST "Thread request failed"
-
-
-
-
-#endif /* !ZMAP_SLAVE_P_H */
+#endif /* ZMAPDATASOURCE_P_H */

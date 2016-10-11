@@ -49,7 +49,7 @@
 #include <ZMap/zmapUtilsGUI.hpp>
 #include <ZMap/zmapAppServices.hpp>
 #include <ZMap/zmapUrl.hpp>
-#include <ZMap/zmapDataSource.hpp>
+#include <ZMap/zmapDataStream.hpp>
 #include <ZMap/zmapConfigStrings.hpp>
 #include <ZMap/zmapServerProtocol.hpp>
 
@@ -1266,14 +1266,14 @@ const char* getEntryText(GtkEntry *entry)
 /* Get the script to use for the given file type. This should not be hard-coded really but long
  * term we will hopefully not need these scripts when zmap can do the remapping itself. Returns
  * null if not found or not executable */
-static const char* fileTypeGetPipeScript(ZMapDataSourceType source_type, 
+static const char* fileTypeGetPipeScript(ZMapDataStreamType source_type, 
                                          string &err_msg)
 {
   const char *result = NULL ;
 
-  if (source_type == ZMapDataSourceType::HTS)
+  if (source_type == ZMapDataStreamType::HTS)
     result = "bam_get" ;
-  else if (source_type == ZMapDataSourceType::BIGWIG)
+  else if (source_type == ZMapDataStreamType::BIGWIG)
     result = "bigwig_get" ;
   else
     err_msg = "File type does not have a remapping script" ;
@@ -1317,7 +1317,7 @@ static string constructRegularFileURL(const char *filename, string &err_msg)
 static string constructPipeFileURL(MainFrame main_frame, 
                                    const char *source_name,
                                    const char *filename, 
-                                   ZMapDataSourceType source_type,
+                                   ZMapDataStreamType source_type,
                                    string &err_msg)
 {
   string url;
@@ -1365,7 +1365,7 @@ static string constructPipeFileURL(MainFrame main_frame,
                                          req_sequence, 
                                          source_name) ;
 
-                  if (source_type == ZMapDataSourceType::BIGWIG)
+                  if (source_type == ZMapDataStreamType::BIGWIG)
                     {
                       // for bigwig, we need the strand for the script. ask the user.
                       bool forward_strand = zMapGUIMsgGetBoolFull(GTK_WINDOW(main_frame->toplevel), 
@@ -1395,9 +1395,9 @@ static string constructPipeFileURL(MainFrame main_frame,
 }
 
 
-static ZMapDataSourceType promptForFileType()
+static ZMapDataStreamType promptForFileType()
 {
-  ZMapDataSourceType source_type = ZMapDataSourceType::UNK ;
+  ZMapDataStreamType source_type = ZMapDataStreamType::UNK ;
 
   GtkWidget *dialog = gtk_dialog_new_with_buttons("Search for Track Hubs",
                                                   NULL,
@@ -1423,10 +1423,10 @@ static ZMapDataSourceType promptForFileType()
   /* Add the rows to the combo box */
   bool first = true ;
 
-  for (int type = (int)ZMapDataSourceType::NONE + 1; type < (int)ZMapDataSourceType::UNK; ++type)
+  for (int type = (int)ZMapDataStreamType::NONE + 1; type < (int)ZMapDataStreamType::UNK; ++type)
     {
-      ZMapDataSourceType type_t = (ZMapDataSourceType)type ;
-      string format = zMapDataSourceFormatFromType(type_t) ;
+      ZMapDataStreamType type_t = (ZMapDataStreamType)type ;
+      string format = zMapDataStreamFormatFromType(type_t) ;
 
       GtkTreeIter iter;
       gtk_list_store_append(store, &iter);
@@ -1455,7 +1455,7 @@ static ZMapDataSourceType promptForFileType()
           gtk_tree_model_get(model, &iter, 0, &format, -1);
           
           if (format)
-            source_type = zMapDataSourceTypeFromFormat(format, NULL) ;
+            source_type = zMapDataStreamTypeFromFormat(format, NULL) ;
         }
     }
 
@@ -1476,7 +1476,7 @@ static string constructFileURL(MainFrame main_frame,
   string url("");
 
   GError *g_error = NULL ;
-  ZMapDataSourceType source_type = zMapDataSourceTypeFromFilename(filename, &g_error) ;
+  ZMapDataStreamType source_type = zMapDataStreamTypeFromFilename(filename, &g_error) ;
 
   if (g_error && g_error->code == ZMAPSERVER_ERROR_UNKNOWN_EXTENSION)
     {
@@ -1486,7 +1486,7 @@ static string constructFileURL(MainFrame main_frame,
       // We couldn't determine the file type from the extension. As the user instead.
       source_type = promptForFileType() ;
 
-      if (source_type == ZMapDataSourceType::UNK)
+      if (source_type == ZMapDataStreamType::UNK)
         g_set_error(&g_error, ZMAP_SERVER_ERROR, ZMAPSERVER_ERROR_UNKNOWN_TYPE, "Failed to determine file type") ;
     }
 
@@ -1496,22 +1496,22 @@ static string constructFileURL(MainFrame main_frame,
     }
   else
     {
-      format = zMapDataSourceFormatFromType(source_type) ;
+      format = zMapDataStreamFormatFromType(source_type) ;
 
       string err_msg;
 
       // Some file types currently have special treatment
       switch (source_type)
         {
-        case ZMapDataSourceType::GIO: //fall through
-        case ZMapDataSourceType::HTS: //fall through
-        case ZMapDataSourceType::BCF:
-        case ZMapDataSourceType::BIGBED: //fall through
+        case ZMapDataStreamType::GIO: //fall through
+        case ZMapDataStreamType::HTS: //fall through
+        case ZMapDataStreamType::BCF:
+        case ZMapDataStreamType::BIGBED: //fall through
           url = constructRegularFileURL(filename, err_msg) ;
           break ;
 
-        case ZMapDataSourceType::BED:    //fall through
-        case ZMapDataSourceType::BIGWIG:
+        case ZMapDataStreamType::BED:    //fall through
+        case ZMapDataStreamType::BIGWIG:
           
           url = constructPipeFileURL(main_frame, source_name, filename, source_type, err_msg) ;
           break ;

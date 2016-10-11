@@ -150,9 +150,27 @@ typedef gboolean (*ParseMethodNamesFunc)(AcedbServer server, char *method_str_in
 /* These provide the interface functions for an acedb server implementation, i.e. you
  * shouldn't change these prototypes without changing all the other server prototypes..... */
 static gboolean globalInit(void) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static gboolean createConnection(void **server_out,
 				 GQuark source_name, char *config_file, ZMapURL url, char *format,
-                                 char *version_str, int timeout) ;
+                                 char *version_str, int timeout,
+                                 pthread_mutex_t *mutex) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+static gboolean createConnection(void **server_out,
+				 GQuark source_name, char *config_file, ZMapURL url,
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+                                 char *format,
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+                                 char *version_str
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+, int timeout
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+) ;
+
 static ZMapServerResponseType openConnection(void *server, ZMapServerReqOpen req_open) ;
 static ZMapServerResponseType getInfo(void *server, ZMapServerReqGetServerInfo info) ;
 static ZMapServerResponseType getFeatureSetNames(void *server,
@@ -297,9 +315,20 @@ static gboolean globalInit(void)
   return result ;
 }
 
+
 static gboolean createConnection(void **server_out,
-				 GQuark source_name, char *config_file, ZMapURL url, char *format,
-                                 char *version_str, int timeout)
+				 GQuark source_name, char *config_file, ZMapURL url,
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+                                 char *format,
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+                                 char *version_str
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+, int timeout
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+)
 {
   gboolean result = FALSE ;
   GError *error = NULL ;
@@ -365,7 +394,8 @@ static gboolean createConnection(void **server_out,
   *server_out = (void *)server ;
 
   if ((server->last_err_status =
-       AceConnCreate(&(server->connection), server->host, url->port, url->user, url->passwd, timeout)) == ACECONN_OK)
+       AceConnCreate(&(server->connection), server->host,
+                     url->port, url->user, url->passwd, ACEDB_SERVER_DEFAULT_TIMEOUT)) == ACECONN_OK)
     result = TRUE ;
 
   return result ;

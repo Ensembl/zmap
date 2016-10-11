@@ -46,28 +46,12 @@
 #define VIEW_FILTERED "Highlight filtered columns"
 
 
-
 typedef struct
 {
   GList *window_list;
 } ContextDestroyListStruct, *ContextDestroyList ;
 
 
-/* Used in stepListFindRequest() to search for a step or a connection. */
-typedef struct
-{
-  ZMapServerReqType request_type ;
-  ZMapViewConnectionStep step ;
-  ZMapViewConnectionRequest request ;
-} StepListFindStruct, *StepListFind ;
-
-
-/* Used in zmapViewStepListStepRequestDeleteAll(). */
-typedef struct
-{
-  ZMapViewConnectionStepList step_list ;
-  ZMapViewConnection connection ;
-} StepListDeleteStruct, *StepListDelete ;
 
 
 
@@ -93,9 +77,6 @@ typedef struct ForAllDataStructType
 
 static void cwh_destroy_key(gpointer cwh_data) ;
 static void cwh_destroy_value(gpointer cwh_data) ;
-static ZMapViewConnectionStep stepListFindStep(ZMapViewConnectionStepList step_list, ZMapServerReqType request_type) ;
-static void stepDestroy(gpointer data, gpointer user_data) ;
-static void formatSession(gpointer data, gpointer user_data) ;
 
 static ZMapGuiNotebookChapter makeChapter(ZMapGuiNotebook note_book_parent, ZMapView view) ;
 static void readChapter(ZMapGuiNotebookChapter chapter, ZMapView view) ;
@@ -107,6 +88,10 @@ static void forAllCB(void *data, void *user_data) ;
 static void setCursorCB(ZMapWindow window, void *user_data) ;
 static void toggleDisplayCoordinatesCB(ZMapWindow, void* user_data) ;
 
+static void formatSession(gpointer data, gpointer user_data) ;
+
+static void invoke_merge_in_names(gpointer list_data, gpointer user_data) ;
+
 
 /*
  *                  External interface functions.
@@ -116,6 +101,60 @@ static void toggleDisplayCoordinatesCB(ZMapWindow, void* user_data) ;
 /* This wierd macro creates a function that will return string literals for each num in the ZMAP_XXXX_LIST's. */
 ZMAP_ENUM_AS_EXACT_STRING_FUNC(zMapViewThreadStatus2ExactStr, ZMapViewThreadStatus, ZMAP_VIEW_THREAD_STATE_LIST) ;
 
+
+
+//  Some context functions....
+//
+
+
+// Simply cover function for internal version.
+ZMapFeatureContext zMapViewCreateContext(ZMapView view, GList *feature_set_names, ZMapFeatureSet feature_set)
+{
+  ZMapFeatureContext context = NULL ;
+
+  context = zmapViewCreateContext(view, feature_set_names, feature_set) ;
+
+  return context ;
+}
+
+
+
+// Do a merge and draw of a new context into an existing one in view.
+ZMapFeatureContextMergeCode zMapViewContextMerge(ZMapView view, ZMapFeatureContext new_context)
+{
+  ZMapFeatureContextMergeCode result = ZMAPFEATURE_CONTEXT_ERROR ;
+  ZMapFeatureContextMergeStats merge_stats = NULL ;
+  bool acedb_source = false ;
+  GList *masked = NULL ;
+
+
+  result = zmapJustMergeContext(view,
+                                &new_context, &merge_stats,
+                                &masked, acedb_source, TRUE) ;
+
+  // do something with merge stats ?
+  g_free(merge_stats) ;
+
+
+  if (result == ZMAPFEATURE_CONTEXT_OK)
+    {
+      // why no return code ??
+      zmapJustDrawContext(view, new_context, masked, NULL, NULL) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      result = TRUE ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+    }
+
+  return result ;
+}
+
+
+
+// Some utilities for views, visibility etc.
+// 
 
 
 gpointer zMapViewFindView(ZMapView view_in, gpointer view_id)
@@ -192,30 +231,6 @@ gboolean zMapViewGetFlag(ZMapView view, ZMapFlag flag)
 }
 
 
-/* Return, as text, details of all data connections for this view. Interface is not completely
- * parameterised in that this function "knows" how to format the reply for its caller.
- */
-gboolean zMapViewSessionGetAsText(ZMapViewWindow view_window, GString *session_data_inout)
-{
-  gboolean result = FALSE ;
-  ZMapView view ;
-
-  view = view_window->parent_view ;
-
-  if (view->connection_list)
-    {
-      g_string_append_printf(session_data_inout, "\tSequence: %s\n\n", view->view_sequence->sequence) ;
-
-      g_list_foreach(view->connection_list, formatSession, session_data_inout) ;
-
-      result = TRUE ;
-    }
-
-  return result ;
-}
-
-
-
 
 /*!
  * \briefReturns a ZMapGuiNotebookChapter containing all general zmap preferences.
@@ -289,9 +304,27 @@ void zmapViewBusyFull(ZMapView zmap_view, gboolean busy, const char *file, const
   return ;
 }
 
+/* Return, as text, details of all data connections for this view. Interface is not completely
+ * parameterised in that this function "knows" how to format the reply for its caller.
+ */
+gboolean zMapViewSessionGetAsText(ZMapViewWindow view_window, GString *session_str_inout)
+{
+  gboolean result = FALSE ;
+  ZMapView view ;
 
+  view = view_window->parent_view ;
 
+  if (view->connection_list)
+    {
+      g_string_append_printf(session_str_inout, "\tSequence: %s\n\n", view->view_sequence->sequence) ;
 
+      g_list_foreach(view->connection_list, formatSession, session_str_inout) ;
+
+      result = TRUE ;
+    }
+
+  return result ;
+}
 
 
 
@@ -301,13 +334,23 @@ void zmapViewBusyFull(ZMapView zmap_view, gboolean busy, const char *file, const
  */
 
 
+void zmapViewMergeColNames(ZMapView view, GList *names)
+{
+  g_list_foreach(view->window_list, invoke_merge_in_names, names) ;
+
+  return ;
+}
+
+
+
+
 
 /* Not sure where this is used...check this out.... in checkStateConnections() zmapView.c*/
 gboolean zmapAnyConnBusy(GList *connection_list)
 {
   gboolean result = FALSE ;
   GList* list_item ;
-  ZMapViewConnection view_con ;
+  ZMapNewDataSource view_con ;
 
   if (connection_list)
     {
@@ -315,7 +358,7 @@ gboolean zmapAnyConnBusy(GList *connection_list)
 
       do
 	{
-	  view_con = (ZMapViewConnection)(list_item->data) ;
+	  view_con = (ZMapNewDataSource)(list_item->data) ;
 
 	  if (view_con->curr_request == ZMAPTHREAD_REQUEST_EXECUTE)
 	    {
@@ -328,313 +371,6 @@ gboolean zmapAnyConnBusy(GList *connection_list)
 
   return result ;
 }
-
-
-
-
-/*
- *
- * A series of functions for handling the stepping through of sending requests to slave threads.
- *
- */
-
-
-/* Make the step list. */
-ZMapViewConnectionStepList zmapViewStepListCreate(StepListDispatchCB dispatch_func,
-						  StepListProcessDataCB process_func,
-						  StepListFreeDataCB free_func)
-{
-  ZMapViewConnectionStepList step_list ;
-
-  step_list = g_new0(ZMapViewConnectionStepListStruct, 1) ;
-
-  step_list->dispatch_func = dispatch_func ;
-  step_list->process_func = process_func ;
-  step_list->free_func = free_func ;
-
-  return step_list ;
-}
-
-
-/* Add a step to the step list, if it's the first step to be added then the current step will be
- * set to this first step. */
-void zmapViewStepListAddStep(ZMapViewConnectionStepList step_list, ZMapServerReqType request_type,
-			     StepListActionOnFailureType on_fail)
-{
-  ZMapViewConnectionStep step ;
-  gboolean first = FALSE ;
-
-  if (!(step_list->steps))
-    first = TRUE ;
-
-  step = g_new0(ZMapViewConnectionStepStruct, 1) ;
-  step->state = STEPLIST_INVALID ;        // might not be requested
-  step->on_fail = on_fail ;
-  step->request = request_type ;
-  step_list->steps = g_list_append(step_list->steps, step) ;
-
-  if (first)
-    step_list->current = step_list->steps ;		    /* Make current the first step. */
-
-  return ;
-}
-
-
-/* Add a connection to the specified step in the step list. */
-ZMapViewConnectionRequest zmapViewStepListAddServerReq(ZMapViewConnectionStepList step_list,
-						       ZMapViewConnection view_con,
-						       ZMapServerReqType request_type,
-						       gpointer request_data,
-						       StepListActionOnFailureType on_fail)
-{
-  ZMapViewConnectionRequest request = NULL ;
-  ZMapViewConnectionStep step ;
-
-  if ((step = stepListFindStep(step_list, request_type)))
-    {
-      request = g_new0(ZMapViewConnectionRequestStruct, 1) ;
-      step->state = request->state = STEPLIST_PENDING ;           // some duplication here?
-      request->request_data = request_data ;
-      step->connection_req = request ;
-
-      if(on_fail != 0)
-	step->on_fail = on_fail ;
-      //printf("add request %d to %s\n",request_type,view_con->url);
-    }
-
-  return request ;
-}
-
-
-
-// create a complete step list. each step will be processed is a request is added
-// steps default to STEPLIST_INVALID
-ZMapViewConnectionStepList zmapViewConnectionStepListCreate(StepListDispatchCB dispatch_func,
-							    StepListProcessDataCB process_func,
-							    StepListFreeDataCB free_func)
-{
-  ZMapViewConnectionStepList step_list;
-
-  step_list = zmapViewStepListCreate(dispatch_func,
-				     process_func,
-				     free_func) ;
-  zmapViewStepListAddStep(step_list, ZMAP_SERVERREQ_CREATE,    REQUEST_ONFAIL_CANCEL_THREAD) ;
-  zmapViewStepListAddStep(step_list, ZMAP_SERVERREQ_OPEN,      REQUEST_ONFAIL_CANCEL_THREAD) ;
-  zmapViewStepListAddStep(step_list, ZMAP_SERVERREQ_GETSERVERINFO, REQUEST_ONFAIL_CANCEL_THREAD) ;
-  zmapViewStepListAddStep(step_list, ZMAP_SERVERREQ_FEATURESETS, REQUEST_ONFAIL_CANCEL_THREAD) ;
-  zmapViewStepListAddStep(step_list, ZMAP_SERVERREQ_STYLES,    REQUEST_ONFAIL_CANCEL_THREAD) ;
-  zmapViewStepListAddStep(step_list, ZMAP_SERVERREQ_NEWCONTEXT,REQUEST_ONFAIL_CANCEL_THREAD) ;
-  zmapViewStepListAddStep(step_list, ZMAP_SERVERREQ_FEATURES,  REQUEST_ONFAIL_CANCEL_THREAD) ;
-  zmapViewStepListAddStep(step_list, ZMAP_SERVERREQ_SEQUENCE,  REQUEST_ONFAIL_CANCEL_THREAD) ;
-  zmapViewStepListAddStep(step_list, ZMAP_SERVERREQ_GETSTATUS,  REQUEST_ONFAIL_CANCEL_THREAD) ;
-  zmapViewStepListAddStep(step_list, ZMAP_SERVERREQ_TERMINATE, REQUEST_ONFAIL_CANCEL_THREAD) ;
-
-  return(step_list);
-
-}
-
-
-/* The meat of the step list stuff, check step list to see where we are and dispatch next
- * step if we are ready for it.
- *
- *  */
-void zmapViewStepListIter(ZMapViewConnection view_con)
-{
-  ZMapViewConnectionStepList step_list = view_con->step_list;
-  gboolean result = FALSE;
-
-  if (step_list->current)
-    {
-      ZMapViewConnectionStep curr_step ;
-
-      curr_step = (ZMapViewConnectionStep)(step_list->current->data) ;
-
-      switch (curr_step->state)
-	{
-	case STEPLIST_PENDING:
-	  {
-	    /* All requests are in STEPLIST_PENDING state and after dispatching will go into STEPLIST_DISPATCHED. */
-
-            /* Call users dispatch func. */
-	    if ((step_list->dispatch_func))
-	      result = step_list->dispatch_func(view_con, (ZMapServerReqAny)(curr_step->connection_req->request_data)) ;
-
-	    if (result || !(step_list->dispatch_func))
-	      {
-		zMapThreadRequest(view_con->thread, curr_step->connection_req->request_data) ;
-
-		curr_step->connection_req->state = STEPLIST_DISPATCHED ;
-		curr_step->state = STEPLIST_DISPATCHED ;
-	      }
-	    else
-	      {
-		curr_step->connection_req->has_failed = TRUE ;
-	      }
-
-	    break ;
-	  }
-	case STEPLIST_DISPATCHED:
-	  {
-	    if (curr_step->connection_req->state != STEPLIST_DISPATCHED)
-	      curr_step->state = STEPLIST_FINISHED ;
-
-	    break ;
-	  }
-	case STEPLIST_INVALID:  // if a step is not used then skip over it
-	case STEPLIST_FINISHED:
-	  {
-	    /* Move to next step, do not dispatch, that is our callers decision.
-	     * If this is the last step then current will be set to NULL. */
-	    step_list->current = step_list->current->next ;
-
-	    break ;
-	  }
-	default:
-	  {
-	    zMapLogFatalLogicErr("switch(), unknown value: %d", curr_step->state) ;
-
-	    break ;
-	  }
-	}
-    }
-
-  return ;
-}
-
-
-
-static void stepFindReq(gpointer data, gpointer user_data)
-{
-  ZMapViewConnectionStep step = (ZMapViewConnectionStep)data ;
-  StepListFind step_find = (StepListFind)user_data ;
-
-  if (!(step_find->request_type) || step->request == step_find->request_type)
-    {
-      step_find->step = step ;
-      step_find->request = step->connection_req;
-    }
-
-  return ;
-}
-
-/* Find a connections request in a given request step. */
-ZMapViewConnectionRequest zmapViewStepListFindRequest(ZMapViewConnectionStepList step_list,
-						      ZMapServerReqType request_type, ZMapViewConnection connection)
-{
-  ZMapViewConnectionRequest request = NULL ;
-
-  if (step_list)
-    {
-      StepListFindStruct step_find = {ZMAP_SERVERREQ_INVALID} ;
-
-      step_find.request_type = request_type ;
-      step_find.request = NULL ;
-
-      g_list_foreach(step_list->steps, stepFindReq, &step_find) ;
-
-      request = step_find.request ;
-    }
-  else
-    {
-      zMapLogWarning("%s", "Program error: step_list is NULL");
-    }
-
-  return request ;
-}
-
-
-/* Process data from request, gets called from main connection loop of the View which itself is
- * called whenever a connection thread returns data.
- *  */
-void zmapViewStepListStepProcessRequest(ZMapViewConnection view_con, ZMapViewConnectionRequest request)
-{
-  gboolean result = TRUE ;
-  ZMapViewConnectionStepList step_list = view_con->step_list;
-
-  /* Call users request processing func, if this signals the connection has failed then
-   * remove it from the step list. */
-  if ((step_list->process_func))
-    result = step_list->process_func(view_con, (ZMapServerReqAny)(request->request_data)) ;
-
-  if (result)
-    {
-      request->state = STEPLIST_FINISHED ;
-    }
-
-  return ;
-}
-
-
-/*                Step list funcs.                             */
-
-/* Free a step. */
-static void stepDestroy(gpointer data, gpointer user_data)
-{
-  ZMapViewConnectionStep step = (ZMapViewConnectionStep)data ;
-  ZMapViewConnectionStepList step_list = (ZMapViewConnectionStepList)user_data ;
-
-  if(step->connection_req)
-    {
-      /* Call users free func. */
-      if ((step_list->free_func))
-	step_list->free_func((ZMapServerReqAny)(step->connection_req->request_data)) ;
-
-      g_free(step->connection_req) ;
-    }
-
-  step->connection_req = NULL ;
-
-  g_free(step) ;
-
-  return ;
-}
-
-
-/* Free the list of steps. */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-void zmapViewStepListDestroy(ZMapViewConnection view_con)
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-void zmapViewStepListDestroy(ZMapViewConnectionStepList step_list)
-{
-  g_list_foreach(step_list->steps, stepDestroy, step_list) ;
-  g_list_free(step_list->steps) ;
-  step_list->steps = NULL ;
-  g_free(step_list) ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  view_con->step_list = NULL;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* THIS IS COMPLETELY AND UTTERLY THE WRONG PLACE TO DO THIS....AGGGGGHHHHHHH...... */
-
-  if(view_con->request_data)
-    {
-      g_free(view_con->request_data) ;
-      view_con->request_data = NULL ;
-    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-  return ;
-}
-
-
-
-/* Test to see if there are any more steps to perform, does not look to see if there are requests. */
-gboolean zmapViewStepListIsNext(ZMapViewConnectionStepList step_list)
-{
-  gboolean more = FALSE ;
-
-  if (step_list->current)
-    more = TRUE ;
-
-  return more ;
-}
-
 
 
 
@@ -800,188 +536,10 @@ void zmapViewCWHDestroy(GHashTable **ghash)
 
 
 
-/*
- * Server Session stuff: holds information about data server connections.
- *
- * NOTE: the list of connection session data is dynamic, as a server
- * connection is terminated the session data is free'd too so the final
- * list may be very short or not even have any connections at all.
- */
-
-/* Record initial details for a session, these are known when the session is created. */
-void zmapViewSessionAddServer(ZMapViewSessionServer server_data, ZMapURL url, char *format)
-{
-  server_data->scheme = url->scheme ;
-  server_data->url = g_strdup(url->url) ;
-  server_data->protocol = g_strdup(url->protocol) ;
-
-  if (format)
-    server_data->format = g_strdup(format) ;
-
-  switch(url->scheme)
-    {
-    case SCHEME_ACEDB:
-      {
-	server_data->scheme_data.acedb.host = g_strdup(url->host) ;
-	server_data->scheme_data.acedb.port = url->port ;
-	server_data->scheme_data.acedb.database = g_strdup(url->path) ;
-	break ;
-      }
-    case SCHEME_PIPE:
-      {
-	server_data->scheme_data.pipe.path = g_strdup(url->path) ;
-	server_data->scheme_data.pipe.query = g_strdup(url->query) ;
-	break ;
-      }
-
-    case SCHEME_FILE:
-      {
-	// mgh: file:// is now handled by pipe://, but as this is a view struct it is unchanged
-	// consider also DAS, which is still known as a file://
-	server_data->scheme_data.file.path = g_strdup(url->path) ;
-	break ;
-      }
-    case SCHEME_ENSEMBL:
-      {
-        server_data->scheme_data.ensembl.host = g_strdup(url->host) ;
-        server_data->scheme_data.ensembl.port = url->port ;
-        break ;
-      }
-    case SCHEME_TRACKHUB:
-      {
-        server_data->scheme_data.trackhub.trackdb_id = g_strdup(url->query) ;
-        break;
-      }
-    default:
-      {
-	/* other schemes not currently supported so mark as invalid. */
-	server_data->scheme = SCHEME_INVALID ;
-	break ;
-      }
-    }
-
-  return ;
-}
-
-/* Record dynamic details for a session which can only be found out by later interrogation
- * of the server. */
-void zmapViewSessionAddServerInfo(ZMapViewSessionServer session_data, ZMapServerReqGetServerInfo session)
-{
-  if (session->data_format_out)
-    session_data->format = g_strdup(session->data_format_out) ;
-
-
-  switch(session_data->scheme)
-    {
-    case SCHEME_ACEDB:
-      {
-	session_data->scheme_data.acedb.database = g_strdup(session->database_path_out) ;
-	break ;
-      }
-    case SCHEME_FILE:
-      {
-
-	break ;
-      }
-    case SCHEME_PIPE:
-      {
-
-	break ;
-      }
-    case SCHEME_ENSEMBL:
-      {
-
-        break ;
-      }
-    case SCHEME_TRACKHUB:
-      {
-        
-        break ;
-      }
-    default:
-      {
-
-	break ;
-      }
-    }
-
-  return ;
-}
-
-
-/* Free all the session data, NOTE: we did not allocate the original struct
- * so we do not free it. */
-void zmapViewSessionFreeServer(ZMapViewSessionServer server_data)
-{
-  g_free(server_data->url) ;
-  g_free(server_data->protocol) ;
-  g_free(server_data->format) ;
-
-  switch(server_data->scheme)
-    {
-    case SCHEME_ACEDB:
-      {
-	g_free(server_data->scheme_data.acedb.host) ;
-	g_free(server_data->scheme_data.acedb.database) ;
-	break ;
-      }
-    case SCHEME_FILE:
-      {
-	g_free(server_data->scheme_data.file.path) ;
-	break ;
-      }
-    case SCHEME_PIPE:
-      {
-	g_free(server_data->scheme_data.pipe.path) ;
-	g_free(server_data->scheme_data.pipe.query) ;
-	break ;
-      }
-    case SCHEME_ENSEMBL:
-      {
-        g_free(server_data->scheme_data.ensembl.host) ;
-        break ;
-      }
-    case SCHEME_TRACKHUB:
-      {
-        g_free(server_data->scheme_data.trackhub.trackdb_id) ;
-        break ;
-      }
-    default:
-      {
-	/* no action currently. */
-	break ;
-      }
-    }
-
-  return ;
-}
-
-
-
-
 
 /*
  *               Internal routines.
  */
-
-
-/* Find a connections request in a given request step. */
-static ZMapViewConnectionStep stepListFindStep(ZMapViewConnectionStepList step_list, ZMapServerReqType request_type)
-{
-  ZMapViewConnectionStep step = NULL ;
-  StepListFindStruct step_find = {ZMAP_SERVERREQ_INVALID} ;
-
-  step_find.request_type = request_type ;
-  step_find.step = NULL ;
-
-  g_list_foreach(step_list->steps, stepFindReq, &step_find) ;
-
-  step = step_find.step ;
-
-  return step ;
-}
-
-
 
 
 
@@ -1011,73 +569,6 @@ static void cwh_destroy_value(gpointer cwh_data)
   return ;
 }
 
-
-
-
-/* Produce information for each session as formatted text.
- *
- * NOTE: some information is only available once the server connection
- * is established and the server can be queried for it. This is not formalised
- * in a struct but could be if found necessary.
- *
- *  */
-static void formatSession(gpointer data, gpointer user_data)
-{
-  ZMapViewConnection view_con = (ZMapViewConnection)data ;
-  ZMapViewSessionServer server_data = &(view_con->session) ;
-  GString *session_text = (GString *)user_data ;
-  const char *unavailable_txt = "<< not available yet >>" ;
-
-
-  g_string_append(session_text, "Server\n") ;
-
-  g_string_append_printf(session_text, "\tURL: %s\n\n", server_data->url) ;
-  g_string_append_printf(session_text, "\tProtocol: %s\n\n", server_data->protocol) ;
-  g_string_append_printf(session_text, "\tFormat: %s\n\n",
-			 (server_data->format ? server_data->format : unavailable_txt)) ;
-
-  switch(server_data->scheme)
-    {
-    case SCHEME_ACEDB:
-      {
-	g_string_append_printf(session_text, "\tServer: %s\n\n", server_data->scheme_data.acedb.host) ;
-	g_string_append_printf(session_text, "\tPort: %d\n\n", server_data->scheme_data.acedb.port) ;
-	g_string_append_printf(session_text, "\tDatabase: %s\n\n",
-			       (server_data->scheme_data.acedb.database
-				? server_data->scheme_data.acedb.database : unavailable_txt)) ;
-	break ;
-      }
-    case SCHEME_FILE:
-      {
-	g_string_append_printf(session_text, "\tFile: %s\n\n", server_data->scheme_data.file.path) ;
-	break ;
-      }
-    case SCHEME_PIPE:
-      {
-	g_string_append_printf(session_text, "\tScript: %s\n\n", server_data->scheme_data.pipe.path) ;
-	g_string_append_printf(session_text, "\tQuery: %s\n\n", server_data->scheme_data.pipe.query) ;
-	break ;
-      }
-    case SCHEME_ENSEMBL:
-      {
-        g_string_append_printf(session_text, "\tServer: %s\n\n", server_data->scheme_data.ensembl.host) ;
-        g_string_append_printf(session_text, "\tPort: %d\n\n", server_data->scheme_data.ensembl.port) ;
-        break ;
-      }
-    case SCHEME_TRACKHUB:
-      {
-        g_string_append_printf(session_text, "\tTrackDb: %s\n\n", server_data->scheme_data.trackhub.trackdb_id) ;
-        break ;
-      }
-    default:
-      {
-	g_string_append(session_text, "\tUnsupported server type !") ;
-	break ;
-      }
-    }
-
-  return ;
-}
 
 
 
@@ -1181,3 +672,53 @@ static void toggleDisplayCoordinatesCB(ZMapWindow window, void* user_data)
       zMapWindowToggleDisplayCoordinates(window) ;
     }
 }
+
+
+
+
+/* Produce information for each session as formatted text.
+ *
+ * NOTE: some information is only available once the server connection
+ * is established and the server can be queried for it. This is not formalised
+ * in a struct but could be if found necessary.
+ *
+ *  */
+static void formatSession(gpointer data, gpointer user_data)
+{
+  ZMapNewDataSource view_con = (ZMapNewDataSource)data ;
+  ZMapViewSessionServer server_data = view_con->server ;
+  GString *session_text = (GString *)user_data ;
+
+  // Get session info as a string....
+  zMapServerFormatSession(server_data, session_text) ;
+
+  return ;
+}
+
+
+
+
+/* This is called on each view_window in a view to merge the given list of featureset names into
+ * the window's list of feature_set_names */
+static void invoke_merge_in_names(gpointer list_data, gpointer user_data)
+{
+  ZMapViewWindow view_window = (ZMapViewWindow)list_data;
+  GList *feature_set_names = (GList *)user_data;
+
+  /* This relies on hokey code... with a number of issues...
+   * 1) the window function only concats the lists.
+   * 2) this view code might well want to do the merge?
+   * 3) how do we order all these columns?
+   */
+   /* mh17: column ordering is as in ZMap config
+    * either by 'columns' command or by server and then featureset order
+    * concat is ok as featuresets are not duplicated, but beware repeat requests to the same server
+    * NOTE (mar 2011) with req from mark we expect duplicate requests, merge must merge not concatenate
+    */
+  zMapWindowMergeInFeatureSetNames(view_window->window, feature_set_names);
+
+  return ;
+}
+
+
+

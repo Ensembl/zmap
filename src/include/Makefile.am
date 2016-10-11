@@ -1,5 +1,7 @@
 NULL =
 
+# removing this for now: zmapDataSourceRequest.hpp
+
 nobase_include_HEADERS = ZMap/sysdep.h \
 ZMap/safe-ctype.h \
 ZMap/zmap.hpp \
@@ -17,6 +19,9 @@ ZMap/zmapConfigStyleDefaults.hpp \
 ZMap/zmapControl.hpp \
 ZMap/zmapDAS.hpp \
 ZMap/zmapDNA.hpp \
+ZMap/zmapDataSlave.hpp \
+ZMap/zmapDataSource.hpp \
+ZMap/zmapDataStream.hpp \
 ZMap/zmapDraw.hpp \
 ZMap/zmapEnsemblUtils.hpp \
 ZMap/zmapEnum.hpp \
@@ -30,6 +35,8 @@ ZMap/zmapGUITreeView.hpp \
 ZMap/zmapIO.hpp \
 ZMap/zmapMLF.hpp \
 ZMap/zmapNavigatorStippleG.xbm \
+ZMap/zmapOldSourceServer.hpp \
+ZMap/zmapOldStepList.hpp \
 ZMap/zmapPeptide.hpp \
 ZMap/zmapReadLine.hpp \
 ZMap/zmapRemoteCommand.hpp \
@@ -45,7 +52,9 @@ ZMap/zmapSkipList.hpp\
 ZMap/zmapString.hpp \
 ZMap/zmapStyle.hpp \
 ZMap/zmapStyleTree.hpp \
-ZMap/zmapThreads.hpp \
+ZMap/zmapThreadSlave.hpp \
+ZMap/zmapThreadSource.hpp \
+ZMap/zmapThreadsLib.hpp \
 ZMap/zmapUrl.hpp \
 ZMap/zmapUrlOptions.hpp \
 ZMap/zmapUrlUtils.hpp \

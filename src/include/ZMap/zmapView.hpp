@@ -36,8 +36,6 @@
 
 #include <string>
 
-#include <gtk/gtk.h>
-
 #include <ZMap/zmapConfigIni.hpp>
 #include <ZMap/zmapEnum.hpp>
 #include <ZMap/zmapWindow.hpp>
@@ -196,6 +194,11 @@ char *zMapViewGetLoadStatusStr(ZMapView view,
                                char **loading_sources_out, char **empty_sources_out, char **failed_sources_out) ;
 GtkWidget *zMapViewGetXremote(ZMapView view) ;
 gboolean zMapViewGetFeaturesSpan(ZMapView zmap_view, int *start, int *end) ;
+
+ZMapFeatureContext zMapViewCreateContext(ZMapView view, GList *feature_set_names, ZMapFeatureSet feature_set) ;
+ZMapFeatureContextMergeCode zMapViewContextMerge(ZMapView view, ZMapFeatureContext new_context) ;
+
+
 ZMapFeatureContextMap zMapViewGetContextMap(ZMapView view) ;
 ZMapWindow zMapViewGetWindow(ZMapViewWindow view_window) ;
 ZMapFeatureContext zMapViewGetContext(ZMapViewWindow view_window) ;
@@ -232,12 +235,6 @@ char *zMapViewRemoteReceiveAccepts(ZMapView view);
 void zMapViewDestroy(ZMapView zmap_view) ;
 
 
-
-
-
-
-
-
 /* HACK! not really to be used... */
 ZMapFeatureContext zMapViewGetContextAsEmptyCopy(ZMapView do_not_use);
 
@@ -260,12 +257,14 @@ gboolean zMapViewExportConfig(ZMapView view, const ZMapViewExportType export_typ
 
 gboolean zMapViewCheckIfUnsaved(ZMapView zmap_view) ;
 
+// change to zMapViewRequestServer ??
+//
 void zMapViewSetUpServerConnection(ZMapView zmap_view, ZMapConfigSource current_server, GError **error) ;
 void zMapViewSetUpServerConnection(ZMapView zmap_view, ZMapConfigSource current_server, 
                                    const char *req_sequence, const int req_start, const int req_end, 
                                    const bool thread_fail_silent, GError **error) ;
-
 void zMapViewAddSource(ZMapView view, const std::string &source_name, ZMapConfigSource source, GError **error) ;
+
 
 bool zMapViewGetDisablePopups(ZMapView zmap_view) ;
 void zMapViewSetDisablePopups(ZMapView zmap_view, const bool value) ;

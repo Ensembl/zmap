@@ -75,6 +75,7 @@ static void closeCB(gpointer cb_data, guint callback_action, GtkWidget *w) ;
 static void quitCB(gpointer cb_data, guint callback_action, GtkWidget *w) ;
 
 static void importCB(gpointer cb_data, guint callback_action, GtkWidget *window);
+static void newImportCB(gpointer cb_data, guint callback_action, GtkWidget *window);
 static void exportCB(gpointer cb_data, guint callback_action, GtkWidget *window);
 static void printCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void dumpCB(gpointer cb_data, guint callback_action, GtkWidget *w);
@@ -92,36 +93,43 @@ static void toggleDisplayCoordinatesCB (gpointer data, guint callback_action, Gt
 static void popout_panel( gpointer data, guint callback_action, GtkWidget *w ) ;
 #endif /* ALLOW_POPOUT_PANEL */
 
+
+//
+//                  Globals
+//
+
 GtkItemFactory *item_factory;
 
 
-static GtkItemFactoryEntry menu_items[] = {
-  { (char*)"/_File",                                NULL,                NULL,                              0,  (char*)"<Branch>" },
-         { (char*)"/File/_New Sequence",                   NULL,                G_CALLBACK(newSequenceByConfigCB), 2,  NULL },
-         { (char*)"/File/New Source",                      NULL,                G_CALLBACK(newSourceCB),           0,  NULL },
-         { (char*)"/File/sep1",                            NULL,                NULL,                              0,  (char*)"<Separator>" },
-         { (char*)"/File/_Save",                           (char*)"<control>S", G_CALLBACK(exportCB),              SAVE_FEATURES, NULL },
-         { (char*)"/File/Save _As",                        (char*)"<shift><control>S", G_CALLBACK(exportCB),       SAVE_FEATURES_AS, NULL },
-         { (char*)"/File/sep1",                            NULL,                NULL,                              0,  (char*)"<Separator>" },
-         { (char*)"/File/_Import",                         (char*)"<control>I", G_CALLBACK(importCB),              0,  NULL },/* or Read ? */
-         { (char*)"/File/_Export",                         NULL,                NULL,                              0,  (char*)"<Branch>" },
-         /*{ (char*)"/File/Export/_Data",                      NULL,                NULL,                  0,  "<Branch>" }, */
-         { (char*)"/File/Export/_DNA",                     NULL,                G_CALLBACK(exportCB),              EXPORT_DNA,  NULL },
-         { (char*)"/File/Export/_Features",                (char*)"<control>E", G_CALLBACK(exportCB),              EXPORT_FEATURES_ALL,  NULL },
-         { (char*)"/File/Export/Features (_marked)",       (char*)"<shift><control>E", G_CALLBACK(exportCB),              EXPORT_FEATURES_MARKED, NULL },
-         { (char*)"/File/Export/_Configuration",           NULL,                G_CALLBACK(exportCB),              EXPORT_CONFIG, NULL },
-         { (char*)"/File/Export/_Styles",                  NULL,                G_CALLBACK(exportCB),              EXPORT_STYLES, NULL },
-         /*{ "/File/Export/_Features (selected)",          NULL,                exportCB,              EXPORT_FEATURES_SELECTED, NULL },*/
-         /* { (char*)"/File/Export/_Context",              NULL,                exportCB,              3,  NULL },
-         { (char*)"/File/Export/_Marked Features",         NULL,                NULL,                  0,  (char*)"<Branch>" },
-         { (char*)"/File/Export/Marked Features/_DNA",     NULL,                exportCB,              1,  NULL },
-         { (char*)"/File/Export/Marked Features/_Context", NULL,                exportCB,              3,  NULL }, */
-         { (char*)"/File/sep1",                            NULL,                NULL,                              0,  (char*)"<Separator>" },
-         { (char*)"/File/Save screen sho_t",               NULL,                G_CALLBACK(dumpCB),                0,  NULL },
-         { (char*)"/File/_Print screen shot",              (char*)"<control>P", G_CALLBACK(printCB),               0,  NULL },
-         { (char*)"/File/sep1",                            NULL,                NULL,                              0,  (char*)"<Separator>" },
-         { (char*)"/File/Close",                           (char*)"<control>W", G_CALLBACK(closeCB),               0,  NULL },
-         { (char*)"/File/Quit",                            (char*)"<control>Q", G_CALLBACK(quitCB),                0,  NULL },
+static GtkItemFactoryEntry menu_items[] =
+  {
+    { (char*)"/_File",                                NULL,                NULL,                              0,  (char*)"<Branch>" },
+    { (char*)"/File/_New Sequence",                   NULL,                G_CALLBACK(newSequenceByConfigCB), 2,  NULL },
+    { (char*)"/File/New Source",                      NULL,                G_CALLBACK(newSourceCB),           0,  NULL },
+    { (char*)"/File/sep1",                            NULL,                NULL,                              0,  (char*)"<Separator>" },
+    { (char*)"/File/_Save",                           (char*)"<control>S", G_CALLBACK(exportCB),              SAVE_FEATURES, NULL },
+    { (char*)"/File/Save _As",                        (char*)"<shift><control>S", G_CALLBACK(exportCB),       SAVE_FEATURES_AS, NULL },
+    { (char*)"/File/sep1",                            NULL,                NULL,                              0,  (char*)"<Separator>" },
+    { (char*)"/File/_Import",                         (char*)"<control>I", G_CALLBACK(importCB),              0,  NULL },/* or Read ? */
+    { (char*)"/File/New Import",                      NULL,                G_CALLBACK(newImportCB),           0,  NULL },/* or Read ? */
+    { (char*)"/File/_Export",                         NULL,                NULL,                              0,  (char*)"<Branch>" },
+    /*{ (char*)"/File/Export/_Data",                      NULL,                NULL,                  0,  "<Branch>" }, */
+    { (char*)"/File/Export/_DNA",                     NULL,                G_CALLBACK(exportCB),              EXPORT_DNA,  NULL },
+    { (char*)"/File/Export/_Features",                (char*)"<control>E", G_CALLBACK(exportCB),              EXPORT_FEATURES_ALL,  NULL },
+    { (char*)"/File/Export/Features (_marked)",       (char*)"<shift><control>E", G_CALLBACK(exportCB),              EXPORT_FEATURES_MARKED, NULL },
+    { (char*)"/File/Export/_Configuration",           NULL,                G_CALLBACK(exportCB),              EXPORT_CONFIG, NULL },
+    { (char*)"/File/Export/_Styles",                  NULL,                G_CALLBACK(exportCB),              EXPORT_STYLES, NULL },
+    /*{ "/File/Export/_Features (selected)",          NULL,                exportCB,              EXPORT_FEATURES_SELECTED, NULL },*/
+    /* { (char*)"/File/Export/_Context",              NULL,                exportCB,              3,  NULL },
+       { (char*)"/File/Export/_Marked Features",         NULL,                NULL,                  0,  (char*)"<Branch>" },
+       { (char*)"/File/Export/Marked Features/_DNA",     NULL,                exportCB,              1,  NULL },
+       { (char*)"/File/Export/Marked Features/_Context", NULL,                exportCB,              3,  NULL }, */
+    { (char*)"/File/sep1",                            NULL,                NULL,                              0,  (char*)"<Separator>" },
+    { (char*)"/File/Save screen sho_t",               NULL,                G_CALLBACK(dumpCB),                0,  NULL },
+    { (char*)"/File/_Print screen shot",              (char*)"<control>P", G_CALLBACK(printCB),               0,  NULL },
+    { (char*)"/File/sep1",                            NULL,                NULL,                              0,  (char*)"<Separator>" },
+    { (char*)"/File/Close",                           (char*)"<control>W", G_CALLBACK(closeCB),               0,  NULL },
+    { (char*)"/File/Quit",                            (char*)"<control>Q", G_CALLBACK(quitCB),                0,  NULL },
 
     { (char*)"/_Edit",                                NULL,                NULL,                              0,  (char*)"<Branch>" },
     { (char*)"/Edit/_Copy Feature Coords",            (char*)"<control>C", G_CALLBACK(copyPasteCB),           EDIT_COPY, NULL },
@@ -164,6 +172,22 @@ static GtkItemFactoryEntry menu_items[] = {
 
 
 
+
+
+//
+//                  External Interface routines
+//
+
+// None at the moment.
+
+
+
+//
+//                  Package routines
+//
+
+
+
 GtkWidget *zmapControlWindowMakeMenuBar(ZMap zmap)
 {
   GtkWidget *menubar = NULL ;
@@ -183,6 +207,12 @@ GtkWidget *zmapControlWindowMakeMenuBar(ZMap zmap)
 
   return menubar ;
 }
+
+
+
+//
+//                  Internal routines
+//
 
 
 /*
@@ -351,8 +381,6 @@ static void exportCB(gpointer cb_data, guint callback_action, GtkWidget *window)
   return ;
 }
 
-
-
 static void controlImportFileCB(gpointer user_data)
 {
   zMapWarning("controlImportFileCB not implemented","");
@@ -362,7 +390,58 @@ static void controlImportFileCB(gpointer user_data)
 }
 
 
+
 static void importCB(gpointer cb_data, guint callback_action, GtkWidget *window)
+{
+  ZMap zmap = (ZMap)cb_data ;
+  ZMapViewWindow vw ;
+  ZMapFeatureSequenceMap sequence_map ;
+  int start=0, end=0 ;
+
+  // can this happen...surely there must a focus viewwindow.....
+  zMapReturnIfFail(zmap->focus_viewwindow) ;
+
+  if (!(zmap->import_file_dialog))
+    {
+      vw = zmap->focus_viewwindow ;
+
+      // This only fails if the zmap is dying.
+      if ((sequence_map = zMapViewGetSequenceMap(zMapViewGetView(vw))))
+        {
+          /* limit to mark if set */
+          start = sequence_map->start;
+          end   = sequence_map->end;
+
+          if (zMapWindowMarkIsSet(zMapViewGetWindow(vw)))
+            {
+              zMapWindowGetMark(zMapViewGetWindow(vw), &start, &end);
+            }
+
+          ZMapView view = zMapViewGetView(vw) ;
+          if (view && zMapViewGetRevCompStatus(view))
+            {
+              int length = sequence_map->end - sequence_map->start + 1 ;
+              start = length - start + sequence_map->start ;
+              end = length - end + sequence_map->start ;
+              int store = start ;
+              start = end ;
+              end = store ;
+            }
+
+          /* need sequence_map to set default seq coords and map sequence name, and to store the
+           * resulting ZMapConfigSource struct for the new source that is created */
+          zmapControlImportFile(controlImportFileCB, cb_data, sequence_map, start, end);
+        }
+    }
+
+  return ;
+}
+
+
+// New test code for new server interface....
+//
+//
+static void newImportCB(gpointer cb_data, guint callback_action, GtkWidget *window)
 {
   ZMap zmap = (ZMap)cb_data ;
   ZMapViewWindow vw ;
@@ -375,7 +454,6 @@ static void importCB(gpointer cb_data, guint callback_action, GtkWidget *window)
 
   sequence_map = zMapViewGetSequenceMap( zMapViewGetView(vw) );
 
-  /* limit to mark if set */
   start = sequence_map->start;
   end   = sequence_map->end;
 
@@ -625,10 +703,10 @@ static void quitCB(gpointer cb_data, guint callback_action, GtkWidget *w)
 {
   ZMap zmap = (ZMap)cb_data ;
   zMapReturnIfFail(zmap && zmap->zmap_cbs_G) ;
-
+  
   /* Call the application exit callback to get everything killed...including this zmap. */
   (*(zmap->zmap_cbs_G->quit_req))(zmap, zmap->app_data) ;
-
+  
   return ;
 }
 

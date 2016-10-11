@@ -19,7 +19,7 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originated by
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
  *
  * Description: Contains macros, functions etc. for logging.
@@ -61,7 +61,7 @@
 
 
 /* Some compilers give more information than others so set up compiler dependant defines. */
-#ifdef __GNUC__	
+#ifdef __GNUC__ 
 
 #define ZMAP_LOG_CODE_PARAMS __FILE__, __PRETTY_FUNCTION__, __LINE__
 
@@ -76,8 +76,8 @@
 /* The base logging routine, you should use the below macros which automatically
  * include the stuff you need instead of this routine. */
 void zMapLogMsg(const char *domain, GLogLevelFlags log_level,
-		const char *file, const char *function, int line,
-		const char *format, ...) ;
+                const char *file, const char *function, int line,
+                const char *format, ...) ;
 
 
 /* Use these macros like this:
@@ -89,35 +89,52 @@ void zMapLogMsg(const char *domain, GLogLevelFlags log_level,
  * otherwise our logging callback routines will not work.
  * 
  * */
-#define zMapLogMessage(FORMAT, ...)		\
-  zMapLogMsg(ZMAPLOG_DOMAIN,			\
-	     G_LOG_LEVEL_MESSAGE,		\
-	     ZMAP_LOG_CODE_PARAMS,	        \
-	     FORMAT,	                        \
-	     __VA_ARGS__)
+#define zMapLogMessage(FORMAT, ...)             \
+  zMapLogMsg(ZMAPLOG_DOMAIN,                    \
+             G_LOG_LEVEL_MESSAGE,               \
+             ZMAP_LOG_CODE_PARAMS,              \
+             FORMAT,                            \
+             __VA_ARGS__)
 
-#define zMapLogWarning(FORMAT, ...)		\
-  zMapLogMsg(ZMAPLOG_DOMAIN,			\
-	     G_LOG_LEVEL_WARNING,		\
-	     ZMAP_LOG_CODE_PARAMS,	        \
-	     FORMAT,                  		\
-	     __VA_ARGS__)
+#define zMapLogWarning(FORMAT, ...)             \
+  zMapLogMsg(ZMAPLOG_DOMAIN,                    \
+             G_LOG_LEVEL_WARNING,               \
+             ZMAP_LOG_CODE_PARAMS,              \
+             FORMAT,                            \
+             __VA_ARGS__)
 
-#define zMapLogCritical(FORMAT, ...)		\
-  zMapLogMsg(ZMAPLOG_DOMAIN,			\
-	     G_LOG_LEVEL_CRITICAL,		\
-	     ZMAP_LOG_CODE_PARAMS,	        \
-	     FORMAT,             		\
-	     __VA_ARGS__)
+#define zMapLogCritical(FORMAT, ...)            \
+  zMapLogMsg(ZMAPLOG_DOMAIN,                    \
+             G_LOG_LEVEL_CRITICAL,              \
+             ZMAP_LOG_CODE_PARAMS,              \
+             FORMAT,                            \
+             __VA_ARGS__)
      
-#define zMapLogFatal(FORMAT, ...)		\
-  zMapLogMsg(ZMAPLOG_DOMAIN,			\
-	     G_LOG_LEVEL_ERROR,			\
-	     ZMAP_LOG_CODE_PARAMS,	        \
-	     FORMAT,                            \
-	     __VA_ARGS__)
+#define zMapLogFatal(FORMAT, ...)               \
+  zMapLogMsg(ZMAPLOG_DOMAIN,                    \
+             G_LOG_LEVEL_ERROR,                 \
+             ZMAP_LOG_CODE_PARAMS,              \
+             FORMAT,                            \
+             __VA_ARGS__)
 
 
+
+/* Use this macro like this:
+ * 
+ *      zMapLogCriticalSysErr(errno, "System call %s failed !", [args]) ;
+ * 
+ */
+#define zMapLogCriticalSysErr(ERRNO, FORMAT, ...)            \
+  do {                                                    \
+    char *errno_str = (char *)g_strerror(ERRNO) ;         \
+                                                          \
+    zMapLogMsg(ZMAPLOG_DOMAIN,                            \
+               G_LOG_LEVEL_CRITICAL,                      \
+               ZMAP_LOG_CODE_PARAMS,                      \
+               FORMAT " (errno = \"%s\")",                \
+               __VA_ARGS__,                               \
+               errno_str) ;                               \
+  } while (0)
 
 /* Use this macro like this:
  * 
@@ -125,15 +142,15 @@ void zMapLogMsg(const char *domain, GLogLevelFlags log_level,
  * 
  */
 #define zMapLogFatalSysErr(ERRNO, FORMAT, ...)            \
-  do {							  \
-    char *errno_str = (char *)g_strerror(ERRNO) ;	  \
+  do {                                                    \
+    char *errno_str = (char *)g_strerror(ERRNO) ;         \
                                                           \
-    zMapLogMsg(ZMAPLOG_DOMAIN,				  \
-	       G_LOG_LEVEL_ERROR,			  \
-	       ZMAP_LOG_CODE_PARAMS,		          \
-	       FORMAT " (errno = \"%s\")",		  \
-	       __VA_ARGS__,			          \
-	       errno_str) ;                               \
+    zMapLogMsg(ZMAPLOG_DOMAIN,                            \
+               G_LOG_LEVEL_ERROR,                         \
+               ZMAP_LOG_CODE_PARAMS,                      \
+               FORMAT " (errno = \"%s\")",                \
+               __VA_ARGS__,                               \
+               errno_str) ;                               \
   } while (0)
 
 /* Use this macro like this:
@@ -148,21 +165,11 @@ void zMapLogMsg(const char *domain, GLogLevelFlags log_level,
  *   }
  */
 #define zMapLogFatalLogicErr(FORMAT, ...)              \
-  zMapLogMsg(ZMAPLOG_DOMAIN,			       \
-	     G_LOG_LEVEL_ERROR,			       \
-	     ZMAP_LOG_CODE_PARAMS,		       \
-	     "Panic - Internal Logic Error: " FORMAT " !!",  \
-	     __VA_ARGS__)
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* make logging from totalview evaluations a lot easier... */
-void zMapLogQuark(GQuark quark);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
+  zMapLogMsg(ZMAPLOG_DOMAIN,                           \
+             G_LOG_LEVEL_ERROR,                        \
+             ZMAP_LOG_CODE_PARAMS,                           \
+             "Panic - Internal Logic Error: " FORMAT " !!",  \
+             __VA_ARGS__)
 
 
 /* Use this macro like this:
@@ -172,28 +179,28 @@ void zMapLogQuark(GQuark quark);
  * Logs the error and returns from the function if widget is NULL.
  * 
  */
-#define zMapLogReturnIfFail(expr)                                     \
-  G_STMT_START{							\
-     if (expr) { } else						\
-       {							\
-  zMapLogMsg(ZMAPLOG_DOMAIN,			\
-	     G_LOG_LEVEL_CRITICAL,		\
-	     ZMAP_LOG_CODE_PARAMS,	        \
-	     "Expr failed: \"%s\"" ,     \
-	     #expr) ;					\
-	 return;						\
-       };				}G_STMT_END
+#define zMapLogReturnIfFail(expr)                               \
+  G_STMT_START{                                                 \
+     if (expr) { } else                                         \
+       {                                                        \
+         zMapLogMsg(ZMAPLOG_DOMAIN,                             \
+                    G_LOG_LEVEL_CRITICAL,                       \
+                    ZMAP_LOG_CODE_PARAMS,                       \
+                    "Expr failed: \"%s\"" ,                     \
+                    #expr) ;                                    \
+         return;                                                \
+       };                               }G_STMT_END
 
-#define zMapLogReturnValIfFail(expr, val)	G_STMT_START{		\
-     if (expr) { } else						\
-       {							\
-  zMapLogMsg(ZMAPLOG_DOMAIN,			\
-	     G_LOG_LEVEL_CRITICAL,		\
-	     ZMAP_LOG_CODE_PARAMS,	        \
-	     "Expr failed: \"%s\"" ,     \
-	     #expr) ;					\
-	 return (val);						\
-       };				}G_STMT_END
+#define zMapLogReturnValIfFail(expr, val)       G_STMT_START{   \
+     if (expr) { } else                                         \
+       {                                                        \
+         zMapLogMsg(ZMAPLOG_DOMAIN,                             \
+                    G_LOG_LEVEL_CRITICAL,                       \
+                    ZMAP_LOG_CODE_PARAMS,                       \
+                    "Expr failed: \"%s\"" ,                     \
+                    #expr) ;                                    \
+         return (val);                                          \
+       };                               }G_STMT_END
 
 
 
