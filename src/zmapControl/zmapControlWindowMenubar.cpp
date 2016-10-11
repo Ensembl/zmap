@@ -703,10 +703,10 @@ static void quitCB(gpointer cb_data, guint callback_action, GtkWidget *w)
 {
   ZMap zmap = (ZMap)cb_data ;
   zMapReturnIfFail(zmap && zmap->zmap_cbs_G) ;
-
+  
   /* Call the application exit callback to get everything killed...including this zmap. */
   (*(zmap->zmap_cbs_G->quit_req))(zmap, zmap->app_data) ;
-
+  
   return ;
 }
 

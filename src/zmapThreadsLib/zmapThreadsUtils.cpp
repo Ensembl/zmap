@@ -43,27 +43,27 @@ static int getAbsTime(const TIMESPEC *relative_timeout, TIMESPEC *abs_timeout) ;
 
 
 
-bool zmapCondVarCreate(ZMapRequest thread_state)
+bool zmapCondVarCreate(ZMapRequest thread_request)
 {
   bool result = FALSE ;
   int status = 0 ;
 
   if (status == 0
-      && ((status = pthread_mutex_init(&(thread_state->mutex), NULL)) != 0))
+      && ((status = pthread_mutex_init(&(thread_request->mutex), NULL)) != 0))
     {
       zMapLogCriticalSysErr(status, "%s", "mutex init") ;
     }
 
   if (status == 0
-      && ((status = pthread_cond_init(&(thread_state->cond), NULL)) != 0))
+      && ((status = pthread_cond_init(&(thread_request->cond), NULL)) != 0))
     {
       zMapLogCriticalSysErr(status, "%s", "cond init") ;
     }
 
   if (status == 0)
     {
-      thread_state->state = ZMAPTHREAD_REQUEST_INVALID ;
-      thread_state->request = NULL ;
+      thread_request->state = ZMAPTHREAD_REQUEST_INVALID ;
+      thread_request->request = NULL ;
 
       result = true ;
     }
@@ -75,32 +75,36 @@ bool zmapCondVarCreate(ZMapRequest thread_state)
 // locked and then can't be used again.
 // This is probably the right thing to do as either it's all working or there is something
 // really wrong !
-bool zmapCondVarSignal(ZMapRequest thread_state, ZMapThreadRequest new_state, void *request)
+bool zmapCondVarSignal(ZMapRequest thread_request, ZMapThreadRequest new_state, void *request)
 {
   bool result = FALSE ;
   int status = 0 ;
 
-  pthread_cleanup_push(releaseCondvarMutex, (void *)thread_state) ;
+  pthread_cleanup_push(releaseCondvarMutex, (void *)thread_request) ;
 
   // Lock....
   if (status == 0)
     {
-      if ((status = pthread_mutex_lock(&(thread_state->mutex))) != 0)
+      if ((status = pthread_mutex_lock(&(thread_request->mutex))) != 0)
         {
           zMapLogCriticalSysErr(status, "%s", "zmapCondVarSignal mutex lock") ;
+        }
+      else
+        {
+          zMapDebugPrintf("  Locked mutex %p", &(thread_request->mutex)) ;
         }
     }
 
   // Set the data in the condvar.
   if (status == 0)
     {
-      thread_state->state = new_state ;
+      thread_request->state = new_state ;
 
       /* For some requests there will be no data. */
       if (request)
-        thread_state->request = request ;
+        thread_request->request = request ;
 
-      if ((status = pthread_cond_signal(&(thread_state->cond))) != 0)
+      if ((status = pthread_cond_signal(&(thread_request->cond))) != 0)
         {
           zMapLogCriticalSysErr(status, "%s", "zmapCondVarSignal cond signal") ;
         }
@@ -109,9 +113,13 @@ bool zmapCondVarSignal(ZMapRequest thread_state, ZMapThreadRequest new_state, vo
   // Unlock...
   if (status == 0)
     {
-      if ((status = pthread_mutex_unlock(&(thread_state->mutex))) != 0)
+      if ((status = pthread_mutex_unlock(&(thread_request->mutex))) != 0)
         {
           zMapLogCriticalSysErr(status, "%s", "zmapCondVarSignal mutex unlock") ;
+        }
+      else
+        {
+          zMapDebugPrintf("Unlocked mutex %p", &(thread_request->mutex)) ;
         }
     }
 
@@ -131,8 +139,9 @@ bool zmapCondVarSignal(ZMapRequest thread_state, ZMapThreadRequest new_state, vo
  * NOTE that you can optionally get the condvar state reset to the waiting_state, this
  * can be useful if you are calling this routine from a loop in which you wait until
  * something has changed from the waiting state...i.e. somehow you need to return to the
- * waiting state before looping again. */
-ZMapThreadRequest zmapCondVarWaitTimed(ZMapRequest condvar, ZMapThreadRequest waiting_state,
+ * waiting state before looping again.
+ */
+ZMapThreadRequest zmapCondVarWaitTimed(ZMapRequest thread_request, ZMapThreadRequest waiting_state,
 				       TIMESPEC *relative_timeout, gboolean reset_to_waiting,
 				       void **data_out)
 {
@@ -140,13 +149,17 @@ ZMapThreadRequest zmapCondVarWaitTimed(ZMapRequest condvar, ZMapThreadRequest wa
   int status = 0 ;
   TIMESPEC abs_timeout ;
 
-  pthread_cleanup_push(releaseCondvarMutex, (void *)condvar) ;
+  pthread_cleanup_push(releaseCondvarMutex, (void *)thread_request) ;
 
   if (status == 0)
     {
-      if ((status = pthread_mutex_lock(&(condvar->mutex))) != 0)
+      if ((status = pthread_mutex_lock(&(thread_request->mutex))) != 0)
         {
           zMapLogCriticalSysErr(status, "%s", "zmapCondVarWait mutex lock") ;
+        }
+      else
+        {
+          zMapDebugPrintf("  Locked mutex %p", &(thread_request->mutex)) ;
         }
     }
 
@@ -160,14 +173,17 @@ ZMapThreadRequest zmapCondVarWaitTimed(ZMapRequest condvar, ZMapThreadRequest wa
 
   if (status == 0)
     {
-      while (condvar->state == waiting_state)
+      while (thread_request->state == waiting_state)
         {
-          if ((status = pthread_cond_timedwait(&(condvar->cond), &(condvar->mutex),
+          if ((status = pthread_cond_timedwait(&(thread_request->cond), &(thread_request->mutex),
                                                &abs_timeout)) != 0)
             {
               if (status == ETIMEDOUT)			    /* Timed out so return. */
                 {
-                  condvar->state = ZMAPTHREAD_REQUEST_TIMED_OUT ;
+                  // a time out is a normal event so reset status to zero.
+                  thread_request->state = ZMAPTHREAD_REQUEST_TIMED_OUT ;
+                  status = 0 ;
+
                   break ;
                 }
               else
@@ -181,29 +197,33 @@ ZMapThreadRequest zmapCondVarWaitTimed(ZMapRequest condvar, ZMapThreadRequest wa
   
   if (status == 0)
     {
-      signalled_state = condvar->state ;			    /* return signalled end state. */
+      signalled_state = thread_request->state ;			    /* return signalled end state. */
 
       /* optionally reset current state to wait state. */
       if (reset_to_waiting)
-        condvar->state = waiting_state ;
+        thread_request->state = waiting_state ;
 
       /* Return data if there is some, seems to make sense only to do this if we _haven't_ timed out.
-       * Note how we reset condvar->request so we detect if new data comes in next time. */
-      if (condvar->state != ZMAPTHREAD_REQUEST_TIMED_OUT)
+       * Note how we reset thread_request->request so we detect if new data comes in next time. */
+      if (thread_request->state != ZMAPTHREAD_REQUEST_TIMED_OUT)
         {
-          if (condvar->request)
+          if (thread_request->request)
             {
-              *data_out = condvar->request ;
-              condvar->request = NULL ;
+              *data_out = thread_request->request ;
+              thread_request->request = NULL ;
             }
         }
     }
 
   if (status == 0)
     {
-      if ((status = pthread_mutex_unlock(&(condvar->mutex))) != 0)
+      if ((status = pthread_mutex_unlock(&(thread_request->mutex))) != 0)
         {
           zMapLogCriticalSysErr(status, "%s", "zmapCondVarWait mutex unlock") ;
+        }
+      else
+        {
+          zMapDebugPrintf("Unlocked mutex %p", &(thread_request->mutex)) ;
         }
     }
 
@@ -213,14 +233,14 @@ ZMapThreadRequest zmapCondVarWaitTimed(ZMapRequest condvar, ZMapThreadRequest wa
 }
 
 
-bool zmapCondVarDestroy(ZMapRequest thread_state)
+bool zmapCondVarDestroy(ZMapRequest thread_request)
 {
   bool result = false ;
   int status = 0 ;
 
   if (status == 0)
     {
-      if ((status = pthread_cond_destroy(&(thread_state->cond))) != 0)
+      if ((status = pthread_cond_destroy(&(thread_request->cond))) != 0)
         {
           zMapLogCriticalSysErr(status, "%s", "cond destroy") ;
         }
@@ -228,7 +248,7 @@ bool zmapCondVarDestroy(ZMapRequest thread_state)
 
   if (status == 0)
     {
-      if ((status = pthread_mutex_destroy(&(thread_state->mutex))) != 0)
+      if ((status = pthread_mutex_destroy(&(thread_request->mutex))) != 0)
         {
           zMapLogCriticalSysErr(status, "%s", "mutex destroy") ;
         }
@@ -245,14 +265,14 @@ bool zmapCondVarDestroy(ZMapRequest thread_state)
 /* this set of routines manipulates the variable in the thread state struct but do not
  * involve the Condition Variable. */
 
-bool zmapVarCreate(ZMapReply thread_state)
+bool zmapVarCreate(ZMapReply thread_reply)
 {
   bool result = false ;
   int status = 0 ;
 
   if (status == 0)
     {
-      if ((status = pthread_mutex_init(&(thread_state->mutex), NULL)) != 0)
+      if ((status = pthread_mutex_init(&(thread_reply->mutex), NULL)) != 0)
         {
           zMapLogCriticalSysErr(status, "%s", "mutex init") ;
         }
@@ -260,7 +280,7 @@ bool zmapVarCreate(ZMapReply thread_state)
 
   if (status == 0)
     {
-      thread_state->state = ZMAPTHREAD_REPLY_INVALID ;
+      thread_reply->state = ZMAPTHREAD_REPLY_INVALID ;
 
       result = true ;
     }
@@ -270,29 +290,37 @@ bool zmapVarCreate(ZMapReply thread_state)
 
 
 
-bool zmapVarSetValue(ZMapReply thread_state, ZMapThreadReply new_state)
+bool zmapVarSetValue(ZMapReply thread_reply, ZMapThreadReply new_state)
 {
   bool result = false ;
   int status = 0 ;
 
   if (status == 0)
     {
-      if ((status = pthread_mutex_lock(&(thread_state->mutex))) != 0)
+      if ((status = pthread_mutex_lock(&(thread_reply->mutex))) != 0)
         {
           zMapLogCriticalSysErr(status, "%s", "zmapVarSetValue mutex lock") ;
+        }
+      else
+        {
+          zMapDebugPrintf("  Locked mutex %p", &(thread_reply->mutex)) ;
         }
     }
 
   if (status == 0)
     {
-      thread_state->state = new_state ;
+      thread_reply->state = new_state ;
     }
 
   if (status == 0)
     {
-      if ((status = pthread_mutex_unlock(&(thread_state->mutex))) != 0)
+      if ((status = pthread_mutex_unlock(&(thread_reply->mutex))) != 0)
         {
           zMapLogCriticalSysErr(status, "%s", "zmapVarSetValue mutex unlock") ;
+        }
+      else
+        {
+          zMapDebugPrintf("Unlocked mutex %p", &(thread_reply->mutex)) ;
         }
     }
 
@@ -306,31 +334,39 @@ bool zmapVarSetValue(ZMapReply thread_state, ZMapThreadReply new_state)
 /* Returns TRUE if it could read the value (i.e. the mutex was unlocked)
  * and returns the value in state_out,
  * returns FALSE otherwise. */
-bool zmapVarGetValue(ZMapReply thread_state, ZMapThreadReply *state_out)
+bool zmapVarGetValue(ZMapReply thread_reply, ZMapThreadReply *state_out)
 {
   bool result = false ;
   int status = 0 ;
 
   if (status == 0)
     {
-      if ((status = pthread_mutex_trylock(&(thread_state->mutex))) != 0)
+      if ((status = pthread_mutex_trylock(&(thread_reply->mutex))) != 0)
         {
           if (status != EBUSY)
             zMapLogCriticalSysErr(status, "%s", "zmapVarGetValue mutex lock") ;
         }
+      else
+        {
+          zMapDebugPrintf("  Locked mutex %p", &(thread_reply->mutex)) ;
+        }
     }
 
   if (status == 0)
     {
-      *state_out = thread_state->state ;
+      *state_out = thread_reply->state ;
     }
 
   if (status == 0)
     {
-      if ((status = pthread_mutex_unlock(&(thread_state->mutex))) != 0)
+      if ((status = pthread_mutex_unlock(&(thread_reply->mutex))) != 0)
 	{
 	  zMapLogCriticalSysErr(status, "%s", "zmapVarGetValue mutex unlock") ;
 	}
+      else
+        {
+          zMapDebugPrintf("Unlocked mutex %p", &(thread_reply->mutex)) ;
+        }
     }
 
   if (status == 0)
@@ -342,30 +378,38 @@ bool zmapVarGetValue(ZMapReply thread_state, ZMapThreadReply *state_out)
 }
 
 
-bool zmapVarSetValueWithData(ZMapReply thread_state, ZMapThreadReply new_state, void *data)
+bool zmapVarSetValueWithData(ZMapReply thread_reply, ZMapThreadReply new_state, void *data)
 {
   bool result = false ;
   int status = 0 ;
 
   if (status == 0)
     {
-      if ((status = pthread_mutex_lock(&(thread_state->mutex))) != 0)
+      if ((status = pthread_mutex_lock(&(thread_reply->mutex))) != 0)
         {
           zMapLogCriticalSysErr(status, "%s", "zmapVarSetValueWithData mutex lock") ;
         }
+      else
+        {
+          zMapDebugPrintf("  Locked mutex %p", &(thread_reply->mutex)) ;
+        }
     }
 
   if (status == 0)
     {
-      thread_state->state = new_state ;
-      thread_state->reply = data ;
+      thread_reply->state = new_state ;
+      thread_reply->reply = data ;
     }
 
   if (status == 0)
     {
-      if ((status = pthread_mutex_unlock(&(thread_state->mutex))) != 0)
+      if ((status = pthread_mutex_unlock(&(thread_reply->mutex))) != 0)
         {
           zMapLogCriticalSysErr(status, "%s", "zmapVarSetValueWithData mutex unlock") ;
+        }
+      else
+        {
+          zMapDebugPrintf("Unlocked mutex %p", &(thread_reply->mutex)) ;
         }
     }
 
@@ -378,38 +422,46 @@ bool zmapVarSetValueWithData(ZMapReply thread_state, ZMapThreadReply new_state, 
 }
 
 
-bool zmapVarSetValueWithError(ZMapReply thread_state, ZMapThreadReply new_state, const char *err_msg)
+bool zmapVarSetValueWithError(ZMapReply thread_reply, ZMapThreadReply new_state, const char *err_msg)
 {
   bool result = false ;
   int status = 0 ;
 
   if (status == 0)
     {
-      if ((status = pthread_mutex_lock(&(thread_state->mutex))) != 0)
+      if ((status = pthread_mutex_lock(&(thread_reply->mutex))) != 0)
         {
           zMapLogCriticalSysErr(status, "%s", "zmapVarSetValueWithError mutex lock") ;
         }
+      else
+        {
+          zMapDebugPrintf("  Locked mutex %p", &(thread_reply->mutex)) ;
+        }
     }
 
   if (status == 0)
     {
-      thread_state->state = new_state ;
+      thread_reply->state = new_state ;
 
       if (err_msg)
         {
-          if (thread_state->error_msg)
-            g_free(thread_state->error_msg) ;
+          if (thread_reply->error_msg)
+            g_free(thread_reply->error_msg) ;
 
-          thread_state->error_msg = g_strdup(err_msg) ;
+          thread_reply->error_msg = g_strdup(err_msg) ;
         }
     }
 
 
   if (status == 0)
     {
-      if ((status = pthread_mutex_unlock(&(thread_state->mutex))) != 0)
+      if ((status = pthread_mutex_unlock(&(thread_reply->mutex))) != 0)
         {
           zMapLogCriticalSysErr(status, "%s", "zmapVarSetValueWithError mutex unlock") ;
+        }
+      else
+        {
+          zMapDebugPrintf("Unlocked mutex %p", &(thread_reply->mutex)) ;
         }
     }
 
@@ -424,7 +476,7 @@ bool zmapVarSetValueWithError(ZMapReply thread_state, ZMapThreadReply new_state,
 
 /* Sometimes for Errors we need to return some of the data as it includeds request
  * details and so on. */
-bool zmapVarSetValueWithErrorAndData(ZMapReply thread_state, ZMapThreadReply new_state,
+bool zmapVarSetValueWithErrorAndData(ZMapReply thread_reply, ZMapThreadReply new_state,
 				     const char *err_msg, void *data)
 {
   bool result = false ;
@@ -432,32 +484,40 @@ bool zmapVarSetValueWithErrorAndData(ZMapReply thread_state, ZMapThreadReply new
 
   if (status == 0)
     {
-      if ((status = pthread_mutex_lock(&(thread_state->mutex))) != 0)
+      if ((status = pthread_mutex_lock(&(thread_reply->mutex))) != 0)
         {
           zMapLogCriticalSysErr(status, "%s", "zmapVarSetValueWithError mutex lock") ;
         }
+      else
+        {
+          zMapDebugPrintf("  Locked mutex %p", &(thread_reply->mutex)) ;
+        }
     }
 
   if (status == 0)
     {
-      thread_state->state = new_state ;
+      thread_reply->state = new_state ;
 
       if (err_msg)
         {
-          if (thread_state->error_msg)
-            g_free(thread_state->error_msg) ;
+          if (thread_reply->error_msg)
+            g_free(thread_reply->error_msg) ;
 
-          thread_state->error_msg = g_strdup(err_msg) ;
+          thread_reply->error_msg = g_strdup(err_msg) ;
         }
 
-      thread_state->reply = data ;
+      thread_reply->reply = data ;
     }
 
   if (status == 0)
     {
-      if ((status = pthread_mutex_unlock(&(thread_state->mutex))) != 0)
+      if ((status = pthread_mutex_unlock(&(thread_reply->mutex))) != 0)
         {
           zMapLogCriticalSysErr(status, "%s", "zmapVarSetValueWithError mutex unlock") ;
+        }
+      else
+        {
+          zMapDebugPrintf("Unlocked mutex %p", &(thread_reply->mutex)) ;
         }
     }
 
@@ -474,7 +534,7 @@ bool zmapVarSetValueWithErrorAndData(ZMapReply thread_state, ZMapThreadReply new
  * and returns the value in state_out and also if there is any data it
  * is returned in data_out and if there is an err_msg it is returned in err_msg_out,
  * returns FALSE if it could not read the value. */
-bool zmapVarGetValueWithData(ZMapReply thread_state, ZMapThreadReply *state_out,
+bool zmapVarGetValueWithData(ZMapReply thread_reply, ZMapThreadReply *state_out,
                              void **data_out, char **err_msg_out)
 {
   bool result = false ;
@@ -482,36 +542,44 @@ bool zmapVarGetValueWithData(ZMapReply thread_state, ZMapThreadReply *state_out,
 
   if (status == 0)
     {
-      if ((status = pthread_mutex_trylock(&(thread_state->mutex))) != 0)
+      if ((status = pthread_mutex_trylock(&(thread_reply->mutex))) != 0)
         {
           if (status != EBUSY)
             zMapLogCriticalSysErr(status, "%s", "zmapVarGetValue mutex lock") ;
+        }
+      else
+        {
+          zMapDebugPrintf("  Locked mutex %p", &(thread_reply->mutex)) ;
         }
     }
 
   if (status == 0)
     {
-      *state_out = thread_state->state ;
+      *state_out = thread_reply->state ;
 
-      if (thread_state->reply)
+      if (thread_reply->reply)
 	{
-	  *data_out = thread_state->reply ;
-	  thread_state->reply = NULL ;
+	  *data_out = thread_reply->reply ;
+	  thread_reply->reply = NULL ;
 	}
 
-      if (thread_state->error_msg)
+      if (thread_reply->error_msg)
 	{
-	  *err_msg_out = thread_state->error_msg ;
-	  thread_state->error_msg = NULL ;
+	  *err_msg_out = thread_reply->error_msg ;
+	  thread_reply->error_msg = NULL ;
 	}
     }
 
   if (status == 0)
     {
-      if ((status = pthread_mutex_unlock(&(thread_state->mutex))) != 0)
+      if ((status = pthread_mutex_unlock(&(thread_reply->mutex))) != 0)
 	{
 	  zMapLogCriticalSysErr(status, "%s", "zmapVarGetValue mutex unlock") ;
 	}
+      else
+        {
+          zMapDebugPrintf("Unlocked mutex %p", &(thread_reply->mutex)) ;
+        }
     }
 
   if (status == 0)
@@ -523,14 +591,14 @@ bool zmapVarGetValueWithData(ZMapReply thread_state, ZMapThreadReply *state_out,
 }
 
 
-bool zmapVarDestroy(ZMapReply thread_state)
+bool zmapVarDestroy(ZMapReply thread_reply)
 {
   bool result = false ;
   int status = 0 ;
 
   if (status == 0)
     {
-      if ((status = pthread_mutex_destroy(&(thread_state->mutex))) != 0)
+      if ((status = pthread_mutex_destroy(&(thread_reply->mutex))) != 0)
         {
           zMapLogCriticalSysErr(status, "%s", "mutex destroy") ;
         }

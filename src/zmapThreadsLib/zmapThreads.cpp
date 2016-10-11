@@ -62,7 +62,7 @@ static GString *addThreadString(GString *str, ZMapThreadType thread_type, ZMapTh
 //
 
 /* Turn on/off all debugging messages for threads. */
-bool zmap_thread_debug_G = true ;
+bool zmap_thread_debug_G = false ;
 
 
 /* For locking/unlocking of fork calls.....should not be in this file....move.... */

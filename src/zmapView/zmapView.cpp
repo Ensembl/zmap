@@ -2939,7 +2939,6 @@ static gboolean checkStateConnections(ZMapView zmap_view)
             {
               ZMapServerReqAny req_any = NULL ;
 
-
               /* Recover the request from the thread data....is there always data ? check this... */
               if (data)
                 {

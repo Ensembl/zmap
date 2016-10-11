@@ -39,6 +39,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <pthread.h>
+
+
+
 #include <glib.h>
 
 #include <ZMap/zmapUtils.hpp>
@@ -75,7 +78,7 @@ void *zmapNewThread(void *thread_args)
 {
   zmapThreadCB thread_cb = NULL ;
   ZMapThread thread = (ZMapThread)thread_args ;
-  ZMapRequest thread_state = &(thread->request) ;
+  ZMapRequest thread_request = &(thread->request) ;
   TIMESPEC timeout ;
   ZMapThreadRequest signalled_state ;
   ZMapThreadReturnCode slave_response =  ZMAPTHREAD_RETURNCODE_OK;
@@ -83,7 +86,19 @@ void *zmapNewThread(void *thread_args)
   int call_clean = 1 ;
   int old_state = 0, old_type = 0, errno ;
 
-  ZMAPTHREAD_DEBUG_MSG(ZMapThreadType::SLAVE, thread, ZMapThreadType::MASTER, NULL, "%s", "slave thread routine starting....") ;
+
+  ZMAPTHREAD_DEBUG_MSG(ZMapThreadType::SLAVE, thread, ZMapThreadType::MASTER, NULL,
+                       "%s", "slave thread routine starting....") ;
+
+
+  /* Next two calls added to fix MACOSX pthread issues with cancellation. */
+  if ((errno = pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, &old_state)) != 0)
+    zMapLogCriticalSysErr(errno, "%s", "pthread_setcancelstate() failed") ;
+
+  if ((errno = pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, &old_type)) != 0)
+    zMapLogCriticalSysErr(errno, "%s", "pthread_setcanceltype() failed") ;
+
+
 
   /* We set up the thread struct and then immediately set up our pthread clean up routine
    * to catch errors, if we are cancelled before this then the clean up routine will not
@@ -94,6 +109,7 @@ void *zmapNewThread(void *thread_args)
   // If we get cancelled we end up directly in the cleanup routine with thread_cancelled == true
   thread_cb->thread_cancelled = true ;
 
+
   // Records that the server request failed for serveral reasons.
   thread_cb->server_died = FALSE ;
 
@@ -102,17 +118,10 @@ void *zmapNewThread(void *thread_args)
   thread_cb->slave_data = NULL ;
 
 
-  /* Next two calls added to fix MACOSX pthread issues */
-  if ((errno = pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, &old_state)) != 0)
-    zMapLogCriticalSysErr(errno, "%s", "pthread_setcancelstate() failed") ;
-
-  if ((errno = pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, &old_type)) != 0)
-    zMapLogCriticalSysErr(errno, "%s", "pthread_setcanceltype() failed") ;
-
-
-
   // Set up thread clean up routine, will receive thread_cb as its arg.
+  // From this point on if we are cancelled we'll end up in cleanUpThread().
   pthread_cleanup_push(cleanUpThread, (void *)thread_cb) ;
+
 
 
   // Set up either new or old slave handlers and exit policy.
@@ -127,16 +136,19 @@ void *zmapNewThread(void *thread_args)
 
 
 
-
-
-
+  // Ok...loop waiting for requests from the master thread.
+  //
   while (slave_response != ZMAPTHREAD_RETURNCODE_QUIT)
     {
       void *request ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       // TRY ONE HERE....
       /* pthread_testcancel fix for MACOSX */
       pthread_testcancel() ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
@@ -149,7 +161,7 @@ void *zmapNewThread(void *thread_args)
       timeout.tv_sec = 5 ;
       timeout.tv_nsec = 0 ;
       request = NULL ;
-      signalled_state = zmapCondVarWaitTimed(thread_state, ZMAPTHREAD_REQUEST_WAIT, &timeout, TRUE,
+      signalled_state = zmapCondVarWaitTimed(thread_request, ZMAPTHREAD_REQUEST_WAIT, &timeout, TRUE,
 					     &request) ;
 
 
@@ -414,7 +426,10 @@ void *zmapNewThread(void *thread_args)
                        "slave thread about to exit: will %scall clean up routine....",
                        (call_clean ? "" : "not ")) ;
 
+
+
   pthread_cleanup_pop(call_clean) ;
+
 
   // Tidy up......
   g_free(thread_cb) ;
@@ -422,6 +437,8 @@ void *zmapNewThread(void *thread_args)
   // Mark thread as finished.
   ZMAPTHREAD_DEBUG_MSG(ZMapThreadType::SLAVE, thread, ZMapThreadType::MASTER, NULL, "%s", "Marking thread as finished and exiting....") ;
 
+
+  // Signal that the thread is finished.
   zmapThreadFinish(thread) ;
 
 
@@ -542,6 +559,16 @@ static void cleanUpThread(void *thread_args)
             }
         }
     }
+
+
+  // Some duplicated clean up if we are cancelled and come straight in here.
+  if (thread_cb->thread_cancelled)
+    {
+      // Signal that the thread is finished.
+      zmapThreadFinish(thread) ;
+    }
+
+
 
   ZMAPTHREAD_DEBUG_MSG(ZMapThreadType::SLAVE, thread, ZMapThreadType::MASTER, NULL, "%s", "thread clean-up routine exiting....") ;
 
