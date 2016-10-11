@@ -2861,7 +2861,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
         {
           ZMapNewDataSource view_con ;
           ZMapThread thread ;
-          ZMapThreadReply reply = ZMAPTHREAD_REPLY_DIED ;
+          ZMapThreadReply reply = ZMAPTHREAD_REPLY_INVALID ;
           void *data = NULL ;
           char *err_msg = NULL ;
           gint err_code = -1 ;

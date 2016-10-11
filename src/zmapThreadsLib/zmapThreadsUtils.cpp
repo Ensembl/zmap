@@ -91,7 +91,7 @@ bool zmapCondVarSignal(ZMapRequest thread_request, ZMapThreadRequest new_state, 
         }
       else
         {
-          zMapDebugPrintf("  Locked mutex %p", &(thread_request->mutex)) ;
+          zMapDebugPrint(zmap_thread_debug_G, "  Locked mutex %p", &(thread_request->mutex)) ;
         }
     }
 
@@ -119,7 +119,7 @@ bool zmapCondVarSignal(ZMapRequest thread_request, ZMapThreadRequest new_state, 
         }
       else
         {
-          zMapDebugPrintf("Unlocked mutex %p", &(thread_request->mutex)) ;
+          zMapDebugPrint(zmap_thread_debug_G, "Unlocked mutex %p", &(thread_request->mutex)) ;
         }
     }
 
@@ -159,7 +159,7 @@ ZMapThreadRequest zmapCondVarWaitTimed(ZMapRequest thread_request, ZMapThreadReq
         }
       else
         {
-          zMapDebugPrintf("  Locked mutex %p", &(thread_request->mutex)) ;
+          zMapDebugPrint(zmap_thread_debug_G, "  Locked mutex %p", &(thread_request->mutex)) ;
         }
     }
 
@@ -223,7 +223,7 @@ ZMapThreadRequest zmapCondVarWaitTimed(ZMapRequest thread_request, ZMapThreadReq
         }
       else
         {
-          zMapDebugPrintf("Unlocked mutex %p", &(thread_request->mutex)) ;
+          zMapDebugPrint(zmap_thread_debug_G, "Unlocked mutex %p", &(thread_request->mutex)) ;
         }
     }
 
@@ -303,7 +303,7 @@ bool zmapVarSetValue(ZMapReply thread_reply, ZMapThreadReply new_state)
         }
       else
         {
-          zMapDebugPrintf("  Locked mutex %p", &(thread_reply->mutex)) ;
+          zMapDebugPrint(zmap_thread_debug_G, "  Locked mutex %p", &(thread_reply->mutex)) ;
         }
     }
 
@@ -320,7 +320,7 @@ bool zmapVarSetValue(ZMapReply thread_reply, ZMapThreadReply new_state)
         }
       else
         {
-          zMapDebugPrintf("Unlocked mutex %p", &(thread_reply->mutex)) ;
+          zMapDebugPrint(zmap_thread_debug_G, "Unlocked mutex %p", &(thread_reply->mutex)) ;
         }
     }
 
@@ -348,7 +348,7 @@ bool zmapVarGetValue(ZMapReply thread_reply, ZMapThreadReply *state_out)
         }
       else
         {
-          zMapDebugPrintf("  Locked mutex %p", &(thread_reply->mutex)) ;
+          zMapDebugPrint(zmap_thread_debug_G, "  Locked mutex %p", &(thread_reply->mutex)) ;
         }
     }
 
@@ -365,7 +365,7 @@ bool zmapVarGetValue(ZMapReply thread_reply, ZMapThreadReply *state_out)
 	}
       else
         {
-          zMapDebugPrintf("Unlocked mutex %p", &(thread_reply->mutex)) ;
+          zMapDebugPrint(zmap_thread_debug_G, "Unlocked mutex %p", &(thread_reply->mutex)) ;
         }
     }
 
@@ -391,7 +391,7 @@ bool zmapVarSetValueWithData(ZMapReply thread_reply, ZMapThreadReply new_state, 
         }
       else
         {
-          zMapDebugPrintf("  Locked mutex %p", &(thread_reply->mutex)) ;
+          zMapDebugPrint(zmap_thread_debug_G, "  Locked mutex %p", &(thread_reply->mutex)) ;
         }
     }
 
@@ -409,7 +409,7 @@ bool zmapVarSetValueWithData(ZMapReply thread_reply, ZMapThreadReply new_state, 
         }
       else
         {
-          zMapDebugPrintf("Unlocked mutex %p", &(thread_reply->mutex)) ;
+          zMapDebugPrint(zmap_thread_debug_G, "Unlocked mutex %p", &(thread_reply->mutex)) ;
         }
     }
 
@@ -435,7 +435,7 @@ bool zmapVarSetValueWithError(ZMapReply thread_reply, ZMapThreadReply new_state,
         }
       else
         {
-          zMapDebugPrintf("  Locked mutex %p", &(thread_reply->mutex)) ;
+          zMapDebugPrint(zmap_thread_debug_G, "  Locked mutex %p", &(thread_reply->mutex)) ;
         }
     }
 
@@ -461,7 +461,7 @@ bool zmapVarSetValueWithError(ZMapReply thread_reply, ZMapThreadReply new_state,
         }
       else
         {
-          zMapDebugPrintf("Unlocked mutex %p", &(thread_reply->mutex)) ;
+          zMapDebugPrint(zmap_thread_debug_G, "Unlocked mutex %p", &(thread_reply->mutex)) ;
         }
     }
 
@@ -490,7 +490,7 @@ bool zmapVarSetValueWithErrorAndData(ZMapReply thread_reply, ZMapThreadReply new
         }
       else
         {
-          zMapDebugPrintf("  Locked mutex %p", &(thread_reply->mutex)) ;
+          zMapDebugPrint(zmap_thread_debug_G, "  Locked mutex %p", &(thread_reply->mutex)) ;
         }
     }
 
@@ -517,7 +517,7 @@ bool zmapVarSetValueWithErrorAndData(ZMapReply thread_reply, ZMapThreadReply new
         }
       else
         {
-          zMapDebugPrintf("Unlocked mutex %p", &(thread_reply->mutex)) ;
+          zMapDebugPrint(zmap_thread_debug_G, "Unlocked mutex %p", &(thread_reply->mutex)) ;
         }
     }
 
@@ -549,7 +549,7 @@ bool zmapVarGetValueWithData(ZMapReply thread_reply, ZMapThreadReply *state_out,
         }
       else
         {
-          zMapDebugPrintf("  Locked mutex %p", &(thread_reply->mutex)) ;
+          zMapDebugPrint(zmap_thread_debug_G, "  Locked mutex %p", &(thread_reply->mutex)) ;
         }
     }
 
@@ -578,7 +578,7 @@ bool zmapVarGetValueWithData(ZMapReply thread_reply, ZMapThreadReply *state_out,
 	}
       else
         {
-          zMapDebugPrintf("Unlocked mutex %p", &(thread_reply->mutex)) ;
+          zMapDebugPrint(zmap_thread_debug_G, "Unlocked mutex %p", &(thread_reply->mutex)) ;
         }
     }
 
