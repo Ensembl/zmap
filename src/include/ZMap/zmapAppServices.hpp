@@ -62,11 +62,16 @@ typedef void (*ZMapAppCreateSourceCB)(const char *name, const std::string &url,
                                       gpointer user_data, GError **error) ;
 
 
-
-gboolean zMapAppGetSequenceConfig(ZMapFeatureSequenceMap seq_map, GError **error) ;
 GtkWidget *zMapAppGetSequenceView(ZMapAppGetSequenceViewCB user_func, gpointer user_data,
                                   ZMapAppClosedSequenceViewCB close_func, gpointer close_data,
                                   ZMapFeatureSequenceMap sequence_map, gboolean display_sequence) ;
+GtkWidget *zMapCreateSequenceViewWidg(ZMapAppGetSequenceViewCB user_func, gpointer user_data,
+                                      ZMapAppClosedSequenceViewCB close_func, gpointer close_data,
+                                      ZMapFeatureSequenceMap sequence_map, 
+                                      gboolean display_sequence = TRUE, const gboolean import = FALSE,
+                                      GtkWidget *toplevel = NULL) ;
+
+gboolean zMapAppGetSequenceConfig(ZMapFeatureSequenceMap seq_map, GError **error) ;
 
 GtkWidget *zMapAppCreateSource(ZMapFeatureSequenceMap sequence_map, 
                                ZMapAppCreateSourceCB user_func, gpointer user_data,
@@ -77,13 +82,9 @@ GtkWidget *zMapAppCreateSource(ZMapFeatureSequenceMap sequence_map,
                                ZMapAppSourceType default_type = ZMapAppSourceType::TRACKHUB
 #endif
                                ) ;
-
 GtkWidget *zMapAppEditSource(ZMapFeatureSequenceMap sequence_map, ZMapConfigSource source,
                              ZMapAppCreateSourceCB user_func, gpointer user_data) ;
-GtkWidget *zMapCreateSequenceViewWidg(ZMapAppGetSequenceViewCB user_func, gpointer user_data,
-                                      ZMapFeatureSequenceMap sequence_map, 
-                                      gboolean display_sequence = TRUE, const gboolean import = FALSE,
-                                      GtkWidget *toplevel = NULL) ;
+
 void zMapAppMergeSequenceName(ZMapFeatureSequenceMap seq_map_inout, const char *sequence_name, 
                               const gboolean merge_details, GError **error) ;
 void zMapAppMergeSequenceCoords(ZMapFeatureSequenceMap seq_map, int start, int end, 
