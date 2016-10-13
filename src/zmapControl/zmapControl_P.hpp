@@ -250,9 +250,6 @@ void zmapControlWriteWindowIdFile(Window id, char *window_name);
 void zmapControlInfoOverwrite(void *data, int code, char *format, ...);
 void zmapControlInfoSet(void *data, int code, char *format, ...);
 
-void zmapControlImportFile(ZMapControlImportFileCB user_func, gpointer user_data,
-                           ZMapFeatureSequenceMap sequence_map, int req_start, int req_end) ;
-
 void zmapControlWindowSetStatus(ZMap zmap) ;
 void zmapControlWindowSetGUIState(ZMap zmap) ;
 void zmapControlWindowSetButtonState(ZMap zmap, ZMapWindowFilter filter) ;
@@ -269,10 +266,11 @@ void zmapControlPrintAllViews(ZMap zmap, gboolean print_xids) ;
 
 void zmapControlWindowMaximize(GtkWidget *widget, ZMap map) ;
 
+
 void zmapControlImportFile(ZMap zmap,
                            ZMapFeatureSequenceMap sequence_map, int req_start, int req_end) ;
 
-
+// scaffolding for testing new threads...
 void zmapControlNewImportFile(ZMap zmap,
                               ZMapFeatureSequenceMap sequence_map, int req_start, int req_end) ;
 
