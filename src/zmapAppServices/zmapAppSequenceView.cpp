@@ -86,6 +86,9 @@ typedef struct MainFrameStructName
   GtkTreeView *sources_tree ;
   GtkTreeModel *sources_model ;
 
+  // Is a source window displayed ?
+  GtkWidget *source_window ;
+
 } MainFrameStruct, *MainFrame ;
 
 
@@ -98,7 +101,11 @@ static GtkWidget *makePanel(GtkWidget *toplevel, gpointer *seqdata_out,
 static GtkWidget *makeMainFrame(MainFrame main_data, ZMapFeatureSequenceMap sequence_map) ;
 static GtkWidget *makeButtonBox(MainFrame main_data) ;
 static void setSequenceEntries(MainFrame main_data) ;
+
 static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data) ;
+static void containerDestroyCB(GtkWidget *widget, gpointer cb_data) ;
+static void destroyData(MainFrame main_data) ;
+
 static void applyCB(GtkWidget *widget, gpointer cb_data) ;
 #ifndef __CYGWIN__
 static void chooseConfigCB(GtkFileChooserButton *widget, gpointer user_data) ;
@@ -125,7 +132,10 @@ static void selectSource(const char *source_name,
                          GtkTreeModel *model,
                          const bool deselect_others = false) ;
 
-
+static void createNewSourceCB(const char *source_name, const std::string &url, 
+                              const char *featuresets, const char *biotypes, const char *format,
+                              gpointer user_data, GError **error) ;
+static void cancelNewSourceCB(GtkWidget *toplevel, gpointer cb_data) ;
 
 
 /*
@@ -153,11 +163,11 @@ GtkWidget *zMapAppGetSequenceView(ZMapAppGetSequenceViewCB user_func, gpointer u
   gtk_container_border_width(GTK_CONTAINER(toplevel), 0) ;
 
   container = makePanel(toplevel, &seq_data,
-                        user_func, user_data,
-                        close_func, close_data,
+                        user_func, user_data, close_func, close_data,
                         sequence_map, display_sequence, true) ;
 
   gtk_container_add(GTK_CONTAINER(toplevel), container) ;
+
   gtk_signal_connect(GTK_OBJECT(toplevel), "destroy",
                      GTK_SIGNAL_FUNC(toplevelDestroyCB), seq_data) ;
 
@@ -174,13 +184,21 @@ GtkWidget *zMapAppGetSequenceView(ZMapAppGetSequenceViewCB user_func, gpointer u
  * and the existing sequence map will be used (e.g. for importing data into an existing view).
  */
 GtkWidget *zMapCreateSequenceViewWidg(ZMapAppGetSequenceViewCB user_func, gpointer user_data,
+                                      ZMapAppClosedSequenceViewCB close_func, gpointer close_data,
                                       ZMapFeatureSequenceMap sequence_map, 
                                       gboolean display_sequence, gboolean import,
                                       GtkWidget *toplevel)
 {
   GtkWidget *container = NULL ;
+  MainFrame main_data = NULL ;
 
-  container = makePanel(toplevel, NULL, user_func, user_data, NULL, NULL, sequence_map, display_sequence, import) ;
+  container = makePanel(toplevel, (void **)&main_data,
+                        user_func, user_data, close_func, close_data,
+                        sequence_map, display_sequence, import) ;
+
+  gtk_signal_connect(GTK_OBJECT(container), "destroy",
+                     GTK_SIGNAL_FUNC(containerDestroyCB), main_data) ;
+
 
   return container ;
 }
@@ -206,6 +224,9 @@ static GtkWidget *makePanel(GtkWidget *toplevel, gpointer *our_data,
 
   main_data = g_new0(MainFrameStruct, 1) ;
 
+  if (our_data)
+    *our_data = main_data ;
+
   main_data->user_func = user_func ;
   main_data->user_data = user_data ;
   main_data->close_func = close_func ;
@@ -213,15 +234,8 @@ static GtkWidget *makePanel(GtkWidget *toplevel, gpointer *our_data,
   main_data->orig_sequence_map = sequence_map ;
   main_data->display_sequence = display_sequence ;
   main_data->import = import ;
-  main_data->show_all = !import ; // only show recent sources in import dialog
-
-  if (toplevel)
-    {
-      main_data->toplevel = toplevel ;
-
-      if (our_data)
-        *our_data = main_data ;
-    }
+  main_data->show_all = !import ;                           // only show recent sources in import dialog
+  main_data->toplevel = toplevel ;                          // n.b. toplevel can legitimately be NULL
 
   frame = gtk_frame_new(NULL) ;
   gtk_container_border_width(GTK_CONTAINER(frame), 5) ;
@@ -271,6 +285,8 @@ static void createTreeViewColumn(GtkTreeView *tree_view,
 
   gtk_tree_view_column_set_resizable(column, TRUE) ;
   gtk_tree_view_append_column(tree_view, column);
+
+  return ;
 }
 
 
@@ -302,6 +318,8 @@ static void updateSourcesListAddSource(MainFrame main_data,
           updateSourcesListAddSource(main_data, store, child_source, &tree_iter) ;
         }
     }
+
+  return ;
 }
 
 
@@ -322,6 +340,8 @@ static void updateSourcesList(MainFrame main_data, ZMapFeatureSequenceMap sequen
           updateSourcesListAddSource(main_data, store, source_iter.second, NULL) ;
         }
     }  
+
+  return ;
 }
 
 
@@ -368,6 +388,8 @@ static void treePathSetLoadStatus(GtkTreeModel *model,
           path_copy = NULL ;
         }
     }
+
+  return ;
 }
 
 
@@ -508,6 +530,8 @@ static void makeLabel(const char *text, GtkWidget *parent)
   GtkWidget *label = gtk_label_new(text) ;
   gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
   gtk_box_pack_start(GTK_BOX(parent), label, FALSE, FALSE, 0) ;
+
+  return ;
 }
 
 
@@ -684,29 +708,52 @@ static GtkWidget *makeButtonBox(MainFrame main_data)
 }
 
 
-
-/* This function gets called whenever there is a gtk_widget_destroy() to the top level
- * widget. Sometimes this is because of window manager action, sometimes one of our exit
- * routines does a gtk_widget_destroy() on the top level widget.
- */
+// For zMapAppGetSequenceView(), this function gets called whenever there is a
+// gtk_widget_destroy() to the top level widget. Sometimes this is because of window manager
+// action, sometimes one of our exit routines does a gtk_widget_destroy() on the top level widget.
 static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data)
 {
   MainFrame main_data = (MainFrame)cb_data ;
 
-  /* Signal app we are going if we are a separate window. */
+  destroyData(main_data) ;
+
+  return ;
+}
+
+// For zMapAppGetSequenceViewWidg(), this function gets called whenever a parent widget of us is
+// being destroyed by a gtk_widget_destroy(). Sometimes this is because of window manager action,
+// sometimes one of our exit routines does a gtk_widget_destroy() on the top level widget.
+static void containerDestroyCB(GtkWidget *widget, gpointer cb_data)
+{
+  MainFrame main_data = (MainFrame)cb_data ;
+
+  destroyData(main_data) ;
+
+  return ;
+}
+
+
+// Common cleanup routine.
+static void destroyData(MainFrame main_data)
+{
+  // Signal app we are going
   if (main_data->close_func)
     (main_data->close_func)(main_data->toplevel, main_data->close_data) ;
 
-  /* Free resources. */
-  if (main_data->orig_sequence_map->sequence)
-    g_free(main_data->orig_sequence_map->sequence) ;
-  if (main_data->orig_sequence_map->config_file)
-    g_free(main_data->orig_sequence_map->config_file) ;
+  // If there's a source window showing then destroy it.
+  if (main_data->source_window)
+    {
+      gtk_widget_destroy(main_data->source_window) ;
+      main_data->source_window = NULL ;
+    }
 
   g_free(main_data) ;
 
   return ;
 }
+
+
+
 
 
 /* Kill the dialog. */
@@ -764,19 +811,18 @@ static void saveCB(GtkWidget *widget, gpointer cb_data)
 
 /* Callback called when the create-source dialog has been ok'd to do the work to create the new
  * source from the user-provided info. Returns true if successfully created the source.  */
-static void createNewSourceCB(const char *source_name, 
-                              const std::string &url, 
-                              const char *featuresets,
-                              const char *biotypes,
-                              const char *format,
-                              gpointer user_data,
-                              GError **error)
+static void createNewSourceCB(const char *source_name, const std::string &url, 
+                              const char *featuresets, const char *biotypes, const char *format,
+                              gpointer user_data, GError **error)
 {
   MainFrame main_data = (MainFrame)user_data ;
   zMapReturnIfFail(main_data && main_data->orig_sequence_map) ;
 
   ZMapFeatureSequenceMap sequence_map = main_data->orig_sequence_map ;
   GError *tmp_error = NULL ;
+
+  // source window will have gone away.
+  main_data->source_window = NULL ;
 
   sequence_map->createSource(source_name, url, featuresets, biotypes, format, false, true, &tmp_error) ;
 
@@ -790,6 +836,19 @@ static void createNewSourceCB(const char *source_name,
 
   if (tmp_error)
     g_propagate_error(error, tmp_error) ;
+
+  return ;
+}
+
+
+static void cancelNewSourceCB(GtkWidget *toplevel, gpointer cb_data)
+{
+  MainFrame main_data = (MainFrame)cb_data ;
+
+  // source window will have gone away.
+  main_data->source_window = NULL ;
+
+  return ;
 }
 
 
@@ -826,11 +885,18 @@ static void createSourceCB(GtkWidget *widget, gpointer cb_data)
   MainFrame main_data = (MainFrame)cb_data ;
   zMapReturnIfFail(main_data) ;
 
-  /* When importing via the import dialog we probably(?) want the default import type to FILE. */
-  if (main_data->import)
-    zMapAppCreateSource(main_data->orig_sequence_map, createNewSourceCB, main_data, NULL, NULL, ZMapAppSourceType::FILE) ;
-  else
-    zMapAppCreateSource(main_data->orig_sequence_map, createNewSourceCB, main_data, NULL, NULL) ;
+  // Only one source window at a time.
+  if (!(main_data->source_window))
+    {
+      /* When importing via the import dialog we probably(?) want the default import type to FILE. */
+      if (main_data->import)
+        main_data->source_window = zMapAppCreateSource(main_data->orig_sequence_map,
+                                                       createNewSourceCB, main_data, cancelNewSourceCB, main_data,
+                                                       ZMapAppSourceType::FILE) ;
+      else
+        main_data->source_window = zMapAppCreateSource(main_data->orig_sequence_map,
+                                                       createNewSourceCB, main_data, cancelNewSourceCB, main_data) ;
+    }
 
   return ;
 }
@@ -915,6 +981,8 @@ static void clearRecentCB(GtkWidget *button, gpointer data)
 
       updateSourcesList(main_data, main_data->orig_sequence_map) ;
     }
+
+  return ;
 }
 
 
@@ -1212,6 +1280,8 @@ static void saveSourcesToConfig(ZMapFeatureSequenceMap sequence_map,
 
   if (tmp_error)
     g_propagate_error(error, tmp_error) ;
+
+  return ;
 }
 
 
@@ -1230,6 +1300,8 @@ static void configChangedCB(GtkWidget *widget, gpointer user_data)
       /* Update the sources list */
       updateSourcesList(main_frame, main_frame->orig_sequence_map) ;
     }
+
+  return ;
 }
 
 
@@ -1280,6 +1352,8 @@ static void selectSource(const char *source_name,
             gtk_tree_selection_select_iter(selection, &iter) ;
         }
     }
+
+  return ;
 }
 
 
