@@ -400,10 +400,13 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
 
   /* Update dependent windows...there is more work to do here.... */
 
-  if (window->col_config_window)
-    {
-      zmapWindowColumnConfigure(window, NULL, ZMAPWINDOWCOLUMN_CONFIGURE_ALL) ;
-    }
+  // gb10: We no longer automatically update the column configuration window when redrawing
+  // columns because this makes it difficult to interact with when data is loading in the
+  // background. Instead, you can use the revert/refresh button on the Columns dialog.
+//  if (window->col_config_window)
+//    {
+//      zmapWindowColumnConfigure(window, NULL, ZMAPWINDOWCOLUMN_CONFIGURE_ALL) ;
+//    }
 
   if(debug_containers)
     {

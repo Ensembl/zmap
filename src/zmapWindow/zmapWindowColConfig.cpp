@@ -2975,10 +2975,10 @@ static GtkWidget *create_revert_apply_button(ColConfigure configure_data)
   gtk_box_set_spacing (GTK_BOX(button_box), ZMAP_WINDOW_GTK_BUTTON_BOX_SPACING);
   gtk_container_set_border_width (GTK_CONTAINER (button_box), ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
 
-  revert_button = gtk_button_new_from_stock(GTK_STOCK_REVERT_TO_SAVED) ;
+  revert_button = gtk_button_new_from_stock(GTK_STOCK_REFRESH) ;
   gtk_box_pack_end(GTK_BOX(button_box), revert_button, FALSE, FALSE, 0) ;
   gtk_signal_connect(GTK_OBJECT(revert_button), "clicked", GTK_SIGNAL_FUNC(revert_button_cb), configure_data) ;
-  gtk_widget_set_tooltip_text(revert_button, "Revert to last applied values") ;
+  gtk_widget_set_tooltip_text(revert_button, "Revert unsaved changes and re-load data") ;
 
   /* Add a button to apply the new column order. We want them to explicitly choose to reorder
    * rather than doing this when they hit the Apply button because they might have reordered just
