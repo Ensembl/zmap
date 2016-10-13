@@ -2749,12 +2749,21 @@ GtkWidget *zMapAppCreateSource(ZMapFeatureSequenceMap sequence_map,
                                ZMapAppSourceType default_type)
 {
   zMapReturnValIfFail(user_func, NULL) ;
-
+  GtkDialog *dialog ;
   GtkWidget *toplevel = NULL ;
-  GtkWidget *container ;
+  GtkWidget *vbox, *container ;
   gpointer seq_data = NULL ;
 
-  toplevel = zMapGUIToplevelNew(NULL, "Create Source") ;
+  toplevel = zMapGUIDialogNew(NULL, "Create Source", NULL, NULL) ;
+
+  dialog = GTK_DIALOG(toplevel) ;
+  vbox = dialog->vbox ;
+
+  int width = 0 ;
+  int height = 0 ;
+
+  if (gbtools::GUIGetTrueMonitorSize(toplevel, &width, &height) && GTK_IS_WINDOW(toplevel))
+    gtk_window_set_default_size(GTK_WINDOW(toplevel), std::min(640.0, width * 0.5), std::min(400.0, height * 0.7)) ;
 
   gtk_window_set_policy(GTK_WINDOW(toplevel), FALSE, TRUE, FALSE ) ;
   gtk_container_border_width(GTK_CONTAINER(toplevel), 0) ;
@@ -2763,8 +2772,8 @@ GtkWidget *zMapAppCreateSource(ZMapFeatureSequenceMap sequence_map,
   container = makePanel(toplevel, &seq_data, sequence_map, 
                         user_func, user_data, close_func, close_data, 
                         default_type, false, &main_data) ;
+  gtk_container_add(GTK_CONTAINER(vbox), container) ;
 
-  gtk_container_add(GTK_CONTAINER(toplevel), container) ;
   gtk_signal_connect(GTK_OBJECT(toplevel), "destroy",
                      GTK_SIGNAL_FUNC(toplevelDestroyCB), seq_data) ;
 
