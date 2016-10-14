@@ -2361,6 +2361,7 @@ static GtkResponseType messageFull(GtkWindow *parent, const char *title_in, cons
     {
       entry = gtk_entry_new() ;
       gtk_box_pack_start(GTK_BOX(GTK_DIALOG(dialog)->vbox), entry, TRUE, TRUE, 0) ;
+      gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE) ;
 
       if (user_data->hide_input)
         gtk_entry_set_visibility(GTK_ENTRY(entry), FALSE) ;
@@ -2379,7 +2380,13 @@ static GtkResponseType messageFull(GtkWindow *parent, const char *title_in, cons
 
   gtk_widget_show_all(dialog) ;
 
-  if (default_response)
+  /* For text-entry dialogs, set the focus in the entry box (must be done after the entry is
+   * realised and mapped). Otherwise, set the focus on the default response button. */
+  if (user_data && user_data->type == ZMAPGUI_USERDATA_TEXT)
+    {
+      gtk_widget_grab_focus(entry) ;
+    }
+  else if (default_response)
     {
       GtkWidget *default_widget = gtk_dialog_get_widget_for_response(GTK_DIALOG(dialog), default_response) ;
       gtk_widget_grab_focus(default_widget) ;
