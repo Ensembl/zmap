@@ -227,11 +227,12 @@ ZMapNewDataSource zmapViewRequestServer(ZMapView view, ZMapNewDataSource view_co
                                         ZMapFeatureBlock block_orig, GList *req_featuresets, GList *req_biotypes,
                                         gpointer _server, /* ZMapConfigSource */
                                         const char *req_sequence, int req_start, int req_end,
-                                        gboolean dna_requested, gboolean terminate, gboolean show_warning)
+                                        gboolean dna_requested, gboolean terminate_in, gboolean show_warning)
 {
   ZMapFeatureContext context ;
   ZMapFeatureBlock block ;
-  gboolean is_pipe ;
+  gboolean is_pipe = FALSE ;
+  gboolean terminate = terminate_in ;
 
   /* UM....this looks like you haven't arranged the code properly...something for investigation.... */
   /* things you have to do to get round scope and headers... */
@@ -274,6 +275,8 @@ ZMapNewDataSource zmapViewRequestServer(ZMapView view, ZMapNewDataSource view_co
     g_str_has_prefix(server->url,"file://") ||
     g_str_has_prefix(server->url,"http://") ||
     g_str_has_prefix(server->url,"https://");
+
+  terminate = terminate || is_pipe ;
 
 
   // ERROR HANDLING..........temp while I rearrange....
