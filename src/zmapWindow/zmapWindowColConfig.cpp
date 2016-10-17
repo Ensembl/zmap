@@ -2586,6 +2586,40 @@ static void select_invert_button_cb(GtkButton *button, gpointer user_data)
 }
 
 
+/* Get the selected rows from the given model as row references (these can be edited without
+ * safely without messing up the iterators e.g. if the changes cause the row order to change).
+ * Optionally also return the tree model. */
+static list<GtkTreeRowReference*> getSelectedRows(GtkTreeView *tree_view,
+                                                  GtkTreeModel **model_out = NULL)
+{
+  list<GtkTreeRowReference*> row_refs ;
+
+  GtkTreeSelection *selection = gtk_tree_view_get_selection(tree_view) ;
+
+  if (selection)
+    {
+      GtkTreeModel *model = NULL ;
+      GList *rows = gtk_tree_selection_get_selected_rows(selection, &model) ;
+
+      if (model_out)
+        *model_out = model ;
+
+      // Loop through the selection and convert the paths to row references. 
+      for (GList *item = rows; item; item = item->next)
+        {
+          GtkTreePath *path = (GtkTreePath*)(item->data) ;
+          
+          row_refs.push_back(gtk_tree_row_reference_new(model, path)) ;
+        }
+
+      // Clean up
+      g_list_free_full (rows, (GDestroyNotify) gtk_tree_path_free);
+    }
+
+  return row_refs ;
+}
+
+
 /* Called when the user hits the set-group button. Prompts for a style and assigns it to the
  * currently-selected rows. */
 static void choose_style_button_cb(GtkButton *button, gpointer user_data)
@@ -2593,11 +2627,12 @@ static void choose_style_button_cb(GtkButton *button, gpointer user_data)
   LoadedPageData page_data = (LoadedPageData)user_data ;
   zMapReturnIfFail(page_data && page_data->tree_model && page_data->window) ;
 
-  GtkTreeSelection *selection = gtk_tree_view_get_selection(page_data->tree_view) ;
+  GtkTreeModel *model = NULL ;
+  list<GtkTreeRowReference*> selected_rows = getSelectedRows(page_data->tree_view, &model) ;
 
   GList *feature_sets = tree_view_get_selected_featuresets(page_data) ;
 
-  if (selection)
+  if (!selected_rows.empty())
     {
       /* Open a dialog for the user to choose a style */
       GQuark style_id = zMapWindowChooseStyleDialog(page_data->window, feature_sets) ;
@@ -2606,13 +2641,13 @@ static void choose_style_button_cb(GtkButton *button, gpointer user_data)
         {
           page_data->last_style_id = style_id ;
 
-          GtkTreeModel *model = NULL ;
-          GList *rows = gtk_tree_selection_get_selected_rows(selection, &model) ;
-          
-          for (GList *item = rows; item; item = item->next)
+          // Loop through each row ref and update the group
+          for (GtkTreeRowReference *row : selected_rows)
             {
-              GtkTreePath *path = (GtkTreePath*)(item->data) ;
+              GtkTreePath *path = gtk_tree_row_reference_get_path(row) ;
               set_column_style(model, path, page_data) ;
+              gtk_tree_row_reference_free(row) ;
+              gtk_tree_path_free(path) ;
             }
 
           /* Apply the changes (if the apply-now flag is set) */
@@ -2728,12 +2763,13 @@ static void set_group_button_cb(GtkButton *button, gpointer user_data)
 {
   LoadedPageData page_data = (LoadedPageData)user_data ;
   zMapReturnIfFail(page_data && page_data->tree_model && page_data->window) ;
+  
+  GtkTreeModel *model = NULL ;
+  list<GtkTreeRowReference*> selected_rows = getSelectedRows(page_data->tree_view, &model) ;
 
-  GtkTreeSelection *selection = gtk_tree_view_get_selection(page_data->tree_view) ;
-
-  if (selection)
+  if (!selected_rows.empty())
     {
-      const char *msg = "Please enter a group name (lowercase only).\n\nClear the text to remvoe the group." ;
+      const char *msg = "Please enter a group name (lowercase only).\n\nClear the text to remove the group." ;
       char *text_out = NULL ;
 
       GtkResponseType response = zMapGUIMsgGetText(NULL, ZMAP_MSG_INFORMATION, msg, FALSE, &text_out) ;
@@ -2745,18 +2781,18 @@ static void set_group_button_cb(GtkButton *button, gpointer user_data)
           else
             page_data->last_group_id = 0 ;
 
-          GtkTreeModel *model = NULL ;
-          GList *rows = gtk_tree_selection_get_selected_rows(selection, &model) ;
-          
-          for (GList *item = rows; item; item = item->next)
+          // Loop through each row ref and update the group
+          for (GtkTreeRowReference *row : selected_rows)
             {
-              GtkTreePath *path = (GtkTreePath*)(item->data) ;
+              GtkTreePath *path = gtk_tree_row_reference_get_path(row) ;
               set_column_group(page_data, model, path) ;
+              gtk_tree_row_reference_free(row) ;
+              gtk_tree_path_free(path) ;
             }
 
-          /* Apply the changes (if the apply-now flag is set) */
+          // Apply the changes (if the apply-now flag is set)
           loaded_page_apply_groups(page_data) ;
-        }
+         }
     }
   else
     {
@@ -2872,16 +2908,16 @@ static GtkWidget* loaded_cols_panel_create_buttons(LoadedPageData page_data)
   gtk_widget_set_tooltip_text(button, "Set visibility of all selected tracks to Hide") ;
 
   /* Add a button to set a group for the selected columns */
-  button = gtk_button_new_with_mnemonic("Assign _Group") ;
+  button = gtk_button_new_with_mnemonic("Change _Group") ;
   gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
   g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(set_group_button_cb), page_data) ;
-  gtk_widget_set_tooltip_text(button, "Choose a group for the selected tracks") ;
+  gtk_widget_set_tooltip_text(button, "Assign or clear the group for the selected tracks") ;
 
   /* Add a button to choose a style for the selected columns */
-  button = gtk_button_new_with_mnemonic("Assign _Style") ;
+  button = gtk_button_new_with_mnemonic("Change _Style") ;
   gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
   g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(choose_style_button_cb), page_data) ;
-  gtk_widget_set_tooltip_text(button, "Assign a style to the selected tracks") ;
+  gtk_widget_set_tooltip_text(button, "Edit the style and/or assign a new style for the selected tracks") ;
 
   return vbox ;
 }
@@ -2975,10 +3011,10 @@ static GtkWidget *create_revert_apply_button(ColConfigure configure_data)
   gtk_box_set_spacing (GTK_BOX(button_box), ZMAP_WINDOW_GTK_BUTTON_BOX_SPACING);
   gtk_container_set_border_width (GTK_CONTAINER (button_box), ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
 
-  revert_button = gtk_button_new_from_stock(GTK_STOCK_REVERT_TO_SAVED) ;
+  revert_button = gtk_button_new_from_stock(GTK_STOCK_REFRESH) ;
   gtk_box_pack_end(GTK_BOX(button_box), revert_button, FALSE, FALSE, 0) ;
   gtk_signal_connect(GTK_OBJECT(revert_button), "clicked", GTK_SIGNAL_FUNC(revert_button_cb), configure_data) ;
-  gtk_widget_set_tooltip_text(revert_button, "Revert to last applied values") ;
+  gtk_widget_set_tooltip_text(revert_button, "Revert unsaved changes and/or re-load data (required to view new columns that have been loaded in the background)") ;
 
   /* Add a button to apply the new column order. We want them to explicitly choose to reorder
    * rather than doing this when they hit the Apply button because they might have reordered just

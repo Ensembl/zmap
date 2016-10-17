@@ -106,22 +106,21 @@ static const char * const ZMAP_BIGBED_SO_TERM  = "sequence_feature" ;
 static const char * const ZMAP_BIGWIG_SO_TERM  = "score" ;
 #define ZMAP_CIGARSTRING_MAXLENGTH 2048
 #define READBUFFER_SIZE 2048
+#define BED_DEFAULT_FIELDS 3 // min number of fields in a BED file
+#define MAX_FILE_THREADS 10  // max number of file threads at any one time
 
 
-/* Map of file types to a data-source types */
-const map<string, ZMapDataStreamType> file_type_to_source_type_G =
-  {
-    {"GFF",     ZMapDataStreamType::GIO}
-    ,{"Bed",    ZMapDataStreamType::BED}
-    ,{"bigBed", ZMapDataStreamType::BIGBED}
-    ,{"bigWig", ZMapDataStreamType::BIGWIG}
-    ,{"BAM",    ZMapDataStreamType::HTS}
-    ,{"SAM",    ZMapDataStreamType::HTS}
-    ,{"CRAM",   ZMapDataStreamType::HTS}
-    ,{"BCF",    ZMapDataStreamType::BCF}
-    ,{"VCF",    ZMapDataStreamType::BCF}
-  } ;
 
+/* 
+ * Function declarations
+ */
+static string toLower(const string &s) ;
+static ZMapDataStreamType dataSourceTypeFromExtension(const string &file_ext, GError **error_out) ;
+
+
+/* 
+ * Utility classes
+ */
 
 /* Need a semaphore to limit the number of threads.
  * From http://stackoverflow.com/questions/4792449/c0x-has-no-semaphores-how-to-synchronize-threads */
@@ -150,64 +149,6 @@ private:
     std::condition_variable cv;
 };
 
-inline semaphore::semaphore(size_t n) : count{n} {}
-
-inline void semaphore::notify() {
-    std::lock_guard<std::mutex> lock{mutex};
-    ++count;
-    cv.notify_one();
-}
-
-inline void semaphore::wait() {
-    std::unique_lock<std::mutex> lock{mutex};
-    cv.wait(lock, [&]{ return count > 0; });
-    --count;
-}
-
-inline bool semaphore::try_wait() {
-    std::lock_guard<std::mutex> lock{mutex};
-
-    if (count > 0) {
-        --count;
-        return true;
-    }
-
-    return false;
-}
-
-template<class Rep, class Period>
-bool semaphore::wait_for(const std::chrono::duration<Rep, Period>& d) {
-    std::unique_lock<std::mutex> lock{mutex};
-    auto finished = cv.wait_for(lock, d, [&]{ return count > 0; });
-
-    if (finished)
-        --count;
-
-    return finished;
-}
-
-template<class Clock, class Duration>
-bool semaphore::wait_until(const std::chrono::time_point<Clock, Duration>& t) {
-    std::unique_lock<std::mutex> lock{mutex};
-    auto finished = cv.wait_until(lock, t, [&]{ return count > 0; });
-
-    if (finished)
-        --count;
-
-    return finished;
-}
-
-inline semaphore::native_handle_type semaphore::native_handle() {
-    return cv.native_handle();
-}
-
-
-
-
-/* Keep track of how many files we've opened in different threads */
-#define MAX_FILE_THREADS 10
-static semaphore semaphore_G(MAX_FILE_THREADS) ;
-
 
 // Utility class to do error handling for blatSrc library.
 // We must use this error handler for all calls to the library to make sure it doesn't abort.
@@ -224,77 +165,6 @@ public:
 private:
   struct errCatch *err_catch_ ;
 } ;
-
-BlatLibErrHandler::BlatLibErrHandler()
-  : err_catch_(NULL)
-{
-}
-
-BlatLibErrHandler::~BlatLibErrHandler()
-{
-  if (err_catch_)
-    {
-      errCatchFree(&err_catch_) ;
-      err_catch_ = NULL ;
-    }
-}
-
-// Initialises the handler. Returns true if ok.
-bool BlatLibErrHandler::errTry()
-{
-  bool result = false ;
-
-  if (err_catch_)
-    errCatchFree(&err_catch_) ;
-
-  err_catch_ = errCatchNew() ;
-
-  if (err_catch_)
-    result = errCatchStart(err_catch_) ;
-
-  return result ;
-}
-
-// Ends the handler. Returns true if there was an error.
-bool BlatLibErrHandler::errCatch()
-{
-  bool result = false ;
-
-  if (err_catch_)
-    {
-      errCatchEnd(err_catch_) ;
-      result = err_catch_->gotError ;
-    }
-
-  return result ;
-}
-
-// Returns the error message (empty string if no error)
-string BlatLibErrHandler::errMsg()
-{
-  string err_msg ;
-
-  if (err_catch_ && err_catch_->gotError && 
-      err_catch_->message && err_catch_->message->string)
-    {
-      err_msg = err_catch_->message->string ;
-    }
-
-  return err_msg ;
-}
-
-
-
-// Utility to convert a std::string to lowercase
-string toLower(const string &s)
-{
-  string result(s) ;
-  
-  for (int i = 0; i < s.length(); ++i)
-    result[i] = std::tolower(result[i]) ;
-
-  return result ;
-}
 
 
 /* Custom comparator for a map to make the key case-insensitive. This is a 'less' object,
@@ -316,48 +186,26 @@ public:
 };
 
 
-/* Determine the source type from the given file extension (e.g. "bigWig") */
-ZMapDataStreamType dataSourceTypeFromExtension(const string &file_ext, GError **error_out)
-{
-  ZMapDataStreamType type = ZMapDataStreamType::UNK ;
+/* 
+ * Globals
+ */
 
-  static const map<string, ZMapDataStreamType, caseInsensitiveCmp> file_extensions = 
-    {
-      {"gff",     ZMapDataStreamType::GIO}
-      ,{"gff3",   ZMapDataStreamType::GIO}
-      ,{"bed",    ZMapDataStreamType::BED}
-      ,{"bb",     ZMapDataStreamType::BIGBED}
-      ,{"bigBed", ZMapDataStreamType::BIGBED}
-      ,{"bw",     ZMapDataStreamType::BIGWIG}
-      ,{"bigWig", ZMapDataStreamType::BIGWIG}
-#ifdef USE_HTSLIB
-      ,{"sam",    ZMapDataStreamType::HTS}
-      ,{"bam",    ZMapDataStreamType::HTS}
-      ,{"cram",   ZMapDataStreamType::HTS}
-      ,{"vcf",    ZMapDataStreamType::BCF}
-      ,{"bcf",    ZMapDataStreamType::BCF}
-#endif
-    };
+/* Keep track of how many files we've opened in different threads */
+static semaphore semaphore_G(MAX_FILE_THREADS) ;
 
-  auto found_iter = file_extensions.find(file_ext) ;
-      
-  if (found_iter != file_extensions.end())
-    {
-      type = found_iter->second ;
-    }
-  else
-    {
-      string expected("");
-      for (auto iter = file_extensions.begin(); iter != file_extensions.end(); ++iter)
-        expected += " ." + iter->first ;
-
-      g_set_error(error_out, ZMAP_SERVER_ERROR, ZMAPSERVER_ERROR_UNKNOWN_EXTENSION,
-                  "Unrecognised file extension .'%s'. Expected one of:%s", 
-                  file_ext.c_str(), expected.c_str()) ;
-    }
-
-  return type ;
-}
+/* Map of file types to a data-source types */
+const map<string, ZMapDataStreamType> file_type_to_source_type_G =
+  {
+    {"GFF",     ZMapDataStreamType::GIO}
+    ,{"Bed",    ZMapDataStreamType::BED}
+    ,{"bigBed", ZMapDataStreamType::BIGBED}
+    ,{"bigWig", ZMapDataStreamType::BIGWIG}
+    ,{"BAM",    ZMapDataStreamType::HTS}
+    ,{"SAM",    ZMapDataStreamType::HTS}
+    ,{"CRAM",   ZMapDataStreamType::HTS}
+    ,{"BCF",    ZMapDataStreamType::BCF}
+    ,{"VCF",    ZMapDataStreamType::BCF}
+  } ;
 
 
 } // unnamed namespace
@@ -429,12 +277,24 @@ ZMapDataStreamBEDStruct::ZMapDataStreamBEDStruct(const GQuark source_name,
                                                  const char *open_mode,
                                                  const char *sequence,
                                                  const int start,
-                                                 const int end)
+                                                 const int end,
+                                                 const GQuark format)
   : ZMapDataStreamStruct(source_name, sequence, start, end),
-    cur_feature_(NULL)
+    cur_feature_(NULL),
+    standard_fields_(BED_DEFAULT_FIELDS)
 {
   zMapReturnIfFail(file_name) ;
   type = ZMapDataStreamType::BED ;
+
+  if (format)
+    {
+      stringstream ss(g_quark_to_string(format)) ;
+      string tmp ;
+      int num_fields ;
+
+      if (ss >> tmp >> num_fields)
+        standard_fields_ = num_fields ;
+    }
 
   BlatLibErrHandler err_handler ;
   string err_msg ;
@@ -494,15 +354,27 @@ ZMapDataStreamBIGBEDStruct::ZMapDataStreamBIGBEDStruct(const GQuark source_name,
                                                        const char *open_mode,
                                                        const char *sequence,
                                                        const int start,
-                                                       const int end)
+                                                       const int end,
+                                                       const GQuark format)
   : ZMapDataStreamStruct(source_name, sequence, start, end),
     lm_(NULL),
     list_(NULL),
     cur_interval_(NULL),
-    cur_feature_(NULL)
+    cur_feature_(NULL),
+    standard_fields_(BED_DEFAULT_FIELDS)
 {
   zMapReturnIfFail(file_name) ;
   type = ZMapDataStreamType::BIGBED ;
+
+  if (format)
+    {
+      stringstream ss(g_quark_to_string(format)) ;
+      string tmp ;
+      int num_fields ;
+
+      if (ss >> tmp >> num_fields)
+        standard_fields_ = num_fields ;
+    }
 
   BlatLibErrHandler err_handler ;
   string err_msg ;
@@ -1698,6 +1570,63 @@ ZMapFeatureSet ZMapDataStreamStruct::makeFeatureSet(const char *feature_name_id,
 }
 
 
+// Utility to create a feature from a BED struct
+ZMapFeature ZMapDataStreamStruct::makeBEDFeature(struct bed *bed_feature, 
+                                                 const int standard_fields,
+                                                 const char *so_term,
+                                                 GError **error)
+{
+  ZMapStyleMode style = ZMAPSTYLE_MODE_BASIC ;
+
+  // BED files with 12 fields represent transcripts
+  if (standard_fields == 12)
+    {
+      so_term = "transcript" ;
+      style = ZMAPSTYLE_MODE_TRANSCRIPT ;
+    }
+
+  ZMapFeature feature = makeFeature(bed_feature->chrom,
+                                    g_quark_to_string(source_name_),
+                                    so_term,
+                                    bed_feature->chromStart + 1, //0-based
+                                    bed_feature->chromEnd,       //chromEnd is one past the last coord
+                                    bed_feature->score,
+                                    bed_feature->strand[0],
+                                    bed_feature->name,
+                                    true,
+                                    1,
+                                    bed_feature->chromEnd - bed_feature->chromStart + 1,
+                                    '.',
+                                    NULL,
+                                    style,
+                                    false,
+                                    error) ;
+
+  if (style == ZMAPSTYLE_MODE_TRANSCRIPT)
+    {
+      zMapFeatureTranscriptInit(feature);
+      zMapFeatureAddTranscriptStartEnd(feature, FALSE, 0, FALSE);
+
+      // If there is no CDS, the thickStart and thickEnd are usually set to chromStart
+      if (bed_feature->thickEnd != bed_feature->thickStart)
+        zMapFeatureAddTranscriptCDS(feature, TRUE, bed_feature->thickStart, bed_feature->thickEnd);
+
+      for (int i = 0; i < bed_feature->blockCount; ++i)
+        {
+          const int exon_start = bed_feature->chromStarts[i] + bed_feature->chromStart ;
+          const int exon_end = exon_start + bed_feature->blockSizes[i] ;
+          ZMapSpanStruct span = {exon_start, exon_end} ;
+
+          zMapFeatureAddTranscriptExonIntron(feature, &span, NULL) ;
+        }
+
+      zMapFeatureTranscriptRecreateIntrons(feature) ;
+    }
+
+  return feature ;
+}
+
+
 ZMapFeature ZMapDataStreamStruct::makeFeature(const char *sequence,
                                               const char *source,
                                               const char *so_type,
@@ -1832,28 +1761,14 @@ bool ZMapDataStreamGIOStruct::parseBodyLine(GError **error)
   return result ;
 }
 
+
 bool ZMapDataStreamBEDStruct::parseBodyLine(GError **error)
 {
   bool result = false ;
 
   if (readLine())
     {
-      makeFeature(cur_feature_->chrom,
-                  g_quark_to_string(source_name_),
-                  ZMAP_BED_SO_TERM,
-                  cur_feature_->chromStart + 1, //0-based
-                  cur_feature_->chromEnd,       //chromEnd is one past the last coord
-                  cur_feature_->score,
-                  cur_feature_->strand[0],
-                  cur_feature_->name,
-                  true,
-                  1,
-                  cur_feature_->chromEnd - cur_feature_->chromStart + 1,
-                  '.',
-                  NULL,
-                  ZMAPSTYLE_MODE_BASIC,
-                  false,
-                  error) ;
+      makeBEDFeature(cur_feature_, standard_fields_, ZMAP_BED_SO_TERM, error) ;
     }
 
   return result ;
@@ -1865,22 +1780,7 @@ bool ZMapDataStreamBIGBEDStruct::parseBodyLine(GError **error)
 
   if (readLine())
     {
-      makeFeature(cur_feature_->chrom,
-                  g_quark_to_string(source_name_),
-                  ZMAP_BIGBED_SO_TERM,
-                  cur_feature_->chromStart + 1, //0-based
-                  cur_feature_->chromEnd,       //chromEnd is one past the last coord
-                  cur_feature_->score,
-                  cur_feature_->strand[0],
-                  cur_feature_->name,
-                  true,
-                  1,
-                  cur_feature_->chromEnd - cur_feature_->chromStart + 1,
-                  '.',
-                  NULL,
-                  ZMAPSTYLE_MODE_BASIC,
-                  false,
-                  error) ;
+      makeBEDFeature(cur_feature_, standard_fields_, ZMAP_BIGBED_SO_TERM, error) ;
     }
 
   return result ;
@@ -2128,11 +2028,15 @@ gboolean ZMapDataStreamHTSStruct::init(const char *region_name, int start, int e
                 }
               else
                 {
-                  return TRUE;
+                  result = TRUE;
                 }
             }
-          hts_iter = sam_itr_queryi(hts_idx, ref, begRange, endRange);
-          result = TRUE;
+
+          if (!result && hts_idx)
+            {
+              hts_iter = sam_itr_queryi(hts_idx, ref, begRange, endRange);
+              result = TRUE;
+            }
         }
       else
         {
@@ -2264,10 +2168,10 @@ ZMapDataStream zMapDataStreamCreate(const GQuark source_name,
           data_source = new ZMapDataStreamGIOStruct(source_name, file_name, open_mode, sequence, start, end) ;
           break ;
         case ZMapDataStreamType::BED:
-          data_source = new ZMapDataStreamBEDStruct(source_name, file_name, open_mode, sequence, start, end) ;
+          data_source = new ZMapDataStreamBEDStruct(source_name, file_name, open_mode, sequence, start, end, format) ;
           break ;
         case ZMapDataStreamType::BIGBED:
-          data_source = new ZMapDataStreamBIGBEDStruct(source_name, file_name, open_mode, sequence, start, end) ;
+          data_source = new ZMapDataStreamBIGBEDStruct(source_name, file_name, open_mode, sequence, start, end, format) ;
           break ;
         case ZMapDataStreamType::BIGWIG:
           data_source = new ZMapDataStreamBIGWIGStruct(source_name, file_name, open_mode, sequence, start, end) ;
@@ -2499,3 +2403,182 @@ ZMapDataStreamType zMapDataStreamTypeFromFormat(const string &format, GError **e
 
   return result ;
 }
+
+
+
+/*
+ *              Internal routines.
+ */
+
+namespace // unnamed namespace
+{
+
+inline semaphore::semaphore(size_t n) : count{n} {}
+
+inline void semaphore::notify() {
+    std::lock_guard<std::mutex> lock{mutex};
+    ++count;
+    cv.notify_one();
+}
+
+inline void semaphore::wait() {
+    std::unique_lock<std::mutex> lock{mutex};
+    cv.wait(lock, [&]{ return count > 0; });
+    --count;
+}
+
+inline bool semaphore::try_wait() {
+    std::lock_guard<std::mutex> lock{mutex};
+
+    if (count > 0) {
+        --count;
+        return true;
+    }
+
+    return false;
+}
+
+template<class Rep, class Period>
+bool semaphore::wait_for(const std::chrono::duration<Rep, Period>& d) {
+    std::unique_lock<std::mutex> lock{mutex};
+    auto finished = cv.wait_for(lock, d, [&]{ return count > 0; });
+
+    if (finished)
+        --count;
+
+    return finished;
+}
+
+template<class Clock, class Duration>
+bool semaphore::wait_until(const std::chrono::time_point<Clock, Duration>& t) {
+    std::unique_lock<std::mutex> lock{mutex};
+    auto finished = cv.wait_until(lock, t, [&]{ return count > 0; });
+
+    if (finished)
+        --count;
+
+    return finished;
+}
+
+inline semaphore::native_handle_type semaphore::native_handle() {
+    return cv.native_handle();
+}
+
+
+BlatLibErrHandler::BlatLibErrHandler()
+  : err_catch_(NULL)
+{
+}
+
+BlatLibErrHandler::~BlatLibErrHandler()
+{
+  if (err_catch_)
+    {
+      errCatchFree(&err_catch_) ;
+      err_catch_ = NULL ;
+    }
+}
+
+// Initialises the handler. Returns true if ok.
+bool BlatLibErrHandler::errTry()
+{
+  bool result = false ;
+
+  if (err_catch_)
+    errCatchFree(&err_catch_) ;
+
+  err_catch_ = errCatchNew() ;
+
+  if (err_catch_)
+    result = errCatchStart(err_catch_) ;
+
+  return result ;
+}
+
+// Ends the handler. Returns true if there was an error.
+bool BlatLibErrHandler::errCatch()
+{
+  bool result = false ;
+
+  if (err_catch_)
+    {
+      errCatchEnd(err_catch_) ;
+      result = err_catch_->gotError ;
+    }
+
+  return result ;
+}
+
+// Returns the error message (empty string if no error)
+string BlatLibErrHandler::errMsg()
+{
+  string err_msg ;
+
+  if (err_catch_ && err_catch_->gotError && 
+      err_catch_->message && err_catch_->message->string)
+    {
+      err_msg = err_catch_->message->string ;
+    }
+
+  return err_msg ;
+}
+
+
+
+// Utility to convert a std::string to lowercase
+static string toLower(const string &s)
+{
+  string result(s) ;
+  
+  for (int i = 0; i < s.length(); ++i)
+    result[i] = std::tolower(result[i]) ;
+
+  return result ;
+}
+
+
+/* Determine the source type from the given file extension (e.g. "bigWig") */
+static ZMapDataStreamType dataSourceTypeFromExtension(const string &file_ext, GError **error_out)
+{
+  ZMapDataStreamType type = ZMapDataStreamType::UNK ;
+
+  static const map<string, ZMapDataStreamType, caseInsensitiveCmp> file_extensions = 
+    {
+      {"gff",     ZMapDataStreamType::GIO}
+      ,{"gff3",   ZMapDataStreamType::GIO}
+      ,{"bed",    ZMapDataStreamType::BED}
+      ,{"bb",     ZMapDataStreamType::BIGBED}
+      ,{"bigBed", ZMapDataStreamType::BIGBED}
+      ,{"bw",     ZMapDataStreamType::BIGWIG}
+      ,{"bigWig", ZMapDataStreamType::BIGWIG}
+#ifdef USE_HTSLIB
+      ,{"sam",    ZMapDataStreamType::HTS}
+      ,{"bam",    ZMapDataStreamType::HTS}
+      ,{"cram",   ZMapDataStreamType::HTS}
+      ,{"vcf",    ZMapDataStreamType::BCF}
+      ,{"bcf",    ZMapDataStreamType::BCF}
+#endif
+    };
+
+  auto found_iter = file_extensions.find(file_ext) ;
+      
+  if (found_iter != file_extensions.end())
+    {
+      type = found_iter->second ;
+    }
+  else
+    {
+      string expected("");
+      for (auto iter = file_extensions.begin(); iter != file_extensions.end(); ++iter)
+        expected += " ." + iter->first ;
+
+      g_set_error(error_out, ZMAP_SERVER_ERROR, ZMAPSERVER_ERROR_UNKNOWN_EXTENSION,
+                  "Unrecognised file extension .'%s'. Expected one of:%s", 
+                  file_ext.c_str(), expected.c_str()) ;
+    }
+
+  return type ;
+}
+
+
+} // unnamed namespace
