@@ -104,29 +104,6 @@ static bool setUpServerConnectionByScheme(ZMapView zmap_view,
 //
 
 
-// Called from zmapcontrol for file loading.
-//
-gboolean zMapViewRequestServer(ZMapView view,
-                               ZMapFeatureBlock block_orig, GList *req_featuresets, GList *req_biotypes,
-                               gpointer server, /* ZMapConfigSource */
-                               const char *req_sequence, int req_start, int req_end,
-                               gboolean dna_requested, gboolean terminate, gboolean show_warning)
-{
-  gboolean result = FALSE ;
-  ZMapNewDataSource view_conn ;
-
-  if ((view_conn = zmapViewRequestServer(view, NULL,
-                                         block_orig, req_featuresets, req_biotypes,
-                                         server, /* ZMapConfigSource */
-                                         req_sequence, req_start, req_end,
-                                         dna_requested, terminate, show_warning)))
-    result = TRUE ;
-
-  return result ;
-}
-
-
-
 /* Set up a connection to a single named server and load features for the whole region.
  * in the view. Does nothing if the server is delayed. Sets the error if there is a problem. */
 void zMapViewSetUpServerConnection(ZMapView zmap_view, 
@@ -225,7 +202,7 @@ void zMapViewSetUpServerConnection(ZMapView zmap_view,
  */
 ZMapNewDataSource zmapViewRequestServer(ZMapView view, ZMapNewDataSource view_conn,
                                         ZMapFeatureBlock block_orig, GList *req_featuresets, GList *req_biotypes,
-                                        gpointer _server, /* ZMapConfigSource */
+                                        ZMapConfigSource server,
                                         const char *req_sequence, int req_start, int req_end,
                                         gboolean dna_requested, gboolean terminate_in, gboolean show_warning)
 {
@@ -233,10 +210,6 @@ ZMapNewDataSource zmapViewRequestServer(ZMapView view, ZMapNewDataSource view_co
   ZMapFeatureBlock block ;
   gboolean is_pipe = FALSE ;
   gboolean terminate = terminate_in ;
-
-  /* UM....this looks like you haven't arranged the code properly...something for investigation.... */
-  /* things you have to do to get round scope and headers... */
-  ZMapConfigSource server = (ZMapConfigSource) _server ;
 
 
   /* Copy the original context from the target block upwards setting feature set names
@@ -509,7 +482,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig,
           dna_requested = TRUE ;
         }
 
-      view_conn = zmapViewRequestServer(view, NULL, block_orig, req_sources, req_biotypes, (gpointer) server,
+      view_conn = zmapViewRequestServer(view, NULL, block_orig, req_sources, req_biotypes, server,
                                         req_sequence, req_start, req_end, dna_requested, terminate, !view->thread_fail_silent);
       if(view_conn)
         requested = TRUE;
@@ -680,7 +653,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig,
 
 
               view_conn = zmapViewRequestServer(view, view_conn, block_orig, req_featuresets, req_biotypes,
-                                                (gpointer)server, req_sequence, req_start, req_end,
+                                                server, req_sequence, req_start, req_end,
                                                 dna_requested,
                                                 (!existing && terminate), !view->thread_fail_silent) ;
 
