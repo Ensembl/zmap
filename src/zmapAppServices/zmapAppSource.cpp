@@ -94,6 +94,9 @@ enum class GenericListColumn {NAME,  /*MUST BE LAST:*/N_COLS} ;
 enum class TrackListColumn {NAME, ID, SPECIES, ASSEMBLY, TRACKS,  /*MUST BE LAST:*/N_COLS} ;
 
 
+/* 
+ * Utility classes
+ */
 
 /* Data we need in callbacks. */
 typedef struct MainFrameStructName
@@ -211,45 +214,237 @@ public:
 
 
 
+/* 
+ * Function declarations 
+ */
 
-GtkWidget *makePanel(GtkWidget *toplevel,
-                     gpointer *seqdata_out,
-                     ZMapFeatureSequenceMap sequence_map,
-                     ZMapAppCreateSourceCB user_func,
-                     gpointer user_data,
-                     ZMapAppClosedSequenceViewCB close_func,
-                     gpointer close_data,
-                     ZMapAppSourceType default_type,
-                     const bool edit_source,
-                     MainFrame *main_data) ;
-GtkWidget *makeButtonBox(MainFrame main_data) ;
-void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data) ;
-void cancelCB(GtkWidget *widget, gpointer cb_data) ;
-void applyCB(GtkWidget *widget, gpointer cb_data) ;
-GtkWidget *makeMainFrame(MainFrame main_data, ZMapFeatureSequenceMap sequence_map) ;
-gboolean applyFile(MainFrame main_data) ;
-void setWidgetsVisibility(list<GtkWidget*> &widget_list, const gboolean visible) ;
-void updatePanelFromSource(MainFrame main_data, ZMapConfigSource source) ;
-gboolean applyTrackhub(MainFrame main_frame);
+static GtkWidget *makePanel(GtkWidget *toplevel, gpointer *our_data, ZMapFeatureSequenceMap sequence_map,
+                            ZMapAppCreateSourceCB user_func, gpointer user_data, ZMapAppClosedSequenceViewCB close_func,
+                            gpointer close_data, ZMapAppSourceType default_type, const bool edit_source,
+                            MainFrame *main_data_out) ;
+static int comboGetIndex(MainFrame main_data, ZMapURLScheme scheme_in) ;
+static void updatePanelFromFileSource(MainFrame main_data, ZMapConfigSource source, ZMapURL zmap_url) ;
+static void updatePanelFromTrackhubSource(MainFrame main_data, ZMapConfigSource source, ZMapURL zmap_url) ;
 
-void trackhubSearchCB(GtkWidget *widget, gpointer cb_data);
-void trackhubBrowseCB(GtkWidget *widget, gpointer cb_data);
-void trackhubRegisterCB(GtkWidget *widget, gpointer cb_data);
+
+static void updatePanelFromSource(MainFrame main_data, ZMapConfigSource source) ;
+static GtkWidget* makeEntryWidget(const char *label_str, const char *default_value, const char *tooltip,
+                                  GtkTable *table, int *row, const int col, const int max_col, gboolean mandatory,
+                                  list<GtkWidget*> *widget_list, const bool activates_default = true) ;
+
+
+static GtkWidget* makeFileChooserWidget(const char *label_str, const char *default_value, const char *tooltip,
+                                        GtkTable *table, int *row, const int col, const int max_col, gboolean mandatory,
+                                        list<GtkWidget*> *widget_list, const bool activates_default, MainFrame main_data) ;
+static void setWidgetsVisibility(list<GtkWidget*> &widget_list, const gboolean visible) ;
+static char* comboGetValue(GtkComboBox *combo) ;
+static void sourceTypeChangedCB(GtkComboBox *combo, gpointer data) ;
+static void createComboItem(MainFrame main_data, GtkComboBox *combo, GtkListStore *store,
+                            ZMapURLScheme scheme, const char *text, unsigned int &combo_index, const bool active) ;
+static GtkComboBox *createComboBox(MainFrame main_data) ;
+static GtkWidget* makeButtonWidget(const char *stock, const char *label, const bool icon_only, const char *tooltip,
+                                   GtkSignalFunc cb_func, gpointer cb_data, GtkTable *table,
+                                   const int row, const int col, list<GtkWidget*> &widgets_list) ;
+
+
+/* This is called after the trackdb_id has changed. It looks up the trackdb_id
+ * in the registry and populates the other details from the results, or clears the detail boxes
+ * if the trackdb_id is not found in the registry. */
+static void onTrackDbIdChanged(GtkEditable *editable, gpointer user_data) ;
+static bool runLoginDialog(MainFrame main_data) ;
+static void loginButtonClickedCB(GtkWidget *button, gpointer data) ;
+static void makeTrackhubWidgets(MainFrame main_data, ZMapFeatureSequenceMap sequence_map,
+                                GtkTable *table, const int rows, const int cols, int &row, int &col) ;
+static GtkWidget *makeMainFrame(MainFrame main_data, ZMapFeatureSequenceMap sequence_map) ;
+static GtkWidget *makeButtonBox(MainFrame main_data) ;
+static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data) ;
+static void cancelCB(GtkWidget *widget, gpointer cb_data) ;
+static void applyCB(GtkWidget *widget, gpointer cb_data) ;
+static const char* getEntryText(GtkEntry *entry) ;
+static const char* fileTypeGetPipeScript(ZMapDataStreamType source_type, string &err_msg) ;
+static string constructRegularFileURL(const char *filename, string &err_msg) ;
+static string constructPipeFileURL(MainFrame main_frame, const char *source_name,
+                                   const char *filename, ZMapDataStreamType source_type, string &err_msg) ;
+static ZMapDataStreamType promptForFileType() ;
+static string constructFileURL(MainFrame main_frame, const char *source_name,
+                               const char *filename, string &format, GError **error) ;
+static gboolean applyFile(MainFrame main_frame) ;
+
+
+static char* my_strcasestr(const char *haystack, const char *needle) ;
+
+template<class ColType>
+static gboolean treeRowContainsText(GtkTreeModel *model, const gchar *search_term,
+                                    GtkTreeIter *iter, const ColType col_id) ;
+
+static gboolean generic_search_equal_func_cb(GtkTreeModel *model, gint column, const gchar *key,
+                                             GtkTreeIter *iter, gpointer user_data) ;
+static gboolean track_search_equal_func_cb(GtkTreeModel *model, gint column,
+                                           const gchar *key, GtkTreeIter *iter, gpointer user_data) ;
+static gboolean track_list_filter_visible_cb(GtkTreeModel *model, GtkTreeIter *iter, gpointer user_data) ;
+
+template<class ColType>
+static gboolean setEntryFromSelection(GtkTreeView *tree_view, GtkEntry *entry, const ColType col_id) ;
+
+static void filter_entry_activate_cb(GtkEntry *entry, gpointer user_data) ;
+static void clear_button_cb(GtkButton *button, gpointer user_data) ;
+static gboolean generic_list_filter_visible_cb(GtkTreeModel *model, GtkTreeIter *iter, gpointer user_data) ;
+static void listStorePopulate(GtkListStore *store, const list<string> &vals_list) ;
+static void listStorePopulate(GtkListStore *store, const list<TrackDb> &trackdb_list) ;
+
+template<class ColType>
+static void createTreeViewTextColumn(GtkTreeView *tree_view, const char *title, 
+                                     const ColType col_id, const bool hide = false) ;
+
+static GtkTreeView* createListWidget(MainFrame main_data, const list<string> &val_list, 
+                                     SearchListData &search_data, const gboolean allow_multiple) ;
+static GtkTreeView* createListWidget(MainFrame main_data, const list<TrackDb> &trackdb_list, 
+                                     SearchListData &search_data, const gboolean allow_multiple) ;
+
+template<class ListType>
+static GtkWidget* createListDialog(MainFrame main_data, const ListType &values_list, const char *title,
+                                   const gboolean allow_multiple, SearchListData &search_data, GtkTreeView **list_widget_out) ;
 
 template<class ListType, class ColType>
-gboolean runListDialog(MainFrame main_data, 
-                       const ListType &values_list, 
-                       const ColType result_col,
-                       GtkEntry *result_widg,
-                       const char *title,
-                       const gboolean allow_multiple) ;
+static gboolean runListDialog(MainFrame main_data, const ListType &values_list, const ColType result_col,
+                              GtkEntry *result_widg, const char *title, const gboolean allow_multiple) ;
+
+static gboolean applyTrackhub(MainFrame main_frame) ;
+static void trackhubSearchResponseCB(GtkDialog *dialog, gint response_id, gpointer user_data) ;
+static void trackhubSearchDestroyCB(GtkWidget *widget, gpointer cb_data) ;
+static void trackhubSearchCB(GtkWidget *widget, gpointer cb_data) ;
+static void deleteButtonClickedCB(GtkWidget *button, gpointer data) ;
+static void trackhubBrowse(MainFrame main_data) ;
+static void trackhubBrowseCB(GtkWidget *widget, gpointer cb_data) ;
+static void trackhubRegister(MainFrame main_data) ;
+static void trackhubRegisterCB(GtkWidget *widget, gpointer cb_data) ;
+
+
+#ifndef __CYGWIN__
+static void chooseFileCB(GtkFileChooserButton *widget, gpointer user_data) ;
+#endif
+
 
 #ifdef USE_ENSEMBL
-void dbnameCB(GtkWidget *widget, gpointer cb_data) ;
-void featuresetsCB(GtkWidget *widget, gpointer cb_data) ;
-void biotypesCB(GtkWidget *widget, gpointer cb_data) ;
-gboolean applyEnsembl(MainFrame main_data) ;
+
+static void updatePanelFromEnsemblSource(MainFrame main_data, ZMapConfigSource source, ZMapURL zmap_url) ;
+
+
+
+
+static void makeEnsemblWidgets(MainFrame main_data, ZMapFeatureSequenceMap sequence_map,
+                               GtkTable *table, const int rows, const int cols, int &row, int &col) ;
+static string constructUrl(const char *host, const char *port, const char *user, const char *pass,
+                           const char *dbname, const char *dbprefix) ;
+static gboolean applyEnsembl(MainFrame main_frame) ;
+static list<string> mainFrameGetDatabaseList(MainFrame main_data, GError **error) ;
+static list<string> mainFrameGetFeaturesetsList(MainFrame main_data, GError **error) ;
+static list<string> mainFrameGetBiotypesList(MainFrame main_data, GError **error) ;
+static void dbnameCB(GtkWidget *widget, gpointer cb_data) ;
+static void featuresetsCB(GtkWidget *widget, gpointer cb_data) ;
+static void biotypesCB(GtkWidget *widget, gpointer cb_data) ;
+
 #endif /* USE_ENSEMBL */
+
+
+} //unnamed namespace
+
+
+
+/*
+ *                   External interface routines.
+ */
+
+
+
+/* Show a dialog to create a new source */
+GtkWidget *zMapAppCreateSource(ZMapFeatureSequenceMap sequence_map,
+                               ZMapAppCreateSourceCB user_func,
+                               gpointer user_data,
+                               ZMapAppClosedSequenceViewCB close_func,
+                               gpointer close_data,
+                               ZMapAppSourceType default_type)
+{
+  zMapReturnValIfFail(user_func, NULL) ;
+  GtkDialog *dialog ;
+  GtkWidget *toplevel = NULL ;
+  GtkWidget *vbox, *container ;
+  gpointer seq_data = NULL ;
+
+  toplevel = zMapGUIDialogNew(NULL, "Create Source", NULL, NULL) ;
+
+  dialog = GTK_DIALOG(toplevel) ;
+  vbox = dialog->vbox ;
+
+  int width = 0 ;
+  int height = 0 ;
+
+  if (gbtools::GUIGetTrueMonitorSize(toplevel, &width, &height) && GTK_IS_WINDOW(toplevel))
+    gtk_window_set_default_size(GTK_WINDOW(toplevel), std::min(640.0, width * 0.5), std::min(400.0, height * 0.7)) ;
+
+  gtk_window_set_policy(GTK_WINDOW(toplevel), FALSE, TRUE, FALSE ) ;
+  gtk_container_border_width(GTK_CONTAINER(toplevel), 0) ;
+
+  MainFrame main_data = NULL ;
+  container = makePanel(toplevel, &seq_data, sequence_map, 
+                        user_func, user_data, close_func, close_data, 
+                        default_type, false, &main_data) ;
+  gtk_container_add(GTK_CONTAINER(vbox), container) ;
+
+  gtk_signal_connect(GTK_OBJECT(toplevel), "destroy",
+                     GTK_SIGNAL_FUNC(toplevelDestroyCB), seq_data) ;
+
+  gtk_widget_show_all(toplevel) ;
+
+  /* Only show widgets for the relevant file type (use given default) */
+  if (main_data)
+    {
+      setWidgetsVisibility(main_data->trackhub_widgets, default_type == ZMapAppSourceType::TRACKHUB) ;
+      setWidgetsVisibility(main_data->file_widgets,     default_type == ZMapAppSourceType::FILE) ;
+#ifdef USE_ENSEMBL
+      setWidgetsVisibility(main_data->ensembl_widgets,  default_type == ZMapAppSourceType::ENSEMBL) ;
+#endif
+    }
+
+  return toplevel ;
+}
+
+
+
+/* Show a dialog to edit an existing source */
+GtkWidget *zMapAppEditSource(ZMapFeatureSequenceMap sequence_map,
+                             ZMapConfigSource source,
+                             ZMapAppCreateSourceCB user_func,
+                             gpointer user_data)
+{
+  zMapReturnValIfFail(user_func, NULL) ;
+
+  GtkWidget *toplevel = NULL ;
+  GtkWidget *container ;
+  gpointer seq_data = NULL ;
+
+  toplevel = zMapGUIToplevelNew(NULL, "Edit Source") ;
+
+  gtk_window_set_policy(GTK_WINDOW(toplevel), FALSE, TRUE, FALSE ) ;
+  gtk_container_border_width(GTK_CONTAINER(toplevel), 0) ;
+
+  MainFrame main_data = NULL ;
+  container = makePanel(toplevel, &seq_data, sequence_map, 
+                        user_func, user_data, NULL, NULL, 
+                        ZMapAppSourceType::NONE, true, &main_data) ;
+
+  gtk_container_add(GTK_CONTAINER(toplevel), container) ;
+  gtk_signal_connect(GTK_OBJECT(toplevel), "destroy",
+                     GTK_SIGNAL_FUNC(toplevelDestroyCB), seq_data) ;
+
+  gtk_widget_show_all(toplevel) ;
+
+  /* Update the panel with the info from the given source. This toggles visibility of the
+   * appropriate widgets so must be done after show_all */
+  updatePanelFromSource(main_data, source) ;
+
+  return toplevel ;
+}
 
 
 
@@ -257,17 +452,21 @@ gboolean applyEnsembl(MainFrame main_data) ;
  *                   Internal routines.
  */
 
+// unnamed namespace
+namespace
+{
+
 /* Make the whole panel returning the top container of the panel. */
-GtkWidget *makePanel(GtkWidget *toplevel, 
-                     gpointer *our_data,
-                     ZMapFeatureSequenceMap sequence_map,
-                     ZMapAppCreateSourceCB user_func,
-                     gpointer user_data,
-                     ZMapAppClosedSequenceViewCB close_func,
-                     gpointer close_data,
-                     ZMapAppSourceType default_type,
-                     const bool edit_source,
-                     MainFrame *main_data_out)
+static GtkWidget *makePanel(GtkWidget *toplevel, 
+                            gpointer *our_data,
+                            ZMapFeatureSequenceMap sequence_map,
+                            ZMapAppCreateSourceCB user_func,
+                            gpointer user_data,
+                            ZMapAppClosedSequenceViewCB close_func,
+                            gpointer close_data,
+                            ZMapAppSourceType default_type,
+                            const bool edit_source,
+                            MainFrame *main_data_out)
 {
   GtkWidget *frame = NULL ;
   GtkWidget *vbox, *main_frame, *button_box ;
@@ -314,7 +513,7 @@ GtkWidget *makePanel(GtkWidget *toplevel,
 
 
 /* Get the row index in the combo box for the given scheme */
-int comboGetIndex(MainFrame main_data, ZMapURLScheme scheme_in)
+static int comboGetIndex(MainFrame main_data, ZMapURLScheme scheme_in)
 {
   int result = -1 ;
 
@@ -339,9 +538,9 @@ int comboGetIndex(MainFrame main_data, ZMapURLScheme scheme_in)
 }
 
 
-void updatePanelFromFileSource(MainFrame main_data, 
-                               ZMapConfigSource source,
-                               ZMapURL zmap_url)
+static void updatePanelFromFileSource(MainFrame main_data, 
+                                      ZMapConfigSource source,
+                                      ZMapURL zmap_url)
 {
   const char *source_name = main_data->sequence_map->getSourceName(source) ;
 
@@ -349,9 +548,9 @@ void updatePanelFromFileSource(MainFrame main_data,
   gtk_entry_set_text(GTK_ENTRY(main_data->path_widg), zmap_url->path) ;
 }
 
-void updatePanelFromTrackhubSource(MainFrame main_data, 
-                                   ZMapConfigSource source,
-                                   ZMapURL zmap_url)
+static void updatePanelFromTrackhubSource(MainFrame main_data, 
+                                          ZMapConfigSource source,
+                                          ZMapURL zmap_url)
 {
   zMapReturnIfFail(main_data) ;
 
@@ -367,9 +566,9 @@ void updatePanelFromTrackhubSource(MainFrame main_data,
 
 
 #ifdef USE_ENSEMBL
-void updatePanelFromEnsemblSource(MainFrame main_data, 
-                                  ZMapConfigSource source,
-                                  ZMapURL zmap_url)
+static void updatePanelFromEnsemblSource(MainFrame main_data, 
+                                         ZMapConfigSource source,
+                                         ZMapURL zmap_url)
 {
   const char *source_name = main_data->sequence_map->getSourceName(source) ;
   const char *host = zmap_url->host ;
@@ -440,7 +639,7 @@ void updatePanelFromEnsemblSource(MainFrame main_data,
 
 /* After creating the panel, you can update it from an existing source (for editing an existing
  * source) using this function */
-void updatePanelFromSource(MainFrame main_data, ZMapConfigSource source)
+static void updatePanelFromSource(MainFrame main_data, ZMapConfigSource source)
 {
   zMapReturnIfFail(main_data) ;
 
@@ -494,16 +693,16 @@ void updatePanelFromSource(MainFrame main_data, ZMapConfigSource source)
 }
 
 
-GtkWidget* makeEntryWidget(const char *label_str, 
-                           const char *default_value,
-                           const char *tooltip,
-                           GtkTable *table,
-                           int *row,
-                           const int col,
-                           const int max_col, 
-                           gboolean mandatory,
-                           list<GtkWidget*> *widget_list,
-                           const bool activates_default = true)
+static GtkWidget* makeEntryWidget(const char *label_str, 
+                                  const char *default_value,
+                                  const char *tooltip,
+                                  GtkTable *table,
+                                  int *row,
+                                  const int col,
+                                  const int max_col, 
+                                  gboolean mandatory,
+                                  list<GtkWidget*> *widget_list,
+                                  const bool activates_default)
 {
   GtkWidget *label = gtk_label_new(label_str) ;
   gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5) ;
@@ -578,17 +777,17 @@ static void chooseFileCB(GtkFileChooserButton *widget, gpointer user_data)
 
 
 /* Similar to makeEntryWidget but adds a file chooser button instead of a label */
-GtkWidget* makeFileChooserWidget(const char *label_str,
-                                 const char *default_value,
-                                 const char *tooltip,
-                                 GtkTable *table,
-                                 int *row,
-                                 const int col,
-                                 const int max_col,
-                                 gboolean mandatory,
-                                 list<GtkWidget*> *widget_list,
-                                 const bool activates_default,
-                                 MainFrame main_data)
+static GtkWidget* makeFileChooserWidget(const char *label_str,
+                                        const char *default_value,
+                                        const char *tooltip,
+                                        GtkTable *table,
+                                        int *row,
+                                        const int col,
+                                        const int max_col,
+                                        gboolean mandatory,
+                                        list<GtkWidget*> *widget_list,
+                                        const bool activates_default,
+                                        MainFrame main_data)
 {
   /* Create a file chooser button instead of a label (this will just be a label on cygwin) */
   GtkWidget *config_button = NULL ;
@@ -660,7 +859,7 @@ GtkWidget* makeFileChooserWidget(const char *label_str,
 }
 
 /* Set the visibility of all the widgets in the given list */
-void setWidgetsVisibility(list<GtkWidget*> &widget_list, const gboolean visible)
+static void setWidgetsVisibility(list<GtkWidget*> &widget_list, const gboolean visible)
 {
   for (list<GtkWidget*>::const_iterator iter = widget_list.begin(); iter != widget_list.end(); ++iter)
     {
@@ -674,7 +873,7 @@ void setWidgetsVisibility(list<GtkWidget*> &widget_list, const gboolean visible)
 
 /* Returns the selected string value in a combo box as a newly-allocated free. Returns null if
  * not found. */
-char* comboGetValue(GtkComboBox *combo)
+static char* comboGetValue(GtkComboBox *combo)
 {
   char *result = NULL ;
 
@@ -691,7 +890,7 @@ char* comboGetValue(GtkComboBox *combo)
 }
 
 
-void sourceTypeChangedCB(GtkComboBox *combo, gpointer data)
+static void sourceTypeChangedCB(GtkComboBox *combo, gpointer data)
 {
   MainFrame main_data = (MainFrame)data ;
   zMapReturnIfFail(main_data) ;
@@ -711,13 +910,13 @@ void sourceTypeChangedCB(GtkComboBox *combo, gpointer data)
 }
 
 
-void createComboItem(MainFrame main_data,
-                     GtkComboBox *combo, 
-                     GtkListStore *store,
-                     ZMapURLScheme scheme,
-                     const char *text,
-                     unsigned int &combo_index,
-                     const bool active)
+static void createComboItem(MainFrame main_data,
+                            GtkComboBox *combo, 
+                            GtkListStore *store,
+                            ZMapURLScheme scheme,
+                            const char *text,
+                            unsigned int &combo_index,
+                            const bool active)
 {
   GtkTreeIter iter;
   gtk_list_store_append(store, &iter);
@@ -731,7 +930,7 @@ void createComboItem(MainFrame main_data,
 }
 
 
-GtkComboBox *createComboBox(MainFrame main_data)
+static GtkComboBox *createComboBox(MainFrame main_data)
 {
   GtkComboBox *combo = NULL ;
 
@@ -767,16 +966,16 @@ GtkComboBox *createComboBox(MainFrame main_data)
 }
 
 
-GtkWidget* makeButtonWidget(const char *stock,
-                            const char *label,
-                            const bool icon_only,
-                            const char *tooltip,
-                            GtkSignalFunc cb_func,
-                            gpointer cb_data,
-                            GtkTable *table,
-                            const int row,
-                            const int col,
-                            list<GtkWidget*> &widgets_list)
+static GtkWidget* makeButtonWidget(const char *stock,
+                                   const char *label,
+                                   const bool icon_only,
+                                   const char *tooltip,
+                                   GtkSignalFunc cb_func,
+                                   gpointer cb_data,
+                                   GtkTable *table,
+                                   const int row,
+                                   const int col,
+                                   list<GtkWidget*> &widgets_list)
 {
   GtkWidget *button = NULL ;
 
@@ -807,7 +1006,7 @@ GtkWidget* makeButtonWidget(const char *stock,
 
 
 #ifdef USE_ENSEMBL
-void makeEnsemblWidgets(MainFrame main_data, 
+static void makeEnsemblWidgets(MainFrame main_data, 
                                ZMapFeatureSequenceMap sequence_map,
                                GtkTable *table,
                                const int rows,
@@ -882,7 +1081,7 @@ void makeEnsemblWidgets(MainFrame main_data,
 /* This is called after the trackdb_id has changed. It looks up the trackdb_id
  * in the registry and populates the other details from the results, or clears the detail boxes
  * if the trackdb_id is not found in the registry. */
-void onTrackDbIdChanged(GtkEditable *editable, gpointer user_data)
+static void onTrackDbIdChanged(GtkEditable *editable, gpointer user_data)
 {
   MainFrame main_data = (MainFrame)user_data ;
   zMapReturnIfFail(main_data && 
@@ -912,7 +1111,7 @@ void onTrackDbIdChanged(GtkEditable *editable, gpointer user_data)
 
 /* Run a dialog that asks for the user credentials and logs in to the trackhub registry. Returns
  * true if logged in successfully */
-bool runLoginDialog(MainFrame main_data)
+static bool runLoginDialog(MainFrame main_data)
 {
   bool result = false ;
 
@@ -976,7 +1175,7 @@ bool runLoginDialog(MainFrame main_data)
 
 
 /* Callback called when the user hits the login/logout button */
-void loginButtonClickedCB(GtkWidget *button, gpointer data)
+static void loginButtonClickedCB(GtkWidget *button, gpointer data)
 {
   MainFrame main_data = (MainFrame)data ;
   zMapReturnIfFail(main_data) ;
@@ -1007,13 +1206,13 @@ void loginButtonClickedCB(GtkWidget *button, gpointer data)
 }
 
 
-void makeTrackhubWidgets(MainFrame main_data, 
-                         ZMapFeatureSequenceMap sequence_map,
-                         GtkTable *table,
-                         const int rows,
-                         const int cols,
-                         int &row,
-                         int &col)
+static void makeTrackhubWidgets(MainFrame main_data, 
+                                ZMapFeatureSequenceMap sequence_map,
+                                GtkTable *table,
+                                const int rows,
+                                const int cols,
+                                int &row,
+                                int &col)
 {
   /* Display the trackDb details */
   main_data->trackdb_id_widg = makeEntryWidget("ID :", NULL, "REQUIRED: The track database ID from the Ensembl Track Hub Registry. Click on the Search button to look up a track hub.",
@@ -1068,8 +1267,8 @@ void makeTrackhubWidgets(MainFrame main_data,
 
 
 /* Make the label/entry fields frame. */
-GtkWidget *makeMainFrame(MainFrame main_data, 
-                         ZMapFeatureSequenceMap sequence_map)
+static GtkWidget *makeMainFrame(MainFrame main_data, 
+                                ZMapFeatureSequenceMap sequence_map)
 {
   GtkWidget *frame = gtk_frame_new( "New source: " ) ;
   gtk_container_border_width(GTK_CONTAINER(frame), 5);
@@ -1116,7 +1315,7 @@ GtkWidget *makeMainFrame(MainFrame main_data,
 
 
 /* Make the action buttons frame. */
-GtkWidget *makeButtonBox(MainFrame main_data)
+static GtkWidget *makeButtonBox(MainFrame main_data)
 {
   GtkWidget *frame ;
   GtkWidget *button_box, *cancel_button, *ok_button ;
@@ -1153,7 +1352,7 @@ GtkWidget *makeButtonBox(MainFrame main_data)
  * widget. Sometimes this is because of window manager action, sometimes one of our exit
  * routines does a gtk_widget_destroy() on the top level widget.
  */
-void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data)
+static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data)
 {
   MainFrame main_data = (MainFrame)cb_data ;
 
@@ -1171,7 +1370,7 @@ void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data)
 
 
 /* Kill the dialog. */
-void cancelCB(GtkWidget *widget, gpointer cb_data)
+static void cancelCB(GtkWidget *widget, gpointer cb_data)
 {
   MainFrame main_data = (MainFrame)cb_data ;
 
@@ -1182,7 +1381,7 @@ void cancelCB(GtkWidget *widget, gpointer cb_data)
 
 
 /* Create the new source. */
-void applyCB(GtkWidget *widget, gpointer cb_data)
+static void applyCB(GtkWidget *widget, gpointer cb_data)
 {
   MainFrame main_frame = (MainFrame)cb_data ;
   zMapReturnIfFail(main_frame) ;
@@ -1248,7 +1447,7 @@ void applyCB(GtkWidget *widget, gpointer cb_data)
 
 
 /* Utility to get entry text but to return null is place of empty strings */
-const char* getEntryText(GtkEntry *entry)
+static const char* getEntryText(GtkEntry *entry)
 {
   const char *result = NULL ;
 
@@ -1533,7 +1732,7 @@ static string constructFileURL(MainFrame main_frame,
 }
 
 
-gboolean applyFile(MainFrame main_frame)
+static gboolean applyFile(MainFrame main_frame)
 {
   gboolean ok = FALSE ;
 
@@ -1573,9 +1772,9 @@ gboolean applyFile(MainFrame main_frame)
 
 #ifdef USE_ENSEMBL
 
-string constructUrl(const char *host, const char *port,
-                    const char *user, const char *pass,
-                    const char *dbname, const char *dbprefix)
+static string constructUrl(const char *host, const char *port,
+                           const char *user, const char *pass,
+                           const char *dbname, const char *dbprefix)
 {
   string result ;
   stringstream url ;
@@ -1619,7 +1818,7 @@ string constructUrl(const char *host, const char *port,
 }
 
 
-gboolean applyEnsembl(MainFrame main_frame)
+static gboolean applyEnsembl(MainFrame main_frame)
 {
   gboolean ok = FALSE ;
   char *tmp = NULL ;
@@ -1688,7 +1887,7 @@ gboolean applyEnsembl(MainFrame main_frame)
 
 
 /* Get the list of databases available from the host specified in the entry widgets */
-list<string> mainFrameGetDatabaseList(MainFrame main_data, GError **error)
+static list<string> mainFrameGetDatabaseList(MainFrame main_data, GError **error)
 {
   list<string> db_list ;
   
@@ -1709,7 +1908,7 @@ list<string> mainFrameGetDatabaseList(MainFrame main_data, GError **error)
 
 
 /* Get the list of featuresets available from the database specified in the entry widgets */
-list<string> mainFrameGetFeaturesetsList(MainFrame main_data, GError **error)
+static list<string> mainFrameGetFeaturesetsList(MainFrame main_data, GError **error)
 {
   list<string> db_list ;
   
@@ -1731,7 +1930,7 @@ list<string> mainFrameGetFeaturesetsList(MainFrame main_data, GError **error)
 
 
 /* Get the list of biotypes available from the database specified in the entry widgets */
-list<string> mainFrameGetBiotypesList(MainFrame main_data, GError **error)
+static list<string> mainFrameGetBiotypesList(MainFrame main_data, GError **error)
 {
   list<string> db_list ;
   
@@ -1754,7 +1953,7 @@ list<string> mainFrameGetBiotypesList(MainFrame main_data, GError **error)
 
 /* Called when the user hits the button to search for a database name. If the user selects a name
  * successfully then this updates the value in the dbname_widg */
-void dbnameCB(GtkWidget *widget, gpointer cb_data)
+static void dbnameCB(GtkWidget *widget, gpointer cb_data)
 {
   MainFrame main_data = (MainFrame)cb_data ;
   zMapReturnIfFail(main_data) ;
@@ -1779,7 +1978,7 @@ void dbnameCB(GtkWidget *widget, gpointer cb_data)
 
 /* Called when the user hits the button to search for featureset names. If the user selects featuresets
  * successfully then this updates the value in the featuresets_widg */
-void featuresetsCB(GtkWidget *widget, gpointer cb_data)
+static void featuresetsCB(GtkWidget *widget, gpointer cb_data)
 {
   MainFrame main_data = (MainFrame)cb_data ;
   zMapReturnIfFail(main_data && main_data->dbname_widg) ;
@@ -1813,7 +2012,7 @@ void featuresetsCB(GtkWidget *widget, gpointer cb_data)
 
 /* Called when the user hits the button to search for biotypes. If the user selects biotypes
  * successfully then this updates the value in the biotypes_widg */
-void biotypesCB(GtkWidget *widget, gpointer cb_data)
+static void biotypesCB(GtkWidget *widget, gpointer cb_data)
 {
   MainFrame main_data = (MainFrame)cb_data ;
   zMapReturnIfFail(main_data && main_data->dbname_widg) ;
@@ -1848,7 +2047,7 @@ void biotypesCB(GtkWidget *widget, gpointer cb_data)
 #endif /* USE_ENSEMBL */
 
 /* Case insensitive version of strstr */
-char* my_strcasestr(const char *haystack, const char *needle)
+static char* my_strcasestr(const char *haystack, const char *needle)
 {
   char *result = 0 ;
 
@@ -1869,10 +2068,10 @@ char* my_strcasestr(const char *haystack, const char *needle)
 
 /* Return true if the given search term matches the value in the given tree row. */
 template<class ColType>
-gboolean treeRowContainsText(GtkTreeModel *model,
-                             const gchar *search_term,
-                             GtkTreeIter *iter,
-                             const ColType col_id)
+static gboolean treeRowContainsText(GtkTreeModel *model,
+                                    const gchar *search_term,
+                                    GtkTreeIter *iter,
+                                    const ColType col_id)
 {
   gboolean result = FALSE ;
 
@@ -1898,16 +2097,16 @@ gboolean treeRowContainsText(GtkTreeModel *model,
 
 /* Callback used to determine if a search term matches a row in the tree. Returns false if it
  * matches, true otherwise. */
-gboolean generic_search_equal_func_cb(GtkTreeModel *model,
-                                      gint column,
-                                      const gchar *key,
-                                      GtkTreeIter *iter,
-                                      gpointer user_data)
+static gboolean generic_search_equal_func_cb(GtkTreeModel *model,
+                                             gint column,
+                                             const gchar *key,
+                                             GtkTreeIter *iter,
+                                             gpointer user_data)
 {
   return !treeRowContainsText(model, key, iter, GenericListColumn::NAME) ;
 }
 
-gboolean track_search_equal_func_cb(GtkTreeModel *model,
+static gboolean track_search_equal_func_cb(GtkTreeModel *model,
                                     gint column,
                                     const gchar *key,
                                     GtkTreeIter *iter,
@@ -1921,9 +2120,9 @@ gboolean track_search_equal_func_cb(GtkTreeModel *model,
 
 
 /* Callback used to determine if a given row in the filtered tree model is visible */
-gboolean track_list_filter_visible_cb(GtkTreeModel *model, 
-                                      GtkTreeIter *iter, 
-                                      gpointer user_data)
+static gboolean track_list_filter_visible_cb(GtkTreeModel *model, 
+                                             GtkTreeIter *iter, 
+                                             gpointer user_data)
 {
   gboolean result = FALSE ;
 
@@ -1957,9 +2156,9 @@ gboolean track_list_filter_visible_cb(GtkTreeModel *model,
 /* Update the given entry with the selected value(s) from the given tree. Uses the given column
  * in the tree for the result */
 template<class ColType>
-gboolean setEntryFromSelection(GtkTreeView *tree_view,
-                               GtkEntry *entry, 
-                               const ColType col_id)
+static gboolean setEntryFromSelection(GtkTreeView *tree_view,
+                                      GtkEntry *entry, 
+                                      const ColType col_id)
 {
   gboolean ok = FALSE ;
 
@@ -2009,7 +2208,7 @@ gboolean setEntryFromSelection(GtkTreeView *tree_view,
 
 
 /* Callback called when the user hits the enter key in the filter text entry box */
-void filter_entry_activate_cb(GtkEntry *entry, gpointer user_data)
+static void filter_entry_activate_cb(GtkEntry *entry, gpointer user_data)
 {
   SearchListData *search_data = (SearchListData*)user_data ;
   zMapReturnIfFail(search_data && search_data->tree_model) ;
@@ -2022,7 +2221,7 @@ void filter_entry_activate_cb(GtkEntry *entry, gpointer user_data)
 }
 
 
-void clear_button_cb(GtkButton *button, gpointer user_data)
+static void clear_button_cb(GtkButton *button, gpointer user_data)
 {
   SearchListData *search_data = (SearchListData*)user_data ;
   zMapReturnIfFail(search_data && search_data->tree_model) ;
@@ -2041,9 +2240,9 @@ void clear_button_cb(GtkButton *button, gpointer user_data)
 
 
 /* Callback used to determine if a given row in the filtered tree model is visible */
-gboolean generic_list_filter_visible_cb(GtkTreeModel *model, 
-                                        GtkTreeIter *iter, 
-                                        gpointer user_data)
+static gboolean generic_list_filter_visible_cb(GtkTreeModel *model, 
+                                               GtkTreeIter *iter, 
+                                               gpointer user_data)
 {
   gboolean result = FALSE ;
 
@@ -2071,7 +2270,7 @@ gboolean generic_list_filter_visible_cb(GtkTreeModel *model,
 }
 
 
-void listStorePopulate(GtkListStore *store,
+static void listStorePopulate(GtkListStore *store,
                        const list<string> &vals_list)
 {
   /* Loop through all of the names */
@@ -2087,8 +2286,8 @@ void listStorePopulate(GtkListStore *store,
     }
 }
 
-void listStorePopulate(GtkListStore *store,
-                       const list<TrackDb> &trackdb_list)
+static void listStorePopulate(GtkListStore *store,
+                              const list<TrackDb> &trackdb_list)
 {
   /* Loop through all of the trackdbs */
   for (const auto &trackdb : trackdb_list)
@@ -2114,10 +2313,10 @@ void listStorePopulate(GtkListStore *store,
 
 /* Utility to create a text column in a tree view */
 template<class ColType>
-void createTreeViewTextColumn(GtkTreeView *tree_view, 
-                              const char *title, 
-                              const ColType col_id,
-                              const bool hide = false)
+static void createTreeViewTextColumn(GtkTreeView *tree_view, 
+                                     const char *title, 
+                                     const ColType col_id,
+                                     const bool hide)
 {
   GtkCellRenderer *renderer = gtk_cell_renderer_text_new() ;
 
@@ -2140,10 +2339,10 @@ void createTreeViewTextColumn(GtkTreeView *tree_view,
 
 
 /* Create a tree view widget to show name values in the given list */
-GtkTreeView* createListWidget(MainFrame main_data, 
-                              const list<string> &val_list,
-                              SearchListData &search_data, 
-                              const gboolean allow_multiple)
+static GtkTreeView* createListWidget(MainFrame main_data, 
+                                     const list<string> &val_list,
+                                     SearchListData &search_data, 
+                                     const gboolean allow_multiple)
 {
   /* Create the data store */
   GtkListStore *store = gtk_list_store_new((int)GenericListColumn::N_COLS, G_TYPE_STRING) ;
@@ -2188,10 +2387,10 @@ GtkTreeView* createListWidget(MainFrame main_data,
 
 
 /* Create a tree view widget to show trackdb values in the given list */
-GtkTreeView* createListWidget(MainFrame main_data, 
-                              const list<TrackDb> &trackdb_list, 
-                              SearchListData &search_data, 
-                              const gboolean allow_multiple)
+static GtkTreeView* createListWidget(MainFrame main_data, 
+                                     const list<TrackDb> &trackdb_list, 
+                                     SearchListData &search_data, 
+                                     const gboolean allow_multiple)
 {
   /* Create the data store */
   int num_cols = (int)(TrackListColumn::N_COLS) ;
@@ -2238,12 +2437,12 @@ GtkTreeView* createListWidget(MainFrame main_data,
 
 
 template<class ListType>
-GtkWidget* createListDialog(MainFrame main_data, 
-                            const ListType &values_list, 
-                            const char *title,
-                            const gboolean allow_multiple,
-                            SearchListData &search_data,
-                            GtkTreeView **list_widget_out)
+static GtkWidget* createListDialog(MainFrame main_data, 
+                                   const ListType &values_list, 
+                                   const char *title,
+                                   const gboolean allow_multiple,
+                                   SearchListData &search_data,
+                                   GtkTreeView **list_widget_out)
 {
   GtkWidget *dialog = NULL ;
   zMapReturnValIfFail(main_data, dialog) ;
@@ -2311,12 +2510,12 @@ GtkWidget* createListDialog(MainFrame main_data,
  * Returns true if the user ok's the dialog and the operation succeeds; false if they cancel or
  * there is an error. */
 template<class ListType, class ColType>
-gboolean runListDialog(MainFrame main_data, 
-                       const ListType &values_list, 
-                       const ColType result_col,
-                       GtkEntry *result_widg,
-                       const char *title,
-                       const gboolean allow_multiple)
+static gboolean runListDialog(MainFrame main_data, 
+                              const ListType &values_list, 
+                              const ColType result_col,
+                              GtkEntry *result_widg,
+                              const char *title,
+                              const gboolean allow_multiple)
 {
   gboolean done = FALSE ;
   zMapReturnValIfFail(main_data, done) ;
@@ -2354,7 +2553,7 @@ gboolean runListDialog(MainFrame main_data,
 }
 
 
-gboolean applyTrackhub(MainFrame main_frame)
+static gboolean applyTrackhub(MainFrame main_frame)
 {
   gboolean ok = FALSE ;
 
@@ -2385,7 +2584,7 @@ gboolean applyTrackhub(MainFrame main_frame)
 
 
 /* Handles the response to the trackhub search dialog */
-void trackhubSearchResponseCB(GtkDialog *dialog, gint response_id, gpointer user_data)
+static void trackhubSearchResponseCB(GtkDialog *dialog, gint response_id, gpointer user_data)
 {
   TrackhubSearchData *data = (TrackhubSearchData*)user_data ;
   MainFrame main_data = data->main_data_ ;
@@ -2450,7 +2649,7 @@ void trackhubSearchResponseCB(GtkDialog *dialog, gint response_id, gpointer user
 
 
 /* Called when the trackhub search dialog is destroyed */
-void trackhubSearchDestroyCB(GtkWidget *widget, gpointer cb_data)
+static void trackhubSearchDestroyCB(GtkWidget *widget, gpointer cb_data)
 {
   TrackhubSearchData *data = (TrackhubSearchData*)cb_data ;
 
@@ -2460,7 +2659,7 @@ void trackhubSearchDestroyCB(GtkWidget *widget, gpointer cb_data)
 
 
 /* Show a dialog where the user can search for trackhubs */
-void trackhubSearchCB(GtkWidget *widget, gpointer cb_data)
+static void trackhubSearchCB(GtkWidget *widget, gpointer cb_data)
 {
   MainFrame main_data = (MainFrame)cb_data ;
   zMapReturnIfFail(main_data && main_data->search_widg) ;
@@ -2503,7 +2702,7 @@ void trackhubSearchCB(GtkWidget *widget, gpointer cb_data)
 
 
 /* Callback called when the user hits the delete-trackhub button */
-void deleteButtonClickedCB(GtkWidget *button, gpointer data)
+static void deleteButtonClickedCB(GtkWidget *button, gpointer data)
 {
   UserTrackhubs *user_data = (UserTrackhubs*)data ;
   zMapReturnIfFail(user_data && user_data->main_data_ && user_data->list_widget_) ;
@@ -2555,7 +2754,7 @@ void deleteButtonClickedCB(GtkWidget *button, gpointer data)
 
 
 /* Show a dialog where the user can browse trackhubs that they have previously registered */
-void trackhubBrowse(MainFrame main_data)
+static void trackhubBrowse(MainFrame main_data)
 {
   bool ok = false ;
 
@@ -2617,7 +2816,7 @@ void trackhubBrowse(MainFrame main_data)
 }
 
 
-void trackhubBrowseCB(GtkWidget *widget, gpointer cb_data)
+static void trackhubBrowseCB(GtkWidget *widget, gpointer cb_data)
 {
   MainFrame main_data = (MainFrame)cb_data ;
 
@@ -2626,7 +2825,7 @@ void trackhubBrowseCB(GtkWidget *widget, gpointer cb_data)
 
 
 /* Show a dialog where the user can register a trackhubs */
-void trackhubRegister(MainFrame main_data)
+static void trackhubRegister(MainFrame main_data)
 {
   bool ok = false ;
   zMapReturnIfFail(main_data && main_data->search_widg) ;
@@ -2724,108 +2923,10 @@ void trackhubRegister(MainFrame main_data)
 }
 
 
-void trackhubRegisterCB(GtkWidget *widget, gpointer cb_data)
+static void trackhubRegisterCB(GtkWidget *widget, gpointer cb_data)
 {
   MainFrame main_data = (MainFrame)cb_data ;
   trackhubRegister(main_data) ;
 }
 
 } //unnamed namespace
-
-
-
-/*
- *                   External interface routines.
- */
-
-
-
-/* Show a dialog to create a new source */
-GtkWidget *zMapAppCreateSource(ZMapFeatureSequenceMap sequence_map,
-                               ZMapAppCreateSourceCB user_func,
-                               gpointer user_data,
-                               ZMapAppClosedSequenceViewCB close_func,
-                               gpointer close_data,
-                               ZMapAppSourceType default_type)
-{
-  zMapReturnValIfFail(user_func, NULL) ;
-  GtkDialog *dialog ;
-  GtkWidget *toplevel = NULL ;
-  GtkWidget *vbox, *container ;
-  gpointer seq_data = NULL ;
-
-  toplevel = zMapGUIDialogNew(NULL, "Create Source", NULL, NULL) ;
-
-  dialog = GTK_DIALOG(toplevel) ;
-  vbox = dialog->vbox ;
-
-  int width = 0 ;
-  int height = 0 ;
-
-  if (gbtools::GUIGetTrueMonitorSize(toplevel, &width, &height) && GTK_IS_WINDOW(toplevel))
-    gtk_window_set_default_size(GTK_WINDOW(toplevel), std::min(640.0, width * 0.5), std::min(400.0, height * 0.7)) ;
-
-  gtk_window_set_policy(GTK_WINDOW(toplevel), FALSE, TRUE, FALSE ) ;
-  gtk_container_border_width(GTK_CONTAINER(toplevel), 0) ;
-
-  MainFrame main_data = NULL ;
-  container = makePanel(toplevel, &seq_data, sequence_map, 
-                        user_func, user_data, close_func, close_data, 
-                        default_type, false, &main_data) ;
-  gtk_container_add(GTK_CONTAINER(vbox), container) ;
-
-  gtk_signal_connect(GTK_OBJECT(toplevel), "destroy",
-                     GTK_SIGNAL_FUNC(toplevelDestroyCB), seq_data) ;
-
-  gtk_widget_show_all(toplevel) ;
-
-  /* Only show widgets for the relevant file type (use given default) */
-  if (main_data)
-    {
-      setWidgetsVisibility(main_data->trackhub_widgets, default_type == ZMapAppSourceType::TRACKHUB) ;
-      setWidgetsVisibility(main_data->file_widgets,     default_type == ZMapAppSourceType::FILE) ;
-#ifdef USE_ENSEMBL
-      setWidgetsVisibility(main_data->ensembl_widgets,  default_type == ZMapAppSourceType::ENSEMBL) ;
-#endif
-    }
-
-  return toplevel ;
-}
-
-
-
-/* Show a dialog to edit an existing source */
-GtkWidget *zMapAppEditSource(ZMapFeatureSequenceMap sequence_map,
-                             ZMapConfigSource source,
-                             ZMapAppCreateSourceCB user_func,
-                             gpointer user_data)
-{
-  zMapReturnValIfFail(user_func, NULL) ;
-
-  GtkWidget *toplevel = NULL ;
-  GtkWidget *container ;
-  gpointer seq_data = NULL ;
-
-  toplevel = zMapGUIToplevelNew(NULL, "Edit Source") ;
-
-  gtk_window_set_policy(GTK_WINDOW(toplevel), FALSE, TRUE, FALSE ) ;
-  gtk_container_border_width(GTK_CONTAINER(toplevel), 0) ;
-
-  MainFrame main_data = NULL ;
-  container = makePanel(toplevel, &seq_data, sequence_map, 
-                        user_func, user_data, NULL, NULL, 
-                        ZMapAppSourceType::NONE, true, &main_data) ;
-
-  gtk_container_add(GTK_CONTAINER(toplevel), container) ;
-  gtk_signal_connect(GTK_OBJECT(toplevel), "destroy",
-                     GTK_SIGNAL_FUNC(toplevelDestroyCB), seq_data) ;
-
-  gtk_widget_show_all(toplevel) ;
-
-  /* Update the panel with the info from the given source. This toggles visibility of the
-   * appropriate widgets so must be done after show_all */
-  updatePanelFromSource(main_data, source) ;
-
-  return toplevel ;
-}
-

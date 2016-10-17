@@ -107,21 +107,20 @@ static const char * const ZMAP_BIGWIG_SO_TERM  = "score" ;
 #define ZMAP_CIGARSTRING_MAXLENGTH 2048
 #define READBUFFER_SIZE 2048
 #define BED_DEFAULT_FIELDS 3 // min number of fields in a BED file
+#define MAX_FILE_THREADS 10  // max number of file threads at any one time
 
-/* Map of file types to a data-source types */
-const map<string, ZMapDataStreamType> file_type_to_source_type_G =
-  {
-    {"GFF",     ZMapDataStreamType::GIO}
-    ,{"Bed",    ZMapDataStreamType::BED}
-    ,{"bigBed", ZMapDataStreamType::BIGBED}
-    ,{"bigWig", ZMapDataStreamType::BIGWIG}
-    ,{"BAM",    ZMapDataStreamType::HTS}
-    ,{"SAM",    ZMapDataStreamType::HTS}
-    ,{"CRAM",   ZMapDataStreamType::HTS}
-    ,{"BCF",    ZMapDataStreamType::BCF}
-    ,{"VCF",    ZMapDataStreamType::BCF}
-  } ;
 
+
+/* 
+ * Function declarations
+ */
+static string toLower(const string &s) ;
+static ZMapDataStreamType dataSourceTypeFromExtension(const string &file_ext, GError **error_out) ;
+
+
+/* 
+ * Utility classes
+ */
 
 /* Need a semaphore to limit the number of threads.
  * From http://stackoverflow.com/questions/4792449/c0x-has-no-semaphores-how-to-synchronize-threads */
@@ -150,64 +149,6 @@ private:
     std::condition_variable cv;
 };
 
-inline semaphore::semaphore(size_t n) : count{n} {}
-
-inline void semaphore::notify() {
-    std::lock_guard<std::mutex> lock{mutex};
-    ++count;
-    cv.notify_one();
-}
-
-inline void semaphore::wait() {
-    std::unique_lock<std::mutex> lock{mutex};
-    cv.wait(lock, [&]{ return count > 0; });
-    --count;
-}
-
-inline bool semaphore::try_wait() {
-    std::lock_guard<std::mutex> lock{mutex};
-
-    if (count > 0) {
-        --count;
-        return true;
-    }
-
-    return false;
-}
-
-template<class Rep, class Period>
-bool semaphore::wait_for(const std::chrono::duration<Rep, Period>& d) {
-    std::unique_lock<std::mutex> lock{mutex};
-    auto finished = cv.wait_for(lock, d, [&]{ return count > 0; });
-
-    if (finished)
-        --count;
-
-    return finished;
-}
-
-template<class Clock, class Duration>
-bool semaphore::wait_until(const std::chrono::time_point<Clock, Duration>& t) {
-    std::unique_lock<std::mutex> lock{mutex};
-    auto finished = cv.wait_until(lock, t, [&]{ return count > 0; });
-
-    if (finished)
-        --count;
-
-    return finished;
-}
-
-inline semaphore::native_handle_type semaphore::native_handle() {
-    return cv.native_handle();
-}
-
-
-
-
-/* Keep track of how many files we've opened in different threads */
-#define MAX_FILE_THREADS 10
-static semaphore semaphore_G(MAX_FILE_THREADS) ;
-
 
 // Utility class to do error handling for blatSrc library.
 // We must use this error handler for all calls to the library to make sure it doesn't abort.
@@ -224,77 +165,6 @@ public:
 private:
   struct errCatch *err_catch_ ;
 } ;
-
-BlatLibErrHandler::BlatLibErrHandler()
-  : err_catch_(NULL)
-{
-}
-
-BlatLibErrHandler::~BlatLibErrHandler()
-{
-  if (err_catch_)
-    {
-      errCatchFree(&err_catch_) ;
-      err_catch_ = NULL ;
-    }
-}
-
-// Initialises the handler. Returns true if ok.
-bool BlatLibErrHandler::errTry()
-{
-  bool result = false ;
-
-  if (err_catch_)
-    errCatchFree(&err_catch_) ;
-
-  err_catch_ = errCatchNew() ;
-
-  if (err_catch_)
-    result = errCatchStart(err_catch_) ;
-
-  return result ;
-}
-
-// Ends the handler. Returns true if there was an error.
-bool BlatLibErrHandler::errCatch()
-{
-  bool result = false ;
-
-  if (err_catch_)
-    {
-      errCatchEnd(err_catch_) ;
-      result = err_catch_->gotError ;
-    }
-
-  return result ;
-}
-
-// Returns the error message (empty string if no error)
-string BlatLibErrHandler::errMsg()
-{
-  string err_msg ;
-
-  if (err_catch_ && err_catch_->gotError && 
-      err_catch_->message && err_catch_->message->string)
-    {
-      err_msg = err_catch_->message->string ;
-    }
-
-  return err_msg ;
-}
-
-
-
-// Utility to convert a std::string to lowercase
-string toLower(const string &s)
-{
-  string result(s) ;
-  
-  for (int i = 0; i < s.length(); ++i)
-    result[i] = std::tolower(result[i]) ;
-
-  return result ;
-}
 
 
 /* Custom comparator for a map to make the key case-insensitive. This is a 'less' object,
@@ -316,48 +186,26 @@ public:
 };
 
 
-/* Determine the source type from the given file extension (e.g. "bigWig") */
-ZMapDataStreamType dataSourceTypeFromExtension(const string &file_ext, GError **error_out)
-{
-  ZMapDataStreamType type = ZMapDataStreamType::UNK ;
+/* 
+ * Globals
+ */
 
-  static const map<string, ZMapDataStreamType, caseInsensitiveCmp> file_extensions = 
-    {
-      {"gff",     ZMapDataStreamType::GIO}
-      ,{"gff3",   ZMapDataStreamType::GIO}
-      ,{"bed",    ZMapDataStreamType::BED}
-      ,{"bb",     ZMapDataStreamType::BIGBED}
-      ,{"bigBed", ZMapDataStreamType::BIGBED}
-      ,{"bw",     ZMapDataStreamType::BIGWIG}
-      ,{"bigWig", ZMapDataStreamType::BIGWIG}
-#ifdef USE_HTSLIB
-      ,{"sam",    ZMapDataStreamType::HTS}
-      ,{"bam",    ZMapDataStreamType::HTS}
-      ,{"cram",   ZMapDataStreamType::HTS}
-      ,{"vcf",    ZMapDataStreamType::BCF}
-      ,{"bcf",    ZMapDataStreamType::BCF}
-#endif
-    };
+/* Keep track of how many files we've opened in different threads */
+static semaphore semaphore_G(MAX_FILE_THREADS) ;
 
-  auto found_iter = file_extensions.find(file_ext) ;
-      
-  if (found_iter != file_extensions.end())
-    {
-      type = found_iter->second ;
-    }
-  else
-    {
-      string expected("");
-      for (auto iter = file_extensions.begin(); iter != file_extensions.end(); ++iter)
-        expected += " ." + iter->first ;
-
-      g_set_error(error_out, ZMAP_SERVER_ERROR, ZMAPSERVER_ERROR_UNKNOWN_EXTENSION,
-                  "Unrecognised file extension .'%s'. Expected one of:%s", 
-                  file_ext.c_str(), expected.c_str()) ;
-    }
-
-  return type ;
-}
+/* Map of file types to a data-source types */
+const map<string, ZMapDataStreamType> file_type_to_source_type_G =
+  {
+    {"GFF",     ZMapDataStreamType::GIO}
+    ,{"Bed",    ZMapDataStreamType::BED}
+    ,{"bigBed", ZMapDataStreamType::BIGBED}
+    ,{"bigWig", ZMapDataStreamType::BIGWIG}
+    ,{"BAM",    ZMapDataStreamType::HTS}
+    ,{"SAM",    ZMapDataStreamType::HTS}
+    ,{"CRAM",   ZMapDataStreamType::HTS}
+    ,{"BCF",    ZMapDataStreamType::BCF}
+    ,{"VCF",    ZMapDataStreamType::BCF}
+  } ;
 
 
 } // unnamed namespace
@@ -2555,3 +2403,182 @@ ZMapDataStreamType zMapDataStreamTypeFromFormat(const string &format, GError **e
 
   return result ;
 }
+
+
+
+/*
+ *              Internal routines.
+ */
+
+namespace // unnamed namespace
+{
+
+inline semaphore::semaphore(size_t n) : count{n} {}
+
+inline void semaphore::notify() {
+    std::lock_guard<std::mutex> lock{mutex};
+    ++count;
+    cv.notify_one();
+}
+
+inline void semaphore::wait() {
+    std::unique_lock<std::mutex> lock{mutex};
+    cv.wait(lock, [&]{ return count > 0; });
+    --count;
+}
+
+inline bool semaphore::try_wait() {
+    std::lock_guard<std::mutex> lock{mutex};
+
+    if (count > 0) {
+        --count;
+        return true;
+    }
+
+    return false;
+}
+
+template<class Rep, class Period>
+bool semaphore::wait_for(const std::chrono::duration<Rep, Period>& d) {
+    std::unique_lock<std::mutex> lock{mutex};
+    auto finished = cv.wait_for(lock, d, [&]{ return count > 0; });
+
+    if (finished)
+        --count;
+
+    return finished;
+}
+
+template<class Clock, class Duration>
+bool semaphore::wait_until(const std::chrono::time_point<Clock, Duration>& t) {
+    std::unique_lock<std::mutex> lock{mutex};
+    auto finished = cv.wait_until(lock, t, [&]{ return count > 0; });
+
+    if (finished)
+        --count;
+
+    return finished;
+}
+
+inline semaphore::native_handle_type semaphore::native_handle() {
+    return cv.native_handle();
+}
+
+
+BlatLibErrHandler::BlatLibErrHandler()
+  : err_catch_(NULL)
+{
+}
+
+BlatLibErrHandler::~BlatLibErrHandler()
+{
+  if (err_catch_)
+    {
+      errCatchFree(&err_catch_) ;
+      err_catch_ = NULL ;
+    }
+}
+
+// Initialises the handler. Returns true if ok.
+bool BlatLibErrHandler::errTry()
+{
+  bool result = false ;
+
+  if (err_catch_)
+    errCatchFree(&err_catch_) ;
+
+  err_catch_ = errCatchNew() ;
+
+  if (err_catch_)
+    result = errCatchStart(err_catch_) ;
+
+  return result ;
+}
+
+// Ends the handler. Returns true if there was an error.
+bool BlatLibErrHandler::errCatch()
+{
+  bool result = false ;
+
+  if (err_catch_)
+    {
+      errCatchEnd(err_catch_) ;
+      result = err_catch_->gotError ;
+    }
+
+  return result ;
+}
+
+// Returns the error message (empty string if no error)
+string BlatLibErrHandler::errMsg()
+{
+  string err_msg ;
+
+  if (err_catch_ && err_catch_->gotError && 
+      err_catch_->message && err_catch_->message->string)
+    {
+      err_msg = err_catch_->message->string ;
+    }
+
+  return err_msg ;
+}
+
+
+
+// Utility to convert a std::string to lowercase
+static string toLower(const string &s)
+{
+  string result(s) ;
+  
+  for (int i = 0; i < s.length(); ++i)
+    result[i] = std::tolower(result[i]) ;
+
+  return result ;
+}
+
+
+/* Determine the source type from the given file extension (e.g. "bigWig") */
+static ZMapDataStreamType dataSourceTypeFromExtension(const string &file_ext, GError **error_out)
+{
+  ZMapDataStreamType type = ZMapDataStreamType::UNK ;
+
+  static const map<string, ZMapDataStreamType, caseInsensitiveCmp> file_extensions = 
+    {
+      {"gff",     ZMapDataStreamType::GIO}
+      ,{"gff3",   ZMapDataStreamType::GIO}
+      ,{"bed",    ZMapDataStreamType::BED}
+      ,{"bb",     ZMapDataStreamType::BIGBED}
+      ,{"bigBed", ZMapDataStreamType::BIGBED}
+      ,{"bw",     ZMapDataStreamType::BIGWIG}
+      ,{"bigWig", ZMapDataStreamType::BIGWIG}
+#ifdef USE_HTSLIB
+      ,{"sam",    ZMapDataStreamType::HTS}
+      ,{"bam",    ZMapDataStreamType::HTS}
+      ,{"cram",   ZMapDataStreamType::HTS}
+      ,{"vcf",    ZMapDataStreamType::BCF}
+      ,{"bcf",    ZMapDataStreamType::BCF}
+#endif
+    };
+
+  auto found_iter = file_extensions.find(file_ext) ;
+      
+  if (found_iter != file_extensions.end())
+    {
+      type = found_iter->second ;
+    }
+  else
+    {
+      string expected("");
+      for (auto iter = file_extensions.begin(); iter != file_extensions.end(); ++iter)
+        expected += " ." + iter->first ;
+
+      g_set_error(error_out, ZMAP_SERVER_ERROR, ZMAPSERVER_ERROR_UNKNOWN_EXTENSION,
+                  "Unrecognised file extension .'%s'. Expected one of:%s", 
+                  file_ext.c_str(), expected.c_str()) ;
+    }
+
+  return type ;
+}
+
+
+} // unnamed namespace

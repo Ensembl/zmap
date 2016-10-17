@@ -57,21 +57,21 @@ typedef gboolean (*HashListExportValueFunc)(const char *key_str, const char *val
 // unnamed namespace
 namespace
 {
-gint colIDOrderCB(gconstpointer a, gconstpointer b,gpointer user_data) ;
-bool colOrderCB(const ZMapFeatureColumn &first, const ZMapFeatureColumn &second) ;
+static gint colIDOrderCB(gconstpointer a, gconstpointer b,gpointer user_data) ;
+static bool colOrderCB(const ZMapFeatureColumn &first, const ZMapFeatureColumn &second) ;
 
-void updateContextHashList(ZMapConfigIniContext context,
-                           ZMapConfigIniFileType file_type, 
-                           const char *stanza,
-                           GHashTable *ghash,
-                           HashListExportValueFunc *export_func) ;
+static void updateContextHashList(ZMapConfigIniContext context,
+                                  ZMapConfigIniFileType file_type, 
+                                  const char *stanza,
+                                  GHashTable *ghash,
+                                  HashListExportValueFunc *export_func) ;
 
-ZMapFeatureContextExecuteStatus updateContextFeatureSetStyle(GQuark key,
-                                                             gpointer data,
-                                                             gpointer user_data,
-                                                             char **err_out) ;
+static ZMapFeatureContextExecuteStatus updateContextFeatureSetStyle(GQuark key,
+                                                                    gpointer data,
+                                                                    gpointer user_data,
+                                                                    char **err_out) ;
 
-}
+} // unnamed namespace
 
 /**********************************************************************
  *                       ZMapFeatureContextMap
@@ -1406,7 +1406,7 @@ void zMapFeatureUpdateContext(ZMapFeatureContextMap context_map,
 namespace
 {
 
-gint colIDOrderCB(gconstpointer a, gconstpointer b,gpointer user_data)
+static gint colIDOrderCB(gconstpointer a, gconstpointer b,gpointer user_data)
 {
   ZMapFeatureColumn pa = NULL,pb = NULL;
   map<GQuark, ZMapFeatureColumn> *columns = (map<GQuark, ZMapFeatureColumn>*)user_data;
@@ -1437,7 +1437,7 @@ gint colIDOrderCB(gconstpointer a, gconstpointer b,gpointer user_data)
 }
 
 
-bool colOrderCB(const ZMapFeatureColumn &pa, const ZMapFeatureColumn &pb)
+static bool colOrderCB(const ZMapFeatureColumn &pa, const ZMapFeatureColumn &pb)
 {
   bool result = true ;
 
@@ -1457,8 +1457,8 @@ bool colOrderCB(const ZMapFeatureColumn &pa, const ZMapFeatureColumn &pb)
  * semi-colon-separated list of the ids from the glist. export_func is an optional function that
  * takes the key and glist-value and returns true if the value should be included in the context, false if
  * not. If this function is null then all values are included.  */
-void updateContextHashList(ZMapConfigIniContext context, ZMapConfigIniFileType file_type, 
-                           const char *stanza, GHashTable *ghash, HashListExportValueFunc *export_func)
+static void updateContextHashList(ZMapConfigIniContext context, ZMapConfigIniFileType file_type, 
+                                  const char *stanza, GHashTable *ghash, HashListExportValueFunc *export_func)
 {
   zMapReturnIfFail(context && context->config) ;
 
@@ -1505,10 +1505,10 @@ void updateContextHashList(ZMapConfigIniContext context, ZMapConfigIniFileType f
 
 /* Callback called for all featuresets to set the key-value pair for the featureset-style stanza
  * in the given key file. Note that featuresets that have their default are not included. */
-ZMapFeatureContextExecuteStatus updateContextFeatureSetStyle(GQuark key,
-                                                             gpointer data,
-                                                             gpointer user_data,
-                                                             char **err_out)
+static ZMapFeatureContextExecuteStatus updateContextFeatureSetStyle(GQuark key,
+                                                                    gpointer data,
+                                                                    gpointer user_data,
+                                                                    char **err_out)
 {
   ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK ;
   ZMapFeatureAny feature_any = (ZMapFeatureAny)data ;
