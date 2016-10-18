@@ -208,7 +208,6 @@ static gboolean createConnection(void **server_out, ZMapConfigSource config_sour
   server->last_err_msg = NULL ;
   server->exit_code = 0;
   server->sequence_server = FALSE ;
-  server->is_otter = FALSE ;
   server->gff_version = ZMAPGFF_VERSION_UNKNOWN ;
   server->zmap_start = 0 ;
   server->zmap_end = 0 ;
@@ -732,13 +731,6 @@ static void getConfiguration(FileServer server)
       else
         {
           server->data_dir = g_get_current_dir();
-        }
-
-      if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
-                                             ZMAPSTANZA_APP_CSVER, &tmp_string))
-        {
-          if (!g_ascii_strcasecmp(tmp_string,"Otter"))
-            server->is_otter = TRUE;
         }
 
       zMapConfigIniContextDestroy(context);

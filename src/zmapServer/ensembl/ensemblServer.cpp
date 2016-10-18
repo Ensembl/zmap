@@ -316,9 +316,6 @@ static gboolean createConnection(void **server_out, ZMapConfigSource config_sour
   server = (EnsemblServer)g_new0(EnsemblServerStruct, 1) ;
   *server_out = (void *)server ;
 
-  if (config_source->configFileCstr())
-    server->config_file = g_strdup(config_source->configFileCstr()) ;
-
   server->mutex = &(global->mutex) ;
 
 
@@ -1110,9 +1107,6 @@ static ZMapServerResponseType destroyConnection(void *server_in)
 
   if (server->sequence)
     g_free(server->sequence) ;
-
-  if (server->config_file)
-    g_free(server->config_file) ;
 
   if (server->host)
     g_free(server->host) ;
