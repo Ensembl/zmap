@@ -253,14 +253,10 @@ ZMapNewDataSource zmapViewRequestServer(ZMapView view, ZMapNewDataSource view_co
 
 
   // ERROR HANDLING..........temp while I rearrange....
-  int url_parse_error ;
-  ZMapURL urlObj;
-
-  /* Parse the url and create connection. */
-  if (!(urlObj = url_parse(server->url(), &url_parse_error)))
+  if (!server->urlObj())
     {
       zMapLogWarning("GUI: url %s did not parse. Parse error < %s >",
-                     server->url(), url_error(url_parse_error)) ;
+                     server->url(), server->urlError().c_str()) ;
       return(NULL) ;
     }
 
@@ -344,7 +340,7 @@ ZMapNewDataSource zmapViewRequestServer(ZMapView view, ZMapNewDataSource view_co
       // Do we need all these args now too...?????
       createStepList(view, view_conn, connect_data,
                      server,
-                     urlObj, server->format,
+                     server->urlObj(), server->format,
                      context, req_featuresets, req_biotypes,
                      dna_requested, server->req_styles, server->stylesfile,
                      terminate) ;

@@ -48,6 +48,7 @@ public:
 
   const char* url() const ;
   const ZMapURL urlObj() const ;
+  const std::string urlError() const ;
   const std::string configFile() const ;
   const char* configFileCstr() const ;
 

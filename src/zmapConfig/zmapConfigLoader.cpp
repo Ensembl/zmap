@@ -205,18 +205,25 @@ void ZMapConfigSourceStruct::setUrl(const char *url)
     }
 }
 
-
 const char* ZMapConfigSourceStruct::url() const
 {
   return url_ ; 
 }
-
 
 const ZMapURL ZMapConfigSourceStruct::urlObj() const
 {
   return url_obj_ ; 
 }
 
+const string ZMapConfigSourceStruct::urlError() const
+{
+  string result("No error") ;
+
+  if (url_parse_error_)
+    result = url_error(url_parse_error_) ;
+
+  return result ;
+}
 
 const string ZMapConfigSourceStruct::configFile() const
 {
