@@ -1387,8 +1387,8 @@ static gint find_name_cb(gconstpointer list_data, gconstpointer user_data)
 
 /* column loaded in a range? (set by the mark) */
 /* also called for full range by using seq start and end coords */
-gboolean column_is_loaded_in_range(ZMapFeatureContextMap map,
-                                   ZMapFeatureBlock block, GQuark column_id, int start, int end)
+static gboolean column_is_loaded_in_range(ZMapFeatureContextMap map,
+                                          ZMapFeatureBlock block, GQuark column_id, int start, int end)
 {
 #define MH17_DEBUG      0
   GList *fsets = NULL;
@@ -1691,7 +1691,7 @@ static FooCanvasGroup *configure_get_point_block_container(ColConfigure configur
 
 
 
-gint col_sort_by_name(gconstpointer a, gconstpointer b)
+static gint col_sort_by_name(gconstpointer a, gconstpointer b)
 {
   int result = 0 ;
 
@@ -2046,7 +2046,7 @@ static void loaded_cols_panel_create_column(LoadedPageData page_data,
 
 /* Called after the tree selection has changed. Updates info about the selected tracks in the
  * selection_feedback label. */
-void tree_selection_changed_cb(GtkTreeSelection *selection, gpointer user_data)
+static void tree_selection_changed_cb(GtkTreeSelection *selection, gpointer user_data)
 {
   LoadedPageData page_data = (LoadedPageData)user_data ;
   zMapReturnIfFail(page_data && page_data->selection_feedback) ;
