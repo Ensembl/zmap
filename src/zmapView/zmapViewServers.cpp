@@ -931,7 +931,7 @@ static bool createStepList(ZMapView zmap_view, ZMapNewDataSource view_con, ZMapC
   req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_CREATE,
                                     source_name,
                                     zmap_view->view_sequence->config_file,
-                                    urlObj, format, timeout, version) ;
+                                    urlObj, version) ;
   zmapViewStepListAddServerReq(connect_data->step_list, ZMAP_SERVERREQ_CREATE, req_any, on_fail) ;
   req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_OPEN) ;
   zmapViewStepListAddServerReq(connect_data->step_list, ZMAP_SERVERREQ_OPEN, req_any, on_fail) ;
