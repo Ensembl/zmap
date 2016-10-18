@@ -220,7 +220,6 @@ GHashTable *zMapConfigIniGetColumnGroups(ZMapConfigIniContext context) ;
 
 std::map<GQuark, ZMapFeatureColumnStructType*> *zMapConfigIniGetColumns(ZMapConfigIniContext context);
 
-void zMapConfigSourceDestroy(ZMapConfigSource source_to_free) ;
 void zMapConfigSourcesFreeList(GList *config_sources_list);
 
 GList *zMapConfigGetSources(const char *config_file, const char *config_str,char **stylesfile);

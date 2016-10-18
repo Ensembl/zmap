@@ -74,19 +74,7 @@ static gboolean createConnection(void **server_out,
                                  char *version_str, int timeout,
                                  pthread_mutex_t *mutex) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-static gboolean createConnection(void **server_out, GQuark source_name,
-                                 char *config_file, ZMapURL url,
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-                                 char *format,
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-                                 char *version_str
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-, int timeout
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-) ;
+static gboolean createConnection(void **server_out, ZMapConfigSource config_source) ;
 
 static ZMapServerResponseType openConnection(void *server, ZMapServerReqOpen req_open) ;
 static ZMapServerResponseType getInfo(void *server, ZMapServerReqGetServerInfo info) ;
@@ -200,30 +188,15 @@ static gboolean isRemoteFileScheme(const ZMapURLScheme scheme)
 }
 
 
-static gboolean createConnection(void **server_out,
-                                 GQuark source_name,
-                                 char *config_file,
-                                 ZMapURL url,
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-                                 char *format,
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-                                 char *version_str
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-,
-                                 int timeout_unused
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-)
+static gboolean createConnection(void **server_out, ZMapConfigSource config_source)
 {
   gboolean result = FALSE ;
-  FileServer server = NULL ;
 
-  server = (FileServer) g_new0(FileServerStruct, 1) ;
-  zMapReturnValIfFail(server, result) ;
+  zMapReturnValIfFail(config_source && config_source->urlObj(), result) ;
 
-  server->source_name = source_name ;
+  FileServer server = (FileServer) g_new0(FileServerStruct, 1) ;
+
+  server->source_name = config_source->name_ ;
   server->config_file = NULL ;
   server->url = NULL ;
   server->scheme = SCHEME_INVALID ;
@@ -242,13 +215,12 @@ static gboolean createConnection(void **server_out,
   server->req_context = NULL ;
   server->sequence_map = NULL ;
   server->styles_file = NULL ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  server->format = g_quark_from_string(format) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  server->format = g_quark_from_string(config_source->format) ;
 
   server->source_2_sourcedata = NULL ;
   server->featureset_2_column = NULL ;
+
+  ZMapURL url = config_source->urlObj() ;
 
   if (!isFileScheme(url->scheme) || (!(url->path) || !(*(url->path))))
     {
@@ -263,7 +235,9 @@ static gboolean createConnection(void **server_out,
       /* char *url_file_name ; */
 
       /* Get configuration parameters. */
-      server->config_file = g_strdup(config_file) ;
+      if (config_source->configFileCstr())
+        server->config_file = g_strdup(config_source->configFileCstr()) ;
+
       getConfiguration(server) ;
 
       /* Get url parameters. */

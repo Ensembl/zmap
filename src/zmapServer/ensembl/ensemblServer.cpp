@@ -135,19 +135,7 @@ static gboolean createConnection(void **server_out,
                                  char *format,
                                  char *version_str, int timeout, pthread_mutex_t *mutex) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-static gboolean createConnection(void **server_out,
-                                 GQuark source_name, char *config_file, ZMapURL url,
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-                                 char *format,
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-                                 char *version_str
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-, int timeout
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-) ;
+static gboolean createConnection(void **server_out, ZMapConfigSource config_source) ;
 
 static ZMapServerResponseType openConnection(void *server, ZMapServerReqOpen req_open) ;
 static ZMapServerResponseType getInfo(void *server, ZMapServerReqGetServerInfo info) ;
@@ -315,34 +303,21 @@ static gboolean globalInit(void)
 }
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static gboolean createConnection(void **server_out,
-                                 GQuark source_name, char *config_file, ZMapURL url, char *format,
-                                 char *version_str, int timeout, pthread_mutex_t *mutex)
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-static gboolean createConnection(void **server_out,
-                                 GQuark source_name, char *config_file, ZMapURL url,
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-                                 char *format,
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-                                 char *version_str
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-, int timeout
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-)
+static gboolean createConnection(void **server_out, ZMapConfigSource config_source)
 {
   gboolean result = TRUE ;
+  zMapReturnValIfFail(config_source && config_source->urlObj(), result) ;
+
   EnsemblServer server ;
   Global global = &global_init_G ;
+  ZMapURL url = config_source->urlObj() ;
 
   /* Always return a server struct as it contains error message stuff. */
   server = (EnsemblServer)g_new0(EnsemblServerStruct, 1) ;
   *server_out = (void *)server ;
 
-  server->config_file = g_strdup(config_file) ;
+  if (config_source->configFileCstr())
+    server->config_file = g_strdup(config_source->configFileCstr()) ;
 
   server->mutex = &(global->mutex) ;
 

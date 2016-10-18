@@ -197,20 +197,7 @@ ZMapServerReqAny zMapServerRequestCreate(ZMapServerReqType request_type, ...)
       {
         ZMapServerReqCreate create = (ZMapServerReqCreate)req_any ;
 
-        create->source_name = va_arg(args, int) ;
-        create->config_file = g_strdup(va_arg(args, char *)) ;
-        create->url = va_arg(args, ZMapURL) ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-        create->format  = g_strdup(va_arg(args, char *)) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-        create->timeout = va_arg(args, int) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-        create->version = g_strdup(va_arg(args, char *)) ;
+        create->config_source = va_arg(args, ZMapConfigSourceStruct *) ;
 
         break ;
       }
@@ -291,16 +278,10 @@ void zMapServerRequestDestroy(ZMapServerReqAny request)
     {
     case ZMAP_SERVERREQ_CREATE:
       {
-        ZMapServerReqCreate create = (ZMapServerReqCreate)request ;
+        //ZMapServerReqCreate create = (ZMapServerReqCreate)request ;
 
-        g_free(create->config_file) ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-        g_free(create->format) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-        g_free(create->version) ;
-
+        // create->config_source is owned by the sequence map so nothing to do here
+        
         break ;
       }
     case ZMAP_SERVERREQ_STYLES:
@@ -354,31 +335,18 @@ ZMapServerResponseType zMapServerRequest(ZMapServer *server_inout, ZMapServerReq
 
         /* Check if we need to call the global init function of the protocol, this is a
          * function that should only be called once, only need to do this when setting up a server. */
-        if (!protocolGlobalInitFunc(&protocol_init_G, create->url, &global_init_data))
+        if (!protocolGlobalInitFunc(&protocol_init_G, create->urlObj(), &global_init_data))
           {
             *err_msg_out = g_strdup_printf("Global Init failed for datasource \"%s\","
                                            " no connections of this type will be available.",
-                                           create->url->protocol) ;
+                                           create->urlObj()->protocol) ;
 
             request->response = ZMAP_SERVERRESPONSE_REQFAIL ;
           }
         else
           {
             if ((request->response
-                 = zMapServerCreateConnection(&server, global_init_data, create->source_name, create->config_file,
-                                                                create->url,
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-                                                                create->format, 
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-                                                                create->timeout,
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-                                                                create->version))
-
+                 = zMapServerCreateConnection(&server, global_init_data, create->config_source))
                 != ZMAP_SERVERRESPONSE_OK)
               {
                 *err_msg_out = g_strdup(zMapServerLastErrorMsg(server)) ;
@@ -671,7 +639,6 @@ ZMapServerResponseType zMapServerRequest(ZMapServer *server_inout, ZMapServerReq
 /*
  *                     Internal routines
  */
-
 
 
 /* Static/global list of protocols and whether their global init/cleanup functions have been

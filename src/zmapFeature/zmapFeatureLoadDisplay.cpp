@@ -564,7 +564,7 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::createSource(const char *sour
       source = new ZMapConfigSourceStruct ;
 
       source->name_ = g_quark_from_string(source_name) ;
-      source->url = g_strdup(url) ;
+      source->setUrl(url) ;
       source->recent = true ;
       
       if (featuresets && *featuresets)
@@ -594,7 +594,7 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::createSource(const char *sour
 
       if (tmp_error)
         {
-          zMapConfigSourceDestroy(source) ;
+          delete source ;
           source = NULL ;
           g_propagate_error(error, tmp_error) ;
         }
@@ -646,7 +646,7 @@ gbtools::trackhub::Registry ZMapFeatureSequenceMapStructType::getTrackhubRegistr
 void ZMapFeatureSequenceMapStructType::createSourceChildren(ZMapConfigSource source,
                                                             GError **error)
 {
-  ZMapURL zmap_url = url_parse(source->url, NULL);
+  ZMapURL zmap_url = url_parse(source->url(), NULL);
 
   if (zmap_url && zmap_url->scheme == SCHEME_TRACKHUB)
     {
@@ -678,7 +678,7 @@ void ZMapFeatureSequenceMapStructType::createSourceChildren(ZMapConfigSource sou
       else
         {
           g_set_error(error, g_quark_from_string("ZMap"), 99,
-                      "Error getting trackDb from URL: %s", source->url) ;
+                      "Error getting trackDb from URL: %s", source->url()) ;
         }
     }
 }
@@ -783,12 +783,7 @@ void ZMapFeatureSequenceMapStructType::updateSource(const char *source_name,
 
   source = getSource(source_name) ;
 
-  if (source->url)
-    {
-      g_free(source->url) ;
-      source->url = NULL ;
-    }
-  source->url = g_strdup(url) ;
+  source->setUrl(url) ;
 
   if (source->featuresets)
     {
@@ -851,7 +846,7 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::createFileSource(const char *
       src->name_ = g_quark_from_string(source_name.c_str()) ;
       src->group = SOURCE_GROUP_START ;        // default_value
       src->featuresets = g_strdup(ZMAP_DEFAULT_FEATURESETS) ;
-      src->url = g_strdup(url.c_str()) ;
+      src->setUrl(url.c_str()) ;
 
       /* Add the source to our list. */
       GError *error = NULL ;
@@ -861,7 +856,7 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::createFileSource(const char *
         {
           zMapLogWarning("Error creating source for file '%s': %s", file, error->message) ;
           g_error_free(error) ;
-          zMapConfigSourceDestroy(src) ;
+          delete src ;
           src = NULL ;
         }
     }
@@ -900,7 +895,7 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::createPipeSource(const char *
       src->name_ = g_quark_from_string(source_name.c_str()) ;
       src->group = SOURCE_GROUP_START ;        // default_value
       src->featuresets = g_strdup(ZMAP_DEFAULT_FEATURESETS) ;
-      src->url = g_strdup(url.str().c_str()) ;
+      src->setUrl(url.str().c_str()) ;
 
       /* Add the source to our list. Use the filename as the source name if none given */
       GError *error = NULL ;
@@ -910,7 +905,7 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::createPipeSource(const char *
         {
           zMapLogWarning("Error creating source for file '%s': %s", file, error->message) ;
           g_error_free(error) ;
-          zMapConfigSourceDestroy(src) ;
+          delete src ;
           src = NULL ;
         }
     }
@@ -1006,7 +1001,7 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::getSource(const string &sourc
 
   if (result && !url.empty())
     {
-      if (!result->url || strcmp(url.c_str(), result->url) != 0)
+      if (!result->url() || strcmp(url.c_str(), result->url()) != 0)
         result = NULL ; // url doesn't match
     }
 
@@ -1036,8 +1031,8 @@ char* ZMapFeatureSequenceMapStructType::getSourceURL(const string &source_name)
 
   ZMapConfigSource source = getSource(source_name) ;
 
-  if (source && source->url)
-    result = g_strdup(source->url) ;
+  if (source && source->url())
+    result = g_strdup(source->url()) ;
 
   if (!result)
     {
@@ -1068,7 +1063,7 @@ GList* ZMapFeatureSequenceMapStructType::getSources(const bool include_children)
         {
           ZMapConfigSource source = iter.second ;
 
-          if (source && source->url && *source->url != '\0' && strncasecmp(source->url, "trackhub://", 11) != 0)
+          if (source && source->url() && *source->url() != '\0' && strncasecmp(source->url(), "trackhub://", 11) != 0)
             result = g_list_append(result, source) ;
 
           if (include_children)
@@ -1088,7 +1083,7 @@ void ZMapFeatureSequenceMapStructType::getSourceChildren(ZMapConfigSource source
   
   for (ZMapConfigSource child : source->children)
     {
-      if (child && child->url && *child->url != '\0' && strncasecmp(child->url, "trackhub://", 11) != 0)
+      if (child && child->url() && *child->url() != '\0' && strncasecmp(child->url(), "trackhub://", 11) != 0)
         *result = g_list_append(*result, child) ;
 
       getSourceChildren(child, result) ;
@@ -1138,7 +1133,7 @@ void ZMapFeatureSequenceMapStructType::addSourcesFromConfig(const char *filename
               g_error_free(tmp_error) ;
               tmp_error = NULL ;
 
-              zMapConfigSourceDestroy(source) ;
+              delete source ;
               source = NULL ;
               source_item->data = NULL ;
             }
@@ -1187,8 +1182,8 @@ bool ZMapFeatureSequenceMapStructType::updateContext(ZMapConfigIniContext contex
             sources_str += "; " + source_name ;
 
           /* Set the values in the source stanza */
-          if (source->url)
-            zMapConfigIniContextSetString(context, file_type, source_name.c_str(), ZMAPSTANZA_SOURCE_CONFIG, ZMAPSTANZA_SOURCE_URL, source->url) ;
+          if (source->url())
+            zMapConfigIniContextSetString(context, file_type, source_name.c_str(), ZMAPSTANZA_SOURCE_CONFIG, ZMAPSTANZA_SOURCE_URL, source->url()) ;
 
           if (source->featuresets)
             zMapConfigIniContextSetString(context, file_type, source_name.c_str(), ZMAPSTANZA_SOURCE_CONFIG, ZMAPSTANZA_SOURCE_FEATURESETS, source->featuresets) ;

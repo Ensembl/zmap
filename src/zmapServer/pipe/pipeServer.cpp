@@ -97,19 +97,7 @@ static gboolean createConnection(void **server_out,
                                  char *version_str, int timeout,
                                  pthread_mutex_t *mutex) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-static gboolean createConnection(void **server_out,
-                                 GQuark source_name, char *config_file, ZMapURL url,
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-                                 char *format,
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-                                 char *version_str
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-, int timeout
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-) ;
+static gboolean createConnection(void **server_out,ZMapConfigSource config_source) ;
 
 static ZMapServerResponseType openConnection(void *server, ZMapServerReqOpen req_open) ;
 static ZMapServerResponseType getInfo(void *server, ZMapServerReqGetServerInfo info) ;
@@ -240,25 +228,14 @@ static gboolean globalInit(void)
  *
  */
 
-static gboolean createConnection(void **server_out,
-                                 GQuark source_name, char *config_file, ZMapURL url,
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-                                 char *format,
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-                                 char *version_str
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-, int timeout_unused
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-)
+static gboolean createConnection(void **server_out, ZMapConfigSource config_source)
 {
   gboolean result = FALSE ;
-  PipeServer server ;
+  zMapReturnValIfFail(config_source && config_source->urlObj(), result) ;
 
-  server = (PipeServer)g_new0(PipeServerStruct, 1) ;
-
+  PipeServer server = (PipeServer)g_new0(PipeServerStruct, 1) ;
+  ZMapURL url = config_source->urlObj() ;
+  
   if ((url->scheme != SCHEME_FILE || url->scheme != SCHEME_PIPE) && (!(url->path) || !(*(url->path))))
     {
       server->last_err_msg = g_strdup_printf("Connection failed because pipe url had wrong scheme or no path: %s.",
@@ -272,7 +249,9 @@ static gboolean createConnection(void **server_out,
       char *url_script_path ;
 
       /* Get configuration parameters. */
-      server->config_file = g_strdup(config_file) ;
+      if (config_source->configFileCstr())
+        server->config_file = g_strdup(config_source->configFileCstr()) ;
+
       getConfiguration(server) ;
 
       /* Get url parameters. */

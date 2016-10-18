@@ -157,19 +157,7 @@ static gboolean createConnection(void **server_out,
                                  char *version_str, int timeout,
                                  pthread_mutex_t *mutex) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-static gboolean createConnection(void **server_out,
-				 GQuark source_name, char *config_file, ZMapURL url,
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-                                 char *format,
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-                                 char *version_str
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-, int timeout
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-) ;
+static gboolean createConnection(void **server_out, ZMapConfigSource config_source) ;
 
 static ZMapServerResponseType openConnection(void *server, ZMapServerReqOpen req_open) ;
 static ZMapServerResponseType getInfo(void *server, ZMapServerReqGetServerInfo info) ;
@@ -316,23 +304,14 @@ static gboolean globalInit(void)
 }
 
 
-static gboolean createConnection(void **server_out,
-				 GQuark source_name, char *config_file, ZMapURL url,
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-                                 char *format,
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-                                 char *version_str
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-, int timeout
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-)
+static gboolean createConnection(void **server_out, ZMapConfigSource config_source)
 {
   gboolean result = FALSE ;
+  zMapReturnValIfFail(config_source && config_source->urlObj(), result) ;
+
   GError *error = NULL ;
   gboolean use_methods = FALSE;
+  ZMapURL url = config_source->urlObj() ;
   AcedbServer server ;
 
   /* Always return a server struct as it contains error message stuff. */
@@ -340,17 +319,18 @@ static gboolean createConnection(void **server_out,
 
   resetErr(server) ;
 
-  server->config_file = g_strdup(config_file) ;
+  if (config_source->configFileCstr())
+    server->config_file = g_strdup(config_source->configFileCstr()) ;
 
   server->host = g_strdup(url->host) ;
   server->port = url->port ;
 
   /* We need a minimum server version but user can specify a higher one in the config file. */
-  if (version_str)
+  if (config_source->version)
     {
-      if (zMapCompareVersionStings(ACEDB_SERVER_MIN_VERSION, version_str, &error))
+      if (zMapCompareVersionStings(ACEDB_SERVER_MIN_VERSION, config_source->version, &error))
 	{
-	  server->version_str = g_strdup(version_str) ;
+          server->version_str = g_strdup(config_source->version) ;
 	}
       else
 	{

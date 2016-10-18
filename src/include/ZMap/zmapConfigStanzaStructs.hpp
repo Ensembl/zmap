@@ -32,32 +32,27 @@
 #define ZMAPCONFIGSTANZASTRUCTS_H
 
 #include <list>
+#include <string>
 
+#include <ZMap/zmapUrl.hpp>
 
 
 /* We should convert this to use the same calls/mechanism as the keyvalue stuff below. */
 class ZMapConfigSourceStruct
 {
 public:
-  ZMapConfigSourceStruct() 
-    : name_(0),
-      url(NULL),
-      version(NULL),
-      featuresets(NULL),
-      biotypes(NULL),
-      stylesfile(NULL),
-      format(NULL),
-      timeout(0),
-      delayed(FALSE),
-      provide_mapping(FALSE),
-      req_styles(FALSE),
-      group(0),
-      recent(false),
-      parent(NULL)
-  {} ;
+  ZMapConfigSourceStruct() ;
+  ~ZMapConfigSourceStruct() ;
+
+  void setUrl(const char *url) ;
+
+  const char* url() const ;
+  const ZMapURL urlObj() const ;
+  const std::string configFile() const ;
+  const char* configFileCstr() const ;
+
 
   GQuark name_ ;
-  char *url ;
   char *version ;
   char *featuresets; //, *navigatorsets ;
   char *biotypes;
@@ -76,6 +71,13 @@ public:
 #define SOURCE_GROUP_START    1
 #define SOURCE_GROUP_DELAYED  2
 #define SOURCE_GROUP_ALWAYS   3
+
+  char *url_ ; // should be private really but still used
+
+private:
+  ZMapURL url_obj_ ;
+  int url_parse_error_ ; // gets set to non-zero if url_obj_ could not be parsed
+  std::string config_file_ ;
 } ;
 
 typedef ZMapConfigSourceStruct *ZMapConfigSource ;
