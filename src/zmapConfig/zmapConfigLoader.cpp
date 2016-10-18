@@ -205,6 +205,11 @@ void ZMapConfigSourceStruct::setUrl(const char *url)
     }
 }
 
+void ZMapConfigSourceStruct::setConfigFile(const char *config_file)
+{
+  config_file_ = config_file ;
+}
+
 const char* ZMapConfigSourceStruct::url() const
 {
   return url_ ; 

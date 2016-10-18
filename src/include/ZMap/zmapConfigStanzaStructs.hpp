@@ -45,6 +45,7 @@ public:
   ~ZMapConfigSourceStruct() ;
 
   void setUrl(const char *url) ;
+  void setConfigFile(const char *config_file) ;
 
   const char* url() const ;
   const ZMapURL urlObj() const ;
