@@ -48,6 +48,8 @@ using namespace std ;
 #define SHOW_LABEL     "Show"
 #define SHOWHIDE_LABEL "Auto"
 #define HIDE_LABEL     "Hide"
+#define BUMPED_TEXT    "bumped"
+#define UNBUMPED_TEXT  "unbumped"
 
 #define XPAD 4
 #define YPAD 4
@@ -67,6 +69,7 @@ typedef enum
     SHOW_REV_COLUMN,   /* toggle button to show this track on the reversestrand */
     AUTO_REV_COLUMN,   /* toggle button to set visibility to auto on the reverse strand */
     HIDE_REV_COLUMN,   /* toggle button to hide this track on the reverse strand */
+    BUMPED_COLUMN,
     GROUP_COLUMN,
     STYLE_COLUMN,
 
@@ -316,6 +319,7 @@ static GList* tree_model_get_column_featuresets(LoadedPageData page_data, GtkTre
 static GQuark tree_model_get_column_id(GtkTreeModel *model, GtkTreeIter *iter, const gboolean unique) ;
 static char* tree_model_get_style_ids(GtkTreeModel *model, GtkTreeIter *iter) ;
 static GQuark tree_model_get_group_id(GtkTreeModel *model, GtkTreeIter *iter) ;
+static bool tree_model_get_bumped(GtkTreeModel *model, GtkTreeIter *iter) ;
 
 static GQuark hashListFindID(GHashTable *column_groups, const GQuark search_id) ;
 
@@ -917,6 +921,75 @@ static void loaded_page_apply_groups(LoadedPageData page_data)
 }
 
 
+/* Assign bump status based on the value in the tree */
+static void loaded_page_apply_bumped(LoadedPageData page_data)
+{
+  zMapReturnIfFail(page_data && 
+                   page_data->tree_model &&
+                   page_data->window &&
+                   page_data->window->context_map &&
+                   page_data->window->context_map->column_groups) ;
+
+  if (page_data->apply_now)
+    {
+      GtkTreeModel *model = page_data->tree_model ;
+
+      /* Loop through all rows in the tree */
+      GtkTreeIter iter;
+  
+      if (gtk_tree_model_get_iter_first(model, &iter))
+        {
+          do
+            {
+              // Get the column id for this row
+              GQuark column_id = tree_model_get_column_id(model, &iter, TRUE) ;
+
+              // Get the canvas items for the columns (forward and rev strand)
+              FooCanvasGroup *column_group_fwd = zmapWindowGetColumnByID(page_data->window, ZMAPSTRAND_FORWARD, column_id) ;
+              FooCanvasGroup *column_group_rev = zmapWindowGetColumnByID(page_data->window, ZMAPSTRAND_REVERSE, column_id) ;
+
+              ZMapWindowContainerFeatureSet container_fwd = (ZMapWindowContainerFeatureSet)column_group_fwd ;
+              ZMapWindowContainerFeatureSet container_rev = (ZMapWindowContainerFeatureSet)column_group_rev ;
+
+              // Get the compress mode depending on whether the mark is set
+              ZMapWindowCompressMode compress_mode ;
+
+              if (zmapWindowMarkIsSet(page_data->window->mark))
+                compress_mode = ZMAPWINDOW_COMPRESS_MARK ;
+              else
+                compress_mode = ZMAPWINDOW_COMPRESS_ALL ;
+
+              // Get the required bump status from the tree row. Note that this is just bumped or
+              // unbumped - if bumped, we use the default bump mode for the column.
+              bool bumped = tree_model_get_bumped(model, &iter) ;
+              
+              ZMapStyleBumpMode bump_mode_fwd = ZMAPBUMP_UNBUMP ;
+              ZMapStyleBumpMode bump_mode_rev = ZMAPBUMP_UNBUMP ;
+
+              if (bumped)
+                {
+                  if (container_fwd)
+                    bump_mode_fwd = zmapWindowContainerFeatureSetGetDefaultBumpMode(container_fwd);
+
+                  if (container_rev)
+                    bump_mode_rev = zmapWindowContainerFeatureSetGetDefaultBumpMode(container_rev);
+                }
+
+              // Do the bump
+              if (container_fwd)
+                zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(column_group_fwd), bump_mode_fwd, compress_mode) ;
+
+              if (container_rev)
+                zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(column_group_rev), bump_mode_rev, compress_mode) ;
+
+              // Redraw
+              zmapWindowFullReposition(page_data->window->feature_root_group,TRUE, "apply bump mode to columns") ;
+            } while (gtk_tree_model_iter_next(model, &iter)) ;
+        }
+    }
+}
+
+
 /* Apply column order changes on the loaded-columns page */
 static void loaded_page_reorder(NotebookPage notebook_page)
 {
@@ -983,6 +1056,7 @@ static void loaded_page_apply(NotebookPage notebook_page)
   loaded_page_apply_visibility(loaded_page_data) ;
   loaded_page_apply_styles(loaded_page_data) ;
   loaded_page_apply_groups(loaded_page_data) ;
+  loaded_page_apply_bumped(loaded_page_data) ;
 
   zmapWindowBusy(loaded_page_data->window, FALSE) ;
   zmapWindowColOrderColumns(loaded_page_data->window);
@@ -2261,6 +2335,9 @@ static GtkWidget* loaded_cols_panel_create_tree_view(LoadedPageData page_data,
   loaded_cols_panel_create_column(page_data, model, tree_view, ZMAPSTRAND_REVERSE, AUTO_REV_COLUMN, "RA") ;
   loaded_cols_panel_create_column(page_data, model, tree_view, ZMAPSTRAND_REVERSE, HIDE_REV_COLUMN, "RH") ;
 
+  /* Create the bumped column */
+  createTreeViewColumn(tree_view, "Bumped", BUMPED_COLUMN, text_renderer, "text", TRUE) ;
+
   /* Create the group column */
   createTreeViewColumn(tree_view, "Group", GROUP_COLUMN, text_renderer, "text", TRUE) ;
 
@@ -2312,6 +2389,42 @@ static GQuark hashListFindID(GHashTable *ghash, const GQuark search_id)
   g_hash_table_foreach(ghash, hashListFindIDCB, &data) ;
 
   return data.result ;
+}
+
+
+static string getBumpedText(ZMapWindowContainerFeatureSet container_fwd,
+                            ZMapWindowContainerFeatureSet container_rev)
+{
+  /* Set whether bumped or unbumped. We don't currently bother listing forward and rev
+   * strand: just show bumped or unbumped if both are the same or blank otherwise. */
+  string bumped_text ;
+
+  if (container_fwd && container_rev)
+    {
+      ZMapStyleBumpMode bumped_fwd = zmapWindowContainerFeatureSetGetBumpMode(container_fwd) ;
+      ZMapStyleBumpMode bumped_rev = zmapWindowContainerFeatureSetGetBumpMode(container_rev) ;
+      
+      if (bumped_fwd == ZMAPBUMP_UNBUMP && bumped_rev == ZMAPBUMP_UNBUMP)
+        bumped_text = UNBUMPED_TEXT ;
+      else if (bumped_fwd != ZMAPBUMP_UNBUMP && bumped_rev != ZMAPBUMP_UNBUMP)
+        bumped_text = BUMPED_TEXT ;
+    }
+  else if (container_fwd || container_rev)
+    {
+      ZMapStyleBumpMode bumped ;
+
+      if (container_fwd)
+        bumped = zmapWindowContainerFeatureSetGetBumpMode(container_fwd) ;
+      else
+        bumped = zmapWindowContainerFeatureSetGetBumpMode(container_rev) ;
+
+      if (bumped == ZMAPBUMP_UNBUMP)
+        bumped_text = UNBUMPED_TEXT ;
+      else
+        bumped_text = BUMPED_TEXT ;
+    }
+
+  return bumped_text ;
 }
 
 
@@ -2367,6 +2480,9 @@ static void loaded_cols_panel_create_tree_row(LoadedPageData page_data,
           
       if (group_id)
         gtk_list_store_set(store, &iter, GROUP_COLUMN, g_quark_to_string(group_id), -1);
+
+      string bumped_text = getBumpedText(container_fwd, container_rev) ;
+      gtk_list_store_set(store, &iter, BUMPED_COLUMN, bumped_text.c_str(), -1);
 
       /* Show two sets of radio buttons for each column to change column display state for
        * each strand. gb10: not sure why but historically we only added an apply button if we set
@@ -2445,7 +2561,7 @@ static GtkTreeModel* loaded_cols_panel_create_tree_model(LoadedPageData page_dat
   GtkListStore *store = gtk_list_store_new(N_COLUMNS, G_TYPE_STRING, 
                                            G_TYPE_BOOLEAN, G_TYPE_BOOLEAN, G_TYPE_BOOLEAN, 
                                            G_TYPE_BOOLEAN, G_TYPE_BOOLEAN, G_TYPE_BOOLEAN,
-                                           G_TYPE_STRING, G_TYPE_STRING) ;
+                                           G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING) ;
 
   /* Loop through all columns in display order (columns are shown in mirror order on the rev
    * strand but we always use forward-strand order) */
@@ -2729,6 +2845,34 @@ static void selected_tracks_set_visibility(LoadedPageData page_data,
     }
 }
 
+/* Set the visibility of the selected tracks to the given state */
+static void selected_tracks_set_bumped(LoadedPageData page_data,
+                                       const bool bumped)
+{
+  zMapReturnIfFail(page_data && page_data->tree_view) ;
+
+  GtkTreeSelection *selection = gtk_tree_view_get_selection(page_data->tree_view) ;
+
+  if (selection)
+    {
+      /* Loop through all selected rows and update the visibility */
+      GtkTreeModel *model = NULL ;
+      GList *rows = gtk_tree_selection_get_selected_rows(selection, &model) ;
+      GtkListStore *store = GTK_LIST_STORE(model) ;
+          
+      for (GList *item = rows; item; item = item->next)
+        {
+          GtkTreePath *path = (GtkTreePath*)(item->data) ;
+          GtkTreeIter iter ;
+          gtk_tree_model_get_iter(model, &iter, path) ;
+
+          string bumped_text = (bumped ? BUMPED_TEXT : UNBUMPED_TEXT) ;
+
+          gtk_list_store_set(store, &iter, BUMPED_COLUMN, bumped_text.c_str(), -1);
+        }
+    }
+}
+
 /* Called when the user hits the button to show sleected tracks. */
 static void show_cb(GtkButton *button, gpointer user_data)
 {
@@ -2747,13 +2891,31 @@ static void auto_cb(GtkButton *button, gpointer user_data)
   selected_tracks_set_visibility(page_data, ZMAPSTYLE_COLDISPLAY_SHOW_HIDE) ;
 }
 
-/* Called when the user hits the button to hide sleected tracks. */
+/* Called when the user hits the button to hide selected tracks. */
 static void hide_cb(GtkButton *button, gpointer user_data)
 {
   LoadedPageData page_data = (LoadedPageData)user_data ;
   zMapReturnIfFail(page_data && page_data->tree_view) ;
 
   selected_tracks_set_visibility(page_data, ZMAPSTYLE_COLDISPLAY_HIDE) ;
+}
+
+/* Called when the user hits the button to bump selected tracks. */
+static void bump_cb(GtkButton *button, gpointer user_data)
+{
+  LoadedPageData page_data = (LoadedPageData)user_data ;
+  zMapReturnIfFail(page_data && page_data->tree_view) ;
+
+  selected_tracks_set_bumped(page_data, true) ;
+}
+
+/* Called when the user hits the button to unbump sleected tracks. */
+static void unbump_cb(GtkButton *button, gpointer user_data)
+{
+  LoadedPageData page_data = (LoadedPageData)user_data ;
+  zMapReturnIfFail(page_data && page_data->tree_view) ;
+
+  selected_tracks_set_bumped(page_data, false) ;
 }
 
 
@@ -2906,6 +3068,17 @@ static GtkWidget* loaded_cols_panel_create_buttons(LoadedPageData page_data)
   gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
   g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(hide_cb), page_data) ;
   gtk_widget_set_tooltip_text(button, "Set visibility of all selected tracks to Hide") ;
+
+  /* Add buttons to bump/unbump all selected columns */
+  button = gtk_button_new_with_mnemonic("_Bump") ;
+  gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
+  g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(bump_cb), page_data) ;
+  gtk_widget_set_tooltip_text(button, "Bump (expand) all selected tracks") ;
+
+  button = gtk_button_new_with_mnemonic("_Unbump") ;
+  gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
+  g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(unbump_cb), page_data) ;
+  gtk_widget_set_tooltip_text(button, "Unbump (collapse) all selected tracks") ;
 
   /* Add a button to set a group for the selected columns */
   button = gtk_button_new_with_mnemonic("Change _Group") ;
@@ -3294,6 +3467,26 @@ static GQuark tree_model_get_group_id(GtkTreeModel *model, GtkTreeIter *iter)
     }
 
   return group_id ;
+}
+
+
+/* Get the bumped status for the given row in the given tree (returns true if bumped, false if
+ * not) */
+static bool tree_model_get_bumped(GtkTreeModel *model, GtkTreeIter *iter)
+{
+  bool bumped = false ;
+  char *bumped_text = NULL ;
+
+  gtk_tree_model_get (model, iter,
+                      BUMPED_COLUMN, &bumped_text,
+                      -1);
+
+  if (bumped_text && bumped_text[0] != '\0')
+    {
+      bumped = (strcmp(bumped_text, BUMPED_TEXT) == 0) ;
+    }
+
+  return bumped ;
 }
 
 
