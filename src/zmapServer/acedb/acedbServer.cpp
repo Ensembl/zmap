@@ -319,8 +319,8 @@ static gboolean createConnection(void **server_out, ZMapConfigSource config_sour
 
   resetErr(server) ;
 
-  if (config_source->configFileCstr())
-    server->config_file = g_strdup(config_source->configFileCstr()) ;
+  if (config_source->configFile())
+    server->config_file = g_strdup(config_source->configFile()) ;
 
   server->host = g_strdup(url->host) ;
   server->port = url->port ;

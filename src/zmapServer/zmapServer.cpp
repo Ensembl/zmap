@@ -195,7 +195,7 @@ ZMapServerResponseType zMapServerCreateConnection(ZMapServer *server_out, void *
 
   if (result == ZMAP_SERVERRESPONSE_OK)
     {
-      server->config_file = g_strdup(config_source->configFileCstr()) ;
+      server->config_file = g_strdup(config_source->configFile()) ;
     }
 
   if (result == ZMAP_SERVERRESPONSE_OK)

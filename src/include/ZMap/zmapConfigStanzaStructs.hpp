@@ -50,8 +50,7 @@ public:
   const char* url() const ;
   const ZMapURL urlObj() const ;
   const std::string urlError() const ;
-  const std::string configFile() const ;
-  const char* configFileCstr() const ;
+  const char* configFile() const ;
 
 
   GQuark name_ ;
@@ -79,7 +78,7 @@ public:
 private:
   ZMapURL url_obj_ ;
   int url_parse_error_ ; // gets set to non-zero if url_obj_ could not be parsed
-  std::string config_file_ ;
+  GQuark config_file_ ;
 } ;
 
 typedef ZMapConfigSourceStruct *ZMapConfigSource ;

@@ -207,7 +207,7 @@ void ZMapConfigSourceStruct::setUrl(const char *url)
 
 void ZMapConfigSourceStruct::setConfigFile(const char *config_file)
 {
-  config_file_ = config_file ;
+  config_file_ = g_quark_from_string(config_file) ;
 }
 
 const char* ZMapConfigSourceStruct::url() const
@@ -230,21 +230,9 @@ const string ZMapConfigSourceStruct::urlError() const
   return result ;
 }
 
-const string ZMapConfigSourceStruct::configFile() const
+const char* ZMapConfigSourceStruct::configFile() const
 {
-  return config_file_ ; 
-}
-
-/* Get the config file as a char* string. Note that this returns NULL if the string is
- * empty. */
-const char *ZMapConfigSourceStruct::configFileCstr() const
-{
-  const char *result = NULL ;
-
-  if (!config_file_.empty())
-    result = config_file_.c_str() ;
-
-  return result ;
+  return g_quark_to_string(config_file_) ; 
 }
 
 
@@ -1229,6 +1217,16 @@ GList *zMapConfigGetSources(const char *config_file, const char *config_str, cha
         zMapConfigIniContextIncludeBuffer(context, config_str);
 
       settings_list = zMapConfigIniContextGetSources(context);
+
+      // For each source, record which config file it came from
+      if (config_file)
+        {
+          for (GList *item = settings_list; item; item = item->next)
+            {
+              ZMapConfigSource config_source = (ZMapConfigSource)settings_list ;
+              config_source->setConfigFile(config_file) ;
+            }
+        }
 
       if(stylesfile)
         {

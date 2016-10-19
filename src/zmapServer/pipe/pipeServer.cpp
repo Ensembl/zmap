@@ -249,8 +249,8 @@ static gboolean createConnection(void **server_out, ZMapConfigSource config_sour
       char *url_script_path ;
 
       /* Get configuration parameters. */
-      if (config_source->configFileCstr())
-        server->config_file = g_strdup(config_source->configFileCstr()) ;
+      if (config_source->configFile())
+        server->config_file = g_strdup(config_source->configFile()) ;
 
       getConfiguration(server) ;
 
