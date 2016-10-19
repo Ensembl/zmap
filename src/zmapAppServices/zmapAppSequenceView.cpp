@@ -258,10 +258,10 @@ static string sourceGetType(ZMapConfigSource source)
 {
   string result("") ;
 
-  if (source && source->url)
+  if (source && source->url())
     {
       /* Just use the prefix in the url (i.e. up to the colon) */
-      const char *pos = source->url ;
+      const char *pos = source->url() ;
 
       for (; pos && *pos && *pos != ':' && *pos != '\0'; ++pos)
         result += *pos ;

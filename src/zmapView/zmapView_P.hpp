@@ -397,10 +397,10 @@ void zmapViewDestroyLoadFeatures(LoadFeaturesData loaded_features) ;
 
 
 ZMapNewDataSource zmapViewRequestServer(ZMapView view, ZMapNewDataSource view_conn,
-					 ZMapFeatureBlock block_orig, GList *req_featuresets, GList *req_biotypes,
-					 gpointer server, /* ZMapConfigSource */
-					 const char *req_sequence, int req_start, int req__end,
-					 gboolean dna_requested, gboolean terminate, gboolean show_warning) ;
+                                        ZMapFeatureBlock block_orig, GList *req_featuresets, GList *req_biotypes,
+                                        ZMapConfigSource server,
+                                        const char *req_sequence, int req_start, int req__end,
+                                        gboolean dna_requested, gboolean terminate, gboolean show_warning) ;
 
 void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req_featuresets, GList *req_biotypes,
                           ZMapConfigSource server,

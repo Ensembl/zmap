@@ -196,7 +196,7 @@ THE COMMENTS ETC ETC....HORRIBLE, HORRIBLE, HORRIBLE......
 /* NB: this is called from zmapViewLoadFeatures() and commandCB (for DNA only) */
 ZMapNewDataSource zMapServerCreateViewConnection(ZMapNewDataSource view_con,
                                                  void *connect_data,
-                                                 char *server_url)
+                                                 const char *server_url)
 {
   if (!view_con)
     {

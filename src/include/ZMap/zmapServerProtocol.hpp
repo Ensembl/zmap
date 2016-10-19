@@ -128,12 +128,9 @@ typedef struct ZMapServerReqCreateStructType
   ZMapServerReqType type ;
   ZMapServerResponseType response ;
 
-  GQuark source_name ;
-  char *config_file ;
+  ZMapConfigSource config_source ; /* details about the configured source */
 
-  ZMapURL url ;
-
-  char *version ;
+  ZMapURL urlObj() { return config_source ? config_source->urlObj() : NULL; } ;
 
 } ZMapServerReqCreateStruct, *ZMapServerReqCreate ;
 

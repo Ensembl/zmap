@@ -653,7 +653,7 @@ static void updatePanelFromSource(MainFrame main_data, ZMapConfigSource source)
 
   /* Parse values out of the url */
   int status = 0 ;
-  ZMapURL zmap_url = url_parse(source->url, &status) ;
+  const ZMapURL zmap_url = url_parse(source->url(), &status) ;
 
   /* Update the combo box with this scheme */
   if (main_data->combo)
