@@ -101,8 +101,8 @@ const char *zMapServerGetUrl(ZMapNewDataSource view_conn) ;
 
 
 ZMapNewDataSource zMapServerCreateViewConnection(ZMapNewDataSource view_con,
-                                                  gpointer connect_data,
-                                                  char *url) ;
+                                                 gpointer connect_data,
+                                                 const char *url) ;
 void *zMapServerConnectionGetUserData(ZMapNewDataSource view_conn) ;
 void zMapServerDestroyViewConnection(ZMapNewDataSource view_conn) ;
 

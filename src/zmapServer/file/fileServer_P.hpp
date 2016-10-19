@@ -64,7 +64,7 @@ typedef struct FileServerStruct_
   GQuark req_sequence;
   int gff_version, zmap_start, zmap_end, exit_code ;
 
-  gboolean sequence_server, is_otter, error ;
+  gboolean sequence_server, error ;
   GHashTable *source_2_sourcedata ;
   GHashTable *featureset_2_column ;
 

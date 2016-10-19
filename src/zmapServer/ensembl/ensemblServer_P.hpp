@@ -44,8 +44,6 @@ extern "C" {
 
 typedef struct _EnsemblServerStruct
 {
-  char *config_file ;
-
   // Lock shared between all ensembl data sources to protect ensc-core library calls as they are
   // not thread safe, i.e. anything using dba, slice etc.
   pthread_mutex_t *mutex ;

@@ -125,6 +125,117 @@ static bool debug_loading_G = false ;                       // Use to turn debug
 
 
 
+
+/*
+ *                  ZMapConfigSource class
+ */
+
+ZMapConfigSourceStruct::ZMapConfigSourceStruct()
+    : name_(0),
+      version(NULL),
+      featuresets(NULL),
+      biotypes(NULL),
+      stylesfile(NULL),
+      format(NULL),
+      timeout(0),
+      delayed(FALSE),
+      provide_mapping(FALSE),
+      req_styles(FALSE),
+      group(0),
+      recent(false),
+      parent(NULL),
+      url_(NULL),
+      url_obj_(NULL),
+      url_parse_error_()
+{
+}
+
+
+ZMapConfigSourceStruct::~ZMapConfigSourceStruct()
+{
+  if(url_)
+    g_free(url_);
+  if(version)
+    g_free(version);
+  if(featuresets)
+    g_free(featuresets);
+  if(biotypes)
+    g_free(biotypes);
+  //  if(navigatorsets)
+  //    g_free(navigatorsets);
+  if(stylesfile)
+    g_free(stylesfile);
+  //  if(styles_list)
+  //    g_free(styles_list);
+  if(format)
+    g_free(format);
+  if (url_obj_)
+    g_free(url_obj_) ;
+}
+
+
+void ZMapConfigSourceStruct::setUrl(const char *url)
+{
+  // Clear existing url and url_obj, if set
+  if (url_)
+    {
+      g_free(url_) ;
+      url_ = NULL ;
+    }
+
+  if (url_obj_)
+    {
+      g_free(url_obj_) ;
+      url_obj_ = NULL ;
+    }
+
+  // Set the url string
+  url_ = g_strdup(url) ;
+
+  // Parse the string into url_obj. Set to null and set the error if this fails.
+  if (url_)
+    {
+      url_obj_ = url_parse(url_, &url_parse_error_) ;
+
+      if (url_parse_error_)
+        {
+          if (url_obj_)
+            url_obj_ = NULL ;
+        }
+    }
+}
+
+void ZMapConfigSourceStruct::setConfigFile(const char *config_file)
+{
+  config_file_ = g_quark_from_string(config_file) ;
+}
+
+const char* ZMapConfigSourceStruct::url() const
+{
+  return url_ ; 
+}
+
+const ZMapURL ZMapConfigSourceStruct::urlObj() const
+{
+  return url_obj_ ; 
+}
+
+const string ZMapConfigSourceStruct::urlError() const
+{
+  string result("No error") ;
+
+  if (url_parse_error_)
+    result = url_error(url_parse_error_) ;
+
+  return result ;
+}
+
+const char* ZMapConfigSourceStruct::configFile() const
+{
+  return g_quark_to_string(config_file_) ; 
+}
+
+
 /*
  *                  External Interface routines
  */
@@ -256,30 +367,6 @@ GList *zMapConfigIniContextGetNamed(ZMapConfigIniContext context, char *stanza_n
     }
 
   return glist ;
-}
-
-
-
-void zMapConfigSourceDestroy(ZMapConfigSource source_to_free)
-{
-  if(source_to_free->url)
-    g_free(source_to_free->url);
-  if(source_to_free->version)
-    g_free(source_to_free->version);
-  if(source_to_free->featuresets)
-    g_free(source_to_free->featuresets);
-  if(source_to_free->biotypes)
-    g_free(source_to_free->biotypes);
-  //  if(source_to_free->navigatorsets)
-  //    g_free(source_to_free->navigatorsets);
-  if(source_to_free->stylesfile)
-    g_free(source_to_free->stylesfile);
-  //  if(source_to_free->styles_list)
-  //    g_free(source_to_free->styles_list);
-  if(source_to_free->format)
-    g_free(source_to_free->format);
-
-  return ;
 }
 
 
@@ -1130,6 +1217,16 @@ GList *zMapConfigGetSources(const char *config_file, const char *config_str, cha
         zMapConfigIniContextIncludeBuffer(context, config_str);
 
       settings_list = zMapConfigIniContextGetSources(context);
+
+      // For each source, record which config file it came from
+      if (config_file)
+        {
+          for (GList *item = settings_list; item; item = item->next)
+            {
+              ZMapConfigSource config_source = (ZMapConfigSource)settings_list ;
+              config_source->setConfigFile(config_file) ;
+            }
+        }
 
       if(stylesfile)
         {
@@ -2140,7 +2237,7 @@ static gpointer create_config_source(gpointer data)
 static void free_source_list_item(gpointer list_data, gpointer unused_data)
 {
   ZMapConfigSource source_to_free = (ZMapConfigSource)list_data;
-  zMapConfigSourceDestroy(source_to_free) ;
+  delete source_to_free ;
 }
 
 
@@ -2189,7 +2286,7 @@ gpointer parent_data, GValue *property_value)
   if (key && *key)
     {
       if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_URL) == 0)
-        str_ptr = &(config_source->url) ;
+        str_ptr = &(config_source->url_) ;
       else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_VERSION) == 0)
         str_ptr = &(config_source->version) ;
       else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_FEATURESETS) == 0)

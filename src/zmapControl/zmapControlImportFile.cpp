@@ -351,7 +351,6 @@ static GtkWidget *makeOptionsBox(MainFrame main_frame, const char *req_sequence,
  */
 static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data)
 {
-  MainFrame main_data = (MainFrame)cb_data ;
 
   return ;
 }
@@ -427,7 +426,7 @@ static void createSourceData(ZMapView view,
   ZMapFeatureContextMap context_map = zMapViewGetContextMap(view) ;
 
   int status = 0 ;
-  ZMapURL zmap_url = url_parse(source->url, &status) ;
+  ZMapURL zmap_url = url_parse(source->url(), &status) ;
 
   if (context_map && sequence_map->runningUnderOtter() && zmap_url && zmap_url->path)
     {
