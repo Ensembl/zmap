@@ -2622,14 +2622,13 @@ static void filter_entry_activate_cb(GtkEntry *entry, gpointer user_data)
 }
 
 
-/* Called for each row in the current selection to set the style to the last-selected style in
- * the data */
-static void set_column_style(GtkTreeModel *model_in, GtkTreePath *path, LoadedPageData page_data)
+/* Utility to get a GtkTreeIter for the given path from the tree model. This uses the filtered
+ * model if appropriate, or the base model otherwise. Sets the relevant model in model_out. */
+static void treeGetIter(GtkTreePath *path, 
+                        GtkTreeModel *model_in, 
+                        GtkTreeModel **model_out, 
+                        GtkTreeIter *iter_out)
 {
-  zMapReturnIfFail(page_data && page_data->tree_model && page_data->window) ;
-
-  /* Update the group column in the tree model */
-  GtkTreeIter iter ;
   GtkTreeModel *model = model_in ;
 
   if (GTK_IS_TREE_MODEL_FILTER(model_in))
@@ -2638,14 +2637,29 @@ static void set_column_style(GtkTreeModel *model_in, GtkTreePath *path, LoadedPa
       model = gtk_tree_model_filter_get_model(GTK_TREE_MODEL_FILTER(model)) ;
       GtkTreeIter iter_in ;
       gtk_tree_model_get_iter(model_in, &iter_in, path) ;
-      gtk_tree_model_filter_convert_iter_to_child_iter(GTK_TREE_MODEL_FILTER(model_in), &iter, &iter_in) ;
+      gtk_tree_model_filter_convert_iter_to_child_iter(GTK_TREE_MODEL_FILTER(model_in), iter_out, &iter_in) ;
     }
   else
     {
-      gtk_tree_model_get_iter(model_in, &iter, path) ;
+      gtk_tree_model_get_iter(model_in, iter_out, path) ;
     }
-      
-  gtk_list_store_set(GTK_LIST_STORE(model), &iter, 
+
+  if (model_out)
+    *model_out = model ;
+}
+
+
+/* Called for each row in the current selection to set the style to the last-selected style in
+ * the data */
+static void set_column_style(GtkTreeModel *model_in, GtkTreePath *path, LoadedPageData page_data)
+{
+  zMapReturnIfFail(page_data && page_data->tree_model && page_data->window) ;
+
+  /* Update the group column in the tree model */
+  GtkTreeIter iter ;
+  gtk_tree_model_get_iter(model_in, &iter, path) ;
+
+  gtk_list_store_set(GTK_LIST_STORE(model_in), &iter, 
                      STYLE_COLUMN, g_quark_to_string(page_data->last_style_id),
                      -1) ;
 }
@@ -2716,16 +2730,28 @@ static list<GtkTreeRowReference*> getSelectedRows(GtkTreeView *tree_view,
     {
       GtkTreeModel *model = NULL ;
       GList *rows = gtk_tree_selection_get_selected_rows(selection, &model) ;
+      GtkTreeModel *model_base = model ;
+
+      // get the base (unfiltered) model
+      if (GTK_IS_TREE_MODEL_FILTER(model))
+        model_base = gtk_tree_model_filter_get_model(GTK_TREE_MODEL_FILTER(model)) ;
 
       if (model_out)
-        *model_out = model ;
+        *model_out = model_base ;
 
       // Loop through the selection and convert the paths to row references. 
       for (GList *item = rows; item; item = item->next)
         {
           GtkTreePath *path = (GtkTreePath*)(item->data) ;
-          
-          row_refs.push_back(gtk_tree_row_reference_new(model, path)) ;
+
+          // convert to path in base model
+          GtkTreeIter iter_base ;
+          treeGetIter(path, model, NULL, &iter_base) ;
+          GtkTreePath *path_base = gtk_tree_model_get_path(model_base, &iter_base) ;
+
+          row_refs.push_back(gtk_tree_row_reference_new(model_base, path_base)) ;
+
+          gtk_tree_path_free(path_base) ;
         }
 
       // Clean up
@@ -2761,7 +2787,9 @@ static void choose_style_button_cb(GtkButton *button, gpointer user_data)
           for (GtkTreeRowReference *row : selected_rows)
             {
               GtkTreePath *path = gtk_tree_row_reference_get_path(row) ;
+
               set_column_style(model, path, page_data) ;
+
               gtk_tree_row_reference_free(row) ;
               gtk_tree_path_free(path) ;
             }
@@ -2789,18 +2817,7 @@ static void set_column_group(LoadedPageData page_data,
   GtkTreeIter iter ;
   GtkTreeModel *model = model_in ;
 
-  if (GTK_IS_TREE_MODEL_FILTER(model_in))
-    {
-      /* Its the filtered model, so we must find the child model and iter */
-      model = gtk_tree_model_filter_get_model(GTK_TREE_MODEL_FILTER(model)) ;
-      GtkTreeIter iter_in ;
-      gtk_tree_model_get_iter(model_in, &iter_in, path) ;
-      gtk_tree_model_filter_convert_iter_to_child_iter(GTK_TREE_MODEL_FILTER(model_in), &iter, &iter_in) ;
-    }
-  else
-    {
-      gtk_tree_model_get_iter(model_in, &iter, path) ;
-    }
+  treeGetIter(path, model_in, &model, &iter) ;
 
   if (page_data->last_group_id)
     {
@@ -2823,24 +2840,24 @@ static void selected_tracks_set_visibility(LoadedPageData page_data,
 {
   zMapReturnIfFail(page_data && page_data->tree_view) ;
 
-  GtkTreeSelection *selection = gtk_tree_view_get_selection(page_data->tree_view) ;
+  GtkTreeModel *model = NULL ;
+  list<GtkTreeRowReference*> selected_rows = getSelectedRows(page_data->tree_view, &model) ;
 
-  if (selection)
+  if (!selected_rows.empty())
     {
-      /* Loop through all selected rows and update the visibility */
-      GtkTreeModel *model = NULL ;
-      GList *rows = gtk_tree_selection_get_selected_rows(selection, &model) ;
-      GtkListStore *store = GTK_LIST_STORE(model) ;
-          
-      for (GList *item = rows; item; item = item->next)
+      // Loop through each row ref and update the group
+      for (GtkTreeRowReference *row : selected_rows)
         {
-          GtkTreePath *path = (GtkTreePath*)(item->data) ;
+          GtkTreePath *path = gtk_tree_row_reference_get_path(row) ;
           GtkTreeIter iter ;
           gtk_tree_model_get_iter(model, &iter, path) ;
 
           /* Set the visibility of both strands */
-          set_tree_store_value_from_state(col_state, store, &iter, TRUE) ;
-          set_tree_store_value_from_state(col_state, store, &iter, FALSE) ;
+          set_tree_store_value_from_state(col_state, GTK_LIST_STORE(model), &iter, TRUE) ;
+          set_tree_store_value_from_state(col_state, GTK_LIST_STORE(model), &iter, FALSE) ;
+
+          gtk_tree_row_reference_free(row) ;
+          gtk_tree_path_free(path) ;
         }
     }
 }
@@ -2851,24 +2868,23 @@ static void selected_tracks_set_bumped(LoadedPageData page_data,
 {
   zMapReturnIfFail(page_data && page_data->tree_view) ;
 
-  GtkTreeSelection *selection = gtk_tree_view_get_selection(page_data->tree_view) ;
+  GtkTreeModel *model = NULL ;
+  list<GtkTreeRowReference*> selected_rows = getSelectedRows(page_data->tree_view, &model) ;
 
-  if (selection)
+  if (!selected_rows.empty())
     {
-      /* Loop through all selected rows and update the visibility */
-      GtkTreeModel *model = NULL ;
-      GList *rows = gtk_tree_selection_get_selected_rows(selection, &model) ;
-      GtkListStore *store = GTK_LIST_STORE(model) ;
-          
-      for (GList *item = rows; item; item = item->next)
+      // Loop through each row ref and update the group
+      for (GtkTreeRowReference *row : selected_rows)
         {
-          GtkTreePath *path = (GtkTreePath*)(item->data) ;
+          GtkTreePath *path = gtk_tree_row_reference_get_path(row) ;
           GtkTreeIter iter ;
           gtk_tree_model_get_iter(model, &iter, path) ;
 
           string bumped_text = (bumped ? BUMPED_TEXT : UNBUMPED_TEXT) ;
+          gtk_list_store_set(GTK_LIST_STORE(model), &iter, BUMPED_COLUMN, bumped_text.c_str(), -1);
 
-          gtk_list_store_set(store, &iter, BUMPED_COLUMN, bumped_text.c_str(), -1);
+          gtk_tree_row_reference_free(row) ;
+          gtk_tree_path_free(path) ;
         }
     }
 }
@@ -3582,18 +3598,7 @@ static void set_and_apply_state(GtkTreeModel *model_in,
   GtkTreeIter iter ;
   GtkTreeModel *model = model_in ;
 
-  if (GTK_IS_TREE_MODEL_FILTER(model_in))
-    {
-      /* Its the filtered model, so we must find the child model and iter */
-      model = gtk_tree_model_filter_get_model(GTK_TREE_MODEL_FILTER(model)) ;
-      GtkTreeIter iter_in ;
-      gtk_tree_model_get_iter(model_in, &iter_in, path) ;
-      gtk_tree_model_filter_convert_iter_to_child_iter(GTK_TREE_MODEL_FILTER(model_in), &iter, &iter_in) ;
-    }
-  else
-    {
-      gtk_tree_model_get_iter(model_in, &iter, path) ;
-    }
+  treeGetIter(path, model_in, &model, &iter) ;
 
   /* Set the state of the cells */
   gboolean forward = (set_state_data->strand == ZMAPSTRAND_FORWARD) ;
