@@ -40,11 +40,10 @@
 #include <ZMap/zmap.hpp>
 
 #include <string.h>
+#include <iostream>
 
 #include <gbtools/gbtools.hpp>
-
 #include <ZMap/zmapString.hpp>    /* testing only. */
-
 #include <config.h>
 #include <ZMap/zmapConfigIni.hpp>
 #include <ZMap/zmapConfigStanzaStructs.hpp>
@@ -54,6 +53,8 @@
 #include <ZMap/zmapDataStream.hpp>
 #include <zmapControl_P.hpp>
 
+
+using namespace std ;
 
 /* number of optional dialog entries for ZMAPSOURCE_FILE_NONE (is really 8 so i allowed a few spare) */
 #define N_ARGS 16
@@ -351,7 +352,11 @@ static GtkWidget *makeOptionsBox(MainFrame main_frame, const char *req_sequence,
  */
 static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data)
 {
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  // Currently unused.
   MainFrame main_data = (MainFrame)cb_data ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   return ;
 }
@@ -552,3 +557,612 @@ static void importFileCB(ZMapFeatureSequenceMap sequence_map, const bool recent_
 }
 
   
+
+
+// SCAFFOLD - THREAD TESTING
+#include <ZMap/zmapDataSource.hpp>
+
+using namespace ZMapDataSource ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+// SCAFFOLD - THREAD TESTING
+static void importNewDialogResponseCB(GtkDialog *dialog, gint response_id, gpointer data) ;
+static void newImportFile(MainFrame main_frame) ;
+
+static void newSequenceCallBackFunc(DataSourceSequence *features_source, void *user_data) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+static void makeNewPanel(MainFrame main_frame, ZMapFeatureSequenceMap sequence_map, int req_start, int req_end) ;
+static void importNewFileCB(ZMapFeatureSequenceMap sequence_map, const bool recent_only, gpointer cb_data) ;
+static void importNewSource(ZMapConfigSource server,
+                            ZMapView view,
+                            ZMapFeatureSequenceMap sequence_map,
+                            const char *req_sequence,
+                            const int req_start,
+                            const int req_end,
+                            const bool recent_only) ;
+static void newCallBackFunc(DataSourceFeatures *features_source, void *user_data) ;
+
+// SCAFFOLD - THREAD TESTING
+// Test dialog for new server stuff....
+//
+//
+
+void zmapControlNewImportFile(ZMap zmap, ZMapFeatureSequenceMap sequence_map, int req_start, int req_end)
+{
+  GtkWidget *toplevel ;
+  MainFrame main_frame ;
+  static bool first_time = true ;
+
+  /* First time around, clear the 'recent' flag from all sources so that we don't show sources
+   * that were loaded on startup. This won't be ideal if the user opens the import dialog before
+   * all sources have finished loading. In that case though they can clear the list manually. */
+  if (first_time)
+    {
+      clearRecentSources(sequence_map) ;
+      first_time = false ;
+    }
+
+  main_frame = g_new0(MainFrameStruct, 1) ;
+
+  main_frame->zmap = zmap ;
+
+  zmap->import_file_dialog = main_frame->toplevel = toplevel
+    = zMapGUIDialogNew(NULL, "Import data from a source", NULL, NULL) ;
+
+  int width = 0 ;
+  int height = 0 ;
+
+  if (gbtools::GUIGetTrueMonitorSize(toplevel, &width, &height) && GTK_IS_WINDOW(toplevel))
+    gtk_window_set_default_size(GTK_WINDOW(toplevel), std::min(640.0, width * 0.5), std::min(400.0, height * 0.7)) ;
+
+  gtk_window_set_policy(GTK_WINDOW(toplevel), FALSE, TRUE, FALSE ) ;
+  gtk_container_border_width(GTK_CONTAINER(toplevel), 0) ;
+
+  makeNewPanel(main_frame, sequence_map, req_start, req_end) ;
+
+  gtk_signal_connect(GTK_OBJECT(toplevel), "destroy",
+                     GTK_SIGNAL_FUNC(toplevelDestroyCB), main_frame) ;
+
+  gtk_widget_show_all(toplevel) ;
+
+  return ;
+}
+
+
+
+
+/* Make the whole panel returning the top container of the panel. */
+static void makeNewPanel(MainFrame main_frame, ZMapFeatureSequenceMap sequence_map, int req_start, int req_end)
+{
+  GtkWidget *vbox, *sequence_box, *options_box;
+  const char *sequence = "";
+  GtkDialog *dialog = GTK_DIALOG(main_frame->toplevel) ;
+
+  vbox = dialog->vbox ;
+
+  importGetConfig(main_frame, sequence_map->config_file );
+
+  main_frame->sequence_map = sequence_map;
+
+  if(sequence_map)
+    sequence = sequence_map->sequence;/* request defaults to original */
+
+  options_box = makeOptionsBox(main_frame, sequence, req_start, req_end) ;
+  gtk_box_pack_start(GTK_BOX(vbox), options_box, FALSE, FALSE, 0) ;
+
+  sequence_box = zMapCreateSequenceViewWidg(importNewFileCB, main_frame,
+                                            fileImportCloseCB, main_frame,
+                                            sequence_map, TRUE, TRUE, main_frame->toplevel) ;
+  gtk_box_pack_start(GTK_BOX(vbox), sequence_box, TRUE, TRUE, 0) ;
+
+  return ;
+}
+
+
+
+
+
+static void importNewFileCB(ZMapFeatureSequenceMap sequence_map, const bool recent_only, gpointer cb_data)
+{
+  bool status = TRUE ;
+  MainFrame main_frame = (MainFrame)cb_data ;
+  std::string err_msg("") ;
+  const char *req_start_txt= NULL ;
+  const char *req_end_txt = NULL ;
+  const char *req_sequence_txt = NULL ;
+  int start = 0 ;
+  int req_start = 0 ;
+  int req_end = 0 ;
+  ZMapView view = NULL ;
+  ZMap zmap = main_frame->zmap ;
+
+  view = zMapViewGetView(zmap->focus_viewwindow);
+
+  req_sequence_txt = gtk_entry_get_text(GTK_ENTRY(main_frame->req_sequence_widg)) ;
+  req_start_txt = gtk_entry_get_text(GTK_ENTRY(main_frame->req_start_widg)) ;
+  req_end_txt = gtk_entry_get_text(GTK_ENTRY(main_frame->req_end_widg)) ;
+
+  /* Validate the user-specified arguments. These calls set status to false if there is a problem
+   * and also set the err_msg. The start/end/strand functions also set the int from the string. 
+   */
+  validateReqSequence(status, err_msg, 
+                      req_sequence_txt, 
+                      req_start_txt, req_end_txt, 
+                      req_start, req_end, start) ;
+
+  /*
+   * If we got this far, then attempt to do something.
+   *
+   */
+  if (status)
+    {      
+      /* If we have previously disabled popup warnings about failed sources, re-enable them now */
+      zMapViewSetDisablePopups(view, false) ;
+
+      for (auto &iter : *sequence_map->sources)
+        {
+          importNewSource(iter.second, view, sequence_map, req_sequence_txt, req_start, req_end, recent_only) ;
+        }
+    }
+  else
+    {
+      zMapWarning("Error: \"%s\"", err_msg.c_str()) ;
+    }
+
+  return ;
+}
+
+
+
+/* Recursively import a source and any child sources */
+static void importNewSource(ZMapConfigSource server,
+                            ZMapView view,
+                            ZMapFeatureSequenceMap sequence_map,
+                            const char *req_sequence,
+                            const int req_start,
+                            const int req_end,
+                            const bool recent_only)
+{
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  if (!recent_only || server->recent)
+    {
+      createSourceData(view, sequence_map, server) ;
+
+      GError *g_error = NULL ;
+      zMapViewSetUpServerConnection(view, server, req_sequence, req_start, req_end, false, &g_error) ;
+
+      if (g_error)
+        {
+          zMapWarning("Failed to set up server connection for '%s': %s", 
+                      g_quark_to_string(server->name_),
+                      (g_error ? g_error->message : "<no error>")) ;
+        }
+
+      // Recurse through children
+      for (auto child : server->children)
+        {
+          importSource(child, view, sequence_map, req_sequence, req_start, req_end, recent_only) ;
+        }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+      // Create a server connection for the source and start getting the data.
+      if (server)
+        {
+          GList *req_featuresets = NULL ;
+          const string url(server->url) ;
+          ZMapFeatureContextMap context_map ;
+          const string config_file = string("") ;
+          const string version = string("") ;
+          ZMapFeatureContext context ;
+
+
+          // Try a feature request
+          context_map = zMapViewGetContextMap(view) ;
+          context = zMapViewCreateContext(view, req_featuresets, NULL) ;
+
+          DataSourceFeatures *my_feature_request = new DataSourceFeatures(sequence_map, req_start, req_end,
+                                                                          url, config_file, version,
+                                                                          context, &(context_map->styles)) ;
+
+          if (!(my_feature_request->SendRequest(newCallBackFunc, view)))
+            {
+              // Really need to be able to get some error state here....should throw from the obj ?
+
+              delete my_feature_request ;
+            }
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+          // Try a sequence request
+          GList *dna_req_featuresets = NULL ;
+          GQuark dna_id = g_quark_from_string("dna") ;
+
+          dna_req_featuresets = g_list_append(dna_req_featuresets, GINT_TO_POINTER(dna_id)) ;
+
+          context_map = zMapViewGetContextMap(view) ;
+          context = zMapViewCreateContext(view, dna_req_featuresets, NULL) ;
+
+          const string acedb_url("acedb://any:any@gen1b:20000?use_methods=false&gff_version=2") ;
+
+          DataSourceSequence *my_sequence_request = new DataSourceSequence(sequence_map, req_start, req_end,
+                                                                           acedb_url, config_file, version,
+                                                                           context, &(context_map->styles)) ;
+
+          if (!(my_sequence_request->SendRequest(newSequenceCallBackFunc, my_sequence_request)))
+            {
+              // Really need to be able to get some error state here....should throw from the obj ?
+
+              delete my_sequence_request ;
+            }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+        }
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+    }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+  return ;
+}
+
+
+
+
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+// old code, take the bits i need...
+
+//
+// gateway to new source interface for Steve
+//
+//
+//
+static void newImportFile(MainFrame main_frame)
+{
+  bool status = TRUE ;
+  bool have_dataset = FALSE ;
+  bool have_assembly = FALSE ;
+  bool remap_features = TRUE ;
+  ZMapFeatureSequenceMap sequence_map = NULL ;
+  std::string err_msg("") ;
+  char *sequence_txt = NULL ;
+  const char *dataset_txt = NULL ;
+  const char *start_txt = NULL ;
+  const char *end_txt = NULL ;
+  const char *file_txt = NULL ;
+  const char *req_start_txt= NULL ;
+  const char *req_end_txt = NULL ;
+  const char *source_txt = NULL ;
+  const char *strand_txt = NULL ;
+  const char *assembly_txt = NULL ;
+  const char *req_sequence_txt = NULL ;
+  int start = 0 ;
+  int end = 0 ;
+  int req_start = 0 ;
+  int req_end = 0 ;
+  int strand = 0 ;
+  ZMapSourceFileType file_type = ZMAPSOURCE_FILE_NONE ;
+  ZMapView view = NULL ;
+  ZMap zmap = NULL ;
+
+  // Error handling seems flakey....
+
+  file_type = main_frame->file_type;
+  zmap = (ZMap) main_frame->zmap ;
+  sequence_map = main_frame->sequence_map ;
+
+
+  view = zMapViewGetView(zmap->focus_viewwindow);
+
+  /* Note gtk_entry returns the empty string "" _not_ NULL when there is no text. */
+  sequence_txt = g_strdup(gtk_entry_get_text(GTK_ENTRY(main_frame->sequence_widg))) ;
+  dataset_txt = gtk_entry_get_text(GTK_ENTRY(main_frame->dataset_widg)) ;
+  start_txt = gtk_entry_get_text(GTK_ENTRY(main_frame->start_widg)) ;
+  end_txt = gtk_entry_get_text(GTK_ENTRY(main_frame->end_widg)) ;
+
+  file_txt = gtk_entry_get_text(GTK_ENTRY(main_frame->file_widg)) ;
+  req_sequence_txt = gtk_entry_get_text(GTK_ENTRY(main_frame->req_sequence_widg)) ;
+  req_start_txt = gtk_entry_get_text(GTK_ENTRY(main_frame->req_start_widg)) ;
+  req_end_txt = gtk_entry_get_text(GTK_ENTRY(main_frame->req_end_widg)) ;
+  source_txt = gtk_entry_get_text(GTK_ENTRY(main_frame->source_widg)) ;
+  assembly_txt = gtk_entry_get_text(GTK_ENTRY(main_frame->assembly_widg)) ;
+  strand_txt = gtk_entry_get_text(GTK_ENTRY(main_frame->strand_widg)) ;
+  remap_features = gtk_toggle_button_get_active((GtkToggleButton*)main_frame->map_widg) ;
+
+  /* Validate the user-specified arguments. These calls set status to false if there is a problem
+   * and also set the err_msg. The start/end/strand functions also set the int from the string. 
+   */
+  validateFile(status, err_msg, file_txt) ;
+  validateSequence(status, err_msg, sequence_txt, start_txt, end_txt, start, end) ;
+  validateReqSequence(status, err_msg, req_sequence_txt, req_start_txt, req_end_txt, req_start, req_end, start) ;
+  validateFileType(status, err_msg, file_type, source_txt, 
+                   assembly_txt, dataset_txt, remap_features, 
+                   have_assembly, have_dataset, sequence_txt) ;
+  validateStrand(status, err_msg, file_type, strand_txt, strand) ;
+
+  /*
+   * If we got this far, then attempt to do something.
+   *
+   */
+  if (status)
+    {
+      bool create_source_data = FALSE ;
+
+      /* Create the source */
+      ZMapConfigSource source = NULL ;
+
+      if (file_type == ZMAPSOURCE_FILE_GFF)
+        {
+          /* Just load the file directly */
+          source = sequence_map->createFileSource(source_txt, file_txt) ;
+        }
+      else
+        {
+          /* Use a pipe script that will remap the features if necessary. This is also required
+           * in order to be able to blixem the columns because blixem doesn't support bam reading
+           * at the moment, so the script command gets passed through to blixem. */
+          std::string script_err("");
+          const char *script = fileTypeGetPipeScript(file_type, script_err) ;
+
+          GString *args = g_string_new("") ;
+
+          g_string_append_printf(args, "--file=%s&--chr=%s&--start=%d&--end=%d&--gff_seqname=%s&--gff_source=%s",
+                                 file_txt, sequence_txt, req_start, req_end, req_sequence_txt, source_txt) ;
+
+          if (file_type == ZMAPSOURCE_FILE_BIGWIG)
+            g_string_append_printf(args, "&--strand=%d", strand) ;
+
+          if (remap_features)
+            g_string_append_printf(args, "&--csver_remote=%s&--dataset=%s", assembly_txt, dataset_txt) ;
+
+          if (script)
+            {
+              /* Ok, create the source for this pipe scripe */
+              source = sequence_map->createPipeSource(source_txt, file_txt, script, args->str) ;
+              create_source_data = TRUE ;
+            }
+          else if (!remap_features)
+            {
+              /* No script; if not remapping features, we can load directly with htslib
+               * instead. There are a couple of problems with this, though:
+               * - the given source name will be ignored and therefore the source_data won't
+               *   be linked correctly. This means it won't be recognised as a bam.
+               * - blixem won't work (until it can load bam files directly, or unless the user
+               *   has preconfigured the source in the blixem config). */
+#ifdef USE_HTSLIB
+              zMapLogMessage("%s", "Pipe script not available; using htslib") ;
+              source = sequence_map->createFileSource(source_txt, file_txt) ;
+#else
+              err_msg = "Cannot load features; pipe script not available: " ;
+              err_msg += script_err ;
+#endif
+            }
+          else
+            {
+              err_msg = "Cannot remap features: " ;
+              err_msg += script_err ;
+            }
+
+          g_string_free(args, TRUE) ;
+        }
+
+      if (create_source_data)
+        {
+          /* If we're using a pipe script, we need to create the source data for the named source
+           * so that we can set is_seq=true for bam sources (otherwise we don't know when we come
+           * to parse the results of the bam_get script that is_seq should be true).
+           * We don't do this if we're loading the file directly because the named source is not used
+           * (the source data is created when the features are parsed from the file instead) */
+          ZMapFeatureContextMap context_map = zMapViewGetContextMap(view) ;
+
+          GQuark fset_id = zMapFeatureSetCreateID(source_txt);
+          ZMapFeatureSource source_data = context_map->getSource(fset_id);
+
+          if (!source_data)
+            {
+              GQuark source_id = fset_id ;
+              GQuark style_id = zMapStyleCreateID(NULL) ;
+              GQuark source_text = g_quark_from_string(source_txt) ;
+              const bool is_seq = (file_type == ZMAPSOURCE_FILE_BAM || file_type == ZMAPSOURCE_FILE_BIGWIG) ;
+
+              context_map->createSource(fset_id,
+                                        source_id, source_text, style_id,
+                                        0, 0, is_seq) ;
+            }
+        }
+
+      // Create a server connection for the source and start getting the data.
+      if (source)
+        {
+          GList *req_featuresets = NULL ;
+          const string url(source->url) ;
+          ZMapFeatureContextMap context_map ;
+          const string config_file = string("") ;
+          const string version = string("") ;
+          ZMapFeatureContext context ;
+
+
+          // Try a feature request
+          context_map = zMapViewGetContextMap(view) ;
+          context = zMapViewCreateContext(view, req_featuresets, NULL) ;
+
+          DataSourceFeatures *my_feature_request = new DataSourceFeatures(sequence_map, req_start, req_end,
+                                                                          url, config_file, version,
+                                                                          context, &(context_map->styles)) ;
+
+          if (!(my_feature_request->SendRequest(newCallBackFunc, view)))
+            {
+              // Really need to be able to get some error state here....should throw from the obj ?
+
+              delete my_feature_request ;
+            }
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+          // Try a sequence request
+          GList *dna_req_featuresets = NULL ;
+          GQuark dna_id = g_quark_from_string("dna") ;
+
+          dna_req_featuresets = g_list_append(dna_req_featuresets, GINT_TO_POINTER(dna_id)) ;
+
+          context_map = zMapViewGetContextMap(view) ;
+          context = zMapViewCreateContext(view, dna_req_featuresets, NULL) ;
+
+          const string acedb_url("acedb://any:any@gen1b:20000?use_methods=false&gff_version=2") ;
+
+          DataSourceSequence *my_sequence_request = new DataSourceSequence(sequence_map, req_start, req_end,
+                                                                           acedb_url, config_file, version,
+                                                                           context, &(context_map->styles)) ;
+
+          if (!(my_sequence_request->SendRequest(newSequenceCallBackFunc, my_sequence_request)))
+            {
+              // Really need to be able to get some error state here....should throw from the obj ?
+
+              delete my_sequence_request ;
+            }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+        }
+      else
+        {
+          zMapWarning("Failed to set up source for file '%s': %s", file_txt, err_msg.c_str()) ;
+        }
+    }
+  else
+    {
+      zMapWarning("Error: \"%s\"", err_msg.c_str()) ;
+    }
+
+  if (sequence_txt)
+    g_free(sequence_txt) ;
+
+  return ;
+}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+
+
+
+
+
+
+static void newCallBackFunc(DataSourceFeatures *features_source, void *user_data)
+{
+  ZMapView view = (ZMapView)user_data ;
+  ZMapFeatureContext context ;
+  ZMapStyleTree *styles ;
+  int error_rc = 0 ;
+  const char *err_msg = NULL ;
+  DataSourceReplyType reply ;
+
+  cout << "in features app callback" << endl ;
+
+  // Get the reply data......
+  if ((reply = features_source->GetReply(&context, &styles)) == DataSourceReplyType::GOT_DATA)
+    {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      // GError *error = NULL ;
+      ZMapFeatureContextMergeStats merge_stats = NULL ;
+      bool acedb_source = false ;
+      GList *masked = NULL ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+      // zMapFeatureDumpStdOutFeatures(context, styles, &error) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      ZMapFeatureContextMergeCode merge_results = ZMAPFEATURE_CONTEXT_ERROR ;
+              
+      merge_results = zmapJustMergeContext(view,
+                                           &context, &merge_stats,
+                                           &masked, acedb_source, TRUE) ;
+
+      // Do something with merge stats ??
+
+      g_free(merge_stats) ;
+
+      if (merge_results == ZMAPFEATURE_CONTEXT_OK)
+        {
+          diff_context = context ;
+
+          zmapJustDrawContext(view, diff_context, masked, NULL, NULL) ;
+
+          result = TRUE ;
+        }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+      ZMapFeatureContextMergeCode merge_results ;
+
+      merge_results = zMapViewContextMerge(view, context) ;
+
+    }
+  else if (reply == DataSourceReplyType::GOT_ERROR)
+    {
+      if (features_source->GetError(&err_msg, &error_rc))
+        zMapWarning("Source failed to get features with: \"%s\"", err_msg) ;
+    }
+  else if (reply == DataSourceReplyType::WAITING)
+    {
+      zMapWarning("%s", "We are waiting...") ;
+    }
+
+  delete features_source ;
+
+  return ;
+}
+
+
+static void newSequenceCallBackFunc(DataSourceSequence *sequence_source, void *user_data)
+{
+  ZMapFeatureContext context ;
+  ZMapStyleTree *styles ;
+  int error_rc = 0 ;
+  const char *err_msg = NULL ;
+  DataSourceReplyType reply ;
+
+  cout << "in sequence app callback" << endl ;
+
+
+  // Get the reply data......
+  if ((reply = sequence_source->GetReply(&context, &styles)) == DataSourceReplyType::GOT_DATA)
+    {
+      GError *error = NULL ;
+
+      zMapFeatureDumpStdOutFeatures(context, styles, &error) ;
+    }
+  else if (reply == DataSourceReplyType::GOT_ERROR)
+    {
+      if (sequence_source->GetError(&err_msg, &error_rc))
+        zMapWarning("Source failed to get features with: \"%s\"", err_msg) ;
+    }
+  else if (reply == DataSourceReplyType::WAITING)
+    {
+      zMapWarning("%s", "We are waiting...") ;
+    }
+
+  delete sequence_source ;
+
+  return ;
+}
+
+

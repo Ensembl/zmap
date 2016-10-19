@@ -466,7 +466,7 @@ static void newImportCB(gpointer cb_data, guint callback_action, GtkWidget *wind
 
   /* need sequence_map to set default seq coords and map sequence name, and to store the
    * resulting ZMapConfigSource struct for the new source that is created */
-  zmapControlImportFile(zmap, sequence_map, start, end);
+  zmapControlNewImportFile(zmap, sequence_map, start, end);
 
   return ;
 }
