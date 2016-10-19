@@ -3067,6 +3067,7 @@ static GtkWidget* loaded_cols_panel_create_buttons(LoadedPageData page_data)
   gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0) ;
   gtk_box_pack_start(GTK_BOX(hbox), gtk_label_new("Action:"), FALSE, FALSE, 0) ;
 
+
   /* Add a button to Show all selected columns */
   button = gtk_button_new_with_mnemonic("Sho_w") ;
   gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
@@ -3085,6 +3086,8 @@ static GtkWidget* loaded_cols_panel_create_buttons(LoadedPageData page_data)
   g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(hide_cb), page_data) ;
   gtk_widget_set_tooltip_text(button, "Set visibility of all selected tracks to Hide") ;
 
+  gtk_box_pack_start(GTK_BOX(hbox), gtk_label_new(" "), FALSE, FALSE, 0) ; //separator
+
   /* Add buttons to bump/unbump all selected columns */
   button = gtk_button_new_with_mnemonic("_Bump") ;
   gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
@@ -3095,6 +3098,8 @@ static GtkWidget* loaded_cols_panel_create_buttons(LoadedPageData page_data)
   gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
   g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(unbump_cb), page_data) ;
   gtk_widget_set_tooltip_text(button, "Unbump (collapse) all selected tracks") ;
+
+  gtk_box_pack_start(GTK_BOX(hbox), gtk_label_new(" "), FALSE, FALSE, 0) ; //separator
 
   /* Add a button to set a group for the selected columns */
   button = gtk_button_new_with_mnemonic("Change _Group") ;
