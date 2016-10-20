@@ -192,7 +192,8 @@ void ZMapConfigSourceStruct::setUrl(const char *url)
   url_parse_error_ = 0 ;
 
   // Set the url string
-  url_ = g_strdup(url) ;
+  if (url && *url)
+    url_ = g_strdup(url) ;
 }
 
 void ZMapConfigSourceStruct::setConfigFile(const char *config_file)

@@ -553,7 +553,6 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::createSource(const char *sour
                                                                 GError **error)
 {
   ZMapConfigSource source = NULL ;
-  zMapReturnValIfFail(!url.empty(), source) ;
 
   // Check if there's already a source with this name and url and return that if found
   source = getSource(source_name, url) ;
