@@ -1226,7 +1226,7 @@ GList *zMapConfigGetSources(const char *config_file, const char *config_str, cha
         {
           for (GList *item = settings_list; item; item = item->next)
             {
-              ZMapConfigSource config_source = (ZMapConfigSource)settings_list ;
+              ZMapConfigSource config_source = (ZMapConfigSource)settings_list->data ;
               config_source->setConfigFile(config_file) ;
             }
         }
