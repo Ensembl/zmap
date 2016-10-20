@@ -216,6 +216,7 @@ typedef struct ZMapGFFParserFeatureSetStruct_
 
 #define ZMAPGFF_PARSER_STRUCT_COMMON_DATA                                                            \
                                               ZMapGFFVersion gff_version ;                           \
+                                              ZMapConfigSource source ;                              \
                                               ZMapGFFParserState state ;                             \
                                               ZMapGFFClipMode clip_mode ;                            \
                                               ZMapSequenceStruct seq_data ;                          \

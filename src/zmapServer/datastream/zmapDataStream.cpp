@@ -260,7 +260,8 @@ ZMapDataStreamGIOStruct::ZMapDataStreamGIOStruct(ZMapConfigSource source,
   parser_ = zMapGFFCreateParser(gff_version_,
                                 sequence,
                                 start,
-                                end) ;
+                                end,
+                                source_) ;
 
   /* The caller may only want a small part of the features in the stream so we set the
    * feature start/end from the block, not the gff stream start/end. */
@@ -334,7 +335,8 @@ ZMapDataStreamBEDStruct::ZMapDataStreamBEDStruct(ZMapConfigSource source,
   parser_ = zMapGFFCreateParser(gff_version,
                                 sequence,
                                 start,
-                                end) ;
+                                end,
+                                source_) ;
 
   /* The caller may only want a small part of the features in the stream so we set the
    * feature start/end from the block, not the gff stream start/end. */
@@ -408,7 +410,8 @@ ZMapDataStreamBIGBEDStruct::ZMapDataStreamBIGBEDStruct(ZMapConfigSource source,
   parser_ = zMapGFFCreateParser(gff_version,
                                 sequence,
                                 start,
-                                end) ;
+                                end,
+                                source_) ;
 
   /* The caller may only want a small part of the features in the stream so we set the
    * feature start/end from the block, not the gff stream start/end. */
@@ -476,7 +479,8 @@ ZMapDataStreamBIGWIGStruct::ZMapDataStreamBIGWIGStruct(ZMapConfigSource source,
   parser_ = zMapGFFCreateParser(gff_version,
                                 sequence,
                                 start,
-                                end) ;
+                                end,
+                                source_) ;
 
   /* The caller may only want a small part of the features in the stream so we set the
    * feature start/end from the block, not the gff stream start/end. */
@@ -532,7 +536,8 @@ ZMapDataStreamHTSStruct::ZMapDataStreamHTSStruct(ZMapConfigSource source,
   parser_ = zMapGFFCreateParser(gff_version,
                                 sequence,
                                 start,
-                                end) ;
+                                end,
+                                source_) ;
 
   /* The caller may only want a small part of the features in the stream so we set the
    * feature start/end from the block, not the gff stream start/end. */
@@ -583,7 +588,8 @@ ZMapDataStreamBCFStruct::ZMapDataStreamBCFStruct(ZMapConfigSource source,
   parser_ = zMapGFFCreateParser(gff_version,
                                 sequence,
                                 start,
-                                end) ;
+                                end,
+                                source) ;
 
   /* The caller may only want a small part of the features in the stream so we set the
    * feature start/end from the block, not the gff stream start/end. */
@@ -1546,7 +1552,7 @@ ZMapFeatureSet ZMapDataStreamStruct::makeFeatureSet(const char *feature_name_id,
       if (source_data && feature_style->unique_id != feature_style_id)
         source_data->style_id = feature_style->unique_id;
 
-      feature_set = zMapFeatureSetCreate((char*)g_quark_to_string(feature_set_id) , NULL) ;
+      feature_set = zMapFeatureSetCreate((char*)g_quark_to_string(feature_set_id) , NULL, source_) ;
 
       zMapLogMessage("Created feature set: %s", g_quark_to_string(feature_set_id)) ;
 

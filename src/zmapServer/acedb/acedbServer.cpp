@@ -319,6 +319,8 @@ static gboolean createConnection(void **server_out, ZMapConfigSource config_sour
 
   resetErr(server) ;
 
+  server->source = config_source ;
+
   if (config_source->configFile())
     server->config_file = g_strdup(config_source->configFile()) ;
 
@@ -1455,7 +1457,7 @@ static gboolean sequenceRequest(DoAllAlignBlocks get_features, ZMapFeatureBlock 
 	  /* Set up the parser, if we are doing cols/styles then set hash tables
 	   * in parser to map the gff source name to the Feature Set (== Column) and a Style. */
 	  parser = zMapGFFCreateParser(iGFFVersion, (char *) g_quark_to_string(feature_block->original_id),
-				       server->zmap_start, server->zmap_end) ;
+				       server->zmap_start, server->zmap_end, server->source) ;
 	  zMapGFFParserInitForFeatures(parser, styles, FALSE) ;
 
 	  zMapGFFSetDefaultToBasic(parser, TRUE);

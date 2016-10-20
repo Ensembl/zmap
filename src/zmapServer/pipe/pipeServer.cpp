@@ -234,6 +234,9 @@ static gboolean createConnection(void **server_out, ZMapConfigSource config_sour
   zMapReturnValIfFail(config_source && config_source->urlObj(), result) ;
 
   PipeServer server = (PipeServer)g_new0(PipeServerStruct, 1) ;
+  
+  server->source = config_source ;
+
   ZMapURL url = config_source->urlObj() ;
   
   if ((url->scheme != SCHEME_FILE || url->scheme != SCHEME_PIPE) && (!(url->path) || !(*(url->path))))
@@ -473,7 +476,8 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
                     {
                       server->parser = zMapGFFCreateParser(server->gff_version,
                                                            g_quark_to_string(server->req_sequence),
-                                                           server->zmap_start, server->zmap_end) ;
+                                                           server->zmap_start, server->zmap_end,
+                                                           server->source) ;
                     }
 
                   /* First parse the header, if we need to (it might already have been done) */

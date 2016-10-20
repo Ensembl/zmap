@@ -855,7 +855,7 @@ ZMapFeatureSet zMapFeatureSetShallowCopy(ZMapFeatureSet src)
   ZMapFeatureSet dest = NULL;
   zMapReturnValIfFail(src, dest) ;
 
-  dest = zMapFeatureSetIDCreate(src->original_id, src->unique_id, src->style, src->features) ;
+  dest = zMapFeatureSetIDCreate(src->original_id, src->unique_id, src->style, src->features, src->source) ;
 
 #ifdef FEATURES_NEED_MAGIC
   dest->magic = src->magic ;

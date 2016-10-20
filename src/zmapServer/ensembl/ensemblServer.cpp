@@ -208,7 +208,7 @@ static void transcriptAddExons(EnsemblServer server, ZMapFeature feature, Vector
 
 static void addMapping(ZMapFeatureContext feature_context, int req_start, int req_end) ;
 
-static ZMapFeatureSet makeFeatureSet(const char *feature_name_id, GQuark feature_set_id, ZMapStyleMode feature_mode, const char *source, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
+static ZMapFeatureSet makeFeatureSet(EnsemblServer server, const char *feature_name_id, GQuark feature_set_id, ZMapStyleMode feature_mode, const char *source, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
 
 static Slice* getSlice(EnsemblServer server, const char *seq_name, long start, long end, int strand) ;
 static char* getSequence(EnsemblServer server, const char *seq_name, long start, long end, int strand) ;
@@ -316,6 +316,7 @@ static gboolean createConnection(void **server_out, ZMapConfigSource config_sour
   server = (EnsemblServer)g_new0(EnsemblServerStruct, 1) ;
   *server_out = (void *)server ;
 
+  server->source = config_source ;
   server->mutex = &(global->mutex) ;
 
 
@@ -1770,7 +1771,7 @@ static ZMapFeature makeFeature(EnsemblServer server,
 
           if (!feature_set)
             {
-              feature_set = makeFeatureSet(feature_name_id, feature_set_id, feature_mode, unique_source, get_features_data, feature_block) ;
+              feature_set = makeFeatureSet(server, feature_name_id, feature_set_id, feature_mode, unique_source, get_features_data, feature_block) ;
             }
 
           if (feature_set)
@@ -1825,7 +1826,8 @@ static ZMapFeature makeFeature(EnsemblServer server,
 }
 
 
-static ZMapFeatureSet makeFeatureSet(const char *feature_name_id,
+static ZMapFeatureSet makeFeatureSet(EnsemblServer server,
+                                     const char *feature_name_id,
                                      GQuark feature_set_id,
                                      ZMapStyleMode feature_mode,
                                      const char *source,
@@ -1882,7 +1884,7 @@ static ZMapFeatureSet makeFeatureSet(const char *feature_name_id,
       if (source_data && feature_style->unique_id != feature_style_id)
         source_data->style_id = feature_style->unique_id;
 
-      feature_set = zMapFeatureSetCreate((char*)g_quark_to_string(feature_set_id) , NULL) ;
+      feature_set = zMapFeatureSetCreate((char*)g_quark_to_string(feature_set_id) , NULL, server->source) ;
       zMapFeatureBlockAddFeatureSet(feature_block, feature_set);
       get_features_data->feature_set_names = g_list_prepend(get_features_data->feature_set_names, GUINT_TO_POINTER(feature_set->unique_id)) ;
 
