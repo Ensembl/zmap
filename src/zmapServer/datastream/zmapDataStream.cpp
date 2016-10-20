@@ -1703,7 +1703,7 @@ ZMapFeature ZMapDataStreamStruct::makeFeature(const char *sequence,
 
   GArray *gaps = NULL ;
 
-  if (ok && cigar_string)
+  if (ok && cigar_string && *cigar_string)
     {
       ok = zMapFeatureAlignmentString2Gaps(ZMAPALIGN_FORMAT_CIGAR_BAM,
                                            strand, start, end,
