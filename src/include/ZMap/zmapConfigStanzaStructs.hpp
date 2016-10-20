@@ -73,11 +73,11 @@ public:
 #define SOURCE_GROUP_DELAYED  2
 #define SOURCE_GROUP_ALWAYS   3
 
-  char *url_ ; // should be private really but still used
+  char *url_ ; // should be private really but still used by source_set_property
 
 private:
-  ZMapURL url_obj_ ;
-  int url_parse_error_ ; // gets set to non-zero if url_obj_ could not be parsed
+  mutable ZMapURL url_obj_ ;     // lazy-evaluated parsed version of the url_
+  mutable int url_parse_error_ ; // gets set to non-zero parsing url_obj_ failed
   GQuark config_file_ ;
 } ;
 

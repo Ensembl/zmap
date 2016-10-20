@@ -146,7 +146,7 @@ ZMapConfigSourceStruct::ZMapConfigSourceStruct()
       parent(NULL),
       url_(NULL),
       url_obj_(NULL),
-      url_parse_error_()
+      url_parse_error_(0)
 {
 }
 
@@ -176,7 +176,7 @@ ZMapConfigSourceStruct::~ZMapConfigSourceStruct()
 
 void ZMapConfigSourceStruct::setUrl(const char *url)
 {
-  // Clear existing url and url_obj, if set
+  // Clear existing url, url_obj and url parser error, if set
   if (url_)
     {
       g_free(url_) ;
@@ -189,20 +189,10 @@ void ZMapConfigSourceStruct::setUrl(const char *url)
       url_obj_ = NULL ;
     }
 
+  url_parse_error_ = 0 ;
+
   // Set the url string
   url_ = g_strdup(url) ;
-
-  // Parse the string into url_obj. Set to null and set the error if this fails.
-  if (url_)
-    {
-      url_obj_ = url_parse(url_, &url_parse_error_) ;
-
-      if (url_parse_error_)
-        {
-          if (url_obj_)
-            url_obj_ = NULL ;
-        }
-    }
 }
 
 void ZMapConfigSourceStruct::setConfigFile(const char *config_file)
@@ -217,6 +207,19 @@ const char* ZMapConfigSourceStruct::url() const
 
 const ZMapURL ZMapConfigSourceStruct::urlObj() const
 {
+  // If not already done, parse the string into url_obj. Set to null and set the error if this
+  // fails. If the error is already set, then don't bother trying to re-parse.
+  if (!url_obj_ && !url_parse_error_ && url_)
+    {
+      url_obj_ = url_parse(url_, &url_parse_error_) ;
+
+      if (url_parse_error_)
+        {
+          if (url_obj_)
+            url_obj_ = NULL ;
+        }
+    }
+
   return url_obj_ ; 
 }
 
