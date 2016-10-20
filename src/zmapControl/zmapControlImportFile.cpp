@@ -752,7 +752,7 @@ static void importNewSource(ZMapConfigSource server,
       if (server)
         {
           GList *req_featuresets = NULL ;
-          const string url(server->url) ;
+          const string url(server->url()) ;
           ZMapFeatureContextMap context_map ;
           const string config_file = string("") ;
           const string version = string("") ;
