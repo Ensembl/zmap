@@ -59,15 +59,16 @@ enum class ZMapDataStreamType {NONE, GIO, HTS, BCF, BED, BIGBED, BIGWIG,  /*UNK 
  *            ZMapDataStreamnBIGBED   blatSrc bigBed file, synchronous only
  *            ZMapDataStreamBIGWIG    blatSrc bigWig file, synchronous only
  */
-ZMapDataStream zMapDataStreamCreate(const GQuark source_name, const char * const file_name, 
+ZMapDataStream zMapDataStreamCreate(ZMapConfigSource config_source,
+                                    const GQuark source_name, const char * const file_name, 
                                     const char *sequence, const int start, const int end, 
-                                    const GQuark format, GError **error_out = NULL) ;
+                                    GError **error_out = NULL) ;
 bool zMapDataStreamIsOpen(ZMapDataStream const source) ;
 bool zMapDataStreamDestroy( ZMapDataStream *source) ;
 ZMapDataStreamType zMapDataStreamGetType(ZMapDataStream source ) ;
 ZMapDataStreamType zMapDataStreamTypeFromFilename(const char * const, GError **error_out = NULL) ;
-std::string zMapDataStreamFormatFromType(ZMapDataStreamType &source_type) ;
-ZMapDataStreamType zMapDataStreamTypeFromFormat(const std::string &format, GError **error_out) ;
+std::string zMapDataStreamTypeToFileType(ZMapDataStreamType &stream_type) ;
+ZMapDataStreamType zMapDataStreamTypeFromFileType(const std::string &file_type, GError **error_out) ;
 
 
 #endif

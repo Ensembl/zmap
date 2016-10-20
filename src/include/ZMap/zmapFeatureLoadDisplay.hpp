@@ -297,22 +297,23 @@ typedef struct ZMapFeatureSequenceMapStructType
   void addSourcesFromConfig(const char *config_str, char **stylesfile) ;
   bool updateContext(_ZMapConfigIniContextStruct *context, ZMapConfigIniFileType file_type) ;
 
-  ZMapConfigSource createSource(const char *source_name, const char *url, 
+  ZMapConfigSource createSource(const char *source_name, const std::string &url, 
                                 const char *featuresets, const char *biotypes, 
-                                const char *format = NULL,
                                 const bool is_child = false, const bool allow_duplicate = true,
                                 GError **error = NULL) ;
   ZMapConfigSource createSource(const char *source_name, const std::string &url, 
                                 const char *featuresets, const char *biotypes, 
-                                const char *format = NULL,
+                                const std::string &file_type, const int num_fields,
                                 const bool is_child = false, const bool allow_duplicate = true,
                                 GError **error = NULL) ;
   void updateSource(const char *source_name, const char *url, 
                     const char *featuresets, const char *biotypes, 
-                    const char *format, GError **error) ;
+                    const std::string &file_type, const int num_fields,
+                    GError **error) ;
   void updateSource(const char *source_name, const std::string &url, 
                     const char *featuresets, const char *biotypes, 
-                    const char *format, GError **error) ;
+                    const std::string &file_type, const int num_fields,
+                    GError **error) ;
   ZMapConfigSource createFileSource(const char *source_name, const char *file) ;
   ZMapConfigSource createPipeSource(const char *source_name, const char *file, const char *script, const char *args) ;
   void removeSource(const char *source_name_cstr, GError **error) ;

@@ -200,6 +200,17 @@ void ZMapConfigSourceStruct::setConfigFile(const char *config_file)
   config_file_ = g_quark_from_string(config_file) ;
 }
 
+void ZMapConfigSourceStruct::setFileType(const string &file_type)
+{
+  file_type_ = file_type ;
+}
+
+void ZMapConfigSourceStruct::setNumFields(const int num_fields)
+{
+  num_fields_ = num_fields ;
+}
+
+
 const char* ZMapConfigSourceStruct::url() const
 {
   return url_ ; 
@@ -236,6 +247,16 @@ const string ZMapConfigSourceStruct::urlError() const
 const char* ZMapConfigSourceStruct::configFile() const
 {
   return g_quark_to_string(config_file_) ; 
+}
+
+const string ZMapConfigSourceStruct::fileType() const
+{
+  return file_type_ ; 
+}
+
+int ZMapConfigSourceStruct::numFields() const
+{
+  return num_fields_ ; 
 }
 
 

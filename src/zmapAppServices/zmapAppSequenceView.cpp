@@ -113,7 +113,7 @@ static void chooseConfigCB(GtkFileChooserButton *widget, gpointer user_data) ;
 static void defaultsCB(GtkWidget *widget, gpointer cb_data) ;
 static void createSourceCB(GtkWidget *widget, gpointer cb_data) ;
 static void removeSourceCB(GtkWidget *widget, gpointer cb_data) ;
-static void editSourceCB(GtkWidget *widget, gpointer cb_data) ;
+static void editSourceButtonCB(GtkWidget *widget, gpointer cb_data) ;
 static void clearRecentCB(GtkWidget *button, gpointer data) ;
 static void saveCB(GtkWidget *widget, gpointer cb_data) ;
 static void closeCB(GtkWidget *widget, gpointer cb_data) ;
@@ -133,7 +133,8 @@ static void selectSource(const char *source_name,
                          const bool deselect_others = false) ;
 
 static void createNewSourceCB(const char *source_name, const std::string &url, 
-                              const char *featuresets, const char *biotypes, const char *format,
+                              const char *featuresets, const char *biotypes, 
+                              const string &file_type, const int num_fields,
                               gpointer user_data, GError **error) ;
 static void cancelNewSourceCB(GtkWidget *toplevel, gpointer cb_data) ;
 
@@ -632,7 +633,7 @@ static GtkWidget *makeButtonBox(MainFrame main_data)
   
   createButton(NULL, GTK_STOCK_EDIT, true,
                "Edit the selected source(s)",
-               G_CALLBACK(editSourceCB), (gpointer)main_data, button_box) ;
+               G_CALLBACK(editSourceButtonCB), (gpointer)main_data, button_box) ;
 
   createButton(NULL, GTK_STOCK_DELETE, true, 
                "Delete the selected source(s).",
@@ -812,7 +813,8 @@ static void saveCB(GtkWidget *widget, gpointer cb_data)
 /* Callback called when the create-source dialog has been ok'd to do the work to create the new
  * source from the user-provided info. Returns true if successfully created the source.  */
 static void createNewSourceCB(const char *source_name, const std::string &url, 
-                              const char *featuresets, const char *biotypes, const char *format,
+                              const char *featuresets, const char *biotypes, 
+                              const string &file_type, const int num_fields,
                               gpointer user_data, GError **error)
 {
   MainFrame main_data = (MainFrame)user_data ;
@@ -824,7 +826,7 @@ static void createNewSourceCB(const char *source_name, const std::string &url,
   // source window will have gone away.
   main_data->source_window = NULL ;
 
-  sequence_map->createSource(source_name, url, featuresets, biotypes, format, false, true, &tmp_error) ;
+  sequence_map->createSource(source_name, url, featuresets, biotypes, file_type, num_fields, false, true, &tmp_error) ;
 
   /* Update the list of sources shown in the dialog to include the new source,
    * and add the new source to the current selection */
@@ -858,7 +860,8 @@ static void editSourceCB(const char *source_name,
                          const std::string &url, 
                          const char *featuresets,
                          const char *biotypes,
-                         const char *format,
+                         const string &file_type, 
+                         const int num_fields,
                          gpointer user_data,
                          GError **error)
 {
@@ -868,7 +871,7 @@ static void editSourceCB(const char *source_name,
   ZMapFeatureSequenceMap sequence_map = main_data->orig_sequence_map ;
   GError *tmp_error = NULL ;
 
-  sequence_map->updateSource(source_name, url, featuresets, biotypes, format, &tmp_error) ;
+  sequence_map->updateSource(source_name, url, featuresets, biotypes, file_type, num_fields, &tmp_error) ;
 
   /* Update the list of sources shown in the dialog to include the new source */
   if (!tmp_error)
@@ -903,7 +906,7 @@ static void createSourceCB(GtkWidget *widget, gpointer cb_data)
 
 
 /* Edit an existing source. */
-static void editSourceCB(GtkWidget *widget, gpointer cb_data)
+static void editSourceButtonCB(GtkWidget *widget, gpointer cb_data)
 {
   MainFrame main_data = (MainFrame)cb_data ;
   zMapReturnIfFail(main_data) ;

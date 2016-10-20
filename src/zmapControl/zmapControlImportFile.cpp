@@ -430,9 +430,9 @@ static void createSourceData(ZMapView view,
 
   if (context_map && sequence_map->runningUnderOtter() && zmap_url && zmap_url->path)
     {
-      ZMapDataStreamType source_type = zMapDataStreamTypeFromFilename(zmap_url->path, NULL) ;
+      ZMapDataStreamType stream_type = zMapDataStreamTypeFromFilename(zmap_url->path, NULL) ;
 
-      if (source_type == ZMapDataStreamType::HTS || source_type == ZMapDataStreamType::BIGWIG)
+      if (stream_type == ZMapDataStreamType::HTS || stream_type == ZMapDataStreamType::BIGWIG)
         {
           const char *source_name = g_quark_to_string(source->name_) ;
           GQuark fset_id = zMapFeatureSetCreateID(source_name);
