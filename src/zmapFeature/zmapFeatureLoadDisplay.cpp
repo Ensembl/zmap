@@ -696,7 +696,7 @@ void ZMapFeatureSequenceMapStructType::createTrackhubSourceChild(ZMapConfigSourc
   string track_name = track.name() ;
 
   // If the track doesn't have a name, create one from the file name in the url
-  if (track_name.empty())
+  if (track_name.empty() && !track.url().empty())
     {
       ZMapURL zmap_url = url_parse(track.url().c_str(), NULL) ;
 

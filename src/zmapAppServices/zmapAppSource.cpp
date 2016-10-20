@@ -651,9 +651,8 @@ static void updatePanelFromSource(MainFrame main_data, ZMapConfigSource source)
   if (main_data->combo)
     gtk_widget_set_sensitive(GTK_WIDGET(main_data->combo), FALSE) ;
 
-  /* Parse values out of the url */
-  int status = 0 ;
-  const ZMapURL zmap_url = url_parse(source->url(), &status) ;
+  /* Get parsed values out of the url */
+  const ZMapURL zmap_url = source->urlObj() ;
 
   /* Update the combo box with this scheme */
   if (main_data->combo)
@@ -1871,7 +1870,7 @@ static gboolean applyEnsembl(MainFrame main_frame)
             }
         }
 
-      (main_frame->user_func)(source_name, url, featuresets, biotypes, NULL, 0, main_frame->user_data, &tmp_error) ;
+      (main_frame->user_func)(source_name, url, featuresets, biotypes, "", 0, main_frame->user_data, &tmp_error) ;
 
       if (tmp_error)
         zMapCritical("Failed to create new source: %s", tmp_error->message) ;
@@ -2571,7 +2570,7 @@ static gboolean applyTrackhub(MainFrame main_frame)
       std::stringstream url ;
       url << "trackhub:///" << trackdb_id ;
 
-      (main_frame->user_func)(source_name, url.str(), NULL, NULL, NULL, 0, main_frame->user_data, &tmp_error) ;
+      (main_frame->user_func)(source_name, url.str(), NULL, NULL, "", 0, main_frame->user_data, &tmp_error) ;
 
       if (tmp_error)
         zMapCritical("Failed to create new source: %s", tmp_error->message) ;

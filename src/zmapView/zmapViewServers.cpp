@@ -750,7 +750,7 @@ static bool setUpServerConnectionByScheme(ZMapView zmap_view,
                                           GError **error)
 {
   bool result = true ;
-  ZMapURL zmap_url = url_parse(current_server->url(), NULL);
+  ZMapURL zmap_url = current_server->urlObj() ;
   terminate = FALSE ;
 
   /* URL may be empty for trackhub sources which are just parents of child data tracks */
