@@ -721,8 +721,12 @@ void ZMapFeatureSequenceMapStructType::createTrackhubSourceChild(ZMapConfigSourc
       if (new_source && !g_error)
         {
           // Success. Set the delayed flag if the track should be hidden by default.
+          // Also set this track to be delayed if its parent is delayed (otherwise the user might
+          // configure a trackhub source to be delayed but we would end up loading them if they
+          // are visible according to the track hub info).
+          new_source->delayed = !track.visible() || parent_source->delayed ;
+
           // Set the parent pointer and add the child to the parent's list.
-          new_source->delayed = !track.visible() ;
           new_source->parent = parent_source ;
           parent_source->children.push_back(new_source) ;
 
