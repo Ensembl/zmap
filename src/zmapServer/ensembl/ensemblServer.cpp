@@ -208,7 +208,13 @@ static void transcriptAddExons(EnsemblServer server, ZMapFeature feature, Vector
 
 static void addMapping(ZMapFeatureContext feature_context, int req_start, int req_end) ;
 
-static ZMapFeatureSet makeFeatureSet(EnsemblServer server, const char *feature_name_id, GQuark feature_set_id, ZMapStyleMode feature_mode, const char *source, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
+static ZMapFeatureSet makeFeatureSet(EnsemblServer server, 
+                                     const char *feature_name_id, 
+                                     ZMapStyleMode feature_mode, 
+                                     GQuark feature_set_id, 
+                                     const char *source, 
+                                     GetFeaturesData get_features_data, 
+                                     ZMapFeatureBlock feature_block) ;
 
 static Slice* getSlice(EnsemblServer server, const char *seq_name, long start, long end, int strand) ;
 static char* getSequence(EnsemblServer server, const char *seq_name, long start, long end, int strand) ;
@@ -1714,7 +1720,7 @@ static ZMapFeature makeFeature(EnsemblServer server,
   gboolean has_score = TRUE ;
   double score = 0.0 ;
   ZMapStrand strand = ZMAPSTRAND_NONE ;
-  char *unique_featureset_name = NULL ;
+  char *featureset_unique_name = NULL ;
   const char *biotype = biotype_in ;
 
   SO_accession = featureGetSOTerm(rsf) ;
@@ -1757,12 +1763,12 @@ static ZMapFeature makeFeature(EnsemblServer server,
           /* We can get different feature types with the same source, so ensure that the
            * featureset id is unique by also appending the biotype or SO term */
           if (server->source)
-            unique_featureset_name = g_strdup_printf("%s_%s_%s", server->source->toplevelName().c_str(), featureset_name, biotype);
+            featureset_unique_name = g_strdup_printf("%s_%s_%s", server->source->toplevelName().c_str(), featureset_name, biotype);
           else
-            unique_featureset_name = g_strdup_printf("%s_%s", featureset_name, biotype) ;
+            featureset_unique_name = g_strdup_printf("%s_%s", featureset_name, biotype) ;
 
           /* Find the featureset, or create it if it doesn't exist */
-          GQuark featureset_unique_id = zMapFeatureSetCreateID((char*)unique_featureset_name) ;
+          GQuark featureset_unique_id = zMapFeatureSetCreateID((char*)featureset_unique_name) ;
 
           ZMapFeatureSet feature_set = (ZMapFeatureSet)zMapFeatureAnyGetFeatureByID((ZMapFeatureAny)feature_block,
                                                                                     featureset_unique_id,
@@ -1770,7 +1776,9 @@ static ZMapFeature makeFeature(EnsemblServer server,
 
           if (!feature_set)
             {
-              feature_set = makeFeatureSet(server, feature_name_id, featureset_unique_id, feature_mode, unique_featureset_name, get_features_data, feature_block) ;
+              feature_set = makeFeatureSet(server, feature_name_id, feature_mode, 
+                                           featureset_unique_id, featureset_unique_name, 
+                                           get_features_data, feature_block) ;
             }
 
           if (feature_set)
@@ -1827,8 +1835,8 @@ static ZMapFeature makeFeature(EnsemblServer server,
 
 static ZMapFeatureSet makeFeatureSet(EnsemblServer server,
                                      const char *feature_name_id,
-                                     GQuark featureset_unique_id,
                                      ZMapStyleMode feature_mode,
+                                     GQuark featureset_unique_id,
                                      const char *featureset_name,
                                      GetFeaturesData get_features_data,
                                      ZMapFeatureBlock feature_block)
@@ -1836,23 +1844,22 @@ static ZMapFeatureSet makeFeatureSet(EnsemblServer server,
   ZMapFeatureSet feature_set = NULL ;
 
   /*
-   * Now deal with the featureset_name -> data mapping referred to in the parser.
+   * Now deal with the featureset_unique_id -> data mapping referred to in the parser.
    */
-  GQuark featureset_name_id = zMapFeatureSetCreateID((char*)featureset_name) ;
   GQuark feature_style_id = 0 ;
   ZMapFeatureSource source_data = NULL ;
 
   if (get_features_data->source_2_sourcedata)
     {
-      if (!(source_data = (ZMapFeatureSource)g_hash_table_lookup(get_features_data->source_2_sourcedata, GINT_TO_POINTER(featureset_name_id))))
+      if (!(source_data = (ZMapFeatureSource)g_hash_table_lookup(get_features_data->source_2_sourcedata, GINT_TO_POINTER(featureset_unique_id))))
         {
           source_data = g_new0(ZMapFeatureSourceStruct,1);
-          source_data->source_id = featureset_name_id;
-          source_data->source_text = featureset_name_id;
+          source_data->source_id = featureset_unique_id;
+          source_data->source_text = g_quark_from_string(featureset_name);
 
-          g_hash_table_insert(get_features_data->source_2_sourcedata,GINT_TO_POINTER(featureset_name_id), source_data);
+          g_hash_table_insert(get_features_data->source_2_sourcedata,GINT_TO_POINTER(featureset_unique_id), source_data);
 
-          zMapLogMessage("Created source_data: %s", g_quark_to_string(featureset_name_id)) ;
+          zMapLogMessage("Created source_data: %s", g_quark_to_string(featureset_unique_id)) ;
         }
 
       if (source_data->style_id)
@@ -1860,13 +1867,13 @@ static ZMapFeatureSet makeFeatureSet(EnsemblServer server,
       else
         feature_style_id = zMapStyleCreateID((char *) g_quark_to_string(source_data->source_id)) ;
 
-      featureset_name_id = source_data->source_id ;
+      featureset_unique_id = source_data->source_id ;
       source_data->style_id = feature_style_id;
       //zMapLogMessage("Style id = %s", g_quark_to_string(source_data->style_id)) ;
     }
   else
     {
-      featureset_name_id = feature_style_id = zMapStyleCreateID((char*)featureset_name) ;
+      featureset_unique_id = feature_style_id = zMapStyleCreateID((char*)featureset_name) ;
     }
 
   ZMapFeatureTypeStyle feature_style = NULL ;
