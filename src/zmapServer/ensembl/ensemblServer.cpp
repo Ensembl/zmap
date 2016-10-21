@@ -1253,7 +1253,7 @@ static ZMapFeature makeFeatureSimple(EnsemblServer server,
 
   ZMapStyleMode feature_mode = ZMAPSTYLE_MODE_BASIC ;
   const char *feature_name = NULL ;
-  const char *source = NULL ;
+  const char *featureset_name = NULL ;
 
   const long start = SeqFeature_getStart((SeqFeature*)rsf) ;
   const long end = SeqFeature_getEnd((SeqFeature*)rsf) ;
@@ -1263,14 +1263,14 @@ static ZMapFeature makeFeatureSimple(EnsemblServer server,
   if (!feature_name || *feature_name == '\0')
     feature_name = SimpleFeature_getDisplayLabel(rsf) ;
 
-  if (analysis && (!source || *source == '\0'))
-    source = Analysis_getLogicName(analysis) ;
+  if (analysis && (!featureset_name || *featureset_name == '\0'))
+    featureset_name = Analysis_getLogicName(analysis) ;
 
-  if (analysis && (!source || *source == '\0'))
-    source = Analysis_getGFFSource(analysis) ;
+  if (analysis && (!featureset_name || *featureset_name == '\0'))
+    featureset_name = Analysis_getGFFSource(analysis) ;
 
   feature = makeFeature(server, (SeqFeature*)rsf, feature_name, feature_name, 
-                        feature_mode, source, NULL, NULL, start, end, 0, 0, 
+                        feature_mode, featureset_name, NULL, NULL, start, end, 0, 0, 
                         get_features_data, feature_block, error) ;
 
   return feature ;
@@ -1287,7 +1287,7 @@ static ZMapFeature makeFeatureRepeat(EnsemblServer server,
 
   ZMapStyleMode feature_mode = ZMAPSTYLE_MODE_BASIC ;
   const char *feature_name = NULL ;
-  const char *source = NULL ;
+  const char *featureset_name = NULL ;
 
   const long start = SeqFeature_getStart((SeqFeature*)rsf) ;
   const long end = SeqFeature_getEnd((SeqFeature*)rsf) ;
@@ -1298,14 +1298,14 @@ static ZMapFeature makeFeatureRepeat(EnsemblServer server,
   if ((!feature_name || *feature_name == '\0') && consensus)
     feature_name = RepeatConsensus_getName(consensus) ;
 
-  if (analysis && (!source || *source == '\0'))
-    source = Analysis_getLogicName(analysis) ;
+  if (analysis && (!featureset_name || *featureset_name == '\0'))
+    featureset_name = Analysis_getLogicName(analysis) ;
 
-  if (analysis && (!source || *source == '\0'))
-    source = Analysis_getGFFSource(analysis) ;
+  if (analysis && (!featureset_name || *featureset_name == '\0'))
+    featureset_name = Analysis_getGFFSource(analysis) ;
 
   feature = makeFeature(server, (SeqFeature*)rsf, feature_name, feature_name, 
-                        feature_mode, source, NULL, NULL, start, end, 0, 0, 
+                        feature_mode, featureset_name, NULL, NULL, start, end, 0, 0, 
                         get_features_data, feature_block, error) ;
 
   return feature ;
@@ -1321,16 +1321,16 @@ static ZMapFeature makeFeatureGene(EnsemblServer server,
 {
   ZMapFeature feature = NULL ;
 
-  const char *source = NULL ;
+  const char *featureset_name = NULL ;
   Analysis *analysis = SeqFeature_getAnalysis((SeqFeature*)rsf) ;
 
-  if (analysis && (!source || *source == '\0'))
-    source = Analysis_getLogicName(analysis) ;
+  if (analysis && (!featureset_name || *featureset_name == '\0'))
+    featureset_name = Analysis_getLogicName(analysis) ;
 
-  if (analysis && (!source || *source == '\0'))
-    source = Analysis_getGFFSource(analysis) ;
+  if (analysis && (!featureset_name || *featureset_name == '\0'))
+    featureset_name = Analysis_getGFFSource(analysis) ;
 
-  geneAddTranscripts(server, rsf, source, get_features_data, feature_block, transcript_ids, error) ;
+  geneAddTranscripts(server, rsf, featureset_name, get_features_data, feature_block, transcript_ids, error) ;
 
   return feature ;
 }
@@ -1338,7 +1338,7 @@ static ZMapFeature makeFeatureGene(EnsemblServer server,
 
 static void geneAddTranscripts(EnsemblServer server, 
                                Gene *rsf, 
-                               const char *gene_source,
+                               const char *gene_featureset_name,
                                GetFeaturesData get_features_data, 
                                ZMapFeatureBlock feature_block,
                                set<GQuark> &transcript_ids,
@@ -1359,7 +1359,7 @@ static void geneAddTranscripts(EnsemblServer server,
           const long end = Transcript_getEnd(transcript) + offset ;
 
           makeFeatureTranscript(server, transcript, 
-                                gene_source, start, end, 
+                                gene_featureset_name, start, end, 
                                 get_features_data, feature_block, transcript_ids, error) ;
         }
 
@@ -1370,7 +1370,7 @@ static void geneAddTranscripts(EnsemblServer server,
 
 static ZMapFeature makeFeatureTranscript(EnsemblServer server,
                                          Transcript *rsf,
-                                         const char *gene_source,
+                                         const char *gene_featureset_name,
                                          const long start,
                                          const long end,
                                          GetFeaturesData get_features_data,
@@ -1383,7 +1383,7 @@ static ZMapFeature makeFeatureTranscript(EnsemblServer server,
   ZMapStyleMode feature_mode = ZMAPSTYLE_MODE_TRANSCRIPT ;
   const char *feature_name_id = NULL ;
   const char *feature_name = NULL ;
-  const char *source = NULL ;
+  const char *featureset_name = NULL ;
   const char *biotype = Transcript_getBiotype(rsf) ;
   Analysis *analysis = SeqFeature_getAnalysis((SeqFeature*)rsf) ;
 
@@ -1397,14 +1397,14 @@ static ZMapFeature makeFeatureTranscript(EnsemblServer server,
       if (!feature_name || *feature_name == '\0')
         feature_name = feature_name_id ;
 
-      if (analysis && (!source || *source == '\0'))
-        source = Analysis_getLogicName(analysis) ;
+      if (analysis && (!featureset_name || *featureset_name == '\0'))
+        featureset_name = Analysis_getLogicName(analysis) ;
 
-      if (analysis && (!source || *source == '\0'))
-        source = Analysis_getGFFSource(analysis) ;
+      if (analysis && (!featureset_name || *featureset_name == '\0'))
+        featureset_name = Analysis_getGFFSource(analysis) ;
 
       feature = makeFeature(server, (SeqFeature*)rsf, feature_name_id, feature_name, 
-                            feature_mode, source, gene_source, biotype, start, end, 0, 0, 
+                            feature_mode, featureset_name, gene_featureset_name, biotype, start, end, 0, 0, 
                             get_features_data, feature_block, error, &transcript_ids) ;
 
       if (feature)
@@ -1479,7 +1479,7 @@ static ZMapFeature makeFeaturePredictionTranscript(EnsemblServer server,
   ZMapStyleMode feature_mode = ZMAPSTYLE_MODE_TRANSCRIPT ;
   const char *feature_name_id = NULL ;
   const char *feature_name = NULL ;
-  const char *source = NULL ;
+  const char *featureset_name = NULL ;
 
   const long start = SeqFeature_getStart((SeqFeature*)rsf) ;
   const long end = SeqFeature_getEnd((SeqFeature*)rsf) ;
@@ -1492,17 +1492,17 @@ static ZMapFeature makeFeaturePredictionTranscript(EnsemblServer server,
   if (!feature_name || *feature_name == '\0')
     feature_name = feature_name_id ;
 
-  if (analysis && (!source || *source == '\0'))
-    source = Analysis_getLogicName(analysis) ;
+  if (analysis && (!featureset_name || *featureset_name == '\0'))
+    featureset_name = Analysis_getLogicName(analysis) ;
 
-  if (analysis && (!source || *source == '\0'))
-    source = Analysis_getGFFSource(analysis) ;
+  if (analysis && (!featureset_name || *featureset_name == '\0'))
+    featureset_name = Analysis_getGFFSource(analysis) ;
 
-  if (!source || *source == '\0')
-    source = featureGetSOTerm((SeqFeature*)rsf) ;
+  if (!featureset_name || *featureset_name == '\0')
+    featureset_name = featureGetSOTerm((SeqFeature*)rsf) ;
   
   feature = makeFeature(server, (SeqFeature*)rsf, feature_name_id, feature_name, 
-                        feature_mode, source, NULL, NULL, start, end, 0, 0, 
+                        feature_mode, featureset_name, NULL, NULL, start, end, 0, 0, 
                         get_features_data, feature_block, error) ;
 
   if (feature)
@@ -1575,7 +1575,7 @@ static ZMapFeature makeFeatureBaseAlign(EnsemblServer server,
                                         GError **error)
 {
   ZMapFeature feature = NULL ;
-  const char *source = NULL ;
+  const char *featureset_name = NULL ;
 
   const long start = SeqFeature_getStart((SeqFeature*)rsf) ;
   const long end = SeqFeature_getEnd((SeqFeature*)rsf) ;
@@ -1591,17 +1591,17 @@ static ZMapFeature makeFeatureBaseAlign(EnsemblServer server,
   int match_start = BaseAlignFeature_getHitStart(rsf) ;
   int match_end = BaseAlignFeature_getHitEnd(rsf) ;
 
-  if ((!source || *source == '\0') && analysis)
-    source = Analysis_getLogicName(analysis) ;
+  if ((!featureset_name || *featureset_name == '\0') && analysis)
+    featureset_name = Analysis_getLogicName(analysis) ;
 
-  if ((!source || *source == '\0') && analysis)
-    source = Analysis_getGFFSource(analysis) ;
+  if ((!featureset_name || *featureset_name == '\0') && analysis)
+    featureset_name = Analysis_getGFFSource(analysis) ;
 
-  if (!source || *source == '\0')
-    source = BaseAlignFeature_getDbName((BaseAlignFeature*)rsf) ;
+  if (!featureset_name || *featureset_name == '\0')
+    featureset_name = BaseAlignFeature_getDbName((BaseAlignFeature*)rsf) ;
 
   feature = makeFeature(server, (SeqFeature*)rsf, feature_name_id, feature_name,
-                        feature_mode, source, NULL, NULL, start, end, match_start, match_end,
+                        feature_mode, featureset_name, NULL, NULL, start, end, match_start, match_end,
                         get_features_data, feature_block, error) ;
 
   if (feature)
@@ -1693,8 +1693,8 @@ static ZMapFeature makeFeature(EnsemblServer server,
                                const char *feature_name_id_in,
                                const char *feature_name_in,
                                ZMapStyleMode feature_mode,
-                               const char *source,
-                               const char *gene_source,
+                               const char *featureset_name,
+                               const char *gene_featureset_name,
                                const char *biotype_in,
                                const long start,
                                const long end,
@@ -1714,19 +1714,19 @@ static ZMapFeature makeFeature(EnsemblServer server,
   gboolean has_score = TRUE ;
   double score = 0.0 ;
   ZMapStrand strand = ZMAPSTRAND_NONE ;
-  char *unique_source = NULL ;
+  char *unique_featureset_name = NULL ;
   const char *biotype = biotype_in ;
 
   SO_accession = featureGetSOTerm(rsf) ;
 
-  /* We must have a SO accession and source. Also check whether we should load this
-   * featureset. This checks whether the featureset source or gene source (if given) is in our
+  /* We must have a SO accession and featureset_name. Also check whether we should load this
+   * featureset. This checks whether the featureset_name or gene_featureset_name (if given) is in our
    * list of requested featuresets. */
-  if (SO_accession && source && 
-      (loadFeatureset(server, source) || loadFeatureset(server, gene_source)))
+  if (SO_accession && featureset_name && 
+      (loadFeatureset(server, featureset_name) || loadFeatureset(server, gene_featureset_name)))
     {
       if (!feature_name_id || *feature_name_id == '\0')
-        feature_name_id = source ;
+        feature_name_id = featureset_name ;
 
       if (!feature_name || *feature_name == '\0')
         feature_name = feature_name_id ;
@@ -1757,20 +1757,20 @@ static ZMapFeature makeFeature(EnsemblServer server,
           /* We can get different feature types with the same source, so ensure that the
            * featureset id is unique by also appending the biotype or SO term */
           if (server->source)
-            unique_source = g_strdup_printf("%s_%s_%s", server->source->toplevelName().c_str(), source, biotype);
+            unique_featureset_name = g_strdup_printf("%s_%s_%s", server->source->toplevelName().c_str(), featureset_name, biotype);
           else
-            unique_source = g_strdup_printf("%s_%s", source, biotype) ;
+            unique_featureset_name = g_strdup_printf("%s_%s", featureset_name, biotype) ;
 
           /* Find the featureset, or create it if it doesn't exist */
-          GQuark feature_set_id = zMapFeatureSetCreateID((char*)unique_source) ;
+          GQuark featureset_unique_id = zMapFeatureSetCreateID((char*)unique_featureset_name) ;
 
           ZMapFeatureSet feature_set = (ZMapFeatureSet)zMapFeatureAnyGetFeatureByID((ZMapFeatureAny)feature_block,
-                                                                                    feature_set_id,
+                                                                                    featureset_unique_id,
                                                                                     ZMAPFEATURE_STRUCT_FEATURESET) ;
 
           if (!feature_set)
             {
-              feature_set = makeFeatureSet(server, feature_name_id, feature_set_id, feature_mode, unique_source, get_features_data, feature_block) ;
+              feature_set = makeFeatureSet(server, feature_name_id, featureset_unique_id, feature_mode, unique_featureset_name, get_features_data, feature_block) ;
             }
 
           if (feature_set)
@@ -1794,8 +1794,8 @@ static ZMapFeature makeFeature(EnsemblServer server,
                                              score,
                                              strand) ;
 
-                  //zMapLogMessage("Created feature: name %s, source %s, so %s, mode %d, start %d, end %d, score %f, strand %d",
-                  //               feature_name, source, SO_accession, feature_mode, start, end, score, strand) ;
+                  //zMapLogMessage("Created feature: name %featureset_namesource %s, so %s, mode %d, start %d, end %d, score %f, strand %d",
+                  //               feature_name, featureset_name, SO_accession, feature_mode, start, end, score, strand) ;
 
                   /* add the new feature to the featureset */
                   ZMapFeature existing_feature = (ZMapFeature)g_hash_table_lookup(((ZMapFeatureAny)feature_set)->children, GINT_TO_POINTER(feature_name_id)) ;
@@ -1811,9 +1811,9 @@ static ZMapFeature makeFeature(EnsemblServer server,
       zMapLogWarning("%s", "Could not create feature [%s]: could not determine SO accession", 
                      feature_name_id ? feature_name_id : "") ;
     }
-  else if (!source)
+  else if (!featureset_name)
     {
-      zMapLogWarning("%s", "Could not create feature [%s]: could not determine source",
+      zMapLogWarning("%s", "Could not create feature [%s]: could not determine featureset name",
                      feature_name_id ? feature_name_id : "") ;
     }
   else
@@ -1827,32 +1827,32 @@ static ZMapFeature makeFeature(EnsemblServer server,
 
 static ZMapFeatureSet makeFeatureSet(EnsemblServer server,
                                      const char *feature_name_id,
-                                     GQuark feature_set_id,
+                                     GQuark featureset_unique_id,
                                      ZMapStyleMode feature_mode,
-                                     const char *source,
+                                     const char *featureset_name,
                                      GetFeaturesData get_features_data,
                                      ZMapFeatureBlock feature_block)
 {
   ZMapFeatureSet feature_set = NULL ;
 
   /*
-   * Now deal with the source -> data mapping referred to in the parser.
+   * Now deal with the featureset_name -> data mapping referred to in the parser.
    */
-  GQuark source_id = zMapFeatureSetCreateID((char*)source) ;
+  GQuark featureset_name_id = zMapFeatureSetCreateID((char*)featureset_name) ;
   GQuark feature_style_id = 0 ;
   ZMapFeatureSource source_data = NULL ;
 
   if (get_features_data->source_2_sourcedata)
     {
-      if (!(source_data = (ZMapFeatureSource)g_hash_table_lookup(get_features_data->source_2_sourcedata, GINT_TO_POINTER(source_id))))
+      if (!(source_data = (ZMapFeatureSource)g_hash_table_lookup(get_features_data->source_2_sourcedata, GINT_TO_POINTER(featureset_name_id))))
         {
           source_data = g_new0(ZMapFeatureSourceStruct,1);
-          source_data->source_id = source_id;
-          source_data->source_text = source_id;
+          source_data->source_id = featureset_name_id;
+          source_data->source_text = featureset_name_id;
 
-          g_hash_table_insert(get_features_data->source_2_sourcedata,GINT_TO_POINTER(source_id), source_data);
+          g_hash_table_insert(get_features_data->source_2_sourcedata,GINT_TO_POINTER(featureset_name_id), source_data);
 
-          zMapLogMessage("Created source_data: %s", g_quark_to_string(source_id)) ;
+          zMapLogMessage("Created source_data: %s", g_quark_to_string(featureset_name_id)) ;
         }
 
       if (source_data->style_id)
@@ -1860,13 +1860,13 @@ static ZMapFeatureSet makeFeatureSet(EnsemblServer server,
       else
         feature_style_id = zMapStyleCreateID((char *) g_quark_to_string(source_data->source_id)) ;
 
-      source_id = source_data->source_id ;
+      featureset_name_id = source_data->source_id ;
       source_data->style_id = feature_style_id;
       //zMapLogMessage("Style id = %s", g_quark_to_string(source_data->style_id)) ;
     }
   else
     {
-      source_id = feature_style_id = zMapStyleCreateID((char*)source) ;
+      featureset_name_id = feature_style_id = zMapStyleCreateID((char*)featureset_name) ;
     }
 
   ZMapFeatureTypeStyle feature_style = NULL ;
@@ -1883,18 +1883,18 @@ static ZMapFeatureSet makeFeatureSet(EnsemblServer server,
       if (source_data && feature_style->unique_id != feature_style_id)
         source_data->style_id = feature_style->unique_id;
 
-      feature_set = zMapFeatureSetCreate((char*)g_quark_to_string(feature_set_id) , NULL, server->source) ;
+      feature_set = zMapFeatureSetCreate((char*)g_quark_to_string(featureset_unique_id) , NULL, server->source) ;
       zMapFeatureBlockAddFeatureSet(feature_block, feature_set);
       get_features_data->feature_set_names = g_list_prepend(get_features_data->feature_set_names, GUINT_TO_POINTER(feature_set->unique_id)) ;
 
-      zMapLogMessage("Created feature set: %s", g_quark_to_string(feature_set_id)) ;
+      zMapLogMessage("Created feature set: %s", g_quark_to_string(featureset_unique_id)) ;
 
       feature_set->style = feature_style;
     }
   else
     {
       zMapLogWarning("Error creating feature %s (%s); no feature style found for %s",
-                     feature_name_id, g_quark_to_string(feature_set_id), g_quark_to_string(feature_style_id)) ;
+                     feature_name_id, g_quark_to_string(featureset_unique_id), g_quark_to_string(feature_style_id)) ;
     }
 
   return feature_set ;
