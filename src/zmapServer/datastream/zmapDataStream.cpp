@@ -216,13 +216,11 @@ const map<string, ZMapDataStreamType> file_type_to_stream_type_G =
  */
 
 ZMapDataStreamStruct::ZMapDataStreamStruct(ZMapConfigSource source,
-                                           const GQuark source_name,
                                            const char *sequence,
                                            const int start,
                                            const int end)
   : type(ZMapDataStreamType::UNK), 
     source_(source),
-    source_name_(source_name),
     start_(start),
     end_(end),
     error_(NULL),
@@ -241,13 +239,12 @@ ZMapDataStreamStruct::ZMapDataStreamStruct(ZMapConfigSource source,
 }
 
 ZMapDataStreamGIOStruct::ZMapDataStreamGIOStruct(ZMapConfigSource source, 
-                                                 const GQuark source_name, 
                                                  const char *file_name,
                                                  const char *open_mode,
                                                  const char *sequence,
                                                  const int start,
                                                  const int end)
-  : ZMapDataStreamStruct(source, source_name, sequence, start, end),
+  : ZMapDataStreamStruct(source, sequence, start, end),
     gff_version_(ZMAPGFF_VERSION_UNKNOWN),
     gff_version_set_(false)
 {
@@ -277,13 +274,12 @@ ZMapDataStreamGIOStruct::ZMapDataStreamGIOStruct(ZMapConfigSource source,
 
 
 ZMapDataStreamBEDStruct::ZMapDataStreamBEDStruct(ZMapConfigSource source, 
-                                                 const GQuark source_name, 
                                                  const char *file_name,
                                                  const char *open_mode,
                                                  const char *sequence,
                                                  const int start,
                                                  const int end)
-  : ZMapDataStreamStruct(source, source_name, sequence, start, end),
+  : ZMapDataStreamStruct(source, sequence, start, end),
     cur_feature_(NULL),
     standard_fields_(BED_DEFAULT_FIELDS)
 {
@@ -348,13 +344,12 @@ ZMapDataStreamBEDStruct::ZMapDataStreamBEDStruct(ZMapConfigSource source,
 }
 
 ZMapDataStreamBIGBEDStruct::ZMapDataStreamBIGBEDStruct(ZMapConfigSource source, 
-                                                       const GQuark source_name, 
                                                        const char *file_name,
                                                        const char *open_mode,
                                                        const char *sequence,
                                                        const int start,
                                                        const int end)
-  : ZMapDataStreamStruct(source, source_name, sequence, start, end),
+  : ZMapDataStreamStruct(source, sequence, start, end),
     lm_(NULL),
     list_(NULL),
     cur_interval_(NULL),
@@ -423,13 +418,12 @@ ZMapDataStreamBIGBEDStruct::ZMapDataStreamBIGBEDStruct(ZMapConfigSource source,
 }
 
 ZMapDataStreamBIGWIGStruct::ZMapDataStreamBIGWIGStruct(ZMapConfigSource source, 
-                                                       const GQuark source_name, 
                                                        const char *file_name,
                                                        const char *open_mode,
                                                        const char *sequence,
                                                        const int start,
                                                        const int end)
-  : ZMapDataStreamStruct(source, source_name, sequence, start, end),
+  : ZMapDataStreamStruct(source, sequence, start, end),
     lm_(NULL),
     list_(NULL),
     cur_interval_(NULL)
@@ -493,13 +487,12 @@ ZMapDataStreamBIGWIGStruct::ZMapDataStreamBIGWIGStruct(ZMapConfigSource source,
 
 #ifdef USE_HTSLIB
 ZMapDataStreamHTSStruct::ZMapDataStreamHTSStruct(ZMapConfigSource source, 
-                                                 const GQuark source_name, 
                                                  const char *file_name, 
                                                  const char *open_mode,
                                                  const char *sequence,
                                                  const int start,
                                                  const int end)
-  : ZMapDataStreamStruct(source, source_name, sequence, start, end),
+  : ZMapDataStreamStruct(source, sequence, start, end),
     hts_file(NULL),
     hts_hdr(NULL),
     hts_idx(NULL),
@@ -549,13 +542,12 @@ ZMapDataStreamHTSStruct::ZMapDataStreamHTSStruct(ZMapConfigSource source,
 }
 
 ZMapDataStreamBCFStruct::ZMapDataStreamBCFStruct(ZMapConfigSource source, 
-                                                 const GQuark source_name, 
                                                  const char *file_name, 
                                                  const char *open_mode,
                                                  const char *sequence,
                                                  const int start,
                                                  const int end)
-  : ZMapDataStreamStruct(source, source_name, sequence, start, end),
+  : ZMapDataStreamStruct(source, sequence, start, end),
     hts_file(NULL),
     hts_hdr(NULL),
     hts_rec(NULL),
@@ -1506,7 +1498,7 @@ ZMapFeatureSet ZMapDataStreamStruct::makeFeatureSet(const char *feature_name_id,
   /*
    * Now deal with the source -> data mapping referred to in the parser.
    */
-  GQuark source_id = zMapStyleCreateIDFromID(source_name_) ;
+  GQuark source_id = zMapStyleCreateIDFromID(source_->name_) ;
   GQuark feature_style_id = 0 ;
   ZMapFeatureSource source_data = NULL ;
 
@@ -1535,7 +1527,7 @@ ZMapFeatureSet ZMapDataStreamStruct::makeFeatureSet(const char *feature_name_id,
     }
   else
     {
-      source_id = feature_style_id = zMapStyleCreateID((char*)g_quark_to_string(source_name_)) ;
+      source_id = feature_style_id = zMapStyleCreateID((char*)g_quark_to_string(source_->name_)) ;
     }
 
   ZMapFeatureTypeStyle feature_style = NULL ;
@@ -1584,7 +1576,6 @@ ZMapFeature ZMapDataStreamStruct::makeBEDFeature(struct bed *bed_feature,
     }
 
   ZMapFeature feature = makeFeature(bed_feature->chrom,
-                                    g_quark_to_string(source_name_),
                                     so_term,
                                     bed_feature->chromStart + 1, //0-based
                                     bed_feature->chromEnd,       //chromEnd is one past the last coord
@@ -1626,7 +1617,6 @@ ZMapFeature ZMapDataStreamStruct::makeBEDFeature(struct bed *bed_feature,
 
 
 ZMapFeature ZMapDataStreamStruct::makeFeature(const char *sequence,
-                                              const char *source,
                                               const char *so_type,
                                               const int start,
                                               const int end,
@@ -1675,7 +1665,7 @@ ZMapFeature ZMapDataStreamStruct::makeFeature(const char *sequence,
   if (ok && !feature_set_)
     {
       feature_set_ = makeFeatureSet(feature_name,
-                                    g_quark_from_string(source),
+                                    source_->name_,
                                     feature_mode,
                                     is_seq) ;
 
@@ -1791,7 +1781,6 @@ bool ZMapDataStreamBIGWIGStruct::parseBodyLine(GError **error)
   if (readLine())
     {
       makeFeature(sequence_,
-                  g_quark_to_string(source_name_),
                   ZMAP_BIGWIG_SO_TERM,
                   cur_interval_->start,
                   cur_interval_->end,
@@ -1824,7 +1813,6 @@ bool ZMapDataStreamHTSStruct::parseBodyLine(GError **error)
       //                          query_strand, query_start, query_end) ;
 
       makeFeature(sequence_,
-                  g_quark_to_string(source_name_),
                   ZMAP_BAM_SO_TERM,
                   cur_feature_data_.start_,
                   cur_feature_data_.end_,
@@ -1851,7 +1839,6 @@ bool ZMapDataStreamBCFStruct::parseBodyLine(GError **error)
   if (readLine())
     {
       makeFeature(sequence_,
-                  g_quark_to_string(source_name_),
                   ZMAP_BCF_SO_TERM,
                   cur_feature_data_.start_,
                   cur_feature_data_.end_,
@@ -2138,7 +2125,6 @@ bool ZMapDataStreamHTSStruct::processRead()
  * Create a ZMapDataStream object
  */
 ZMapDataStream zMapDataStreamCreate(ZMapConfigSource source,
-                                    const GQuark source_name, 
                                     const char * const file_name, 
                                     const char *sequence,
                                     const int start,
@@ -2163,23 +2149,23 @@ ZMapDataStream zMapDataStreamCreate(ZMapConfigSource source,
       switch (stream_type)
         {
         case ZMapDataStreamType::GIO:
-          data_source = new ZMapDataStreamGIOStruct(source, source_name, file_name, open_mode, sequence, start, end) ;
+          data_source = new ZMapDataStreamGIOStruct(source, file_name, open_mode, sequence, start, end) ;
           break ;
         case ZMapDataStreamType::BED:
-          data_source = new ZMapDataStreamBEDStruct(source, source_name, file_name, open_mode, sequence, start, end) ;
+          data_source = new ZMapDataStreamBEDStruct(source, file_name, open_mode, sequence, start, end) ;
           break ;
         case ZMapDataStreamType::BIGBED:
-          data_source = new ZMapDataStreamBIGBEDStruct(source, source_name, file_name, open_mode, sequence, start, end) ;
+          data_source = new ZMapDataStreamBIGBEDStruct(source, file_name, open_mode, sequence, start, end) ;
           break ;
         case ZMapDataStreamType::BIGWIG:
-          data_source = new ZMapDataStreamBIGWIGStruct(source, source_name, file_name, open_mode, sequence, start, end) ;
+          data_source = new ZMapDataStreamBIGWIGStruct(source, file_name, open_mode, sequence, start, end) ;
           break ;
 #ifdef USE_HTSLIB
         case ZMapDataStreamType::HTS:
-          data_source = new ZMapDataStreamHTSStruct(source, source_name, file_name, open_mode, sequence, start, end) ;
+          data_source = new ZMapDataStreamHTSStruct(source, file_name, open_mode, sequence, start, end) ;
           break ;
         case ZMapDataStreamType::BCF:
-          data_source = new ZMapDataStreamBCFStruct(source, source_name, file_name, open_mode, sequence, start, end) ;
+          data_source = new ZMapDataStreamBCFStruct(source, file_name, open_mode, sequence, start, end) ;
           break ;
 #endif
         default:

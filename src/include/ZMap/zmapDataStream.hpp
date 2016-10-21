@@ -60,7 +60,7 @@ enum class ZMapDataStreamType {NONE, GIO, HTS, BCF, BED, BIGBED, BIGWIG,  /*UNK 
  *            ZMapDataStreamBIGWIG    blatSrc bigWig file, synchronous only
  */
 ZMapDataStream zMapDataStreamCreate(ZMapConfigSource config_source,
-                                    const GQuark source_name, const char * const file_name, 
+                                    const char * const file_name, 
                                     const char *sequence, const int start, const int end, 
                                     GError **error_out = NULL) ;
 bool zMapDataStreamIsOpen(ZMapDataStream const source) ;

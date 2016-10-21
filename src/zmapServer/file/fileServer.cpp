@@ -197,7 +197,6 @@ static gboolean createConnection(void **server_out, ZMapConfigSource config_sour
   FileServer server = (FileServer) g_new0(FileServerStruct, 1) ;
 
   server->config_source = config_source ;
-  server->source_name = config_source->name_ ;
   server->config_file = NULL ;
   server->url = NULL ;
   server->scheme = SCHEME_INVALID ;
@@ -337,7 +336,6 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
    * Create data source object (file or GIOChannel)
    */
   server->data_stream = zMapDataStreamCreate(server->config_source,
-                                             server->source_name, 
                                              server->path, 
                                              (server->req_sequence ? g_quark_to_string(server->req_sequence) : NULL), 
                                              server->zmap_start,
