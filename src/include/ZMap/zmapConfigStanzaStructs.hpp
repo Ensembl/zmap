@@ -55,6 +55,7 @@ public:
   const char* configFile() const ;
   const std::string fileType() const ;
   int numFields() const ;
+  std::string toplevelName() const ;
 
 
   GQuark name_ ;

@@ -1753,11 +1753,11 @@ static ZMapFeature makeFeature(EnsemblServer server,
           if (transcript_ids)
             transcript_ids->insert(unique_id);
 
-          /* Prefix the parent source name onto the source name to make it unique */
+          /* Prefix the toplevel source name onto the featureset name to make sure it's unique. */
           /* We can get different feature types with the same source, so ensure that the
            * featureset id is unique by also appending the biotype or SO term */
-          if (server->source && server->source->name_)
-            unique_source = g_strdup_printf("%s_%s_%s", g_quark_to_string(server->source->name_), source, biotype);
+          if (server->source)
+            unique_source = g_strdup_printf("%s_%s_%s", server->source->toplevelName().c_str(), source, biotype);
           else
             unique_source = g_strdup_printf("%s_%s", source, biotype) ;
 

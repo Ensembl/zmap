@@ -260,6 +260,20 @@ int ZMapConfigSourceStruct::numFields() const
   return num_fields_ ; 
 }
 
+// Return the toplevel source name; that is, if this source is in a hierarchy return the name of
+// the toplevel parent. Otherwise just return this source's name.
+string ZMapConfigSourceStruct::toplevelName() const
+{
+  string result ;
+
+  if (parent)
+    result = parent->toplevelName() ;
+  else
+    result = g_quark_to_string(name_) ;
+
+  return result ;
+}
+
 
 /*
  *                  External Interface routines
