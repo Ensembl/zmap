@@ -464,16 +464,21 @@ static void importSource(ZMapConfigSource server,
 {
   if (!recent_only || server->recent)
     {
-      createSourceData(view, sequence_map, server) ;
-
-      GError *g_error = NULL ;
-      zMapViewSetUpServerConnection(view, server, req_sequence, req_start, req_end, false, &g_error) ;
-
-      if (g_error)
+      // Some sources do not have a url because they are just parent sources in the hierarchy. Do
+      // not process them, but process their children.
+      if (server->url())
         {
-          zMapWarning("Failed to set up server connection for '%s': %s", 
-                      g_quark_to_string(server->name_),
-                      (g_error ? g_error->message : "<no error>")) ;
+          createSourceData(view, sequence_map, server) ;
+
+          GError *g_error = NULL ;
+          zMapViewSetUpServerConnection(view, server, req_sequence, req_start, req_end, false, &g_error) ;
+
+          if (g_error)
+            {
+              zMapWarning("Failed to set up server connection for '%s': %s", 
+                          g_quark_to_string(server->name_),
+                          (g_error ? g_error->message : "<no error>")) ;
+            }
         }
 
       // Recurse through children
