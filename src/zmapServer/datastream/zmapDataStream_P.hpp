@@ -120,8 +120,7 @@ public:
   virtual ZMapSequence getSequence(GQuark seq_id, GError **error) ;
   virtual bool terminated() ;
 
-  ZMapFeatureSet makeFeatureSet(const char *feature_name_id, GQuark feature_set_id, 
-                                ZMapStyleMode feature_mode, const bool is_seq) ;
+  ZMapFeatureSet makeFeatureSet(const char *feature_name_id, ZMapStyleMode feature_mode, const bool is_seq) ;
   ZMapFeature makeBEDFeature(struct bed *bed_feature, const int standard_fields, 
                              const char *so_term, GError **error) ;
   ZMapFeature makeFeature(const char *sequence, const char *so_type,

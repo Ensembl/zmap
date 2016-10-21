@@ -1489,7 +1489,6 @@ void ZMapDataStreamGIOStruct::parserInit(GHashTable *featureset_2_column,
 }
 
 ZMapFeatureSet ZMapDataStreamStruct::makeFeatureSet(const char *feature_name_id,
-                                                    GQuark feature_set_id,
                                                     ZMapStyleMode feature_mode,
                                                     const bool is_seq)
 {
@@ -1508,7 +1507,7 @@ ZMapFeatureSet ZMapDataStreamStruct::makeFeatureSet(const char *feature_name_id,
         {
           source_data = g_new0(ZMapFeatureSourceStruct,1);
           source_data->source_id = source_id;
-          source_data->source_text = source_id;
+          source_data->source_text = source_->name_ ;
           source_data->is_seq = is_seq ;
 
           g_hash_table_insert(source_2_sourcedata_,GINT_TO_POINTER(source_id), source_data);
@@ -1544,16 +1543,16 @@ ZMapFeatureSet ZMapDataStreamStruct::makeFeatureSet(const char *feature_name_id,
       if (source_data && feature_style->unique_id != feature_style_id)
         source_data->style_id = feature_style->unique_id;
 
-      feature_set = zMapFeatureSetCreate((char*)g_quark_to_string(feature_set_id) , NULL, source_) ;
+      feature_set = zMapFeatureSetCreate((char*)g_quark_to_string(source_->name_) , NULL, source_) ;
 
-      zMapLogMessage("Created feature set: %s", g_quark_to_string(feature_set_id)) ;
+      zMapLogMessage("Created feature set: %s", g_quark_to_string(source_->name_)) ;
 
       feature_set->style = feature_style;
     }
   else
     {
       zMapLogWarning("Error creating feature %s (%s); no feature style found for %s",
-                     feature_name_id, g_quark_to_string(feature_set_id), g_quark_to_string(feature_style_id)) ;
+                     feature_name_id, g_quark_to_string(source_->name_), g_quark_to_string(feature_style_id)) ;
     }
 
   return feature_set ;
@@ -1665,7 +1664,6 @@ ZMapFeature ZMapDataStreamStruct::makeFeature(const char *sequence,
   if (ok && !feature_set_)
     {
       feature_set_ = makeFeatureSet(feature_name,
-                                    source_->name_,
                                     feature_mode,
                                     is_seq) ;
 
