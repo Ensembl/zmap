@@ -132,7 +132,6 @@ typedef struct MainFrameStructName
   GtkWidget *user_widg ;
   GtkWidget *pass_widg ;
   GtkWidget *dbname_widg ;
-  GtkWidget *dbprefix_widg ;
   GtkWidget *featuresets_widg ;
   GtkWidget *biotypes_widg ;
   GtkWidget *dna_check ;
@@ -335,7 +334,7 @@ static void updatePanelFromEnsemblSource(MainFrame main_data, ZMapConfigSource s
 static void makeEnsemblWidgets(MainFrame main_data, ZMapFeatureSequenceMap sequence_map,
                                GtkTable *table, const int rows, const int cols, int &row, int &col) ;
 static string constructUrl(const char *host, const char *port, const char *user, const char *pass,
-                           const char *dbname, const char *dbprefix) ;
+                           const char *dbname) ;
 static gboolean applyEnsembl(MainFrame main_frame) ;
 static list<string> mainFrameGetDatabaseList(MainFrame main_data, GError **error) ;
 static list<string> mainFrameGetFeaturesetsList(MainFrame main_data, GError **error) ;
@@ -576,7 +575,6 @@ static void updatePanelFromEnsemblSource(MainFrame main_data,
   const char *user = zmap_url->user ;
   const char *pass = zmap_url->passwd ;
   char *dbname = zMapURLGetQueryValue(zmap_url->query, "db_name") ;
-  char *dbprefix = zMapURLGetQueryValue(zmap_url->query, "db_prefix") ;
   char *featuresets = g_strdup(source->featuresets) ;
   char *featuresets_ptr = featuresets ;
   const char *biotypes = source->biotypes ;
@@ -616,8 +614,6 @@ static void updatePanelFromEnsemblSource(MainFrame main_data,
     gtk_entry_set_text(GTK_ENTRY(main_data->pass_widg), pass) ;
   if (dbname && main_data->dbname_widg)
     gtk_entry_set_text(GTK_ENTRY(main_data->dbname_widg), dbname) ;
-  if (dbprefix && main_data->dbprefix_widg)
-    gtk_entry_set_text(GTK_ENTRY(main_data->dbprefix_widg), dbprefix) ;
   if (featuresets && main_data->featuresets_widg)
     gtk_entry_set_text(GTK_ENTRY(main_data->featuresets_widg), featuresets) ;
   if (biotypes && main_data->biotypes_widg)
@@ -629,8 +625,6 @@ static void updatePanelFromEnsemblSource(MainFrame main_data,
     g_free(port) ;
   if (dbname)
     g_free(dbname) ;
-  if (dbprefix)
-    g_free(dbprefix) ;
   if (featuresets_ptr)
     g_free(featuresets_ptr) ;
 }
@@ -1023,9 +1017,6 @@ static void makeEnsemblWidgets(MainFrame main_data,
                    GTK_SIGNAL_FUNC(dbnameCB), main_data,
                    table, row - 1, col + 2,
                    main_data->ensembl_widgets) ;
-
-  main_data->dbprefix_widg = makeEntryWidget("DB prefix :", NULL, "OPTIONAL: If specified, this prefix will be added to source names for features from this database", 
-                                             table, &row, col, col + 2, FALSE, &main_data->ensembl_widgets) ;
 
   /* Second column */
   int max_row = row ;
@@ -1773,7 +1764,7 @@ static gboolean applyFile(MainFrame main_frame)
 
 static string constructUrl(const char *host, const char *port,
                            const char *user, const char *pass,
-                           const char *dbname, const char *dbprefix)
+                           const char *dbname)
 {
   string result ;
   stringstream url ;
@@ -1806,12 +1797,6 @@ static string constructUrl(const char *host, const char *port,
       separator = "&" ;
     }
 
-  if (dbprefix)
-    {
-      url << separator << "db_prefix=" << dbprefix ;
-      separator = "&" ;
-    }
-
   result = url.str() ;
   return result ;
 }
@@ -1828,7 +1813,6 @@ static gboolean applyEnsembl(MainFrame main_frame)
   const char *user = getEntryText(GTK_ENTRY(main_frame->user_widg)) ;
   const char *pass = getEntryText(GTK_ENTRY(main_frame->pass_widg)) ;
   const char *dbname = getEntryText(GTK_ENTRY(main_frame->dbname_widg)) ;
-  const char *dbprefix = getEntryText(GTK_ENTRY(main_frame->dbprefix_widg)) ;
   const char *featuresets = getEntryText(GTK_ENTRY(main_frame->featuresets_widg)) ;
   const char *biotypes = getEntryText(GTK_ENTRY(main_frame->biotypes_widg)) ;
   const gboolean load_dna = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(main_frame->dna_check)) ;
@@ -1849,7 +1833,7 @@ static gboolean applyEnsembl(MainFrame main_frame)
     {
       GError *tmp_error = NULL ;
       
-      std::string url = constructUrl(host, port, user, pass, dbname, dbprefix) ;
+      std::string url = constructUrl(host, port, user, pass, dbname) ;
 
       /* If loading dna (which for now implies 3ft etc too) then prefix the featuresets list with
          the dna, 3ft etc. column names. */

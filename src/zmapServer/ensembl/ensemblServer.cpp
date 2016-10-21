@@ -334,7 +334,6 @@ static gboolean createConnection(void **server_out, ZMapConfigSource config_sour
         server->passwd = g_strdup(url->passwd) ;
 
       server->db_name = zMapURLGetQueryValue(url->query, "db_name") ;
-      server->db_prefix = zMapURLGetQueryValue(url->query, "db_prefix") ;
 
       if (server->host && server->db_name)
         {
@@ -1754,11 +1753,11 @@ static ZMapFeature makeFeature(EnsemblServer server,
           if (transcript_ids)
             transcript_ids->insert(unique_id);
 
-          /* If a prefix is given, add it to the source name */
+          /* Prefix the parent source name onto the source name to make it unique */
           /* We can get different feature types with the same source, so ensure that the
            * featureset id is unique by also appending the biotype or SO term */
-          if (server->db_prefix)
-            unique_source = g_strdup_printf("%s_%s_%s", server->db_prefix, source, biotype);
+          if (server->source && server->source->name_)
+            unique_source = g_strdup_printf("%s_%s_%s", g_quark_to_string(server->source->name_), source, biotype);
           else
             unique_source = g_strdup_printf("%s_%s", source, biotype) ;
 
