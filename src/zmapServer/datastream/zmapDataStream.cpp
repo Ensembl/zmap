@@ -2299,32 +2299,21 @@ string zMapDataStreamTypeToFileType(ZMapDataStreamType &stream_type)
 {
   string file_type ;
 
-  // Create a map to cache the results
-  static map<ZMapDataStreamType, string> cache ;
-
-  file_type = cache[stream_type] ;
-
-  if (file_type.empty()) // not found
+  // Find all file types for this source type
+  for (auto &iter : file_type_to_stream_type_G)
     {
-      // Find all file types for this source type
-      for (auto &iter : file_type_to_stream_type_G)
+      string file_type = iter.first ;
+      
+      if (iter.second == stream_type)
         {
-          string file_type = iter.first ;
-
-          if (iter.second == stream_type)
-            {
-              // Append them as "/"-separated string
-              if (!file_type.empty())
-                file_type += "/" ;
-
-              file_type += iter.first ;
-            }
+          // Append them as "/"-separated string
+          if (!file_type.empty())
+            file_type += "/" ;
+          
+          file_type += iter.first ;
         }
-
-      // Cache the result
-      cache[stream_type] = file_type ;
     }
-
+  
   return file_type ;
 }
 
