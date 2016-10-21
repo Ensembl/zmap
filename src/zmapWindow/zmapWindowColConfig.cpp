@@ -72,6 +72,7 @@ typedef enum
     BUMPED_COLUMN,
     GROUP_COLUMN,
     STYLE_COLUMN,
+    SOURCE_COLUMN,
 
     N_COLUMNS
   } DialogColumns ;
@@ -743,6 +744,46 @@ static char* columnGetStylesList(LoadedPageData page_data, ZMapFeatureContextMap
     {
       GList *styles_list = (GList*)g_hash_table_lookup(context_map->column_2_styles, GINT_TO_POINTER(column_id)) ;
       style_names = zMap_g_list_quark_to_string(styles_list, ";") ;
+    }
+
+  return style_names ;
+}
+
+
+/* Get the list of sources as a ;-separated string for the given column */
+static string columnGetSourcesList(LoadedPageData page_data, ZMapFeatureContextMap context_map, const GQuark column_id)
+{
+  string style_names ;
+  zMapReturnValIfFail(context_map && 
+                      page_data && 
+                      page_data->window && 
+                      page_data->window->feature_context &&
+                      context_map->columns, 
+                      style_names) ;
+
+  std::map<GQuark, ZMapFeatureColumn>::iterator col_iter = context_map->columns->find(column_id) ;
+  ZMapFeatureColumn column = NULL ;
+
+  if (col_iter != context_map->columns->end())
+    column = col_iter->second ;
+
+  if (column)
+    {
+      ZMapFeatureContext context = page_data->window->feature_context ;
+
+      for (GList *item = column->featuresets_unique_ids; item; item = item->next)
+        {
+          GQuark fset_id = (GQuark)GPOINTER_TO_INT(item->data) ;
+          ZMapFeatureSet feature_set = zmapFeatureContextGetFeaturesetFromId(context, fset_id) ;
+
+          if (feature_set && feature_set->source && !feature_set->source->toplevelName().empty())
+            {
+              if (!style_names.empty())
+                style_names += "; " ;
+
+              style_names += feature_set->source->toplevelName() ;
+            }
+        }
     }
 
   return style_names ;
@@ -2344,6 +2385,9 @@ static GtkWidget* loaded_cols_panel_create_tree_view(LoadedPageData page_data,
   /* Create the style column */
   createTreeViewColumn(tree_view, "Styles", STYLE_COLUMN, text_renderer, "text", TRUE) ;
 
+  /* Create the source column */
+  createTreeViewColumn(tree_view, "Source", SOURCE_COLUMN, text_renderer, "text", TRUE) ;
+
 
   page_data->tree_view = GTK_TREE_VIEW(tree) ;
 
@@ -2472,6 +2516,10 @@ static void loaded_cols_panel_create_tree_row(LoadedPageData page_data,
           g_free(style_names) ;
         }
 
+      /* Set the source name(s) */
+      string source_names = columnGetSourcesList(page_data, page_data->window->context_map, column->unique_id) ;
+      gtk_list_store_set(store, &iter, SOURCE_COLUMN, source_names.c_str(), -1);
+
       /* Set the group name */
       GQuark group_id = hashListFindID(page_data->window->context_map->column_groups, column->column_id) ;
  
@@ -2561,7 +2609,7 @@ static GtkTreeModel* loaded_cols_panel_create_tree_model(LoadedPageData page_dat
   GtkListStore *store = gtk_list_store_new(N_COLUMNS, G_TYPE_STRING, 
                                            G_TYPE_BOOLEAN, G_TYPE_BOOLEAN, G_TYPE_BOOLEAN, 
                                            G_TYPE_BOOLEAN, G_TYPE_BOOLEAN, G_TYPE_BOOLEAN,
-                                           G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING) ;
+                                           G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING) ;
 
   /* Loop through all columns in display order (columns are shown in mirror order on the rev
    * strand but we always use forward-strand order) */
