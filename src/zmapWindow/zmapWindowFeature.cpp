@@ -820,7 +820,10 @@ void zmapWindowFeatureGetSourceTxt(ZMapFeature feature, char **source_name_out, 
 {
   zMapReturnIfFail(feature) ;
 
-  if (feature->source_id)
+  // gb10: The 
+  if (feature->parent && ((ZMapFeatureSet)(feature->parent))->source)
+    *source_name_out = g_strdup(((ZMapFeatureSet)(feature->parent))->source->toplevelName().c_str());
+  else if (feature->source_id)
     *source_name_out = g_strdup(g_quark_to_string(feature->source_id)) ;
 
   if (feature->source_text)
