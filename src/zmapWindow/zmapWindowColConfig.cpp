@@ -32,7 +32,10 @@
 #include <ZMap/zmap.hpp>
 
 #include <string.h>
+#include <string>
 #include <list>
+#include <map>
+#include <algorithm>
 
 #include <ZMap/zmapUtils.hpp>
 #include <ZMap/zmapGLibUtils.hpp>
@@ -75,13 +78,10 @@ typedef enum
     STYLE_COLUMN,
     SOURCE_COLUMN,
 
-    N_COLUMNS
+    N_COLUMNS, /* must appear after main list of columns */
+    NO_COLUMN
   } DialogColumns ;
 
-
-
-/* Items for the drop-down box to select which field to search/filter by */
-enum class SearchField {INVALID, ALL, NAME, GROUP, STYLE, SOURCE} ;
 
 
 
@@ -191,7 +191,7 @@ typedef struct _LoadedPageDataStruct
   GQuark last_style_id ;   /* the last style id that was chosen using the Choose Style option */
   GQuark last_group_id ;
 
-  SearchField search_field ; /* which field to apply the search/filter to */
+  DialogColumns search_field ; /* which field to apply the search/filter to */
 } LoadedPageDataStruct;
 
 
@@ -342,6 +342,9 @@ static GList* tree_view_get_selected_featuresets(LoadedPageData page_data) ;
 
 static GList* getFeaturesetStructsFromIDs(GList *featureset_ids, ZMapFeatureContext context) ;
 
+static DialogColumns comboGetValue(GtkComboBox *combo) ;
+
+
 
 /*
  *          Globals
@@ -358,15 +361,13 @@ static GtkItemFactoryEntry menu_items_G[] =
   };
 
 
-/* Map of search field enum to a descriptive string for use in the drop-down box. Currently, items
- * are added to the drop-down box in the order they appear here, with the first item selected by
- * default. */
-static map<SearchField, string> searchfields_G = {
-  {SearchField::ALL, "All"},
-  {SearchField::NAME, "Name"},
-  {SearchField::GROUP, "Group"},
-  {SearchField::STYLE, "Style"},
-  {SearchField::SOURCE, "Source"}
+/* Map of search field enum to a descriptive string for use in the drop-down box. */
+static map<DialogColumns, string> searchfields_G = {
+  {NO_COLUMN, "All"},    // if no column is specified, we'll search/filter all relevant fields
+  {NAME_COLUMN, "Name"},
+  {GROUP_COLUMN, "Group"},
+  {STYLE_COLUMN, "Style"},
+  {SOURCE_COLUMN, "Source"}
   } ;
 
 
@@ -615,7 +616,7 @@ static void loaded_page_populate (NotebookPage notebook_page, FooCanvasGroup *co
   loaded_page_data->window = configure_data->window ; 
   loaded_page_data->page_container = notebook_page->page_container ;
   loaded_page_data->configure_data = configure_data ;
-  loaded_page_data->search_field = SearchField::INVALID ;
+  loaded_page_data->search_field = NO_COLUMN ;
 
   loaded_cols_panel(loaded_page_data, column_group) ;
 
@@ -2327,11 +2328,11 @@ static char* my_strcasestr(const char *haystack, const char *needle)
 
 /* Callback used to determine if a search term matches a row in the tree. Returns false if it
  * matches, true otherwise. */
-gboolean tree_view_search_equal_func_cb(GtkTreeModel *model,
-                                        gint column,
-                                        const gchar *key,
-                                        GtkTreeIter *iter,
-                                        gpointer user_data)
+static gboolean tree_view_search_equal_func_cb(GtkTreeModel *model,
+                                               gint column,
+                                               const gchar *key,
+                                               GtkTreeIter *iter,
+                                               gpointer user_data)
 {
   gboolean result = TRUE ;
 
@@ -2588,34 +2589,69 @@ static void loaded_cols_panel_create_tree_row(LoadedPageData page_data,
 }
 
 
-/* Callback used to determine if a given row in the filtered tree model is visible */
-gboolean tree_model_filter_visible_cb(GtkTreeModel *model, GtkTreeIter *iter, gpointer user_data)
+/* Utility to see if the value in the given column matches the given text */
+static gboolean columnMatchesText(GtkTreeModel *model,
+                                  GtkTreeIter *iter,
+                                  DialogColumns col_id, 
+                                  const char *text)
 {
   gboolean result = FALSE ;
 
-  GtkEntry *search_entry = GTK_ENTRY(user_data) ;
+  // Get the string value for this column from the selected row in the drop-down box
+  char *value = NULL ;
+  gtk_tree_model_get(model, iter, col_id, &value, -1) ;
+
+  if (text &&
+      value && 
+      *text != 0 &&
+      *value != 0 && 
+      my_strcasestr(value, text) != NULL)
+    {
+      result = TRUE ;
+    }
+
+  g_free(value) ;
+
+  return result ;
+}
+
+
+/* Callback used to determine if a given row in the filtered tree model is visible */
+static gboolean tree_model_filter_visible_cb(GtkTreeModel *model, GtkTreeIter *iter, gpointer user_data)
+{
+  gboolean result = FALSE ;
+
+  LoadedPageData page_data = (LoadedPageData)user_data ;
+  GtkEntry *search_entry = page_data->filter_entry ;
   zMapReturnValIfFail(search_entry, result) ;
 
   const char *text = gtk_entry_get_text(search_entry) ;
-  char *column_name = NULL ;
-
-  gtk_tree_model_get(model, iter,
-                     NAME_COLUMN, &column_name,
-                     -1) ;
 
   if (!text || *text == 0)
     {
       /* If text isn't specified, show everything */
       result = TRUE ;
     }
-  else if (column_name && 
-           *column_name != 0 && 
-           my_strcasestr(column_name, text) != NULL)
+  else
     {
-      result = TRUE ;
+      /* Get the column to filter */
+      DialogColumns col_id = comboGetValue(page_data->search_field_combo) ;
+      
+      if (col_id != NO_COLUMN)
+        {
+          // Check the specified column
+          result = columnMatchesText(model, iter, col_id, text) ;
+        }
+      else
+        {
+          // Check all relevant columns
+          for (auto &field_iter : searchfields_G)
+            {
+              if (field_iter.first != NO_COLUMN)
+                result |= columnMatchesText(model, iter, field_iter.first, text) ;
+            }
+        }
     }
-
-  g_free(column_name) ;
 
   return result ;
 }
@@ -2664,7 +2700,7 @@ static GtkTreeModel* loaded_cols_panel_create_tree_model(LoadedPageData page_dat
      
       gtk_tree_model_filter_set_visible_func(GTK_TREE_MODEL_FILTER(filtered), 
                                              tree_model_filter_visible_cb, 
-                                             page_data->filter_entry,
+                                             page_data,
                                              NULL);
       page_data->tree_filtered = filtered ;
     }
@@ -3078,51 +3114,52 @@ static void clear_button_cb(GtkButton *button, gpointer user_data)
   gtk_tree_sortable_set_sort_column_id(GTK_TREE_SORTABLE(page_data->tree_model), 
                                        GTK_TREE_SORTABLE_UNSORTED_SORT_COLUMN_ID,
                                        GTK_SORT_ASCENDING) ;
-
-  /* Reset the search field to "All" */
-  page_data->search_field = SearchField::ALL ;
-  gtk_combo_box_set_active(page_data->search_field_combo, 0) ; // select 1st index in list by default
 }
 
 
-/* Returns the selected string value in a combo box as a newly-allocated free. Returns null if
- * not found. */
-static char* comboGetValue(GtkComboBox *combo)
+/* Returns the selected value in the combo box */
+static DialogColumns comboGetValue(GtkComboBox *combo)
 {
-  char *result = NULL ;
+  DialogColumns result = NO_COLUMN ;
 
   GtkTreeIter iter;
   
   if (gtk_combo_box_get_active_iter(GTK_COMBO_BOX(combo), &iter))
     {
-      GtkTreeModel *model = gtk_combo_box_get_model(GTK_COMBO_BOX(combo));      
-      gtk_tree_model_get(model, &iter, 0, &result, -1);
+      GtkTreeModel *model = gtk_combo_box_get_model(GTK_COMBO_BOX(combo));
+      char *value = NULL ;
+
+      // Get the string value
+      gtk_tree_model_get(model, &iter, 0, &value, -1);
+
+      if (value)
+        {
+          // Find this string value in the map of search fields
+          auto search_result = find_if(searchfields_G.begin(), searchfields_G.end(),
+                                       [&value](const pair<DialogColumns, string> &search_pair) 
+                                       { 
+                                         return search_pair.second == value ; 
+                                       }) ;
+          
+          if (search_result != searchfields_G.end())
+            result = search_result->first ;
+
+          g_free(value) ;
+        }
     }
 
   return result ;
 }
 
 
+/* Called when the user changes the value in the search/filter drop-down box */
 static void search_field_changed_cb(GtkComboBox *combo, gpointer data)
 {
   LoadedPageData page_data = (LoadedPageData)data ;
   zMapReturnIfFail(page_data) ;
 
-  char *value = comboGetValue(combo) ;
-
-  if (value)
-    {
-      for (auto &iter : searchfields_G)
-        {
-          if (strcmp(value, iter.second.c_str()) == 0)
-            {
-              page_data->search_field = iter.first ;
-              break ;
-            }
-        }
-
-      g_free(value) ;
-    }
+  // Just update the search field in the data
+  page_data->search_field = comboGetValue(combo) ;
 }
 
 
@@ -3158,13 +3195,10 @@ static GtkComboBox *createSearchFieldCombo(GCallback cb_func, gpointer cb_data)
 
   gtk_widget_set_tooltip_text(GTK_WIDGET(combo), "Select which field to search/filter") ;
 
-  /* Add the rows to the combo box. Make the first one active by default */
-  bool first = true ;
-
+  /* Add the rows to the combo box. Make "All" (NO_COLUMN) active by default. */
   for (auto &iter : searchfields_G)
     {
-      createComboItem(combo, store, iter.second.c_str(), first) ;
-      first = false ;
+      createComboItem(combo, store, iter.second.c_str(), iter.first == NO_COLUMN) ;
     }
 
   g_signal_connect(G_OBJECT(combo), "changed", cb_func, cb_data);
