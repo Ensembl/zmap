@@ -51,6 +51,7 @@ using namespace std ;
 #define BUMPED_TEXT    "bumped"
 #define UNBUMPED_TEXT  "unbumped"
 
+
 #define XPAD 4
 #define YPAD 4
 
@@ -76,6 +77,12 @@ typedef enum
 
     N_COLUMNS
   } DialogColumns ;
+
+
+
+/* Items for the drop-down box to select which field to search/filter by */
+enum class SearchField {INVALID, ALL, NAME, GROUP, STYLE, SOURCE} ;
+
 
 
 typedef struct _ColConfigureStruct
@@ -168,6 +175,7 @@ typedef struct _LoadedPageDataStruct
   GtkEntry *search_entry ;
   GtkEntry *filter_entry ;
   GtkLabel *selection_feedback ;
+  GtkComboBox *search_field_combo ;
 
   ColConfigure configure_data ;
 
@@ -182,6 +190,8 @@ typedef struct _LoadedPageDataStruct
 
   GQuark last_style_id ;   /* the last style id that was chosen using the Choose Style option */
   GQuark last_group_id ;
+
+  SearchField search_field ; /* which field to apply the search/filter to */
 } LoadedPageDataStruct;
 
 
@@ -333,6 +343,10 @@ static GList* tree_view_get_selected_featuresets(LoadedPageData page_data) ;
 static GList* getFeaturesetStructsFromIDs(GList *featureset_ids, ZMapFeatureContext context) ;
 
 
+/*
+ *          Globals
+ */
+
 static GtkItemFactoryEntry menu_items_G[] =
   {
     { (gchar *)"/_File",           NULL,          NULL,             0, (gchar *)"<Branch>",         NULL},
@@ -343,6 +357,17 @@ static GtkItemFactoryEntry menu_items_G[] =
     { (gchar *)"/Help/Display",    NULL,          (GtkItemFactoryCallback)helpDisplayCB,           0, NULL, NULL}
   };
 
+
+/* Map of search field enum to a descriptive string for use in the drop-down box. Currently, items
+ * are added to the drop-down box in the order they appear here, with the first item selected by
+ * default. */
+static map<SearchField, string> searchfields_G = {
+  {SearchField::ALL, "All"},
+  {SearchField::NAME, "Name"},
+  {SearchField::GROUP, "Group"},
+  {SearchField::STYLE, "Style"},
+  {SearchField::SOURCE, "Source"}
+  } ;
 
 
 /*
@@ -590,6 +615,7 @@ static void loaded_page_populate (NotebookPage notebook_page, FooCanvasGroup *co
   loaded_page_data->window = configure_data->window ; 
   loaded_page_data->page_container = notebook_page->page_container ;
   loaded_page_data->configure_data = configure_data ;
+  loaded_page_data->search_field = SearchField::INVALID ;
 
   loaded_cols_panel(loaded_page_data, column_group) ;
 
@@ -3027,6 +3053,7 @@ static void set_group_button_cb(GtkButton *button, gpointer user_data)
 }
 
 
+/* Callback to clear the current search/filter */
 static void clear_button_cb(GtkButton *button, gpointer user_data)
 {
   LoadedPageData page_data = (LoadedPageData)user_data ;
@@ -3051,6 +3078,100 @@ static void clear_button_cb(GtkButton *button, gpointer user_data)
   gtk_tree_sortable_set_sort_column_id(GTK_TREE_SORTABLE(page_data->tree_model), 
                                        GTK_TREE_SORTABLE_UNSORTED_SORT_COLUMN_ID,
                                        GTK_SORT_ASCENDING) ;
+
+  /* Reset the search field to "All" */
+  page_data->search_field = SearchField::ALL ;
+  gtk_combo_box_set_active(page_data->search_field_combo, 0) ; // select 1st index in list by default
+}
+
+
+/* Returns the selected string value in a combo box as a newly-allocated free. Returns null if
+ * not found. */
+static char* comboGetValue(GtkComboBox *combo)
+{
+  char *result = NULL ;
+
+  GtkTreeIter iter;
+  
+  if (gtk_combo_box_get_active_iter(GTK_COMBO_BOX(combo), &iter))
+    {
+      GtkTreeModel *model = gtk_combo_box_get_model(GTK_COMBO_BOX(combo));      
+      gtk_tree_model_get(model, &iter, 0, &result, -1);
+    }
+
+  return result ;
+}
+
+
+static void search_field_changed_cb(GtkComboBox *combo, gpointer data)
+{
+  LoadedPageData page_data = (LoadedPageData)data ;
+  zMapReturnIfFail(page_data) ;
+
+  char *value = comboGetValue(combo) ;
+
+  if (value)
+    {
+      for (auto &iter : searchfields_G)
+        {
+          if (strcmp(value, iter.second.c_str()) == 0)
+            {
+              page_data->search_field = iter.first ;
+              break ;
+            }
+        }
+
+      g_free(value) ;
+    }
+}
+
+
+static void createComboItem(GtkComboBox *combo, 
+                            GtkListStore *store,
+                            const char *text,
+                            const bool active)
+{
+  GtkTreeIter iter;
+  gtk_list_store_append(store, &iter);
+  gtk_list_store_set(store, &iter, 0, text, -1);
+
+  if (active)
+    gtk_combo_box_set_active_iter(combo, &iter);
+}
+
+
+static GtkComboBox *createSearchFieldCombo(GCallback cb_func, gpointer cb_data)
+{
+  GtkComboBox *combo = NULL ;
+
+  LoadedPageData page_data = (LoadedPageData)cb_data ;
+  zMapReturnValIfFail(page_data, combo) ;
+
+  /* Create a combo box to choose the type of source to create */
+  GtkListStore *store = gtk_list_store_new(1, G_TYPE_STRING);
+  combo = GTK_COMBO_BOX(gtk_combo_box_new_with_model(GTK_TREE_MODEL(store)));
+  g_object_unref(store) ;
+
+  GtkCellRenderer *renderer = gtk_cell_renderer_text_new();
+  gtk_cell_layout_pack_start(GTK_CELL_LAYOUT(combo), renderer, FALSE);
+  gtk_cell_layout_set_attributes(GTK_CELL_LAYOUT(combo), renderer, "text", 0, NULL);
+
+  gtk_widget_set_tooltip_text(GTK_WIDGET(combo), "Select which field to search/filter") ;
+
+  /* Add the rows to the combo box. Make the first one active by default */
+  bool first = true ;
+
+  for (auto &iter : searchfields_G)
+    {
+      createComboItem(combo, store, iter.second.c_str(), first) ;
+      first = false ;
+    }
+
+  g_signal_connect(G_OBJECT(combo), "changed", cb_func, cb_data);
+
+  page_data->search_field_combo = combo ;
+
+  return combo ;
 }
 
 
@@ -3076,6 +3197,10 @@ static GtkWidget* loaded_cols_panel_create_buttons(LoadedPageData page_data)
       gtk_box_pack_start(GTK_BOX(hbox), GTK_WIDGET(page_data->filter_entry), FALSE, FALSE, 0) ;
       g_signal_connect(G_OBJECT(page_data->filter_entry), "activate", G_CALLBACK(filter_entry_activate_cb), page_data) ;
       gtk_widget_set_tooltip_text(GTK_WIDGET(page_data->filter_entry), "Show only column names containing this text. Press enter to apply the filter.") ;
+
+      /* Add a drop-down box to select which fields to search/filter by */
+      GtkWidget *combo = GTK_WIDGET(createSearchFieldCombo(G_CALLBACK(search_field_changed_cb), page_data)) ;
+      gtk_box_pack_start(GTK_BOX(hbox), combo, FALSE, FALSE, 0) ;
 
       /* Add a button to clear the search/filter boxes and sort order */
       GtkWidget *button = gtk_button_new_with_mnemonic("C_lear") ;
