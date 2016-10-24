@@ -2326,6 +2326,33 @@ static char* my_strcasestr(const char *haystack, const char *needle)
 }
 
 
+/* Utility to see if the value in the given column matches the given text */
+static gboolean columnMatchesText(GtkTreeModel *model,
+                                  GtkTreeIter *iter,
+                                  DialogColumns col_id, 
+                                  const char *text)
+{
+  gboolean result = FALSE ;
+
+  // Get the string value for this column from the selected row in the drop-down box
+  char *value = NULL ;
+  gtk_tree_model_get(model, iter, col_id, &value, -1) ;
+
+  if (text &&
+      value && 
+      *text != 0 &&
+      *value != 0 && 
+      my_strcasestr(value, text) != NULL)
+    {
+      result = TRUE ;
+    }
+
+  g_free(value) ;
+
+  return result ;
+}
+
+
 /* Callback used to determine if a search term matches a row in the tree. Returns false if it
  * matches, true otherwise. */
 static gboolean tree_view_search_equal_func_cb(GtkTreeModel *model,
@@ -2336,22 +2363,29 @@ static gboolean tree_view_search_equal_func_cb(GtkTreeModel *model,
 {
   gboolean result = TRUE ;
 
-  char *column_name = NULL ;
+  LoadedPageData page_data = (LoadedPageData)user_data ;
+  gboolean found = FALSE ;
 
-  gtk_tree_model_get(model, iter,
-                     NAME_COLUMN, &column_name,
-                     -1) ;
+  /* Get the column to search */
+  DialogColumns col_id = comboGetValue(page_data->search_field_combo) ;
 
-  if (column_name && 
-      key && 
-      strlen(column_name) > 0 && 
-      strlen(key) > 0 &&
-      my_strcasestr(column_name, key) != NULL)
+  if (col_id != NO_COLUMN)
     {
-      result = FALSE ;
+      // Check the specified column
+      found = columnMatchesText(model, iter, col_id, key) ;
+    }
+  else
+    {
+      // Check all relevant columns
+      for (auto &field_iter : searchfields_G)
+        {
+          if (field_iter.first != NO_COLUMN)
+            found |= columnMatchesText(model, iter, field_iter.first, key) ;
+        }
     }
 
-  g_free(column_name) ;
+  // The return value is false if it matches, true otherwise
+  result = !found ;
 
   return result ;
 }
@@ -2383,7 +2417,7 @@ static GtkWidget* loaded_cols_panel_create_tree_view(LoadedPageData page_data,
       gtk_tree_view_set_enable_search(tree_view, FALSE);
       gtk_tree_view_set_search_column(tree_view, NAME_COLUMN);
       gtk_tree_view_set_search_entry(tree_view, page_data->search_entry) ;
-      gtk_tree_view_set_search_equal_func(tree_view, tree_view_search_equal_func_cb, NULL, NULL) ;
+      gtk_tree_view_set_search_equal_func(tree_view, tree_view_search_equal_func_cb, page_data, NULL) ;
     }
 
   GtkTreeSelection *tree_selection = gtk_tree_view_get_selection(tree_view) ;
@@ -2586,33 +2620,6 @@ static void loaded_cols_panel_create_tree_row(LoadedPageData page_data,
           set_tree_store_value_from_state(ZMAPSTYLE_COLDISPLAY_SHOW_HIDE, store, &iter, FALSE) ;
         }
     }
-}
-
-
-/* Utility to see if the value in the given column matches the given text */
-static gboolean columnMatchesText(GtkTreeModel *model,
-                                  GtkTreeIter *iter,
-                                  DialogColumns col_id, 
-                                  const char *text)
-{
-  gboolean result = FALSE ;
-
-  // Get the string value for this column from the selected row in the drop-down box
-  char *value = NULL ;
-  gtk_tree_model_get(model, iter, col_id, &value, -1) ;
-
-  if (text &&
-      value && 
-      *text != 0 &&
-      *value != 0 && 
-      my_strcasestr(value, text) != NULL)
-    {
-      result = TRUE ;
-    }
-
-  g_free(value) ;
-
-  return result ;
 }
 
 
