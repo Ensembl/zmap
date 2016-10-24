@@ -3176,6 +3176,9 @@ static void search_field_changed_cb(GtkComboBox *combo, gpointer data)
 
   // Just update the search field in the data
   page_data->search_field = comboGetValue(combo) ;
+
+  // Reset the search/filter boxes because any results are now invalid
+  clearSearchFilter(page_data) ;
 }
 
 
