@@ -804,7 +804,8 @@ static void createNewSourceCB(const char *source_name,
                               const std::string &url, 
                               const char *featuresets,
                               const char *biotypes,
-                              const char *format,
+                              const std::string &file_type, 
+                              const int num_fields,
                               gpointer user_data,
                               GError **error)
 {
@@ -818,7 +819,8 @@ static void createNewSourceCB(const char *source_name,
   if (sequence_map)
     {
       ZMapConfigSource source = sequence_map->createSource(source_name, url, 
-                                                           featuresets, biotypes, format,
+                                                           featuresets, biotypes,
+                                                           file_type, num_fields,
                                                            false, true, &tmp_error) ;
 
       /* Connect to the new source */

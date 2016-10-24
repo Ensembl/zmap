@@ -58,7 +58,7 @@ typedef void (*ZMapAppClosedSequenceViewCB)(GtkWidget *toplevel, gpointer user_d
 /* User callback function, called by zMapAppCreateSource code */
 typedef void (*ZMapAppCreateSourceCB)(const char *name, const std::string &url, 
                                       const char *featuresets, const char *biotypes,
-                                      const char *format,
+                                      const std::string &file_type, const int num_fields,
                                       gpointer user_data, GError **error) ;
 
 

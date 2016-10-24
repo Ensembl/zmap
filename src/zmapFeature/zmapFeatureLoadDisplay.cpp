@@ -531,29 +531,28 @@ void ZMapFeatureSequenceMapStructType::addSource(const string &source_name,
 /* Create a source with the given details. If allow_duplicate is true then return the existing
  * source with the same name if one exists; otherwise, give an error if the source name already exists */
 ZMapConfigSource ZMapFeatureSequenceMapStructType::createSource(const char *source_name, 
-                                                                const std::string &url, 
+                                                                const std::string &url,
                                                                 const char *featuresets,
                                                                 const char *biotypes,
-                                                                const char *format,
                                                                 const bool is_child,
                                                                 const bool allow_duplicate,
                                                                 GError **error)
 {
-  return createSource(source_name, url.c_str(), featuresets, biotypes, format, is_child, allow_duplicate, error) ;
+  return createSource(source_name, url.c_str(), featuresets, biotypes, "", 0, is_child, allow_duplicate, error) ;
 }
 
 
 ZMapConfigSource ZMapFeatureSequenceMapStructType::createSource(const char *source_name,
-                                                                const char *url,
+                                                                const std::string &url,
                                                                 const char *featuresets,
                                                                 const char *biotypes,
-                                                                const char *format,
+                                                                const std::string &file_type,
+                                                                const int num_fields,
                                                                 const bool is_child,
                                                                 const bool allow_duplicate,
                                                                 GError **error)
 {
   ZMapConfigSource source = NULL ;
-  zMapReturnValIfFail(url, source) ;
 
   // Check if there's already a source with this name and url and return that if found
   source = getSource(source_name, url) ;
@@ -565,7 +564,7 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::createSource(const char *sour
 
       source->setConfigFile(config_file) ;
       source->name_ = g_quark_from_string(source_name) ;
-      source->setUrl(url) ;
+      source->setUrl(url.c_str()) ;
       source->recent = true ;
       
       if (featuresets && *featuresets)
@@ -574,8 +573,8 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::createSource(const char *sour
       if (biotypes && *biotypes)
         source->biotypes = g_strdup(biotypes) ;
 
-      if (format && *format)
-        source->format = g_strdup(format) ;
+      source->setFileType(file_type) ;
+      source->setNumFields(num_fields) ;
 
       /* Add the new source to the view */
       std::string source_name_str(source_name) ;
@@ -647,7 +646,7 @@ gbtools::trackhub::Registry ZMapFeatureSequenceMapStructType::getTrackhubRegistr
 void ZMapFeatureSequenceMapStructType::createSourceChildren(ZMapConfigSource source,
                                                             GError **error)
 {
-  ZMapURL zmap_url = url_parse(source->url(), NULL);
+  ZMapURL zmap_url = source->urlObj() ;
 
   if (zmap_url && zmap_url->scheme == SCHEME_TRACKHUB)
     {
@@ -697,7 +696,7 @@ void ZMapFeatureSequenceMapStructType::createTrackhubSourceChild(ZMapConfigSourc
   string track_name = track.name() ;
 
   // If the track doesn't have a name, create one from the file name in the url
-  if (track_name.empty())
+  if (track_name.empty() && !track.url().empty())
     {
       ZMapURL zmap_url = url_parse(track.url().c_str(), NULL) ;
 
@@ -709,21 +708,12 @@ void ZMapFeatureSequenceMapStructType::createTrackhubSourceChild(ZMapConfigSourc
     {
       GError *g_error = NULL ;
 
-      // Create a "format" string which includes the number of fields e.g. "bigbed 12".  This is a
-      // bit of a hack - ideally we'd pass these through separately but it has to get passed
-      // through various callbacks to the server, so using the format string for now for
-      // expediency.
-      stringstream format_ss ;
-      if (!track.fileType().empty())
-        {
-          format_ss << track.fileType().c_str() << " " << track.fields() ;
-        }
-
       ZMapConfigSource new_source = createSource(track.name().c_str(),
                                                  track.url().c_str(), 
                                                  parent_source->featuresets, 
                                                  parent_source->biotypes,
-                                                 format_ss.str().c_str(),
+                                                 track.fileType(),
+                                                 track.fields(),
                                                  true,
                                                  false,
                                                  &g_error) ;
@@ -731,8 +721,12 @@ void ZMapFeatureSequenceMapStructType::createTrackhubSourceChild(ZMapConfigSourc
       if (new_source && !g_error)
         {
           // Success. Set the delayed flag if the track should be hidden by default.
+          // Also set this track to be delayed if its parent is delayed (otherwise the user might
+          // configure a trackhub source to be delayed but we would end up loading them if they
+          // are visible according to the track hub info).
+          new_source->delayed = !track.visible() || parent_source->delayed ;
+
           // Set the parent pointer and add the child to the parent's list.
-          new_source->delayed = !track.visible() ;
           new_source->parent = parent_source ;
           parent_source->children.push_back(new_source) ;
 
@@ -761,13 +755,15 @@ void ZMapFeatureSequenceMapStructType::createTrackhubSourceChild(ZMapConfigSourc
 }
 
 
-void ZMapFeatureSequenceMapStructType::updateSource(const char *source_name, const std::string &url, 
+void ZMapFeatureSequenceMapStructType::updateSource(const char *source_name, 
+                                                    const std::string &url, 
                                                     const char *featuresets,
                                                     const char *biotypes,
-                                                    const char *format,
+                                                    const string &file_type, 
+                                                    const int num_fields,
                                                     GError **error)
 {
-  return updateSource(source_name, url.c_str(), featuresets, biotypes, format, error) ;
+  return updateSource(source_name, url.c_str(), featuresets, biotypes, file_type, num_fields, error) ;
 }
 
 
@@ -776,7 +772,8 @@ void ZMapFeatureSequenceMapStructType::updateSource(const char *source_name,
                                                     const char *url,
                                                     const char *featuresets,
                                                     const char *biotypes,
-                                                    const char *format,
+                                                    const string &file_type, 
+                                                    const int num_fields,
                                                     GError **error)
 {
   ZMapConfigSource source = NULL ;
@@ -802,13 +799,8 @@ void ZMapFeatureSequenceMapStructType::updateSource(const char *source_name,
   if (biotypes && *biotypes)
     source->biotypes = g_strdup(biotypes) ;
 
-  if (source->format)
-    {
-      g_free(source->format) ;
-      source->format = NULL ;
-    }
-  if (format && *format)
-    source->format = g_strdup(format) ;
+  source->setFileType(file_type) ;
+  source->setNumFields(num_fields) ;
 
   /* Indicate that there are changes that need saving */
   setFlag(ZMAPFLAG_SAVE_SOURCES, TRUE) ;

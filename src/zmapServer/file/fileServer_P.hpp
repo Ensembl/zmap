@@ -52,14 +52,13 @@ typedef struct FileServerStruct_
   ZMapFeatureContext req_context ;
   ZMapFeatureSequenceMap sequence_map ;
 
-  GQuark source_name ;
+  ZMapConfigSource config_source ;    /* The source the server will process */
   char *config_file ;
   char *url ;                          /* Full url string. */
   char *path ;                         /* Filename out of the URL  */
   char *data_dir ;                     /* default location for data files (using file://)) */
   char *last_err_msg ;
   char *styles_file ;
-  GQuark format ;
 
   GQuark req_sequence;
   int gff_version, zmap_start, zmap_end, exit_code ;
