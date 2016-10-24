@@ -3096,11 +3096,10 @@ static void set_group_button_cb(GtkButton *button, gpointer user_data)
 }
 
 
-/* Callback to clear the current search/filter */
-static void clear_button_cb(GtkButton *button, gpointer user_data)
+/* Clear the text in the search/filter boxes */
+static void clearSearchFilter(LoadedPageData page_data)
 {
-  LoadedPageData page_data = (LoadedPageData)user_data ;
-  zMapReturnIfFail(page_data && page_data->tree_model) ;
+  zMapReturnIfFail(page_data) ;
 
   if (page_data->search_entry)
     gtk_entry_set_text(page_data->search_entry, "") ;
@@ -3121,6 +3120,16 @@ static void clear_button_cb(GtkButton *button, gpointer user_data)
   gtk_tree_sortable_set_sort_column_id(GTK_TREE_SORTABLE(page_data->tree_model), 
                                        GTK_TREE_SORTABLE_UNSORTED_SORT_COLUMN_ID,
                                        GTK_SORT_ASCENDING) ;
+}
+
+
+/* Callback to clear the current search/filter */
+static void clear_button_cb(GtkButton *button, gpointer user_data)
+{
+  LoadedPageData page_data = (LoadedPageData)user_data ;
+  zMapReturnIfFail(page_data && page_data->tree_model) ;
+
+  clearSearchFilter(page_data) ;
 }
 
 
