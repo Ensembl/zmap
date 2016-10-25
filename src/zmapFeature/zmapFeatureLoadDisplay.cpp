@@ -945,17 +945,19 @@ void ZMapFeatureSequenceMapStructType::removeSource(const char *source_name_cstr
  * loading (i.e. not delayed). Only includes "recent" sources if the recent flag is true; includes
  * all sources otherwise. */
 void ZMapFeatureSequenceMapStructType::countSources(uint &num_total, 
-                                                    uint &num_selected,
+                                                    uint &num_with_data,
+                                                    uint &num_to_load,
                                                     const bool recent)
 {
   if (sources)
     {
       num_total = 0 ;
-      num_selected = 0 ;
+      num_with_data = 0 ;
+      num_to_load = 0 ;
 
       for (auto &iter : *sources)
         {
-          iter.second->countSources(num_total, num_selected, recent) ;
+          iter.second->countSources(num_total, num_with_data, num_to_load, recent) ;
         }
     }
 }

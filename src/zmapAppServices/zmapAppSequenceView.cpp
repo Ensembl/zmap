@@ -519,20 +519,24 @@ static void updateInfoLabel(MainFrame main_data, ZMapFeatureSequenceMap sequence
 {
   zMapReturnIfFail(main_data && main_data->info_widg && sequence_map) ;
 
-  uint num_sources = 0 ;
-  uint num_selected = 0 ;
-  sequence_map->countSources(num_sources, num_selected, !main_data->show_all) ;
+  uint num_total = 0 ;     // total number of sources
+  uint num_with_data = 0 ; // number of sources with data
+  uint num_to_load = 0 ;   // number of sources with data that are selected for loading
+
+  sequence_map->countSources(num_total, num_with_data, num_to_load, !main_data->show_all) ;
 
   stringstream text_ss ;
 
-  if (num_sources == 0)
+  if (num_total == 0)
     text_ss << "No sources" ;
-  else if (num_selected < 1)
-    text_ss << "No sources will be loaded out of " << num_sources ;
-  else if (num_selected == 1)
-    text_ss << num_selected << " source will be loaded out of " << num_sources ;
+  else if (num_with_data == 0)
+    text_ss << "No sources have data" ;
+  else if (num_to_load < 1)
+    text_ss << "No sources will be loaded out of "              << num_with_data << " with data (" << num_total << " total)" ;
+  else if (num_to_load == 1)
+    text_ss << num_to_load << " source will be loaded out of "  << num_with_data << " with data (" << num_total << " total)" ;
   else
-    text_ss << num_selected << " sources will be loaded out of " << num_sources ;
+    text_ss << num_to_load << " sources will be loaded out of " << num_with_data << " with data (" << num_total << " total)";
 
   gtk_label_set_text(GTK_LABEL(main_data->info_widg), text_ss.str().c_str()) ;
 }

@@ -276,21 +276,30 @@ string ZMapConfigSourceStruct::toplevelName() const
 
 
 void ZMapConfigSourceStruct::countSources(uint &num_total, 
-                                          uint &num_selected, 
+                                          uint &num_with_data, 
+                                          uint &num_to_load, 
                                           const bool recent_only) const
 {
   if (!recent_only || recent)
     {
       ++num_total ;
 
-      if (!delayed)
-        ++num_selected ;
+      // Check if this source has data to load. It has data if it has a valid URL object which is
+      // not a trackhub url (because trackhub urls are not loaded directly - only their children
+      // are loaded).
+      if (urlObj() && urlObj()->scheme != SCHEME_TRACKHUB)
+        {
+          ++num_with_data ;
+
+          if (!delayed)
+            ++num_to_load ;
+        }
     }
 
   // recurse
   for (ZMapConfigSource child : children)
     {
-      child->countSources(num_total, num_selected, recent_only) ;
+      child->countSources(num_total, num_with_data, num_to_load, recent_only) ;
     }
 }
 

@@ -317,7 +317,7 @@ typedef struct ZMapFeatureSequenceMapStructType
   ZMapConfigSource createFileSource(const char *source_name, const char *file) ;
   ZMapConfigSource createPipeSource(const char *source_name, const char *file, const char *script, const char *args) ;
   void removeSource(const char *source_name_cstr, GError **error) ;
-  void countSources(uint &num_total, uint &num_selected, const bool recent = false) ;
+  void countSources(uint &num_total, uint &num_with_data, uint &num_to_load, const bool recent = false) ;
 
   bool runningUnderOtter() ;
 
