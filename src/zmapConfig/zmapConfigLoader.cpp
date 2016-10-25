@@ -275,6 +275,26 @@ string ZMapConfigSourceStruct::toplevelName() const
 }
 
 
+void ZMapConfigSourceStruct::countSources(uint &num_total, 
+                                          uint &num_selected, 
+                                          const bool recent_only) const
+{
+  if (!recent_only || recent)
+    {
+      ++num_total ;
+
+      if (!delayed)
+        ++num_selected ;
+    }
+
+  // recurse
+  for (ZMapConfigSource child : children)
+    {
+      child->countSources(num_total, num_selected, recent_only) ;
+    }
+}
+
+
 /*
  *                  External Interface routines
  */

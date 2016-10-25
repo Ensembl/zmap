@@ -71,6 +71,8 @@ static ZMapFeatureContextExecuteStatus updateContextFeatureSetStyle(GQuark key,
                                                                     gpointer user_data,
                                                                     char **err_out) ;
 
+static ZMapConfigSource findSourceRecursively(ZMapConfigSource source, const char *search_str) ;
+
 } // unnamed namespace
 
 /**********************************************************************
@@ -938,30 +940,24 @@ void ZMapFeatureSequenceMapStructType::removeSource(const char *source_name_cstr
 }
 
 
-/* Find the child of the given source that has the given name. Returns NULL if not found. */
-static ZMapConfigSource findSourceRecursively(ZMapConfigSource source, const char *search_str)
+
+/* Count how many sources there are (including child sources) and how many are selected for
+ * loading (i.e. not delayed). Only includes "recent" sources if the recent flag is true; includes
+ * all sources otherwise. */
+void ZMapFeatureSequenceMapStructType::countSources(uint &num_total, 
+                                                    uint &num_selected,
+                                                    const bool recent)
 {
-  ZMapConfigSource result = NULL ;
-
-  if (source)
+  if (sources)
     {
-      if (strcasecmp(g_quark_to_string(source->name_), search_str) == 0)
-        {
-          result = source ;
-        }
-      else
-        {
-          for (auto child : source->children)
-            {
-              result = findSourceRecursively(child, search_str) ;
+      num_total = 0 ;
+      num_selected = 0 ;
 
-              if (result)
-                break ;
-            }
+      for (auto &iter : *sources)
+        {
+          iter.second->countSources(num_total, num_selected, recent) ;
         }
     }
-
-  return result ;
 }
 
 
@@ -1540,6 +1536,31 @@ static ZMapFeatureContextExecuteStatus updateContextFeatureSetStyle(GQuark key,
   return status ;
 }
 
+/* Find the child of the given source that has the given name. Returns NULL if not found. */
+static ZMapConfigSource findSourceRecursively(ZMapConfigSource source, const char *search_str)
+{
+  ZMapConfigSource result = NULL ;
+
+  if (source)
+    {
+      if (strcasecmp(g_quark_to_string(source->name_), search_str) == 0)
+        {
+          result = source ;
+        }
+      else
+        {
+          for (auto child : source->children)
+            {
+              result = findSourceRecursively(child, search_str) ;
+
+              if (result)
+                break ;
+            }
+        }
+    }
+
+  return result ;
+}
 
 
 } // unnamed namespace
