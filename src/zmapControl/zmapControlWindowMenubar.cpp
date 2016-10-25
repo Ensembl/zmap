@@ -424,6 +424,12 @@ static void importCB(gpointer cb_data, guint callback_action, GtkWidget *window)
           zmapControlImportFile(zmap, sequence_map, start, end);
         }
     }
+  else
+    {
+      if (GTK_IS_WINDOW(zmap->import_file_dialog))
+        gtk_window_present(GTK_WINDOW(zmap->import_file_dialog)) ;
+      
+    }
 
   return ;
 }

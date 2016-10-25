@@ -56,6 +56,7 @@ public:
   const std::string fileType() const ;
   int numFields() const ;
   std::string toplevelName() const ;
+  void countSources(uint &num_total, uint &num_with_data, uint &num_to_load, const bool recent = false) const ;
 
 
   GQuark name_ ;
