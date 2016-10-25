@@ -250,14 +250,43 @@ const char* ZMapConfigSourceStruct::configFile() const
   return g_quark_to_string(config_file_) ; 
 }
 
+/* Return the file type. Returns an empty string if not applicable */
 const string ZMapConfigSourceStruct::fileType() const
 {
   return file_type_ ; 
 }
 
+/* Return the number of fileds for file sources. Returns 0 if not applicable. */
 int ZMapConfigSourceStruct::numFields() const
 {
   return num_fields_ ; 
+}
+
+/* Get a descriptive type for this source. This returns the type of the source, e.g. "ensembl",
+ * and also the file type and number of fields, if applicable e.g. "file (bigbed 12)" */
+string ZMapConfigSourceStruct::type() const
+{
+  string result("") ;
+  
+  if (urlObj())
+    {
+      stringstream result_ss ;
+      result_ss << urlObj()->protocol ;
+
+      if (!fileType().empty())
+        {
+          result_ss << " (" << fileType() ;
+                
+          if (numFields() > 0)
+            result_ss << " " << numFields() ;
+
+          result_ss << ")" ;
+        }
+      
+      result = result_ss.str() ;
+    }
+
+  return result ;
 }
 
 // Return the toplevel source name; that is, if this source is in a hierarchy return the name of
@@ -302,6 +331,7 @@ void ZMapConfigSourceStruct::countSources(uint &num_total,
       child->countSources(num_total, num_with_data, num_to_load, recent_only) ;
     }
 }
+
 
 
 /*

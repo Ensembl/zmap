@@ -259,24 +259,6 @@ static GtkWidget *makePanel(GtkWidget *toplevel, gpointer *our_data,
 }
 
 
-/* Utility to get a descriptive type for the given source. Returns an empty string if not found. */
-static string sourceGetType(ZMapConfigSource source)
-{
-  string result("") ;
-
-  if (source && source->url())
-    {
-      /* Just use the prefix in the url (i.e. up to the colon) */
-      const char *pos = source->url() ;
-
-      for (; pos && *pos && *pos != ':' && *pos != '\0'; ++pos)
-        result += *pos ;
-    }
-
-  return result ;
-}
-
-
 static void createTreeViewColumn(GtkTreeView *tree_view, 
                                  const char *title,
                                  GtkCellRenderer *renderer,
@@ -306,7 +288,7 @@ static void updateSourcesListAddSource(MainFrame main_data,
   /* Only show recent sources, if applicable */
   if (main_data->show_all || source->recent)
     {
-      string source_type = sourceGetType(source) ;
+      string source_type = source->type() ;
 
       /* Create a new row in the list store and set the values */
       GtkTreeIter tree_iter ;
