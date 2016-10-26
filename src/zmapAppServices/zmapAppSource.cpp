@@ -296,9 +296,9 @@ static void createTreeViewTextColumn(GtkTreeView *tree_view, const char *title,
                                      const ColType col_id, const bool hide = false) ;
 
 static GtkTreeView* createListWidget(MainFrame main_data, const list<string> &val_list, 
-                                     SearchListData &search_data, const gboolean allow_multiple) ;
+                                     SearchListData &search_data, const gboolean allow_multiple, GtkDialog *dialog) ;
 static GtkTreeView* createListWidget(MainFrame main_data, const list<TrackDb> &trackdb_list, 
-                                     SearchListData &search_data, const gboolean allow_multiple) ;
+                                     SearchListData &search_data, const gboolean allow_multiple, GtkDialog *dialog) ;
 
 template<class ListType>
 static GtkWidget* createListDialog(MainFrame main_data, const ListType &values_list, const char *title,
@@ -2321,11 +2321,27 @@ static void createTreeViewTextColumn(GtkTreeView *tree_view,
 }
 
 
+/* Called when the user activates a row in a list widget */
+void listWidgetRowActivatedCB(GtkTreeView *tree_view, 
+                              GtkTreePath *path, 
+                              GtkTreeViewColumn *column,
+                              gpointer user_data)
+{
+  zMapReturnIfFail(GTK_IS_DIALOG(user_data)) ;
+
+  GtkDialog *dialog = GTK_DIALOG(user_data) ;
+
+  // Activate the default response on the dialog
+  gtk_dialog_response (dialog, GTK_RESPONSE_OK);
+}
+
+
 /* Create a tree view widget to show name values in the given list */
 static GtkTreeView* createListWidget(MainFrame main_data, 
                                      const list<string> &val_list,
                                      SearchListData &search_data, 
-                                     const gboolean allow_multiple)
+                                     const gboolean allow_multiple,
+                                     GtkDialog *dialog)
 {
   /* Create the data store */
   GtkListStore *store = gtk_list_store_new((int)GenericListColumn::N_COLS, G_TYPE_STRING) ;
@@ -2343,6 +2359,9 @@ static GtkTreeView* createListWidget(MainFrame main_data,
 
   /* Create the tree widget */
   GtkTreeView *tree_view = GTK_TREE_VIEW(gtk_tree_view_new_with_model(GTK_TREE_MODEL(filtered))) ;
+
+  /* Connect a signal take action when a row is activated (e.g. press enter or double click) */
+  g_signal_connect(tree_view, "row-activated", (GCallback)listWidgetRowActivatedCB, (gpointer)dialog) ;
 
   /* Set various properties on the tree widget */
   gtk_tree_view_set_enable_search(tree_view, FALSE);
@@ -2373,7 +2392,8 @@ static GtkTreeView* createListWidget(MainFrame main_data,
 static GtkTreeView* createListWidget(MainFrame main_data, 
                                      const list<TrackDb> &trackdb_list, 
                                      SearchListData &search_data, 
-                                     const gboolean allow_multiple)
+                                     const gboolean allow_multiple,
+                                     GtkDialog *dialog)
 {
   /* Create the data store */
   int num_cols = (int)(TrackListColumn::N_COLS) ;
@@ -2398,6 +2418,9 @@ static GtkTreeView* createListWidget(MainFrame main_data,
 
   /* Create the tree widget */
   GtkTreeView *tree_view = GTK_TREE_VIEW(gtk_tree_view_new_with_model(GTK_TREE_MODEL(filtered))) ;
+
+  /* Connect a signal take action when a row is activated (e.g. press enter or double click) */
+  g_signal_connect(tree_view, "row-activated", (GCallback)listWidgetRowActivatedCB, (gpointer)dialog) ;
 
   /* Set various properties on the tree widget */
   gtk_tree_view_set_enable_search(tree_view, FALSE);
@@ -2475,7 +2498,7 @@ static GtkWidget* createListDialog(MainFrame main_data,
   gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrollwin), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
   gtk_box_pack_start(content, GTK_WIDGET(scrollwin), TRUE, TRUE, 0) ;
 
-  GtkTreeView *list_widget = createListWidget(main_data, values_list, search_data, allow_multiple) ;
+  GtkTreeView *list_widget = createListWidget(main_data, values_list, search_data, allow_multiple, GTK_DIALOG(dialog)) ;
   gtk_container_add(GTK_CONTAINER(scrollwin), GTK_WIDGET(list_widget)) ;
 
   if (list_widget_out)
