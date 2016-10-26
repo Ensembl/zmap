@@ -999,6 +999,22 @@ static GtkWidget* makeButtonWidget(const char *stock,
 
 
 #ifdef USE_ENSEMBL
+static void onDbnameChanged(GtkEditable *editable, gpointer user_data)
+{
+  MainFrame main_data = (MainFrame)user_data ;
+  zMapReturnIfFail(main_data && main_data->name_widg && main_data->dbname_widg) ;
+
+  // If the source name is not already set, then set it to be the same as the dbname
+  const char *name = gtk_entry_get_text(GTK_ENTRY(main_data->name_widg)) ;
+
+  if (!name || *name == '\0')
+    {
+      const char *dbname = gtk_entry_get_text(GTK_ENTRY(main_data->dbname_widg)) ;
+      gtk_entry_set_text(GTK_ENTRY(main_data->name_widg), dbname) ;
+    }
+}
+
+
 static void makeEnsemblWidgets(MainFrame main_data, 
                                ZMapFeatureSequenceMap sequence_map,
                                GtkTable *table,
@@ -1064,6 +1080,9 @@ static void makeEnsemblWidgets(MainFrame main_data,
   gtk_table_attach(table, main_data->dna_check, col, col + 1, row - 1, row, GTK_SHRINK, GTK_SHRINK, xpad, ypad) ;
   main_data->ensembl_widgets.push_back(main_data->dna_check) ;
   ++row ;
+
+  /* Connect a signal to update the other details after the dbname has changed */
+  g_signal_connect(main_data->dbname_widg, "changed", G_CALLBACK(onDbnameChanged), main_data) ;
 }
 #endif /* USE_ENSEMBL */
 
