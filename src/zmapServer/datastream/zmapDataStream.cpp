@@ -106,9 +106,9 @@ static const char * const ZMAP_BIGBED_SO_TERM  = "sequence_feature" ;
 static const char * const ZMAP_BIGWIG_SO_TERM  = "score" ;
 #define ZMAP_CIGARSTRING_MAXLENGTH 2048
 #define READBUFFER_SIZE 2048
-#define BED_DEFAULT_FIELDS 3 // min number of fields in a BED file
-#define MAX_FILE_THREADS 10  // max number of file threads at any one time
-
+#define BED_DEFAULT_FIELDS 3       // min number of fields in a BED file
+#define MAX_FILE_THREADS 10        // max number of file threads at any one time
+#define SEQ_LIST_SEPARATOR "\n"    // used as separator in list of sequence names
 
 
 /* 
@@ -938,13 +938,14 @@ bool ZMapDataStreamBIGBEDStruct::checkHeader(std::string &err_msg, bool &empty_o
               break ;
             }
 
-          available_seqs << chrom->name << ", " ;
+          available_seqs << chrom->name << SEQ_LIST_SEPARATOR ;
         }
 
       if (!result)
         {
+          
           g_set_error(&error_, g_quark_from_string("ZMap"), 99,
-                      "File header does not contain sequence '%s'. Available sequences in this file are: %s\n", 
+                      "File header does not contain sequence '%s'. Available sequences in this file are:\n%s\n", 
                       sequence_, available_seqs.str().c_str()) ;
         }
     }
@@ -983,13 +984,13 @@ bool ZMapDataStreamBIGWIGStruct::checkHeader(std::string &err_msg, bool &empty_o
               break ;
             }
 
-          available_seqs << chrom->name << ", " ;
+          available_seqs << chrom->name << SEQ_LIST_SEPARATOR ;
         }
 
       if (!result)
         {
           g_set_error(&error_, g_quark_from_string("ZMap"), 99,
-                      "File header does not contain sequence '%s'. Available sequences in this file are: %s\n", 
+                      "File header does not contain sequence '%s'. Available sequences in this file are:\n%s\n", 
                       sequence_, available_seqs.str().c_str()) ;
         }
     }
@@ -1034,14 +1035,14 @@ bool ZMapDataStreamHTSStruct::checkHeader(std::string &err_msg, bool &empty_or_e
               break ;
             }
           
-          available_seqs << hts_hdr->target_name[i] << ", " ;
+          available_seqs << hts_hdr->target_name[i] << SEQ_LIST_SEPARATOR ;
         }
     }
 
   if (!result)
     {
       g_set_error(&error_, g_quark_from_string("ZMap"), 99,
-                  "File header does not contain sequence '%s'. Available sequences in this file are: %s\n", 
+                  "File header does not contain sequence '%s'. Available sequences in this file are:\n%s\n", 
                   sequence_, available_seqs.str().c_str()) ;
     }
 
@@ -1072,13 +1073,13 @@ bool ZMapDataStreamBCFStruct::checkHeader(std::string &err_msg, bool &empty_or_e
           break ;
         }
 
-      available_seqs << seqnames[i] << ", " ;
+      available_seqs << seqnames[i] << SEQ_LIST_SEPARATOR ;
     }
 
   if (!result)
     {
       g_set_error(&error_, g_quark_from_string("ZMap"), 99,
-                  "File header does not contain sequence '%s'. Available sequences in this file are: %s\n", 
+                  "File header does not contain sequence '%s'. Available sequences in this file are:\n%s\n", 
                   sequence_, available_seqs.str().c_str()) ;
     }
 

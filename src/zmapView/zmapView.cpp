@@ -68,7 +68,7 @@ using namespace std ;
 using namespace ZMapThreadSource ;
 
 
-#define SOURCE_FAILURE_WARNING_FORMAT "Error loading source(s). First error was:\n\n%s\n\nFurther source failures will not be reported. See the log file for details of any other failures."
+#define SOURCE_FAILURE_WARNING_FORMAT "Error loading source(s). Further source failures WILL NOT BE REPORTED. See the log file for details of any other failures.\n\nThe first error was:\n\n%s"
 
 /* Define thread debug messages, used in checkStateConnections() mostly. */
 #define THREAD_DEBUG_MSG_PREFIX " Reply from slave thread %s, "
