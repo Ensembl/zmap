@@ -72,6 +72,9 @@ typedef struct MainFrameStructName
   // 'Recent' button
   GtkWidget *recent_widg ;
 
+  // Info label
+  GtkWidget *info_widg ;
+
   ZMapFeatureSequenceMap orig_sequence_map ;
   gboolean display_sequence ;
   bool import ; // importing into existing view
@@ -113,7 +116,7 @@ static void chooseConfigCB(GtkFileChooserButton *widget, gpointer user_data) ;
 static void defaultsCB(GtkWidget *widget, gpointer cb_data) ;
 static void createSourceCB(GtkWidget *widget, gpointer cb_data) ;
 static void removeSourceCB(GtkWidget *widget, gpointer cb_data) ;
-static void editSourceCB(GtkWidget *widget, gpointer cb_data) ;
+static void editSourceButtonCB(GtkWidget *widget, gpointer cb_data) ;
 static void clearRecentCB(GtkWidget *button, gpointer data) ;
 static void saveCB(GtkWidget *widget, gpointer cb_data) ;
 static void closeCB(GtkWidget *widget, gpointer cb_data) ;
@@ -133,9 +136,12 @@ static void selectSource(const char *source_name,
                          const bool deselect_others = false) ;
 
 static void createNewSourceCB(const char *source_name, const std::string &url, 
-                              const char *featuresets, const char *biotypes, const char *format,
+                              const char *featuresets, const char *biotypes, 
+                              const string &file_type, const int num_fields,
                               gpointer user_data, GError **error) ;
 static void cancelNewSourceCB(GtkWidget *toplevel, gpointer cb_data) ;
+
+static void updateInfoLabel(MainFrame main_data, ZMapFeatureSequenceMap sequence_map) ;
 
 
 /*
@@ -253,24 +259,6 @@ static GtkWidget *makePanel(GtkWidget *toplevel, gpointer *our_data,
 }
 
 
-/* Utility to get a descriptive type for the given source. Returns an empty string if not found. */
-static string sourceGetType(ZMapConfigSource source)
-{
-  string result("") ;
-
-  if (source && source->url())
-    {
-      /* Just use the prefix in the url (i.e. up to the colon) */
-      const char *pos = source->url() ;
-
-      for (; pos && *pos && *pos != ':' && *pos != '\0'; ++pos)
-        result += *pos ;
-    }
-
-  return result ;
-}
-
-
 static void createTreeViewColumn(GtkTreeView *tree_view, 
                                  const char *title,
                                  GtkCellRenderer *renderer,
@@ -300,7 +288,7 @@ static void updateSourcesListAddSource(MainFrame main_data,
   /* Only show recent sources, if applicable */
   if (main_data->show_all || source->recent)
     {
-      string source_type = sourceGetType(source) ;
+      string source_type = source->type() ;
 
       /* Create a new row in the list store and set the values */
       GtkTreeIter tree_iter ;
@@ -351,6 +339,7 @@ static void treePathSetLoadStatus(GtkTreeModel *model,
                                   GtkTreePath *path, 
                                   const gboolean load,
                                   const gboolean do_siblings,
+                                  MainFrame main_data,
                                   ZMapFeatureSequenceMap sequence_map)
 {
   GtkTreeIter iter ;
@@ -375,7 +364,7 @@ static void treePathSetLoadStatus(GtkTreeModel *model,
       // Recurse through child paths and siblings (if applicable)
       GtkTreePath *path_copy = gtk_tree_path_copy(path) ;
       gtk_tree_path_down(path_copy) ;
-      treePathSetLoadStatus(model, path_copy, load, TRUE, sequence_map) ; // do all child siblings
+      treePathSetLoadStatus(model, path_copy, load, TRUE, main_data, sequence_map) ; // do all child siblings
       gtk_tree_path_free(path_copy) ;
       path_copy = NULL ; 
 
@@ -383,10 +372,12 @@ static void treePathSetLoadStatus(GtkTreeModel *model,
         {
           path_copy = gtk_tree_path_copy(path) ;
           gtk_tree_path_next(path_copy) ;
-          treePathSetLoadStatus(model, path_copy, load, do_siblings, sequence_map) ;
+          treePathSetLoadStatus(model, path_copy, load, do_siblings, main_data, sequence_map) ;
           gtk_tree_path_free(path_copy) ;
           path_copy = NULL ;
         }
+
+      updateInfoLabel(main_data, main_data->orig_sequence_map) ;
     }
 
   return ;
@@ -412,7 +403,7 @@ static void loadButtonToggledCB(GtkCellRendererToggle *toggle_renderer,
       
       gboolean load = !cur_value ;
 
-      treePathSetLoadStatus(main_data->sources_model, path, load, FALSE, main_data->orig_sequence_map) ;
+      treePathSetLoadStatus(main_data->sources_model, path, load, FALSE, main_data, main_data->orig_sequence_map) ;
     }
 
   if (path)
@@ -464,6 +455,7 @@ static void onUpdateList(GtkWidget *button, gpointer data)
     {
       main_data->show_all = !main_data->show_all ;
       updateSourcesList(main_data, main_data->orig_sequence_map) ;
+      updateInfoLabel(main_data, main_data->orig_sequence_map) ;
     }
 }
 
@@ -504,6 +496,34 @@ static GtkWidget *createButton(const char *label,
 }
 
 
+/* Update the info label with info about how many sources are selected */
+static void updateInfoLabel(MainFrame main_data, ZMapFeatureSequenceMap sequence_map)
+{
+  zMapReturnIfFail(main_data && main_data->info_widg && sequence_map) ;
+
+  uint num_total = 0 ;     // total number of sources
+  uint num_with_data = 0 ; // number of sources with data
+  uint num_to_load = 0 ;   // number of sources with data that are selected for loading
+
+  sequence_map->countSources(num_total, num_with_data, num_to_load, !main_data->show_all) ;
+
+  stringstream text_ss ;
+
+  if (num_total == 0)
+    text_ss << "No sources" ;
+  else if (num_with_data == 0)
+    text_ss << "No sources have data" ;
+  else if (num_to_load < 1)
+    text_ss << "No sources will be loaded out of "              << num_with_data << " with data (" << num_total << " total)" ;
+  else if (num_to_load == 1)
+    text_ss << num_to_load << " source will be loaded out of "  << num_with_data << " with data (" << num_total << " total)" ;
+  else
+    text_ss << num_to_load << " sources will be loaded out of " << num_with_data << " with data (" << num_total << " total)";
+
+  gtk_label_set_text(GTK_LABEL(main_data->info_widg), text_ss.str().c_str()) ;
+}
+
+
 /* Create a frame listing all of the available sources */
 static GtkWidget *makeSourcesFrame(MainFrame main_data, ZMapFeatureSequenceMap sequence_map)
 {
@@ -520,6 +540,11 @@ static GtkWidget *makeSourcesFrame(MainFrame main_data, ZMapFeatureSequenceMap s
 
   GtkWidget *list_widget = createListWidget(sequence_map, main_data) ;
   gtk_container_add(GTK_CONTAINER(scrolled), list_widget) ;
+
+  // Create a label to show how many sources will be loaded
+  main_data->info_widg = gtk_label_new("") ;
+  gtk_box_pack_start(GTK_BOX(topbox), main_data->info_widg, FALSE, FALSE, 0) ;
+  updateInfoLabel(main_data, sequence_map) ;
 
   return frame ;
 }
@@ -632,7 +657,7 @@ static GtkWidget *makeButtonBox(MainFrame main_data)
   
   createButton(NULL, GTK_STOCK_EDIT, true,
                "Edit the selected source(s)",
-               G_CALLBACK(editSourceCB), (gpointer)main_data, button_box) ;
+               G_CALLBACK(editSourceButtonCB), (gpointer)main_data, button_box) ;
 
   createButton(NULL, GTK_STOCK_DELETE, true, 
                "Delete the selected source(s).",
@@ -812,7 +837,8 @@ static void saveCB(GtkWidget *widget, gpointer cb_data)
 /* Callback called when the create-source dialog has been ok'd to do the work to create the new
  * source from the user-provided info. Returns true if successfully created the source.  */
 static void createNewSourceCB(const char *source_name, const std::string &url, 
-                              const char *featuresets, const char *biotypes, const char *format,
+                              const char *featuresets, const char *biotypes, 
+                              const string &file_type, const int num_fields,
                               gpointer user_data, GError **error)
 {
   MainFrame main_data = (MainFrame)user_data ;
@@ -824,7 +850,7 @@ static void createNewSourceCB(const char *source_name, const std::string &url,
   // source window will have gone away.
   main_data->source_window = NULL ;
 
-  sequence_map->createSource(source_name, url, featuresets, biotypes, format, false, true, &tmp_error) ;
+  sequence_map->createSource(source_name, url, featuresets, biotypes, file_type, num_fields, false, true, &tmp_error) ;
 
   /* Update the list of sources shown in the dialog to include the new source,
    * and add the new source to the current selection */
@@ -832,6 +858,7 @@ static void createNewSourceCB(const char *source_name, const std::string &url,
     {
       updateSourcesList(main_data, sequence_map) ;
       selectSource(source_name, main_data->sources_tree, main_data->sources_model) ;
+      updateInfoLabel(main_data, main_data->orig_sequence_map) ;
     }
 
   if (tmp_error)
@@ -858,7 +885,8 @@ static void editSourceCB(const char *source_name,
                          const std::string &url, 
                          const char *featuresets,
                          const char *biotypes,
-                         const char *format,
+                         const string &file_type, 
+                         const int num_fields,
                          gpointer user_data,
                          GError **error)
 {
@@ -868,11 +896,14 @@ static void editSourceCB(const char *source_name,
   ZMapFeatureSequenceMap sequence_map = main_data->orig_sequence_map ;
   GError *tmp_error = NULL ;
 
-  sequence_map->updateSource(source_name, url, featuresets, biotypes, format, &tmp_error) ;
+  sequence_map->updateSource(source_name, url, featuresets, biotypes, file_type, num_fields, &tmp_error) ;
 
   /* Update the list of sources shown in the dialog to include the new source */
   if (!tmp_error)
-    updateSourcesList(main_data, sequence_map) ;
+    {
+      updateSourcesList(main_data, sequence_map) ;
+      updateInfoLabel(main_data, main_data->orig_sequence_map) ;
+    }
 
   if (tmp_error)
     g_propagate_error(error, tmp_error) ;
@@ -903,7 +934,7 @@ static void createSourceCB(GtkWidget *widget, gpointer cb_data)
 
 
 /* Edit an existing source. */
-static void editSourceCB(GtkWidget *widget, gpointer cb_data)
+static void editSourceButtonCB(GtkWidget *widget, gpointer cb_data)
 {
   MainFrame main_data = (MainFrame)cb_data ;
   zMapReturnIfFail(main_data) ;
@@ -955,6 +986,7 @@ static void removeSourceCB(GtkWidget *widget, gpointer cb_data)
 
       /* Update the list widget */
       updateSourcesList(main_data, main_data->orig_sequence_map) ;
+      updateInfoLabel(main_data, main_data->orig_sequence_map) ;
       main_data->orig_sequence_map->setFlag(ZMAPFLAG_SAVE_SOURCES, TRUE) ;
     }
   else if (err_msg)
@@ -980,6 +1012,7 @@ static void clearRecentCB(GtkWidget *button, gpointer data)
         iter.second->recent = false ;
 
       updateSourcesList(main_data, main_data->orig_sequence_map) ;
+      updateInfoLabel(main_data, main_data->orig_sequence_map) ;
     }
 
   return ;
@@ -1299,6 +1332,7 @@ static void configChangedCB(GtkWidget *widget, gpointer user_data)
 
       /* Update the sources list */
       updateSourcesList(main_frame, main_frame->orig_sequence_map) ;
+      updateInfoLabel(main_frame, main_frame->orig_sequence_map) ;
     }
 
   return ;

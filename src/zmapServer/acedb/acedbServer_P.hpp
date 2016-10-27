@@ -62,6 +62,7 @@
 /* Holds all the state we need to manage the acedb connection. */
 typedef struct _AcedbServerStruct
 {
+  ZMapConfigSource source ;
   char *config_file ;
 
   /* Connection details. */

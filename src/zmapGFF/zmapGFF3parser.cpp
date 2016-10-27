@@ -166,7 +166,7 @@ static const ZMapGFFParserState ZMAP_GFF_PARSER_TRANSITIONS[ZMAPGFF_NUMBER_PARSE
 /*
  * Function to create a v3 parser object.
  */
-ZMapGFFParser zMapGFFCreateParser_V3(const char *sequence, int features_start, int features_end)
+ZMapGFFParser zMapGFFCreateParser_V3(const char *sequence, int features_start, int features_end, ZMapConfigSource source)
 {
   ZMapGFF3Parser pParser = NULL ;
 
@@ -179,6 +179,7 @@ ZMapGFFParser zMapGFFCreateParser_V3(const char *sequence, int features_start, i
         {
 
           pParser->gff_version                      = ZMAPGFF_VERSION_3 ;
+          pParser->source                           = source ;
           pParser->pHeader                          = zMapGFFCreateHeader() ;
           if (!pParser->pHeader)
             return NULL ;

@@ -82,17 +82,17 @@ static gboolean removeTranscriptFeature(gpointer key,gpointer value, gpointer us
  * Public interface parser creation function. Calls version specific functions. Returns
  * NULL if we are passed unsupported version.
  */
-ZMapGFFParser zMapGFFCreateParser(int iGFFVersion, const char *sequence, int features_start, int features_end)
+ZMapGFFParser zMapGFFCreateParser(int iGFFVersion, const char *sequence, int features_start, int features_end, ZMapConfigSource source)
 {
   ZMapGFFParser pParser = NULL ;
 
   if (iGFFVersion == ZMAPGFF_VERSION_2 )
     {
-      pParser = zMapGFFCreateParser_V2(sequence, features_start, features_end) ;
+      pParser = zMapGFFCreateParser_V2(sequence, features_start, features_end, source) ;
     }
   else if (iGFFVersion == ZMAPGFF_VERSION_3 )
     {
-      pParser = zMapGFFCreateParser_V3(sequence, features_start, features_end) ;
+      pParser = zMapGFFCreateParser_V3(sequence, features_start, features_end, source) ;
     }
   else
     {

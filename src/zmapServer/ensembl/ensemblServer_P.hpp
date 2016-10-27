@@ -44,6 +44,8 @@ extern "C" {
 
 typedef struct _EnsemblServerStruct
 {
+  ZMapConfigSource source ;
+
   // Lock shared between all ensembl data sources to protect ensc-core library calls as they are
   // not thread safe, i.e. anything using dba, slice etc.
   pthread_mutex_t *mutex ;
@@ -61,7 +63,6 @@ typedef struct _EnsemblServerStruct
   char *user ;
   char *passwd ;
   char *db_name ;
-  char *db_prefix ;
 
   /* Results of server requests. */
   ZMapServerResponseType result ;

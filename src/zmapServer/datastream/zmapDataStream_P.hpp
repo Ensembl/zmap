@@ -96,12 +96,12 @@ public:
 
 
 /*
- * General source type
+ * General stream type
  */
 class ZMapDataStreamStruct
 {
 public:
-  ZMapDataStreamStruct(const GQuark source_name, const char *sequence, const int start, const int end) ;
+  ZMapDataStreamStruct(ZMapConfigSource source, const char *sequence, const int start, const int end) ;
   virtual ~ZMapDataStreamStruct() ;
 
   virtual gboolean init(const char *region_name, int start, int end) ;
@@ -120,11 +120,10 @@ public:
   virtual ZMapSequence getSequence(GQuark seq_id, GError **error) ;
   virtual bool terminated() ;
 
-  ZMapFeatureSet makeFeatureSet(const char *feature_name_id, GQuark feature_set_id, 
-                                ZMapStyleMode feature_mode, const bool is_seq) ;
+  ZMapFeatureSet makeFeatureSet(const char *feature_name_id, ZMapStyleMode feature_mode, const bool is_seq) ;
   ZMapFeature makeBEDFeature(struct bed *bed_feature, const int standard_fields, 
                              const char *so_term, GError **error) ;
-  ZMapFeature makeFeature(const char *sequence, const char *source, const char *so_type,
+  ZMapFeature makeFeature(const char *sequence, const char *so_type,
                           const int start, const int end, const double score,
                           const char strand_c, const char *feature_name_in,
                           const bool have_target = false, const int target_start = 0, const int target_end = 0, 
@@ -138,7 +137,7 @@ public:
 
 protected:
 
-  GQuark source_name_ ;
+  ZMapConfigSource source_ ;
   char *sequence_ ;
   int start_ ;
   int end_ ;
@@ -163,7 +162,8 @@ protected:
 class ZMapDataStreamGIOStruct : public ZMapDataStreamStruct
 {
 public:
-  ZMapDataStreamGIOStruct(const GQuark source_name, const char *file_name, const char *open_mode, 
+  ZMapDataStreamGIOStruct(ZMapConfigSource source, 
+                          const char *file_name, const char *open_mode, 
                           const char *sequence, const int start, const int end) ;
   ~ZMapDataStreamGIOStruct() ;
 
@@ -192,8 +192,9 @@ private:
 class ZMapDataStreamBEDStruct : public ZMapDataStreamStruct
 {
 public:
-  ZMapDataStreamBEDStruct(const GQuark source_name, const char *file_name, const char *open_mode, 
-                          const char *sequence, const int start, const int end, const GQuark format) ;
+  ZMapDataStreamBEDStruct(ZMapConfigSource source, 
+                          const char *file_name, const char *open_mode, 
+                          const char *sequence, const int start, const int end) ;
   ~ZMapDataStreamBEDStruct() ;
 
   bool isOpen() ;
@@ -211,8 +212,9 @@ private:
 class ZMapDataStreamBIGBEDStruct : public ZMapDataStreamStruct
 {
 public:
-  ZMapDataStreamBIGBEDStruct(const GQuark source_name, const char *file_name, const char *open_mode, 
-                             const char *sequence, const int start, const int end, const GQuark format) ;
+  ZMapDataStreamBIGBEDStruct(ZMapConfigSource source, 
+                             const char *file_name, const char *open_mode, 
+                             const char *sequence, const int start, const int end) ;
   ~ZMapDataStreamBIGBEDStruct() ;
 
   bool isOpen() ;
@@ -233,7 +235,8 @@ private:
 class ZMapDataStreamBIGWIGStruct : public ZMapDataStreamStruct
 {
 public:
-  ZMapDataStreamBIGWIGStruct(const GQuark source_name, const char *file_name, const char *open_mode, 
+  ZMapDataStreamBIGWIGStruct(ZMapConfigSource source, 
+                             const char *file_name, const char *open_mode, 
                              const char *sequence, const int start, const int end) ;
   ~ZMapDataStreamBIGWIGStruct() ;
 
@@ -255,7 +258,8 @@ private:
 class ZMapDataStreamHTSStruct : public ZMapDataStreamStruct
 {
 public:
-  ZMapDataStreamHTSStruct(const GQuark source_name, const char *file_name, const char *open_mode, 
+  ZMapDataStreamHTSStruct(ZMapConfigSource source, 
+                          const char *file_name, const char *open_mode, 
                           const char *sequence, const int start, const int end) ;
   ~ZMapDataStreamHTSStruct() ;
 
@@ -287,7 +291,8 @@ private:
 class ZMapDataStreamBCFStruct : public ZMapDataStreamStruct
 {
 public:
-  ZMapDataStreamBCFStruct(const GQuark source_name, const char *file_name, const char *open_mode, 
+  ZMapDataStreamBCFStruct(ZMapConfigSource source, 
+                          const char *file_name, const char *open_mode, 
                           const char *sequence, const int start, const int end) ;
   ~ZMapDataStreamBCFStruct() ;
   bool isOpen() ;

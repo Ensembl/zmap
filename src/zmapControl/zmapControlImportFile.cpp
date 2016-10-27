@@ -430,14 +430,13 @@ static void createSourceData(ZMapView view,
 
   ZMapFeatureContextMap context_map = zMapViewGetContextMap(view) ;
 
-  int status = 0 ;
-  ZMapURL zmap_url = url_parse(source->url(), &status) ;
+  ZMapURL zmap_url = source->urlObj() ;
 
   if (context_map && sequence_map->runningUnderOtter() && zmap_url && zmap_url->path)
     {
-      ZMapDataStreamType source_type = zMapDataStreamTypeFromFilename(zmap_url->path, NULL) ;
+      ZMapDataStreamType stream_type = zMapDataStreamTypeFromFilename(zmap_url->path, NULL) ;
 
-      if (source_type == ZMapDataStreamType::HTS || source_type == ZMapDataStreamType::BIGWIG)
+      if (stream_type == ZMapDataStreamType::HTS || stream_type == ZMapDataStreamType::BIGWIG)
         {
           const char *source_name = g_quark_to_string(source->name_) ;
           GQuark fset_id = zMapFeatureSetCreateID(source_name);
@@ -470,16 +469,21 @@ static void importSource(ZMapConfigSource server,
 {
   if (!recent_only || server->recent)
     {
-      createSourceData(view, sequence_map, server) ;
-
-      GError *g_error = NULL ;
-      zMapViewSetUpServerConnection(view, server, req_sequence, req_start, req_end, false, &g_error) ;
-
-      if (g_error)
+      // Some sources do not have a url because they are just parent sources in the hierarchy. Do
+      // not process them, but process their children.
+      if (server->url())
         {
-          zMapWarning("Failed to set up server connection for '%s': %s", 
-                      g_quark_to_string(server->name_),
-                      (g_error ? g_error->message : "<no error>")) ;
+          createSourceData(view, sequence_map, server) ;
+
+          GError *g_error = NULL ;
+          zMapViewSetUpServerConnection(view, server, req_sequence, req_start, req_end, false, &g_error) ;
+
+          if (g_error)
+            {
+              zMapWarning("Failed to set up server connection for '%s': %s", 
+                          g_quark_to_string(server->name_),
+                          (g_error ? g_error->message : "<no error>")) ;
+            }
         }
 
       // Recurse through children

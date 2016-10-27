@@ -131,22 +131,27 @@ static bool debug_loading_G = false ;                       // Use to turn debug
  */
 
 ZMapConfigSourceStruct::ZMapConfigSourceStruct()
-    : name_(0),
-      version(NULL),
-      featuresets(NULL),
-      biotypes(NULL),
-      stylesfile(NULL),
-      format(NULL),
-      timeout(0),
-      delayed(FALSE),
-      provide_mapping(FALSE),
-      req_styles(FALSE),
-      group(0),
-      recent(false),
-      parent(NULL),
-      url_(NULL),
-      url_obj_(NULL),
-      url_parse_error_(0)
+  : name_(0),
+    version(NULL),
+    featuresets(NULL),
+    biotypes(NULL),
+    stylesfile(NULL),
+    format(NULL),
+    timeout(0),
+    delayed(FALSE),
+    provide_mapping(FALSE),
+    req_styles(FALSE),
+    group(0),
+    recent(false),
+    parent(NULL),
+    children{nullptr},
+  url_(NULL),
+  url_obj_(NULL),
+  url_parse_error_(0),
+  config_file_{0},
+  file_type_{},
+  num_fields_{0}
+  
 {
 }
 
@@ -192,13 +197,25 @@ void ZMapConfigSourceStruct::setUrl(const char *url)
   url_parse_error_ = 0 ;
 
   // Set the url string
-  url_ = g_strdup(url) ;
+  if (url && *url)
+    url_ = g_strdup(url) ;
 }
 
 void ZMapConfigSourceStruct::setConfigFile(const char *config_file)
 {
   config_file_ = g_quark_from_string(config_file) ;
 }
+
+void ZMapConfigSourceStruct::setFileType(const string &file_type)
+{
+  file_type_ = file_type ;
+}
+
+void ZMapConfigSourceStruct::setNumFields(const int num_fields)
+{
+  num_fields_ = num_fields ;
+}
+
 
 const char* ZMapConfigSourceStruct::url() const
 {
@@ -237,6 +254,89 @@ const char* ZMapConfigSourceStruct::configFile() const
 {
   return g_quark_to_string(config_file_) ; 
 }
+
+/* Return the file type. Returns an empty string if not applicable */
+const string ZMapConfigSourceStruct::fileType() const
+{
+  return file_type_ ; 
+}
+
+/* Return the number of fileds for file sources. Returns 0 if not applicable. */
+int ZMapConfigSourceStruct::numFields() const
+{
+  return num_fields_ ; 
+}
+
+/* Get a descriptive type for this source. This returns the type of the source, e.g. "ensembl",
+ * and also the file type and number of fields, if applicable e.g. "file (bigbed 12)" */
+string ZMapConfigSourceStruct::type() const
+{
+  string result("") ;
+  
+  if (urlObj())
+    {
+      stringstream result_ss ;
+      result_ss << urlObj()->protocol ;
+
+      if (!fileType().empty())
+        {
+          result_ss << " (" << fileType() ;
+                
+          if (numFields() > 0)
+            result_ss << " " << numFields() ;
+
+          result_ss << ")" ;
+        }
+      
+      result = result_ss.str() ;
+    }
+
+  return result ;
+}
+
+// Return the toplevel source name; that is, if this source is in a hierarchy return the name of
+// the toplevel parent. Otherwise just return this source's name.
+string ZMapConfigSourceStruct::toplevelName() const
+{
+  string result ;
+
+  if (parent)
+    result = parent->toplevelName() ;
+  else
+    result = g_quark_to_string(name_) ;
+
+  return result ;
+}
+
+
+void ZMapConfigSourceStruct::countSources(uint &num_total, 
+                                          uint &num_with_data, 
+                                          uint &num_to_load, 
+                                          const bool recent_only) const
+{
+  if (!recent_only || recent)
+    {
+      ++num_total ;
+
+      // Check if this source has data to load. It has data if it has a valid URL object which is
+      // not a trackhub url (because trackhub urls are not loaded directly - only their children
+      // are loaded).
+      if (urlObj() && urlObj()->scheme != SCHEME_TRACKHUB)
+        {
+          ++num_with_data ;
+
+          if (!delayed)
+            ++num_to_load ;
+        }
+    }
+
+  // recurse
+  for (ZMapConfigSource child : children)
+    {
+      child->countSources(num_total, num_with_data, num_to_load, recent_only) ;
+    }
+}
+
 
 
 /*

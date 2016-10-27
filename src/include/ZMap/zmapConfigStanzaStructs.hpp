@@ -47,11 +47,18 @@ public:
 
   void setUrl(const char *url) ;
   void setConfigFile(const char *config_file) ;
+  void setFileType(const std::string &file_type) ;
+  void setNumFields(const int num_fields) ;
 
   const char* url() const ;
   const ZMapURL urlObj() const ;
   const std::string urlError() const ;
   const char* configFile() const ;
+  const std::string fileType() const ;
+  int numFields() const ;
+  std::string type() const ;
+  std::string toplevelName() const ;
+  void countSources(uint &num_total, uint &num_with_data, uint &num_to_load, const bool recent = false) const ;
 
 
   GQuark name_ ;
@@ -83,6 +90,8 @@ private:
   mutable ZMapURL url_obj_ ;     // lazy-evaluated parsed version of the url_
   mutable int url_parse_error_ ; // gets set to non-zero parsing url_obj_ failed
   GQuark config_file_ ;
+  std::string file_type_ ;       // describes file type e.g. "bigBed". Empty if not applicable or unknown.
+  uint num_fields_ ;             // for file sources, number of fields. 0 if not applicable or unknown.
 } ;
 
 typedef ZMapConfigSourceStruct *ZMapConfigSource ;
