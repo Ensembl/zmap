@@ -221,6 +221,7 @@ ZMapDataStreamStruct::ZMapDataStreamStruct(ZMapConfigSource source,
                                            const int end)
   : type(ZMapDataStreamType::UNK), 
     source_(source),
+    sequence_{nullptr},
     start_(start),
     end_(end),
     error_(NULL),
