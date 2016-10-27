@@ -40,6 +40,7 @@
 /* We should convert this to use the same calls/mechanism as the keyvalue stuff below. */
 class ZMapConfigSourceStruct
 {
+
 public:
   ZMapConfigSourceStruct() ;
   ~ZMapConfigSourceStruct() ;
@@ -57,7 +58,9 @@ public:
   char *version ;
   char *featuresets; //, *navigatorsets ;
   char *biotypes;
+
 //  char *styles_list;  not used,. pointless
+
   char *stylesfile ;
   char *format ;
   int timeout ;
@@ -68,6 +71,7 @@ public:
   bool recent;
   ZMapConfigSourceStruct* parent ;
   std::list<ZMapConfigSourceStruct*> children ;
+
 #define SOURCE_GROUP_NEVER    0     // these are bitfields, and correspond to the obvious strings
 #define SOURCE_GROUP_START    1
 #define SOURCE_GROUP_DELAYED  2
@@ -83,8 +87,12 @@ private:
 
 typedef ZMapConfigSourceStruct *ZMapConfigSource ;
 
+
+
+
 typedef enum {ZMAPCONF_INVALID, ZMAPCONF_BOOLEAN, ZMAPCONF_INT, ZMAPCONF_DOUBLE,
 	      ZMAPCONF_STR,  ZMAPCONF_STR_ARRAY} ZMapKeyValueType ;
+
 typedef enum {ZMAPCONV_INVALID, ZMAPCONV_NONE, ZMAPCONV_STR2ENUM, ZMAPCONV_STR2COLOUR} ZMapKeyValueConv  ;
 
 typedef int (*ZMapConfStr2EnumFunc)(const char *str) ;
@@ -111,6 +119,8 @@ typedef struct ZMapKeyValueStructID
   } conv_func ;
 
 } ZMapKeyValueStruct, *ZMapKeyValue ;
+
+
 
 
 #endif /* ZMAPCONFIGSTANZASTRUCTS_H */

@@ -56,6 +56,7 @@ namespace ZMapDataSource
   //
 
 
+
   bool DataSlave::GetSequenceData(DataSource &source,
                                   ZMapFeatureSequenceMap *sequence_map_out, int *start_out, int *end_out)
   {
@@ -66,12 +67,20 @@ namespace ZMapDataSource
     return result ;
   }
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   bool DataSlave::GetServerInfo(DataSource &source,
                                 char **config_file_out, ZMapURL *url_obj_out, char **version_str_out)
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  bool DataSlave::GetServerInfo(DataSource &source,
+                                ZMapConfigSource *config_source_out)
   {
     bool result = false ;
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     result = source.GetServerInfo(config_file_out, url_obj_out, version_str_out) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+    result = source.GetServerInfo(config_source_out) ;
 
     return result ;
   }

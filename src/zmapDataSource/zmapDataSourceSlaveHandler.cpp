@@ -75,9 +75,14 @@ ZMapThreadReturnCode zmapDataSourceThreadRequestHandler(void **slave_data, void 
   ZMapThreadReturnCode thread_rc = ZMAPTHREAD_RETURNCODE_OK ;
   DataSource *source = static_cast<DataSource *>(request_in) ;
   DataSlave data_slave ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   char *config_file = NULL ;
   ZMapURL url_obj = NULL ;
   char *version_str = NULL ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  ZMapConfigSource config_source = NULL ;  
+
   ZMapFeatureSequenceMap sequence_map = NULL ;
   int start = 0, end = 0 ;
   ZMapFeatureContext context = NULL ;
@@ -101,7 +106,11 @@ ZMapThreadReturnCode zmapDataSourceThreadRequestHandler(void **slave_data, void 
 
       thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
     }
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   else if (!data_slave.GetServerInfo(*source, &config_file, &url_obj, &version_str)
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  else if (!data_slave.GetServerInfo(*source, &config_source)
            || !data_slave.GetSequenceData(*source, &sequence_map, &start, &end))
     {
       // Get all the params needed for the server calls.
@@ -181,7 +190,11 @@ ZMapThreadReturnCode zmapDataSourceThreadRequestHandler(void **slave_data, void 
             {
             case ZMAP_SERVERREQ_CREATE:
               {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
                 req_any = zMapServerRequestCreate(server_request, config_file, url_obj, version_str) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+                req_any = zMapServerRequestCreate(server_request, config_source) ;
 
                 break ;
               }

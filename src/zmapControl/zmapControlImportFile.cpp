@@ -488,6 +488,8 @@ static void importSource(ZMapConfigSource server,
           importSource(child, view, sequence_map, req_sequence, req_start, req_end, recent_only) ;
         }
     }
+
+  return ;
 }
 
 
@@ -569,7 +571,6 @@ using namespace ZMapDataSource ;
 static void importNewDialogResponseCB(GtkDialog *dialog, gint response_id, gpointer data) ;
 static void newImportFile(MainFrame main_frame) ;
 
-static void newSequenceCallBackFunc(DataSourceSequence *features_source, void *user_data) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 static void makeNewPanel(MainFrame main_frame, ZMapFeatureSequenceMap sequence_map, int req_start, int req_end) ;
@@ -582,6 +583,9 @@ static void importNewSource(ZMapConfigSource server,
                             const int req_end,
                             const bool recent_only) ;
 static void newCallBackFunc(DataSourceFeatures *features_source, void *user_data) ;
+
+static void newSequenceCallBackFunc(DataSourceSequence *sequence_source, void *user_data) ;
+
 
 // SCAFFOLD - THREAD TESTING
 // Test dialog for new server stuff....
@@ -725,11 +729,12 @@ static void importNewSource(ZMapConfigSource server,
                             const bool recent_only)
 {
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   if (!recent_only || server->recent)
     {
       createSourceData(view, sequence_map, server) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       GError *g_error = NULL ;
       zMapViewSetUpServerConnection(view, server, req_sequence, req_start, req_end, false, &g_error) ;
 
@@ -739,23 +744,29 @@ static void importNewSource(ZMapConfigSource server,
                       g_quark_to_string(server->name_),
                       (g_error ? g_error->message : "<no error>")) ;
         }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+      // DON'T THINK WE NEED THIS STEP FOR THIS CODE
       // Recurse through children
       for (auto child : server->children)
         {
           importSource(child, view, sequence_map, req_sequence, req_start, req_end, recent_only) ;
         }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
       // Create a server connection for the source and start getting the data.
       if (server)
         {
           GList *req_featuresets = NULL ;
-          const string url(server->url()) ;
           ZMapFeatureContextMap context_map ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+          const string url(server->url()) ;
           const string config_file = string("") ;
           const string version = string("") ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
           ZMapFeatureContext context ;
 
 
@@ -763,9 +774,16 @@ static void importNewSource(ZMapConfigSource server,
           context_map = zMapViewGetContextMap(view) ;
           context = zMapViewCreateContext(view, req_featuresets, NULL) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
           DataSourceFeatures *my_feature_request = new DataSourceFeatures(sequence_map, req_start, req_end,
                                                                           url, config_file, version,
                                                                           context, &(context_map->styles)) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+          DataSourceFeatures *my_feature_request = new DataSourceFeatures(sequence_map, req_start, req_end,
+                                                                          server,
+                                                                          context, &(context_map->styles)) ;
+
 
           if (!(my_feature_request->SendRequest(newCallBackFunc, view)))
             {
@@ -776,7 +794,6 @@ static void importNewSource(ZMapConfigSource server,
 
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
           // Try a sequence request
           GList *dna_req_featuresets = NULL ;
           GQuark dna_id = g_quark_from_string("dna") ;
@@ -788,9 +805,16 @@ static void importNewSource(ZMapConfigSource server,
 
           const string acedb_url("acedb://any:any@gen1b:20000?use_methods=false&gff_version=2") ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
           DataSourceSequence *my_sequence_request = new DataSourceSequence(sequence_map, req_start, req_end,
                                                                            acedb_url, config_file, version,
                                                                            context, &(context_map->styles)) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+          DataSourceSequence *my_sequence_request = new DataSourceSequence(sequence_map, req_start, req_end,
+                                                                           server,
+                                                                           context, &(context_map->styles)) ;
+
 
           if (!(my_sequence_request->SendRequest(newSequenceCallBackFunc, my_sequence_request)))
             {
@@ -798,16 +822,14 @@ static void importNewSource(ZMapConfigSource server,
 
               delete my_sequence_request ;
             }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 
         }
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
   return ;

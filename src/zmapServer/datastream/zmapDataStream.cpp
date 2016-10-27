@@ -221,6 +221,7 @@ ZMapDataStreamStruct::ZMapDataStreamStruct(const GQuark source_name,
                                            const int end)
   : type(ZMapDataStreamType::UNK), 
     source_name_(source_name),
+    sequence_{nullptr},
     start_(start),
     end_(end),
     error_(NULL),
@@ -236,6 +237,8 @@ ZMapDataStreamStruct::ZMapDataStreamStruct(const GQuark source_name,
 
   if (sequence)
     sequence_ = g_strdup(sequence) ;
+
+  return ;
 }
 
 ZMapDataStreamGIOStruct::ZMapDataStreamGIOStruct(const GQuark source_name, 

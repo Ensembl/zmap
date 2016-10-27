@@ -141,7 +141,7 @@ void zMapViewSetUpServerConnection(ZMapView zmap_view,
   if (!current_server->delayed)   // skip if delayed (we'll only request data when asked to)
     {
       /* Check for required fields from config, if not there then we can't connect. */
-      if (!current_server->url())
+     if (!current_server->url())
         {
           /* url is absolutely required. Skip if there isn't one. */
           g_set_error(error, ZMAP_VIEW_ERROR, ZMAPVIEW_ERROR_CONNECT,

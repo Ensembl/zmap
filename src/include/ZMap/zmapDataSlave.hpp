@@ -58,8 +58,15 @@ class DataSlave
   // base object ops.
   bool GetSequenceData(DataSource &source,
                        ZMapFeatureSequenceMap *sequence_map_out, int *start_out, int *end_out) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   bool GetServerInfo(DataSource &source,
                      char **config_file_out, ZMapURL *url_obj_out, char **version_str_out) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  bool GetServerInfo(DataSource &source,
+                     ZMapConfigSource *config_source_out) ;
+
+
   DataSourceRequestType GetRequestType(DataSource &source) ;
   bool SetError(DataSource &source_object, const char *err_msg) ;
 

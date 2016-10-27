@@ -64,19 +64,34 @@ namespace ZMapDataSource
 
   // Note that for  url_ string it has to be () and not {}...I can't remember the exact reason but
   // there's some stupidity in C++ about this...it's in Scott Meyers book about C11/C14....
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   DataSource::DataSource(DataSourceRequestType request, 
                          ZMapFeatureSequenceMap sequence_map, int start, int end,
                          const string &url, const string &config_file, const string &version)
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  DataSource::DataSource(DataSourceRequestType request, 
+                         ZMapFeatureSequenceMap sequence_map, int start, int end,
+                         ZMapConfigSource config_source)
     : reply_{DataSourceReplyType::INVALID}, state_{DataSourceState::INVALID},
     thread_(zmapDataSourceThreadRequestHandler,
             zmapDataSourceThreadTerminateHandler, zmapDataSourceThreadDestroyHandler),
     user_func_{NULL}, user_data_{NULL},
     request_{request}, 
     sequence_map_{sequence_map}, start_{start}, end_{end},
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     url_(url), config_file_(config_file), version_(version),
     url_obj_{NULL}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  config_source_{config_source}
+
 {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   int url_parse_error ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   if (request != DataSourceRequestType::GET_FEATURES && request != DataSourceRequestType::GET_SEQUENCE)
     {
@@ -90,6 +105,8 @@ namespace ZMapDataSource
     {
       throw invalid_argument("Invalid start/end.") ;
     }
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   else if (!(url_.length()))
     {
       throw invalid_argument("Missing server url.") ;
@@ -98,6 +115,8 @@ namespace ZMapDataSource
     {
       throw invalid_argument("Bad url.") ;
     }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   // Start polling, if this means we do too much polling we can have a function to start or do it
   // as part of the SendRequest....though that might induce some timing problems.
@@ -150,15 +169,23 @@ namespace ZMapDataSource
     return result ;
   }
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   bool DataSource::GetServerInfo(char **config_file_out, ZMapURL *url_obj_out, char **version_str_out)
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+    bool DataSource::GetServerInfo(ZMapConfigSource *config_source_out)
   {
     bool result = TRUE ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     *config_file_out = (char *)config_file_.c_str() ;
 
     *url_obj_out = url_obj_ ;
 
     *version_str_out = (char *)version_.c_str() ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+    *config_source_out = config_source_ ;
 
     return result ;
   }
@@ -243,8 +270,12 @@ namespace ZMapDataSource
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     url_free(url_obj_) ;
     url_obj_ = NULL ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+    // stuff will need to be freed from the config source....
 
     state_ = DataSourceState::INVALID ;
 
@@ -257,11 +288,17 @@ namespace ZMapDataSource
   // Features subclass
   //
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   DataSourceFeatures::DataSourceFeatures(ZMapFeatureSequenceMap sequence_map, int start, int end,
                                          const string &config_file, const string &url, const string &server_version,
                                          ZMapFeatureContext context_inout, ZMapStyleTree *styles)
-    : DataSource{DataSourceRequestType::GET_FEATURES, sequence_map, start, end, config_file, url, server_version},
-    styles_{styles}, context_{context_inout}, err_msg_{}, exit_code_{0}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  DataSourceFeatures::DataSourceFeatures(ZMapFeatureSequenceMap sequence_map, int start, int end,
+                                         ZMapConfigSource config_source,
+                                         ZMapFeatureContext context_inout, ZMapStyleTree *styles)
+    : DataSource{DataSourceRequestType::GET_FEATURES, sequence_map, start, end, config_source},
+                                    styles_{styles}, context_{context_inout}, err_msg_{}, exit_code_{0}
 {
   if (!context_inout)
     {
@@ -427,10 +464,21 @@ namespace ZMapDataSource
   // Sequence subclass
   //
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   DataSourceSequence::DataSourceSequence(ZMapFeatureSequenceMap sequence_map, int start, int end,
                                          const string &config_file, const string &url, const string &server_version,
                                          ZMapFeatureContext context_inout, ZMapStyleTree *styles)
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  DataSourceSequence::DataSourceSequence(ZMapFeatureSequenceMap sequence_map, int start, int end,
+                                         ZMapConfigSource config_source,
+                                         ZMapFeatureContext context_inout, ZMapStyleTree *styles)
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     : DataSource{DataSourceRequestType::GET_SEQUENCE, sequence_map, start, end, config_file, url, server_version},
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+    : DataSource{DataSourceRequestType::GET_SEQUENCE, sequence_map, start, end, config_source},
     styles_{styles}, context_{context_inout}, err_msg_{}, exit_code_{0}
 {
   if (!context_inout)

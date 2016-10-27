@@ -72,9 +72,16 @@ namespace ZMapDataSource
 
     enum class DataSourceState {INVALID, INIT, WAITING, GOT_REPLY, GOT_ERROR, FINISHED} ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     DataSource(DataSourceRequestType request, 
                ZMapFeatureSequenceMap sequence_map, int start, int end,
                const std::string &url, const std::string &config_file, const std::string &version) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+    DataSource(DataSourceRequestType request, 
+               ZMapFeatureSequenceMap sequence_map, int start, int end,
+               ZMapConfigSource config_source) ;
+
 
     bool SendRequest(UserBaseCallBackFunc user_func, void *user_data) ;
 
@@ -100,7 +107,12 @@ namespace ZMapDataSource
 
     bool GetSequenceData(ZMapFeatureSequenceMap *sequence_map_out, int *start_out, int *end_out) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     bool GetServerInfo(char **config_file_out, ZMapURL *url_obj_out, char **version_str_out) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+    bool GetServerInfo(ZMapConfigSource *config_source_out) ;
+
 
     DataSourceRequestType GetRequestType() ;
 
@@ -123,6 +135,8 @@ namespace ZMapDataSource
     ZMapFeatureSequenceMap sequence_map_ ;
     int start_, end_ ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     std::string url_ ;
 
     std::string config_file_ ;
@@ -130,6 +144,11 @@ namespace ZMapDataSource
     std::string version_ ;
 
     ZMapURL url_obj_ ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+    // I'm making this a pointer because we don't have the code in place to copy these objects sensibly.
+    ZMapConfigSource config_source_ ;
+
+
 
     const char *thread_err_msg_ ;
 
@@ -148,8 +167,14 @@ namespace ZMapDataSource
 
   typedef void (*UserFeaturesCallBackFunc)(DataSourceFeatures *data_source, void *user_data) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     DataSourceFeatures(ZMapFeatureSequenceMap sequence_map, int start, int end,
                        const std::string &url, const std::string &config_file, const std::string &server_version,
+                       ZMapFeatureContext context_inout, ZMapStyleTree *styles) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+    DataSourceFeatures(ZMapFeatureSequenceMap sequence_map, int start, int end,
+                       ZMapConfigSource config_source,
                        ZMapFeatureContext context_inout, ZMapStyleTree *styles) ;
 
     bool SendRequest(UserFeaturesCallBackFunc user_func, void *user_data) ;
@@ -202,9 +227,16 @@ namespace ZMapDataSource
 
   typedef void (*UserSequenceCallBackFunc)(DataSourceSequence *data_source, void *user_data) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     DataSourceSequence(ZMapFeatureSequenceMap sequence_map, int start, int end,
                        const std::string &config_file, const std::string &url, const std::string &server_version,
                        ZMapFeatureContext context_inout, ZMapStyleTree *styles) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+    DataSourceSequence(ZMapFeatureSequenceMap sequence_map, int start, int end,
+                       ZMapConfigSource config_source,
+                       ZMapFeatureContext context_inout, ZMapStyleTree *styles) ;
+
 
     bool SendRequest(UserSequenceCallBackFunc user_func, void *user_data) ;
 
