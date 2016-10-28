@@ -144,7 +144,7 @@ ZMapConfigSourceStruct::ZMapConfigSourceStruct()
     group(0),
     recent(false),
     parent(NULL),
-    children{nullptr},
+    children(),
   url_(NULL),
   url_obj_(NULL),
   url_parse_error_(0),
