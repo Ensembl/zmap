@@ -190,7 +190,7 @@ void ZMapConfigSourceStruct::setUrl(const char *url)
 
   if (url_obj_)
     {
-      g_free(url_obj_) ;
+      url_free(url_obj_) ;
       url_obj_ = NULL ;
     }
 
