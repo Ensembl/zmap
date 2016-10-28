@@ -286,7 +286,7 @@ static void updateSourcesListAddSource(MainFrame main_data,
                                        GtkTreeIter *parent_tree_iter)
 {
   /* Only show recent sources, if applicable */
-  if (main_data->show_all || source->recent)
+  if (source && (main_data->show_all || source->recent))
     {
       string source_type = source->type() ;
 
