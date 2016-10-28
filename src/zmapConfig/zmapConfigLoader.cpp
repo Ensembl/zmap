@@ -175,7 +175,7 @@ ZMapConfigSourceStruct::~ZMapConfigSourceStruct()
   if(format)
     g_free(format);
   if (url_obj_)
-    g_free(url_obj_) ;
+    url_free(url_obj_) ;
 }
 
 

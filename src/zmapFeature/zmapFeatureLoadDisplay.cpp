@@ -462,7 +462,8 @@ ZMapFeatureSequenceMapStructType::ZMapFeatureSequenceMapStructType()
     dataset(NULL),
     sequence(NULL),
     start(0),
-    end(0)
+    end(0),
+    flags()
 {
   for (int i = 0; i < ZMAPFLAG_NUM_FLAGS; ++i)
     {
