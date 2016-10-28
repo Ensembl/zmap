@@ -895,31 +895,37 @@ static ZMapServerResponseType destroyConnection(void *server_in)
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   PipeServer server = (PipeServer)server_in ;
 
-
   if (child_pid_debug_G)
     zMapLogWarning("Child pid %d destroying server connection.", server->child_pid) ;
 
-  /* Slightly tricky here, we can be requested to destroy the connection _before_ the
-   * child has died so we need to replace the standard child watch routine with one that
-   * _only_ reaps the child and nothing else, this will be called sometime later when
-   * the child dies. (no point in recording watch id for reap callback
-   * as once we exit here this connection no longer exists. */
-  if (server->child_watch_id)
-    g_source_remove(server->child_watch_id) ;
+  if (!server)
+    {
+      zMapLogWarning("%s", "pipe: Tried to destroy a server that is null") ;
+    }
+  else
+    {
+      /* Slightly tricky here, we can be requested to destroy the connection _before_ the
+       * child has died so we need to replace the standard child watch routine with one that
+       * _only_ reaps the child and nothing else, this will be called sometime later when
+       * the child dies. (no point in recording watch id for reap callback
+       * as once we exit here this connection no longer exists. */
+      if (server->child_watch_id)
+        g_source_remove(server->child_watch_id) ;
 
-  server->child_watch_id = 0 ;
-  g_child_watch_add(server->child_pid, childReapOnlyCB, NULL) ;
+      server->child_watch_id = 0 ;
+      g_child_watch_add(server->child_pid, childReapOnlyCB, NULL) ;
 
-  if (server->url)
-    g_free(server->url) ;
+      if (server->url)
+        g_free(server->url) ;
 
-  if (server->script_path)
-    g_free(server->script_path) ;
+      if (server->script_path)
+        g_free(server->script_path) ;
 
-  if (server->last_err_msg)
-    g_free(server->last_err_msg) ;
+      if (server->last_err_msg)
+        g_free(server->last_err_msg) ;
 
-  g_free(server) ;
+      g_free(server) ;
+    }
 
   return result ;
 }
