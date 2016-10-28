@@ -1742,7 +1742,10 @@ bool ZMapDataStreamGIOStruct::parseBodyLine(GError **error)
   bool result = zMapGFFParseLine(parser_, buffer_line_->str) ;
 
   if (!result && error)
-    *error = zMapGFFGetError(parser_) ;
+    {
+      // the caller takes ownership of the error, so make a copy of the error in the gff parser
+      *error = g_error_copy(zMapGFFGetError(parser_)) ;
+    }
 
   readLine() ;
 
