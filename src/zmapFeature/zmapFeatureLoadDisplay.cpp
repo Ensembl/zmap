@@ -705,6 +705,8 @@ void ZMapFeatureSequenceMapStructType::createTrackhubSourceChild(ZMapConfigSourc
 
       if (zmap_url && zmap_url->file)
         track_name = string(zmap_url->file) ;
+
+      url_free(zmap_url) ;
     }
 
   if (!track_name.empty())
