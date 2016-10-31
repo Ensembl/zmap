@@ -42,7 +42,8 @@
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 // echoes typedef in zmapConfigStanzaStructs.hpp unfortunately.
-typedef struct ZMapConfigSourceStruct *ZMapConfigSource ;
+class ZMapConfigSourceStruct ;
+typedef ZMapConfigSourceStruct *ZMapConfigSource ;
 
 
 
