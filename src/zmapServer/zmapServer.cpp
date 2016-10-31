@@ -183,7 +183,7 @@ ZMapServerResponseType zMapServerCreateConnection(ZMapServer *server_out, void *
       else
         {
           /* COPY/REPARSE the url into server... with paranoia as it managed to parse 1st time! */
-          if (!(server->url = url_parse(config_source->urlObj()->url, &parse_error)))
+          if (!(server->url = url_parse(config_source->urlObj()->url(), &parse_error)))
             {
               result = ZMAP_SERVERRESPONSE_REQFAIL ;
               zMapServerSetErrorMsg(server, ZMAPSERVER_MAKEMESSAGE(config_source->urlObj()->protocol,
