@@ -526,13 +526,14 @@ ZMapServerResponseType zMapServerGetContextSequences(ZMapServer server, ZMapStyl
 ZMapServerResponseType zMapServerCloseConnection(ZMapServer server)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
+  zMapReturnValIfFail(server, ZMAP_SERVERRESPONSE_REQFAIL) ;
 
   result = server->last_response
     = (server->funcs->close)(server->server_conn) ;
 
   if (result != ZMAP_SERVERRESPONSE_OK)
-    zMapServerSetErrorMsg(server,ZMAPSERVER_MAKEMESSAGE(server->url->protocol,
-                                                        server->url->host, "%s",
+    zMapServerSetErrorMsg(server,ZMAPSERVER_MAKEMESSAGE((server->url ? server->url->protocol : "",
+                                                         (server->url ? server->url->host : ""), "%s",
                                                         (server->funcs->errmsg)(server->server_conn))) ;
 
   return result ;
