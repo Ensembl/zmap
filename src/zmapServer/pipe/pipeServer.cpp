@@ -353,6 +353,7 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   PipeServer server = (PipeServer)server_in ;
+  
   GError *gff_pipe_err = NULL ;
   GIOStatus pipe_status = G_IO_STATUS_NORMAL ;
 
@@ -504,6 +505,7 @@ static ZMapServerResponseType getInfo(void *server_in, ZMapServerReqGetServerInf
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   PipeServer server = (PipeServer)server_in ;
+  zMapReturnValIfFail(server, ZMAP_SERVERRESPONSE_REQFAIL) ;
 
   if ((result = childHasFailed(server, NULL)) == ZMAP_SERVERRESPONSE_OK)
     {
@@ -540,6 +542,7 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   PipeServer server = (PipeServer)server_in ;
+  zMapReturnValIfFail(server, ZMAP_SERVERRESPONSE_REQFAIL) ;
 
   if ((result = childHasFailed(server, NULL)) == ZMAP_SERVERRESPONSE_OK)
     {
@@ -573,6 +576,7 @@ static ZMapServerResponseType getStyles(void *server_in, GHashTable **styles_out
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   PipeServer server = (PipeServer)server_in ;
+  zMapReturnValIfFail(server, ZMAP_SERVERRESPONSE_REQFAIL) ;
 
   if ((result = childHasFailed(server, NULL)) == ZMAP_SERVERRESPONSE_OK)
     {
@@ -593,6 +597,7 @@ static ZMapServerResponseType haveModes(void *server_in, gboolean *have_mode)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   PipeServer server = (PipeServer)server_in ;
+  zMapReturnValIfFail(server, ZMAP_SERVERRESPONSE_REQFAIL) ;
 
   if ((result = childHasFailed(server, NULL)) == ZMAP_SERVERRESPONSE_OK)
     {
@@ -607,6 +612,7 @@ static ZMapServerResponseType getSequences(void *server_in, GList *sequences_ino
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_UNSUPPORTED ;
   PipeServer server = (PipeServer)server_in ;
+  zMapReturnValIfFail(server, ZMAP_SERVERRESPONSE_REQFAIL) ;
 
   if ((result = childHasFailed(server, NULL)) == ZMAP_SERVERRESPONSE_OK)
     {
@@ -631,6 +637,7 @@ static ZMapServerResponseType setContext(void *server_in, ZMapFeatureContext fea
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   PipeServer server = (PipeServer)server_in ;
+  zMapReturnValIfFail(server, ZMAP_SERVERRESPONSE_REQFAIL) ;
 
   if ((result = childHasFailed(server, NULL)) == ZMAP_SERVERRESPONSE_OK)
     {
@@ -655,6 +662,8 @@ static ZMapServerResponseType getFeatures(void *server_in, ZMapStyleTree &styles
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   PipeServer server = (PipeServer)server_in ;
+  zMapReturnValIfFail(server, ZMAP_SERVERRESPONSE_REQFAIL) ;
+
   GetFeaturesDataStruct get_features_data = {NULL} ;
 
   if ((result = childHasFailed(server, NULL)) == ZMAP_SERVERRESPONSE_OK)
@@ -735,6 +744,7 @@ static ZMapServerResponseType getContextSequence(void *server_in,
                                                  int *dna_length_out, char **dna_sequence_out)
 {
   PipeServer server = (PipeServer)server_in ;
+  zMapReturnValIfFail(server, ZMAP_SERVERRESPONSE_REQFAIL) ;
 
   if ((server->result = childHasFailed(server, NULL)) == ZMAP_SERVERRESPONSE_OK)
     {
@@ -789,6 +799,7 @@ static const char *lastErrorMsg(void *server_in)
 {
   char *err_msg = NULL ;
   PipeServer server = (PipeServer)server_in ;
+  zMapReturnValIfFail(server, err_msg) ;
 
   if (server->last_err_msg)
     err_msg = server->last_err_msg ;
@@ -801,6 +812,7 @@ static ZMapServerResponseType getStatus(void *server_conn, gint *exit_code)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   PipeServer server = (PipeServer)server_conn ;
+  zMapReturnValIfFail(server, ZMAP_SERVERRESPONSE_REQFAIL) ;
 
   if ((result = childHasFailed(server, NULL)) == ZMAP_SERVERRESPONSE_OK)
     {
@@ -827,6 +839,7 @@ static ZMapServerResponseType getConnectState(void *server_conn, ZMapServerConne
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   PipeServer server = (PipeServer)server_conn ;
+  zMapReturnValIfFail(server, ZMAP_SERVERRESPONSE_REQFAIL) ;
 
   if ((result = childHasFailed(server, NULL)) == ZMAP_SERVERRESPONSE_OK)
     {
@@ -845,6 +858,7 @@ static ZMapServerResponseType closeConnection(void *server_in)
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   PipeServer server = (PipeServer)server_in ;
   GError *gff_pipe_err = NULL ;
+  zMapReturnValIfFail(server, ZMAP_SERVERRESPONSE_REQFAIL) ;
 
 
   /* check clear up here is child pid has already gone..... */
@@ -894,38 +908,32 @@ static ZMapServerResponseType destroyConnection(void *server_in)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   PipeServer server = (PipeServer)server_in ;
+  zMapReturnValIfFail(server, ZMAP_SERVERRESPONSE_REQFAIL) ;
 
   if (child_pid_debug_G)
     zMapLogWarning("Child pid %d destroying server connection.", server->child_pid) ;
 
-  if (!server)
-    {
-      zMapLogWarning("%s", "pipe: Tried to destroy a server that is null") ;
-    }
-  else
-    {
-      /* Slightly tricky here, we can be requested to destroy the connection _before_ the
-       * child has died so we need to replace the standard child watch routine with one that
-       * _only_ reaps the child and nothing else, this will be called sometime later when
-       * the child dies. (no point in recording watch id for reap callback
-       * as once we exit here this connection no longer exists. */
-      if (server->child_watch_id)
-        g_source_remove(server->child_watch_id) ;
+  /* Slightly tricky here, we can be requested to destroy the connection _before_ the
+   * child has died so we need to replace the standard child watch routine with one that
+   * _only_ reaps the child and nothing else, this will be called sometime later when
+   * the child dies. (no point in recording watch id for reap callback
+   * as once we exit here this connection no longer exists. */
+  if (server->child_watch_id)
+    g_source_remove(server->child_watch_id) ;
 
-      server->child_watch_id = 0 ;
-      g_child_watch_add(server->child_pid, childReapOnlyCB, NULL) ;
+  server->child_watch_id = 0 ;
+  g_child_watch_add(server->child_pid, childReapOnlyCB, NULL) ;
 
-      if (server->url)
-        g_free(server->url) ;
+  if (server->url)
+    g_free(server->url) ;
 
-      if (server->script_path)
-        g_free(server->script_path) ;
+  if (server->script_path)
+    g_free(server->script_path) ;
 
-      if (server->last_err_msg)
-        g_free(server->last_err_msg) ;
+  if (server->last_err_msg)
+    g_free(server->last_err_msg) ;
 
-      g_free(server) ;
-    }
+  g_free(server) ;
 
   return result ;
 }
