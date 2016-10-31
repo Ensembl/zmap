@@ -292,7 +292,7 @@ ZMapDataStreamBEDStruct::ZMapDataStreamBEDStruct(ZMapConfigSource source,
 
   BlatLibErrHandler err_handler ;
   string err_msg ;
-
+  
   if (err_handler.errTry())
     {
       // Open the file
@@ -308,14 +308,17 @@ ZMapDataStreamBEDStruct::ZMapDataStreamBEDStruct(ZMapConfigSource source,
       // Remember the original error message
       err_msg = err_handler.errMsg() ;
 
-      if (strncasecmp(file_name, "http://", 7) == 0 && strlen(file_name) > 7 && err_handler.errTry())
+      if (strncasecmp(file_name, "http://", 7) == 0 && strlen(file_name) > 7)
         {
-          char *file_name_copy = g_strdup_printf("https://%s", file_name + 7) ;
-          bed_features_ = bedLoadAll(file_name_copy) ;
-          g_free(file_name_copy) ;
-        }
+          if (err_handler.errTry())
+            {
+              char *file_name_copy = g_strdup_printf("https://%s", file_name + 7) ;
+              bed_features_ = bedLoadAll(file_name_copy) ;
+              g_free(file_name_copy) ;
+            }
 
-      is_err = err_handler.errCatch() ;
+          is_err = err_handler.errCatch() ;
+        }
     }
 
   if (is_err)
@@ -381,14 +384,17 @@ ZMapDataStreamBIGBEDStruct::ZMapDataStreamBIGBEDStruct(ZMapConfigSource source,
       err_msg = err_handler.errMsg() ;
 
       /* If it's http try again as https */
-      if (strncasecmp(file_name, "http://", 7) == 0 && strlen(file_name) > 7 && err_handler.errTry())
+      if (strncasecmp(file_name, "http://", 7) == 0 && strlen(file_name) > 7)
         {
-          char *file_name_copy = g_strdup_printf("https://%s", file_name + 7) ;
-          bbi_file_ = bigBedFileOpen(file_name_copy) ;
-          g_free(file_name_copy) ;
-        }
+          if (err_handler.errTry())
+            {
+              char *file_name_copy = g_strdup_printf("https://%s", file_name + 7) ;
+              bbi_file_ = bigBedFileOpen(file_name_copy) ;
+              g_free(file_name_copy) ;
+            }
 
-      is_err = err_handler.errCatch() ;
+          is_err = err_handler.errCatch() ;
+        }
     }
 
   if (is_err)
@@ -449,14 +455,17 @@ ZMapDataStreamBIGWIGStruct::ZMapDataStreamBIGWIGStruct(ZMapConfigSource source,
       err_msg = err_handler.errMsg() ;
 
       /* If it's http try again as https */
-      if (strncasecmp(file_name, "http://", 7) == 0 && strlen(file_name) > 7 && err_handler.errTry())
+      if (strncasecmp(file_name, "http://", 7) == 0 && strlen(file_name) > 7)
         {
-          char *file_name_copy = g_strdup_printf("https://%s", file_name + 7) ;
-          bbi_file_ = bigWigFileOpen(file_name_copy) ;
-          g_free(file_name_copy) ;
+          if (err_handler.errTry())
+            {
+              char *file_name_copy = g_strdup_printf("https://%s", file_name + 7) ;
+              bbi_file_ = bigWigFileOpen(file_name_copy) ;
+              g_free(file_name_copy) ;
+            }
+        
+          is_err = err_handler.errCatch() ;
         }
-
-      is_err = err_handler.errCatch() ;
     }
 
   if (is_err)
@@ -2455,7 +2464,8 @@ BlatLibErrHandler::~BlatLibErrHandler()
     }
 }
 
-// Initialises the handler. Returns true if ok.
+// Initialises the handler. Returns true if ok. Must be called before errCatch. There must be one
+// call to errCatch for each call to errTry.
 bool BlatLibErrHandler::errTry()
 {
   bool result = false ;
@@ -2471,7 +2481,8 @@ bool BlatLibErrHandler::errTry()
   return result ;
 }
 
-// Ends the handler. Returns true if there was an error.
+// Ends the handler. Returns true if there was an error. Must be called after errTry. There must
+// be one call to errCatch for each call to errTry.
 bool BlatLibErrHandler::errCatch()
 {
   bool result = false ;
