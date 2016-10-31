@@ -36,7 +36,15 @@
 #include <ZMap/zmapConfigStyleDefaults.hpp>
 #include <ZMap/zmapStyle.hpp>
 #include <ZMap/zmapUtils.hpp>
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #include <ZMap/zmapFeatureLoadDisplay.hpp>
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+// echoes typedef in zmapConfigStanzaStructs.hpp unfortunately.
+typedef struct ZMapConfigSourceStruct *ZMapConfigSource ;
+
+
 
 /* Some basic macros. */
 #define ZMAPFEATURE_FORWARD(FEATURE)       ((FEATURE)->strand == ZMAPSTRAND_FORWARD)

@@ -73,8 +73,11 @@ public:
   gboolean req_styles;
   int group;
   bool recent;
+
   ZMapConfigSourceStruct* parent ;
+
   std::list<ZMapConfigSourceStruct*> children ;
+
 #define SOURCE_GROUP_NEVER    0     // these are bitfields, and correspond to the obvious strings
 #define SOURCE_GROUP_START    1
 #define SOURCE_GROUP_DELAYED  2

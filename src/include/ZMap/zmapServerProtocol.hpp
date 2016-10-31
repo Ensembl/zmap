@@ -35,9 +35,10 @@
 #include <glib.h>
 
 #include <ZMap/zmapEnum.hpp>
+#include <ZMap/zmapConfigStanzaStructs.hpp>
 #include <ZMap/zmapUrl.hpp>
 #include <ZMap/zmapFeature.hpp>
-
+#include <ZMap/zmapFeatureLoadDisplay.hpp>
 
 
 /* Requests can be of different types with different input parameters and returning

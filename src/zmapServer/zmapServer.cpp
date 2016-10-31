@@ -172,7 +172,7 @@ ZMapServerResponseType zMapServerCreateConnection(ZMapServer *server_out, void *
 
   if (result == ZMAP_SERVERRESPONSE_OK)
     {
-      if (!config_source->urlObj())
+      if (!config_source->urlObj() || !(config_source->urlObj()->url))
         {
           char *err_msg ;
 

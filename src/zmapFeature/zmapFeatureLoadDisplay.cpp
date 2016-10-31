@@ -1062,7 +1062,7 @@ GList* ZMapFeatureSequenceMapStructType::getSources(const bool include_children)
           if (source && source->url() && *source->url() != '\0' && strncasecmp(source->url(), "trackhub://", 11) != 0)
             result = g_list_append(result, source) ;
 
-          if (include_children)
+          if (include_children && !(source->children.empty()))
             getSourceChildren(source, &result) ;
         }
     }
@@ -1079,10 +1079,24 @@ void ZMapFeatureSequenceMapStructType::getSourceChildren(ZMapConfigSource source
   
   for (ZMapConfigSource child : source->children)
     {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       if (child && child->url() && *child->url() != '\0' && strncasecmp(child->url(), "trackhub://", 11) != 0)
         *result = g_list_append(*result, child) ;
 
       getSourceChildren(child, result) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+      // SHOULD THESE IF CLAUSES ACTUALLY BE COMBINED...????
+
+      if (child && child->url() && *child->url() != '\0' && strncasecmp(child->url(), "trackhub://", 11) != 0)
+        *result = g_list_append(*result, child) ;
+
+      if (child)
+        getSourceChildren(child, result) ;
+
+
+
     }
 }
 

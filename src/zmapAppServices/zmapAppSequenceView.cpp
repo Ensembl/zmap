@@ -303,7 +303,9 @@ static void updateSourcesListAddSource(MainFrame main_data,
       /* Also add child sources, if any */
       for (ZMapConfigSource child_source : source->children)
         {
-          updateSourcesListAddSource(main_data, store, child_source, &tree_iter) ;
+          // HACKED FOR NOW...
+          if (child_source)
+            updateSourcesListAddSource(main_data, store, child_source, &tree_iter) ;
         }
     }
 

@@ -41,6 +41,7 @@
 #include <ZMap/zmapStyle.hpp>
 #include <ZMap/zmapStyleTree.hpp>
 #include <ZMap/zmapConfigIni.hpp>
+#include <ZMap/zmapConfigStanzaStructs.hpp>
 #include <ZMap/zmapConfigStrings.hpp>
 
 
