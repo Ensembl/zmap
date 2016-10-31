@@ -532,7 +532,7 @@ ZMapServerResponseType zMapServerCloseConnection(ZMapServer server)
     = (server->funcs->close)(server->server_conn) ;
 
   if (result != ZMAP_SERVERRESPONSE_OK)
-    zMapServerSetErrorMsg(server,ZMAPSERVER_MAKEMESSAGE((server->url ? server->url->protocol : "",
+    zMapServerSetErrorMsg(server,ZMAPSERVER_MAKEMESSAGE((server->url ? server->url->protocol : ""),
                                                          (server->url ? server->url->host : ""), "%s",
                                                         (server->funcs->errmsg)(server->server_conn))) ;
 
