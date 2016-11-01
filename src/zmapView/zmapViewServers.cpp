@@ -71,7 +71,7 @@ static GHashTable *getFeatureSourceHash(GList *sources) ;
 
 static bool createStepList(ZMapView zmap_view, ZMapNewDataSource view_con, ZMapConnectionData connect_data,
                            ZMapConfigSource server,
-                           ZMapURL urlObj, const char *format, 
+                           const ZMapURL urlObj, const char *format, 
                            ZMapFeatureContext context, GList *req_featuresets, GList *req_biotypes,
                            gboolean dna_requested, gboolean req_styles, char *styles_file,
                            gboolean terminate) ;
@@ -750,7 +750,7 @@ static bool setUpServerConnectionByScheme(ZMapView zmap_view,
                                           GError **error)
 {
   bool result = true ;
-  ZMapURL zmap_url = current_server->urlObj() ;
+  const ZMapURL zmap_url = current_server->urlObj() ;
   terminate = FALSE ;
 
   /* URL may be empty for trackhub sources which are just parents of child data tracks */
@@ -876,7 +876,7 @@ static GHashTable *getFeatureSourceHash(GList *sources)
 
 static bool createStepList(ZMapView zmap_view, ZMapNewDataSource view_con, ZMapConnectionData connect_data,
                            ZMapConfigSource server,
-                           ZMapURL urlObj, const char *format,
+                           const ZMapURL urlObj, const char *format,
                            ZMapFeatureContext context, GList *req_featuresets, GList *req_biotypes,
                            gboolean dna_requested, gboolean req_styles, char *styles_file,
                            gboolean terminate)

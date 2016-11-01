@@ -649,7 +649,7 @@ gbtools::trackhub::Registry ZMapFeatureSequenceMapStructType::getTrackhubRegistr
 void ZMapFeatureSequenceMapStructType::createSourceChildren(ZMapConfigSource source,
                                                             GError **error)
 {
-  ZMapURL zmap_url = source->urlObj() ;
+  const ZMapURL zmap_url = source->urlObj() ;
 
   if (zmap_url && zmap_url->scheme == SCHEME_TRACKHUB)
     {

@@ -316,7 +316,7 @@ static gboolean createConnection(void **server_out, ZMapConfigSource config_sour
 
   EnsemblServer server ;
   Global global = &global_init_G ;
-  ZMapURL url = config_source->urlObj() ;
+  const ZMapURL url = config_source->urlObj() ;
 
   /* Always return a server struct as it contains error message stuff. */
   server = (EnsemblServer)g_new0(EnsemblServerStruct, 1) ;

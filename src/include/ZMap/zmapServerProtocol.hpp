@@ -131,7 +131,7 @@ typedef struct ZMapServerReqCreateStructType
 
   ZMapConfigSource config_source ; /* details about the configured source */
 
-  ZMapURL urlObj() { return config_source ? config_source->urlObj() : NULL; } ;
+  const ZMapURL urlObj() const { return config_source ? config_source->urlObj() : NULL; } ;
 
 } ZMapServerReqCreateStruct, *ZMapServerReqCreate ;
 
