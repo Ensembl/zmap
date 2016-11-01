@@ -227,18 +227,6 @@ const ZMapURL ZMapConfigSourceStruct::urlObj() const
   // fails. If the error is already set, then don't bother trying to re-parse.
   if (!url_obj_ && !url_parse_error_ && url_)
     {
-
-      // THIS SEEMS UNECESSARILY COMPLICATED...IF PARSE FAILS IT RETURNS NULL AND AN ERROR....
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      url_obj_ = url_parse(url_, &url_parse_error_) ;
-
-      if (url_parse_error_)
-        {
-          if (url_obj_)
-            url_obj_ = NULL ;
-        }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
       // Can return NULL and an error if it fails.
       url_obj_ = url_parse(url_, &url_parse_error_) ;
     }
