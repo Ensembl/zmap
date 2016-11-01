@@ -286,7 +286,7 @@ static void updateSourcesListAddSource(MainFrame main_data,
                                        GtkTreeIter *parent_tree_iter)
 {
   /* Only show recent sources, if applicable */
-  if (main_data->show_all || source->recent)
+  if (source && (main_data->show_all || source->recent))
     {
       string source_type = source->type() ;
 
@@ -303,7 +303,9 @@ static void updateSourcesListAddSource(MainFrame main_data,
       /* Also add child sources, if any */
       for (ZMapConfigSource child_source : source->children)
         {
-          updateSourcesListAddSource(main_data, store, child_source, &tree_iter) ;
+          // HACKED FOR NOW...
+          if (child_source)
+            updateSourcesListAddSource(main_data, store, child_source, &tree_iter) ;
         }
     }
 

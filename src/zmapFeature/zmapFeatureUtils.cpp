@@ -34,10 +34,12 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <zmapFeature_P.hpp>
-#include <ZMap/zmapPeptide.hpp>
 #include <ZMap/zmapUtils.hpp>
 #include <ZMap/zmapGLibUtils.hpp>
+#include <ZMap/zmapPeptide.hpp>
+#include <ZMap/zmapStyleTree.hpp>
+#include <zmapFeature_P.hpp>
+
 
 
 typedef struct SimpleParent2ChildDataStructType

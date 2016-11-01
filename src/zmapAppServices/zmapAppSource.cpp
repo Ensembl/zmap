@@ -395,6 +395,10 @@ GtkWidget *zMapAppCreateSource(ZMapFeatureSequenceMap sequence_map,
 
   gtk_widget_show_all(toplevel) ;
 
+  /* Hide the trackhub id widget because this is for internal use only */
+  if (main_data->trackdb_id_widg)
+    gtk_widget_hide_all(main_data->trackdb_id_widg) ;
+
   /* Only show widgets for the relevant file type (use given default) */
   if (main_data)
     {
@@ -437,6 +441,10 @@ GtkWidget *zMapAppEditSource(ZMapFeatureSequenceMap sequence_map,
                      GTK_SIGNAL_FUNC(toplevelDestroyCB), seq_data) ;
 
   gtk_widget_show_all(toplevel) ;
+
+  /* Hide the trackhub id widget because this is for internal use only */
+  if (main_data->trackdb_id_widg)
+    gtk_widget_hide_all(main_data->trackdb_id_widg) ;
 
   /* Update the panel with the info from the given source. This toggles visibility of the
    * appropriate widgets so must be done after show_all */
@@ -697,16 +705,25 @@ static GtkWidget* makeEntryWidget(const char *label_str,
                                   list<GtkWidget*> *widget_list,
                                   const bool activates_default)
 {
-  GtkWidget *label = gtk_label_new(label_str) ;
-  gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5) ;
-  gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
-  gtk_table_attach(table, label, col, col + 1, *row, *row + 1, GTK_FILL, GTK_SHRINK, xpad, ypad) ;
-
-  if (mandatory)
+  if (label_str)
     {
-      GdkColor color ;
-      gdk_color_parse("red", &color) ;
-      gtk_widget_modify_fg(label, GTK_STATE_NORMAL, &color) ;
+      GtkWidget *label = gtk_label_new(label_str) ;
+      gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5) ;
+      gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
+      gtk_table_attach(table, label, col, col + 1, *row, *row + 1, GTK_FILL, GTK_SHRINK, xpad, ypad) ;
+
+      if (mandatory)
+        {
+          GdkColor color ;
+          gdk_color_parse("red", &color) ;
+          gtk_widget_modify_fg(label, GTK_STATE_NORMAL, &color) ;
+        }
+
+      if (tooltip)
+        gtk_widget_set_tooltip_text(label, tooltip) ;
+
+      if (widget_list)
+        widget_list->push_back(label) ;
     }
 
   GtkWidget *entry = gtk_entry_new() ;
@@ -726,16 +743,10 @@ static GtkWidget* makeEntryWidget(const char *label_str,
     gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE) ;
 
   if (tooltip)
-    {
-      gtk_widget_set_tooltip_text(label, tooltip) ;
-      gtk_widget_set_tooltip_text(entry, tooltip) ;
-    }
+    gtk_widget_set_tooltip_text(entry, tooltip) ;
 
   if (widget_list)
-    {
-      widget_list->push_back(label) ;
-      widget_list->push_back(entry) ;
-    }
+    widget_list->push_back(entry) ;
 
   return entry ;
 }
@@ -1223,14 +1234,15 @@ static void makeTrackhubWidgets(MainFrame main_data,
                                 int &row,
                                 int &col)
 {
-  /* Display the trackDb details */
-  main_data->trackdb_id_widg = makeEntryWidget("ID :", NULL, "REQUIRED: The track database ID from the Ensembl Track Hub Registry. Click on the Search button to look up a track hub.",
-                                               table, &row, col, col + 6, TRUE, &main_data->trackhub_widgets);
-  main_data->trackdb_name_widg = makeEntryWidget("Name :", NULL, "The hub name",
+  /* Display the trackDb details. Don't add the trackdb_id_widg to the widgets list because it
+   * should remain hidden */
+  main_data->trackdb_id_widg = makeEntryWidget(NULL, NULL, "The track database ID from the Ensembl Track Hub Registry. Use the buttons below to search for a hub or register one. The source name will be set from the hub name by default, but you can edit it to anything you like.",
+                                               table, &row, col, col + 6, FALSE, NULL);
+  main_data->trackdb_name_widg = makeEntryWidget("Name :", NULL, "The hub name. Use the buttons below to search for a hub or register one.",
                                                  table, &row, col, col + 6, FALSE, &main_data->trackhub_widgets);
-  main_data->trackdb_species_widg = makeEntryWidget("Species :", NULL, "The species this hub belongs to",
+  main_data->trackdb_species_widg = makeEntryWidget("Species :", NULL, "The species this hub belongs to. Use the buttons below to search for a hub or register one.",
                                                     table, &row, col, col + 6, FALSE, &main_data->trackhub_widgets);
-  main_data->trackdb_assembly_widg = makeEntryWidget("Assembly :", NULL, "The assembly this hub belongs to",
+  main_data->trackdb_assembly_widg = makeEntryWidget("Assembly :", NULL, "The assembly this hub belongs to. Use the buttons below to search for a hub or register one.",
                                                      table, &row, col, col + 6, FALSE, &main_data->trackhub_widgets);
 
   /* Connect a signal to update the other details after the trackdb_id has changed */

@@ -34,7 +34,11 @@
 #include <map>
 #include <list>
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #include <ZMap/zmapConfigStanzaStructs.hpp>
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 class ZMapStyleTree ;
 

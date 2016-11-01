@@ -353,6 +353,7 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   PipeServer server = (PipeServer)server_in ;
+  
   GError *gff_pipe_err = NULL ;
   GIOStatus pipe_status = G_IO_STATUS_NORMAL ;
 
@@ -504,6 +505,7 @@ static ZMapServerResponseType getInfo(void *server_in, ZMapServerReqGetServerInf
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   PipeServer server = (PipeServer)server_in ;
+  zMapReturnValIfFail(server, ZMAP_SERVERRESPONSE_REQFAIL) ;
 
   if ((result = childHasFailed(server, NULL)) == ZMAP_SERVERRESPONSE_OK)
     {
@@ -540,6 +542,7 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   PipeServer server = (PipeServer)server_in ;
+  zMapReturnValIfFail(server, ZMAP_SERVERRESPONSE_REQFAIL) ;
 
   if ((result = childHasFailed(server, NULL)) == ZMAP_SERVERRESPONSE_OK)
     {
@@ -573,6 +576,7 @@ static ZMapServerResponseType getStyles(void *server_in, GHashTable **styles_out
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   PipeServer server = (PipeServer)server_in ;
+  zMapReturnValIfFail(server, ZMAP_SERVERRESPONSE_REQFAIL) ;
 
   if ((result = childHasFailed(server, NULL)) == ZMAP_SERVERRESPONSE_OK)
     {
@@ -593,6 +597,7 @@ static ZMapServerResponseType haveModes(void *server_in, gboolean *have_mode)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   PipeServer server = (PipeServer)server_in ;
+  zMapReturnValIfFail(server, ZMAP_SERVERRESPONSE_REQFAIL) ;
 
   if ((result = childHasFailed(server, NULL)) == ZMAP_SERVERRESPONSE_OK)
     {
@@ -607,6 +612,7 @@ static ZMapServerResponseType getSequences(void *server_in, GList *sequences_ino
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_UNSUPPORTED ;
   PipeServer server = (PipeServer)server_in ;
+  zMapReturnValIfFail(server, ZMAP_SERVERRESPONSE_REQFAIL) ;
 
   if ((result = childHasFailed(server, NULL)) == ZMAP_SERVERRESPONSE_OK)
     {
@@ -631,6 +637,7 @@ static ZMapServerResponseType setContext(void *server_in, ZMapFeatureContext fea
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   PipeServer server = (PipeServer)server_in ;
+  zMapReturnValIfFail(server, ZMAP_SERVERRESPONSE_REQFAIL) ;
 
   if ((result = childHasFailed(server, NULL)) == ZMAP_SERVERRESPONSE_OK)
     {
@@ -655,6 +662,8 @@ static ZMapServerResponseType getFeatures(void *server_in, ZMapStyleTree &styles
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   PipeServer server = (PipeServer)server_in ;
+  zMapReturnValIfFail(server, ZMAP_SERVERRESPONSE_REQFAIL) ;
+
   GetFeaturesDataStruct get_features_data = {NULL} ;
 
   if ((result = childHasFailed(server, NULL)) == ZMAP_SERVERRESPONSE_OK)
@@ -735,6 +744,7 @@ static ZMapServerResponseType getContextSequence(void *server_in,
                                                  int *dna_length_out, char **dna_sequence_out)
 {
   PipeServer server = (PipeServer)server_in ;
+  zMapReturnValIfFail(server, ZMAP_SERVERRESPONSE_REQFAIL) ;
 
   if ((server->result = childHasFailed(server, NULL)) == ZMAP_SERVERRESPONSE_OK)
     {
@@ -789,6 +799,7 @@ static const char *lastErrorMsg(void *server_in)
 {
   char *err_msg = NULL ;
   PipeServer server = (PipeServer)server_in ;
+  zMapReturnValIfFail(server, err_msg) ;
 
   if (server->last_err_msg)
     err_msg = server->last_err_msg ;
@@ -801,6 +812,7 @@ static ZMapServerResponseType getStatus(void *server_conn, gint *exit_code)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   PipeServer server = (PipeServer)server_conn ;
+  zMapReturnValIfFail(server, ZMAP_SERVERRESPONSE_REQFAIL) ;
 
   if ((result = childHasFailed(server, NULL)) == ZMAP_SERVERRESPONSE_OK)
     {
@@ -827,6 +839,7 @@ static ZMapServerResponseType getConnectState(void *server_conn, ZMapServerConne
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   PipeServer server = (PipeServer)server_conn ;
+  zMapReturnValIfFail(server, ZMAP_SERVERRESPONSE_REQFAIL) ;
 
   if ((result = childHasFailed(server, NULL)) == ZMAP_SERVERRESPONSE_OK)
     {
@@ -845,6 +858,7 @@ static ZMapServerResponseType closeConnection(void *server_in)
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   PipeServer server = (PipeServer)server_in ;
   GError *gff_pipe_err = NULL ;
+  zMapReturnValIfFail(server, ZMAP_SERVERRESPONSE_REQFAIL) ;
 
 
   /* check clear up here is child pid has already gone..... */
@@ -894,7 +908,7 @@ static ZMapServerResponseType destroyConnection(void *server_in)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   PipeServer server = (PipeServer)server_in ;
-
+  zMapReturnValIfFail(server, ZMAP_SERVERRESPONSE_REQFAIL) ;
 
   if (child_pid_debug_G)
     zMapLogWarning("Child pid %d destroying server connection.", server->child_pid) ;

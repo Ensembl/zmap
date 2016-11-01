@@ -103,20 +103,6 @@ static void freeServer(ZMapViewSessionServer server_data) ;
  */
 
 
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-void zMapServerSetScheme(ZMapViewSessionServer server, ZMapURLScheme scheme)
-{
-  server->scheme = scheme ;
-
-  return ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-
 /* Produce information for each session as formatted text.
  *
  * NOTE: some information is only available once the server connection
