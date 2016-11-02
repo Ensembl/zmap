@@ -467,17 +467,6 @@ GList *zMapConfigIniContextGetNamed(ZMapConfigIniContext context, char *stanza_n
 }
 
 
-void zMapConfigSourcesFreeList(GList *config_sources_list)
-{
-  zMapReturnIfFail(config_sources_list) ;
-
-  g_list_foreach(config_sources_list, free_source_list_item, NULL);
-  g_list_free(config_sources_list);
-
-  return ;
-}
-
-
 GList *zMapConfigIniContextGetReferencedStanzas(ZMapConfigIniContext context,
                                                 ZMapConfigIniUserDataCreateFunc object_create_func,
                                                 const char *parent_name,
