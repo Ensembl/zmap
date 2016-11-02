@@ -92,7 +92,6 @@ static ZMapConfigIniContextKeyEntry get_source_group_data(const char **stanza_na
 static ZMapConfigIniContextKeyEntry get_window_group_data(const char **stanza_name, const char **stanza_type);
 static ZMapConfigIniContextKeyEntry get_blixem_group_data(const char **stanza_name, const char **stanza_type);
 static gpointer create_config_source(gpointer data);
-static void free_source_list_item(gpointer list_data, gpointer unused_data);
 static void source_set_property(char *current_stanza_name, const char *key, GType type,
 gpointer parent_data, GValue *property_value) ;
 static gpointer create_config_style(gpointer data) ;
@@ -2318,12 +2317,6 @@ static gpointer create_config_source(gpointer data)
   src->group = SOURCE_GROUP_START ;                         // default_value
 
   return src ;
-}
-
-static void free_source_list_item(gpointer list_data, gpointer unused_data)
-{
-  ZMapConfigSource source_to_free = (ZMapConfigSource)list_data;
-  delete source_to_free ;
 }
 
 
