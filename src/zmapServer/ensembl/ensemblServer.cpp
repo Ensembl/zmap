@@ -1759,9 +1759,13 @@ static ZMapFeature makeFeature(EnsemblServer server,
           if (transcript_ids)
             transcript_ids->insert(unique_id);
 
+          /* Prefix the toplevel source name onto the featureset name to make sure it's unique. */
           /* We can get different feature types with the same source, so ensure that the
            * featureset id is unique by also appending the biotype or SO term */
-          featureset_unique_name = g_strdup_printf("%s_%s", featureset_name, biotype) ;
+          if (server->source)
+            featureset_unique_name = g_strdup_printf("%s_%s_%s", server->source->toplevelName().c_str(), featureset_name, biotype);
+          else
+            featureset_unique_name = g_strdup_printf("%s_%s", featureset_name, biotype) ;
 
           /* Find the featureset, or create it if it doesn't exist */
           GQuark featureset_unique_id = zMapFeatureSetCreateID((char*)featureset_unique_name) ;
