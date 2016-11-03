@@ -302,9 +302,9 @@ string ZMapConfigSourceStruct::toplevelName() const
 }
 
 
-void ZMapConfigSourceStruct::countSources(uint &num_total, 
-                                          uint &num_with_data, 
-                                          uint &num_to_load, 
+void ZMapConfigSourceStruct::countSources(unsigned int &num_total, 
+                                          unsigned int &num_with_data, 
+                                          unsigned int &num_to_load, 
                                           const bool recent_only) const
 {
   if (!recent_only || recent)
