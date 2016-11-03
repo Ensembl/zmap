@@ -1051,7 +1051,8 @@ static void makeEnsemblWidgets(MainFrame main_data,
                    table, row - 1, col + 2,
                    main_data->ensembl_widgets) ;
 
-  main_data->dbprefix_widg = makeEntryWidget("DB prefix :", NULL, "OPTIONAL: If specified, this prefix will be added to source names for features from this database", 
+  main_data->dbprefix_widg = makeEntryWidget("DB prefix :", NULL, 
+                                             "OPTIONAL: By default, duplicate features from different databases are NOT loaded in ZMap. If you want to load them, then you can specify a prefix, which will be prepended to the logic name for all features from this database to make it unique. This will ensure that all features from this database will be loaded.", 
                                              table, &row, col, col + 2, FALSE, &main_data->ensembl_widgets) ;
 
   /* Second column */
