@@ -73,10 +73,6 @@ extern bool zmap_thread_debug_G ;
 
 
 
-
-
-
-
 /* Requests to a slave thread. */
 #define ZMAP_THREAD_REQUEST_LIST(_)                                             \
 _(ZMAPTHREAD_REQUEST_INVALID,    , "invalid",    "invalid request. ",       "") \
@@ -99,12 +95,6 @@ _(ZMAPTHREAD_REPLY_CANCELLED,  , "thread_cancelled", "Thread has been cancelled.
 _(ZMAPTHREAD_REPLY_QUIT,       , "quit",             "Thread has terminated normally. ", "")
 
 ZMAP_DEFINE_ENUM(ZMapThreadReply, ZMAP_THREAD_REPLY_LIST) ;
-
-
-
-// oh gosh...feels like it's in the wrong place.....investigate.....actually it just mimics 
-// ZMapServerResponseType which is pointless....sort this out....CRAZY....
-//
 
 
 
@@ -150,20 +140,8 @@ void zMapThreadKill(ZMapThread thread) ;
 bool zMapThreadDestroy(ZMapThread thread) ;
 
 
-
-
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zMapThreadRequest2ExactStr, ZMapThreadRequest) ;
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zMapThreadReply2ExactStr, ZMapThreadReply) ;
-
-
-
-
-
-// THESE SHOULD NOT BE HERE.... MOVE TO ZMAPUTILS WHERE THEY BELONG...THEY ARE NOTHING TO DO WITH
-// THIS THREADING INTERFACE.......
-void zMapThreadForkLock(void) ;
-void zMapThreadForkUnlock(void) ;
-
 
 
 #endif /* !ZMAP_THREADSLIB_H */

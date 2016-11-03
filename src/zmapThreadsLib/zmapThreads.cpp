@@ -65,11 +65,6 @@ static GString *addThreadString(GString *str, ZMapThreadType thread_type, ZMapTh
 bool zmap_thread_debug_G = false ;
 
 
-/* For locking/unlocking of fork calls.....should not be in this file....move.... */
-static pthread_mutex_t thread_fork_mutex_G = PTHREAD_MUTEX_INITIALIZER ;
-
-
-
 
 //
 //                   External interface
@@ -422,89 +417,11 @@ bool zMapThreadDestroy(ZMapThread thread)
 
 
 
-
-
-
-
-
 /* These wierd macros create functions that will return string literals for each enum. */
 ZMAP_ENUM_AS_EXACT_STRING_FUNC(zMapThreadRequest2ExactStr, ZMapThreadRequest, ZMAP_THREAD_REQUEST_LIST) ;
 ZMAP_ENUM_AS_EXACT_STRING_FUNC(zMapThreadReply2ExactStr, ZMapThreadReply, ZMAP_THREAD_REPLY_LIST) ;
-
 ZMAP_ENUM_AS_EXACT_STRING_FUNC(zMapThreadReturnCode2ExactStr, ZMapThreadReturnCode, ZMAP_THREAD_RETURNCODE_LIST) ;
 
-
-
-
-
-
-/* Two functions to lock/unlock round the spawning of a sub-process.
- * 
- * 
- *  */
-// 30 threads generate 'can't fork (no memory)' errors from linux
-// tried using pthread_atfork() but htis has no effect
-//    NB: without the child_at_fork() function this hangs, which implies something odd
-// So fork() is thread safe but g_spawn_async_with_pipes() is not
-// Must call zMapThreadForkLock() and zMapThreadForkUnlock() around this to serialise the calls
-// as pthread_cancel() operates asynchronously then we don't have to worry about unlock on exit
-// however, we can just call pthread_mutex_unlock() regardless
-
-// NB libpfetch also call g_spwan_async()
-// ZMap has a copy of that code but does not call it
-// zMapViewCallBlixem()  also calls g_spawn_...
-// but these operate on user command so if they fail can be retried
-
-
-// prevent concurrent fork() calls from slave threads -> and also the main one?
-//          pthread_atfork(prepare_atfork,parent_atfork,child_atfork);
-//void prepare_atfork(void).....DON'T KNOW WHY THIS COMMENT IS HERE.....
-//
-// NB: don't ever nest calls to this function
-void zMapThreadForkLock(void)
-{
-  int locked ;
-
-  locked = pthread_mutex_lock(&thread_fork_mutex_G) ;
-
-  switch (locked)
-    {
-    case EINVAL:
-      zMapLogFatal("%s", "pthread_mutex_lock() called on a mutex which is not correctly initialised.") ;
-      break ;						    /* Not zmaplogfatal terminates the process in fact. */
-    case EDEADLK:
-      zMapLogFatal("%s", "pthread_mutex_lock() called on a mutex which is already locked by this thread.") ;
-      break ;
-    default:
-      break ;
-    }
-
-  return ;
-}
-
-
-//void parent_atfork(void).....DON'T KNOW WHY THIS COMMENT IS HERE.....
-//
-void zMapThreadForkUnlock(void)
-{
-  int unlocked ;
-
-  unlocked = pthread_mutex_unlock(&thread_fork_mutex_G) ;
-
-  switch (unlocked)
-    {
-    case EINVAL:
-      zMapLogFatal("%s", "pthread_mutex_unlock() called on a mutex which is not correctly initialised.") ;
-      break ;						    /* Not zmaplogfatal terminates the process in fact. */
-    case EPERM:
-      zMapLogCritical("%s", "pthread_mutex_unlock() called on a mutex which this thread does not own.") ;
-      break ;
-    default:
-      break ;
-    }
-
-  return ;
-}
 
 
 
@@ -564,15 +481,6 @@ char *zmapThreadGetDebugPrefix(ZMapThreadType caller_thread_type, ZMapThread cal
 static ZMapThread createThread()
 {
   ZMapThread thread ;
-
-  static gboolean init = FALSE ;
-
-  // This should not be in here...it's not part of this package at all...should be in zmaputils somewhere.
-  if (!init)
-    {
-      pthread_mutex_init(&thread_fork_mutex_G,NULL) ;
-      init = TRUE ;
-    }
 
   thread = g_new0(ZMapThreadStruct, 1) ;
 
