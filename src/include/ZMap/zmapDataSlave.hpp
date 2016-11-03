@@ -67,7 +67,7 @@ class DataSlave
                      ZMapConfigSource *config_source_out) ;
 
 
-  DataSourceRequestType GetRequestType(DataSource &source) ;
+  DataSourceRequest GetRequestType(DataSource &source) ;
   bool SetError(DataSource &source_object, const char *err_msg) ;
 
 

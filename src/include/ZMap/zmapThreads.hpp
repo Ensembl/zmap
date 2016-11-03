@@ -34,24 +34,12 @@
 #include <pthread.h>
 #endif
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* WARNING, IN THEORY WE SHOULD INCLUDE THIS AS WE REFERENCE A PTHREAD TYPE BELOW,
- * _BUT_ IF WE DO THEN WE RUN INTO TROUBLE ON THE ALPHAS AS FOR UNKNOWN AND PROBABLY
- * BIZARRE REASONS IT FAILS TO COMPILE COMPLAINING ABOUT "leave" IN THE Window/View
- * HEADERS TO BE ILLEGAL...THEY INCLUDE THIS HEADER...SIGH... WE COULD JUST HACK
- * OUR OWN VERSION OF THE pthread_t type to get round this.... */
-
-#include <pthread.h>
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 #include <ZMap/zmapEnum.hpp>
 
 
-/* The calls need changing to handle a more general
- * mechanism of requests etc.....this interface should not need to know the requests it is
- * servicing.....all the server stuff needs to be removed from the conncreate and these
- * routines should be renamed to  zMapThreadNNNN */
+/* The calls need changing to handle a more general mechanism of requests etc.....this interface
+ * should not need to know the requests it is servicing.....all the server stuff needs to be
+ * removed from the conncreate and these routines should be renamed to zMapThreadNNNN */
 
 
 /* We should have a function to access this global.... */
@@ -81,20 +69,6 @@ _(ZMAPTHREAD_REPLY_CANCELLED,         , "thread_cancelled", "Thread has been can
 _(ZMAPTHREAD_REPLY_QUIT,              , "quit",             "Thread has terminated normally. ", "")
 
 ZMAP_DEFINE_ENUM(ZMapThreadReply, ZMAP_THREAD_REPLY_LIST) ;
-
-
-/* Return codes from the handler function called by the slave thread to service a request. */
-#define ZMAP_THREAD_RETURNCODE_LIST(_)             \
-_(ZMAPTHREAD_RETURNCODE_INVALID,      , "invalid",        "Invalid return code. ", "") \
-_(ZMAPTHREAD_RETURNCODE_OK,           , "ok",             "OK. ", "") \
-_(ZMAPTHREAD_RETURNCODE_TIMEDOUT,     , "timed_out",      "Timed out. ", "") \
-_(ZMAPTHREAD_RETURNCODE_REQFAIL,      , "request_failed", "Request failed. ", "") \
-_(ZMAPTHREAD_RETURNCODE_SOURCEEMPTY,  , "source_empty",   "Source is empty ", "") \
-_(ZMAPTHREAD_RETURNCODE_BADREQ,       , "bad_request",    "Invalid request. ", "") \
-_(ZMAPTHREAD_RETURNCODE_SERVERDIED,   , "server_died",    "Server has died. ", "") \
-_(ZMAPTHREAD_RETURNCODE_QUIT,         , "server_quit",    "Server has quit. ", "")
-
-ZMAP_DEFINE_ENUM(ZMapThreadReturnCode, ZMAP_THREAD_RETURNCODE_LIST) ;
 
 
 

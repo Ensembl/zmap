@@ -51,7 +51,9 @@ static ZMapThreadReturnCode thread_RC(ZMapServerResponseType code) ;
 
 
 
-static ZMapServerReqType getNextRequest(ZMapServerReqType curr_request, DataSourceRequestType type) ;
+
+static ZMapServerReqType getNextRequest(ZMapServerReqType curr_request, DataSourceRequest type) ;
+
 
 
 
@@ -87,7 +89,7 @@ ZMapThreadReturnCode zmapDataSourceThreadRequestHandler(void **slave_data, void 
   int start = 0, end = 0 ;
   ZMapFeatureContext context = NULL ;
   ZMapStyleTree *styles = NULL ;
-  DataSourceRequestType type = DataSourceRequestType::INVALID ;
+  DataSourceRequest type = DataSourceRequest::INVALID ;
 
 
   if ((*slave_data) || !request_in || !err_msg_out)
@@ -130,7 +132,7 @@ ZMapThreadReturnCode zmapDataSourceThreadRequestHandler(void **slave_data, void 
     {
       type = data_slave.GetRequestType(*source) ;
 
-      if (type == DataSourceRequestType::GET_FEATURES)
+      if (type == DataSourceRequest::GET_FEATURES)
         {
           DataSourceFeatures *feature_req = static_cast<DataSourceFeatures *>(source) ;
 
@@ -147,7 +149,7 @@ ZMapThreadReturnCode zmapDataSourceThreadRequestHandler(void **slave_data, void 
               thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
             }
         }
-      else if (type == DataSourceRequestType::GET_SEQUENCE)
+      else if (type == DataSourceRequest::GET_SEQUENCE)
         {
           DataSourceSequence *sequence_req = static_cast<DataSourceSequence *>(source) ;
 
@@ -227,7 +229,7 @@ ZMapThreadReturnCode zmapDataSourceThreadRequestHandler(void **slave_data, void 
                 // Need to choose here whether to get features or sequence....according to type of
                 // request object.
 
-                if (type == DataSourceRequestType::GET_FEATURES)
+                if (type == DataSourceRequest::GET_FEATURES)
                   {
                     ZMapServerReqGetFeatures req_features ;
 
@@ -533,7 +535,7 @@ static ZMapThreadReturnCode thread_RC(ZMapServerResponseType code)
 
 
 
-static ZMapServerReqType getNextRequest(ZMapServerReqType curr_request, DataSourceRequestType type)
+static ZMapServerReqType getNextRequest(ZMapServerReqType curr_request, DataSourceRequest type)
 {
   ZMapServerReqType next_request ;
 
@@ -546,7 +548,7 @@ static ZMapServerReqType getNextRequest(ZMapServerReqType curr_request, DataSour
       next_request = ZMAP_SERVERREQ_GETSERVERINFO ;
       break ;
     case ZMAP_SERVERREQ_GETSERVERINFO:
-      if (type == DataSourceRequestType::GET_FEATURES)
+      if (type == DataSourceRequest::GET_FEATURES)
         next_request = ZMAP_SERVERREQ_FEATURES ;
       else
         next_request = ZMAP_SERVERREQ_SEQUENCE ;

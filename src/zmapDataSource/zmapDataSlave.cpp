@@ -72,8 +72,8 @@ namespace ZMapDataSource
   bool DataSlave::GetServerInfo(DataSource &source,
                                 char **config_file_out, ZMapURL *url_obj_out, char **version_str_out)
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-  bool DataSlave::GetServerInfo(DataSource &source,
-                                ZMapConfigSource *config_source_out)
+    bool DataSlave::GetServerInfo(DataSource &source,
+                                  ZMapConfigSource *config_source_out)
   {
     bool result = false ;
 
@@ -86,20 +86,20 @@ namespace ZMapDataSource
   }
 
 
-  DataSourceRequestType DataSlave::GetRequestType(DataSource &source)
+  DataSourceRequest DataSlave::GetRequestType(DataSource &source)
   {
     return source.request_ ;
   }
 
-bool DataSlave::SetError(DataSource &source_object, const char *err_msg)
-{
-  bool result = false ;
 
-  result = source_object.SetError(err_msg) ;
+  bool DataSlave::SetError(DataSource &source_object, const char *err_msg)
+  {
+    bool result = false ;
 
-  return result ;
-}
+    result = source_object.SetError(err_msg) ;
 
+    return result ;
+  }
 
 
   bool DataSlave::GetRequestParams(DataSourceFeatures &features_class,
@@ -112,24 +112,25 @@ bool DataSlave::SetError(DataSource &source_object, const char *err_msg)
     return result ;
   }
 
+
   bool DataSlave::SetReply(DataSourceFeatures &features_class,
                            ZMapFeatureContext context, ZMapStyleTree *styles)
-{
-  bool result = false ;
+  {
+    bool result = false ;
 
-  result = features_class.SetReply(context, styles) ;
+    result = features_class.SetReply(context, styles) ;
 
-  return result ;
-}
+    return result ;
+  }
 
-bool DataSlave::SetError(DataSourceFeatures &features_class, gint exit_code, const char *stderr)
-{
-  bool result = false ;
+  bool DataSlave::SetError(DataSourceFeatures &features_class, gint exit_code, const char *stderr)
+  {
+    bool result = false ;
 
-  result = features_class.SetError(exit_code, stderr) ;
+    result = features_class.SetError(exit_code, stderr) ;
 
-  return result ;
-}
+    return result ;
+  }
 
 
 
@@ -145,22 +146,22 @@ bool DataSlave::SetError(DataSourceFeatures &features_class, gint exit_code, con
 
   bool DataSlave::SetReply(DataSourceSequence &sequence_class,
                            ZMapFeatureContext context, ZMapStyleTree *styles)
-{
-  bool result = false ;
+  {
+    bool result = false ;
 
-  result = sequence_class.SetReply(context, styles) ;
+    result = sequence_class.SetReply(context, styles) ;
 
-  return result ;
-}
+    return result ;
+  }
 
-bool DataSlave::SetError(DataSourceSequence &sequence_class, gint exit_code, const char *stderr)
-{
-  bool result = false ;
+  bool DataSlave::SetError(DataSourceSequence &sequence_class, gint exit_code, const char *stderr)
+  {
+    bool result = false ;
 
-  result = sequence_class.SetError(exit_code, stderr) ;
+    result = sequence_class.SetError(exit_code, stderr) ;
 
-  return result ;
-}
+    return result ;
+  }
 
 
 

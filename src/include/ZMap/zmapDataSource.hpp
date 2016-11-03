@@ -51,9 +51,9 @@ namespace ZMapDataSource
   // convert to our enum system and add a macro to our enum system to support this c++ type of
   // enum, i.e. needs to add "class" and do away with typedef....
   //
-  enum class DataSourceRequestType {INVALID, GET_FEATURES, GET_SEQUENCE} ;
+  enum class DataSourceRequest {INVALID, GET_FEATURES, GET_SEQUENCE} ;
 
-  enum class DataSourceReplyType {INVALID, FAILED, WAITING, GOT_DATA, GOT_ERROR} ;
+  enum class DataSourceReply {INVALID, GOT_DATA, GOT_ERROR} ;
 
 
 
@@ -70,7 +70,7 @@ namespace ZMapDataSource
 
     typedef void (*UserBaseCallBackFunc)(DataSource *data_source, void *user_data) ;
 
-    enum class DataSourceState {INVALID, INIT, WAITING, GOT_REPLY, GOT_ERROR, FINISHED} ;
+    enum class DataSourceState {INVALID, INIT, WAITING, GOT_REPLY, FINISHED} ;
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -78,7 +78,7 @@ namespace ZMapDataSource
                ZMapFeatureSequenceMap sequence_map, int start, int end,
                const std::string &url, const std::string &config_file, const std::string &version) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-    DataSource(DataSourceRequestType request, 
+    DataSource(DataSourceRequest request, 
                ZMapFeatureSequenceMap sequence_map, int start, int end,
                ZMapConfigSource config_source) ;
 
@@ -87,7 +87,9 @@ namespace ZMapDataSource
 
     virtual ~DataSource() ;
 
-    DataSourceReplyType reply_ ;
+    // do we need to store the request...
+
+    DataSourceReply reply_ ;
 
     DataSourceState state_ ;
 
@@ -114,9 +116,11 @@ namespace ZMapDataSource
     bool GetServerInfo(ZMapConfigSource *config_source_out) ;
 
 
-    DataSourceRequestType GetRequestType() ;
+    DataSourceRequest GetRequestType() ;
 
     virtual bool SetError(const char *err_msg) = 0 ;
+
+    virtual bool GetError(const char **errmsg_out, gint *exit_code_out) = 0 ;
 
     void SetThreadError(const char *err_msg) ;
 
@@ -129,7 +133,7 @@ namespace ZMapDataSource
     UserBaseCallBackFunc user_func_ ;
     void *user_data_ ;
 
-    DataSourceRequestType request_ ;
+    DataSourceRequest request_ ;
 
 
     ZMapFeatureSequenceMap sequence_map_ ;
@@ -179,7 +183,7 @@ namespace ZMapDataSource
 
     bool SendRequest(UserFeaturesCallBackFunc user_func, void *user_data) ;
 
-    DataSourceReplyType GetReply(ZMapFeatureContext *context_out, ZMapStyleTree **styles_out) ;
+    bool GetReply(ZMapFeatureContext *context_out, ZMapStyleTree **styles_out) ;
 
     bool GetError(const char **errmsg_out, gint *exit_code_out) ;
 
@@ -240,7 +244,7 @@ namespace ZMapDataSource
 
     bool SendRequest(UserSequenceCallBackFunc user_func, void *user_data) ;
 
-    DataSourceReplyType GetReply(ZMapFeatureContext *context_out, ZMapStyleTree **styles_out) ;
+    bool GetReply(ZMapFeatureContext *context_out, ZMapStyleTree **styles_out) ;
 
     bool GetError(const char **errmsg_out, gint *exit_code_out) ;
 

@@ -1095,12 +1095,11 @@ static void newCallBackFunc(DataSourceFeatures *features_source, void *user_data
   ZMapStyleTree *styles ;
   int error_rc = 0 ;
   const char *err_msg = NULL ;
-  DataSourceReplyType reply ;
 
   cout << "in features app callback" << endl ;
 
   // Get the reply data......
-  if ((reply = features_source->GetReply(&context, &styles)) == DataSourceReplyType::GOT_DATA)
+  if (features_source->GetReply(&context, &styles))
     {
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -1141,13 +1140,13 @@ static void newCallBackFunc(DataSourceFeatures *features_source, void *user_data
       merge_results = zMapViewContextMerge(view, context) ;
 
     }
-  else if (reply == DataSourceReplyType::GOT_ERROR)
+  else if (features_source->GetError(&err_msg, &error_rc))
     {
-      if (features_source->GetError(&err_msg, &error_rc))
-        zMapWarning("Source failed to get features with: \"%s\"", err_msg) ;
+      zMapWarning("Source failed to get features with: \"%s\"", err_msg) ;
     }
-  else if (reply == DataSourceReplyType::WAITING)
+  else
     {
+      // debug....for now....should never be called....
       zMapWarning("%s", "We are waiting...") ;
     }
 
@@ -1163,24 +1162,21 @@ static void newSequenceCallBackFunc(DataSourceSequence *sequence_source, void *u
   ZMapStyleTree *styles ;
   int error_rc = 0 ;
   const char *err_msg = NULL ;
-  DataSourceReplyType reply ;
 
   cout << "in sequence app callback" << endl ;
 
-
   // Get the reply data......
-  if ((reply = sequence_source->GetReply(&context, &styles)) == DataSourceReplyType::GOT_DATA)
+  if (sequence_source->GetReply(&context, &styles))
     {
       GError *error = NULL ;
 
       zMapFeatureDumpStdOutFeatures(context, styles, &error) ;
     }
-  else if (reply == DataSourceReplyType::GOT_ERROR)
+  else if (sequence_source->GetError(&err_msg, &error_rc))
     {
-      if (sequence_source->GetError(&err_msg, &error_rc))
         zMapWarning("Source failed to get features with: \"%s\"", err_msg) ;
     }
-  else if (reply == DataSourceReplyType::WAITING)
+  else
     {
       zMapWarning("%s", "We are waiting...") ;
     }

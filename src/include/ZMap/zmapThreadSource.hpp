@@ -67,13 +67,9 @@ typedef void (*ZMapThreadPollSlaveUserReplyFunc)(void *func_data) ;
 
     bool SendRequest(void *request) ;
 
-    // should we even have this ?
-    bool ThreadStop() ;
-
-    // Temp for old code....
-    ZMapThread GetThread() ;
-
     bool HasFailed() ;
+
+    bool ThreadStop() ;
 
     ~ThreadSource() ;
 
@@ -87,6 +83,10 @@ typedef void (*ZMapThreadPollSlaveUserReplyFunc)(void *func_data) ;
                  ZMapSlaveDestroyHandlerFunc destroy_handler_func) ;
 
     bool ThreadStart() ;
+
+
+    // Temp for old code....
+    ZMapThread GetThread() ;
     //-------------------------------------------------------------
 
 

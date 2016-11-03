@@ -180,7 +180,25 @@ namespace ZMapThreadSource
   }
 
 
-  // Request slave thread to stop.
+  ZMapThread ThreadSource::GetThread()
+  {
+    ZMapThread thread = NULL ;
+
+    if (state_ == ThreadSourceStateType::INIT || state_ == ThreadSourceStateType::POLLING)
+      {
+        thread = thread_ ;
+      }
+
+    return thread ;
+  }
+
+  bool ThreadSource::HasFailed()
+  {
+    return failed_ ;
+  }
+
+
+  // Request slave thread to stop....no good...how do you know when it's stopped ??
   //
   bool ThreadSource::ThreadStop()
   {
@@ -198,23 +216,6 @@ namespace ZMapThreadSource
     return result ;
   }
 
-
-  ZMapThread ThreadSource::GetThread()
-  {
-    ZMapThread thread = NULL ;
-
-    if (state_ == ThreadSourceStateType::INIT || state_ == ThreadSourceStateType::POLLING)
-      {
-        thread = thread_ ;
-      }
-
-    return thread ;
-  }
-
-  bool ThreadSource::HasFailed()
-  {
-    return failed_ ;
-  }
 
   // Stop the thread and destroy it.
   //

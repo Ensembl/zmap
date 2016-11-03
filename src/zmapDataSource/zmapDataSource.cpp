@@ -70,10 +70,10 @@ namespace ZMapDataSource
                          ZMapFeatureSequenceMap sequence_map, int start, int end,
                          const string &url, const string &config_file, const string &version)
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-  DataSource::DataSource(DataSourceRequestType request, 
-                         ZMapFeatureSequenceMap sequence_map, int start, int end,
-                         ZMapConfigSource config_source)
-    : reply_{DataSourceReplyType::INVALID}, state_{DataSourceState::INVALID},
+    DataSource::DataSource(DataSourceRequest request, 
+                           ZMapFeatureSequenceMap sequence_map, int start, int end,
+                           ZMapConfigSource config_source)
+      : reply_{DataSourceReply::INVALID}, state_{DataSourceState::INVALID},
     thread_(zmapDataSourceThreadRequestHandler,
             zmapDataSourceThreadTerminateHandler, zmapDataSourceThreadDestroyHandler),
     user_func_{NULL}, user_data_{NULL},
@@ -93,7 +93,7 @@ namespace ZMapDataSource
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-  if (request != DataSourceRequestType::GET_FEATURES && request != DataSourceRequestType::GET_SEQUENCE)
+  if (request != DataSourceRequest::GET_FEATURES && request != DataSourceRequest::GET_SEQUENCE)
     {
       throw invalid_argument("Bad request type.") ;
     }
@@ -150,7 +150,7 @@ namespace ZMapDataSource
   }
 
 
-  DataSourceRequestType DataSource::GetRequestType()
+  DataSourceRequest DataSource::GetRequestType()
   {
     return request_ ;
   }
@@ -191,6 +191,8 @@ namespace ZMapDataSource
   }
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   // This should never be called....does this need to be defined...is pure virtual in header...
   bool DataSource::SetError(const char *stderr)
   {
@@ -201,16 +203,23 @@ namespace ZMapDataSource
 
     return result ;
   }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
+
+
+  // NEEDS CHECKING....WHO CALLS THIS....
   // If we can't access our slave thread we unconditionally set error state with this.
   void DataSource::SetThreadError(const char *err_msg)
   {
     cout << "in the base class SetThreadError()" << endl ;
 
+    // string should be copied ??
     thread_err_msg_ = err_msg ;
 
-    DataSource::state_ = DataSourceState::GOT_ERROR ;
+    DataSource::state_ = DataSourceState::FINISHED ;
+
+    DataSource::reply_ = DataSourceReply::GOT_ERROR ;
 
     return ;
   }
@@ -238,8 +247,15 @@ namespace ZMapDataSource
   {
     DataSource *source = static_cast<DataSource *>(func_data) ;
 
+
+    // I think we can't throw an exception here in any useful way, who will catch it ??
+    // BUT it does demand critical error handling...think about it....
+
     // Will log an error as we shouldn't be called unless we got a reply or an error.
-    zMapReturnIfFail(source->state_ == DataSourceState::GOT_REPLY || source->state_ == DataSourceState::GOT_ERROR) ;
+    zMapReturnIfFail(source->state_ == DataSourceState::GOT_REPLY
+                     && (source->reply_ == DataSourceReply::GOT_DATA
+                         || source->reply_ == DataSourceReply::GOT_ERROR)) ;
+
 
     // Check if the threadsource has failed...should get error from thread source....duh....
     if (source->thread_.HasFailed())
@@ -261,6 +277,34 @@ namespace ZMapDataSource
   DataSource::~DataSource()
   {
     cout << "in base destructor" << endl ;
+
+    // Does not currently handle being destroyed permaturely....need to do that.....
+    // including shutting down thread and so on.....(probably by a pthread_cancel)
+
+    // Kill the thread if still in INIT or WAITING.....
+    if (state_ == DataSourceState::INIT || state_ == DataSourceState::WAITING)
+      {
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+        thread_.zMapThreadKill(this) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+        // rest of thread cleared up as part of destruction of the datasource object.
+      }
+
+
+
+
+
+    // Does the sequencemap or config source need freeing...check this out...
+
+
+
+
+
+
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     // ok...this is in the wrong place I think....the thread destructor will be called before the
@@ -294,10 +338,10 @@ namespace ZMapDataSource
                                          const string &config_file, const string &url, const string &server_version,
                                          ZMapFeatureContext context_inout, ZMapStyleTree *styles)
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-  DataSourceFeatures::DataSourceFeatures(ZMapFeatureSequenceMap sequence_map, int start, int end,
-                                         ZMapConfigSource config_source,
-                                         ZMapFeatureContext context_inout, ZMapStyleTree *styles)
-    : DataSource{DataSourceRequestType::GET_FEATURES, sequence_map, start, end, config_source},
+    DataSourceFeatures::DataSourceFeatures(ZMapFeatureSequenceMap sequence_map, int start, int end,
+                                           ZMapConfigSource config_source,
+                                           ZMapFeatureContext context_inout, ZMapStyleTree *styles)
+      : DataSource{DataSourceRequest::GET_FEATURES, sequence_map, start, end, config_source},
                                     styles_{styles}, context_{context_inout}, err_msg_{}, exit_code_{0}
 {
   if (!context_inout)
@@ -328,7 +372,7 @@ namespace ZMapDataSource
   {
     bool result = false ;
 
-    if (state_ != DataSourceState::GOT_ERROR && state_ != DataSourceState::FINISHED)
+    if (state_ != DataSourceState::FINISHED)
       {
         *context_out = context_ ;
         *styles_out = styles_ ;
@@ -353,6 +397,7 @@ namespace ZMapDataSource
         styles_ = styles ;
 
         DataSource::state_ = DataSourceState::GOT_REPLY ;
+        DataSource::reply_ = DataSourceReply::GOT_DATA ;
 
         result = true ;
       }
@@ -372,7 +417,8 @@ namespace ZMapDataSource
         if (stderr && *stderr)
           err_msg_ = stderr ;
 
-        DataSource::state_ = DataSourceState::GOT_ERROR ;
+        DataSource::state_ = DataSourceState::GOT_REPLY ;
+        DataSource::reply_ = DataSourceReply::GOT_ERROR ;
 
         result = true ;
       }
@@ -393,7 +439,8 @@ namespace ZMapDataSource
         if (stderr && *stderr)
           err_msg_ = stderr ;
 
-        DataSource::state_ = DataSourceState::GOT_ERROR ;
+        DataSource::state_ = DataSourceState::GOT_REPLY ;
+        DataSource::reply_ = DataSourceReply::GOT_ERROR ;
 
         cout << "in the features class SetError() and have set error state" << endl ;
 
@@ -403,11 +450,11 @@ namespace ZMapDataSource
     return result ;
   }
 
-  DataSourceReplyType DataSourceFeatures::GetReply(ZMapFeatureContext *context_out, ZMapStyleTree **styles_out)
+  bool DataSourceFeatures::GetReply(ZMapFeatureContext *context_out, ZMapStyleTree **styles_out)
   {
-    DataSourceReplyType result = DataSourceReplyType::FAILED ;
+    bool result = false ;
 
-    if (DataSource::state_ == DataSourceState::GOT_REPLY)
+    if (DataSource::state_ == DataSourceState::GOT_REPLY && DataSource::reply_ == DataSourceReply::GOT_DATA)
       {
         *context_out = context_ ;
         context_ = NULL ;
@@ -417,17 +464,7 @@ namespace ZMapDataSource
 
         DataSource::state_ = DataSourceState::FINISHED ;
 
-        result = DataSourceReplyType::GOT_DATA ;
-      }
-    else if (DataSource::state_ == DataSourceState::GOT_ERROR)
-      {
-        DataSource::state_ = DataSourceState::FINISHED ;
-
-        result = DataSourceReplyType::GOT_ERROR ;
-      }
-    else if (DataSource::state_ == DataSourceState::WAITING)
-      {
-        result = DataSourceReplyType::WAITING ;
+        result = true ;
       }
 
     return result ;
@@ -438,7 +475,7 @@ namespace ZMapDataSource
   {
     bool result = false ;
 
-    if (DataSource::state_ == DataSourceState::GOT_ERROR)
+    if (DataSource::state_ == DataSourceState::GOT_REPLY && DataSource::reply_ == DataSourceReply::GOT_ERROR)
       {
         *errmsg_out = err_msg_.c_str() ;
 
@@ -456,6 +493,7 @@ namespace ZMapDataSource
     cout << "in feature destructor" << endl ;
 
 
+
     return ;
   }
 
@@ -471,15 +509,15 @@ namespace ZMapDataSource
                                          ZMapFeatureContext context_inout, ZMapStyleTree *styles)
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-  DataSourceSequence::DataSourceSequence(ZMapFeatureSequenceMap sequence_map, int start, int end,
-                                         ZMapConfigSource config_source,
-                                         ZMapFeatureContext context_inout, ZMapStyleTree *styles)
+    DataSourceSequence::DataSourceSequence(ZMapFeatureSequenceMap sequence_map, int start, int end,
+                                           ZMapConfigSource config_source,
+                                           ZMapFeatureContext context_inout, ZMapStyleTree *styles)
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-    : DataSource{DataSourceRequestType::GET_SEQUENCE, sequence_map, start, end, config_file, url, server_version},
+      : DataSource{DataSourceRequestType::GET_SEQUENCE, sequence_map, start, end, config_file, url, server_version},
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-    : DataSource{DataSourceRequestType::GET_SEQUENCE, sequence_map, start, end, config_source},
-    styles_{styles}, context_{context_inout}, err_msg_{}, exit_code_{0}
+                                       : DataSource{DataSourceRequest::GET_SEQUENCE, sequence_map, start, end, config_source},
+                                       styles_{styles}, context_{context_inout}, err_msg_{}, exit_code_{0}
 {
   if (!context_inout)
     {
@@ -509,13 +547,21 @@ namespace ZMapDataSource
   {
     bool result = false ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     if (state_ != DataSourceState::GOT_ERROR && state_ != DataSourceState::FINISHED)
       {
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
         *context_out = context_ ;
         *styles_out = styles_ ;
 
         result = TRUE ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
     return result ;
   }
@@ -533,6 +579,7 @@ namespace ZMapDataSource
         styles_ = styles ;
 
         DataSource::state_ = DataSourceState::GOT_REPLY ;
+        DataSource::reply_ = DataSourceReply::GOT_DATA ;
 
         result = true ;
       }
@@ -552,7 +599,8 @@ namespace ZMapDataSource
         if (stderr && *stderr)
           err_msg_ = stderr ;
 
-        DataSource::state_ = DataSourceState::GOT_ERROR ;
+        DataSource::state_ = DataSourceState::GOT_REPLY ;
+        DataSource::reply_ = DataSourceReply::GOT_ERROR ;
 
         cout << "in the sequence class SetError() and have set error state" << endl ;
 
@@ -574,7 +622,8 @@ namespace ZMapDataSource
         if (stderr && *stderr)
           err_msg_ = stderr ;
 
-        DataSource::state_ = DataSourceState::GOT_ERROR ;
+        DataSource::state_ = DataSourceState::GOT_REPLY ;
+        DataSource::reply_ = DataSourceReply::GOT_ERROR ;
 
         result = true ;
       }
@@ -586,11 +635,11 @@ namespace ZMapDataSource
   // here we return the sequence I think ?? not the features etc.....check is stylestree is
   // altered, is it altered when we get features ??
 
-  DataSourceReplyType DataSourceSequence::GetReply(ZMapFeatureContext *context_out, ZMapStyleTree **styles_out)
+  bool DataSourceSequence::GetReply(ZMapFeatureContext *context_out, ZMapStyleTree **styles_out)
   {
-    DataSourceReplyType result = DataSourceReplyType::FAILED ;
+    bool result = false ;
 
-    if (DataSource::state_ == DataSourceState::GOT_REPLY)
+    if (DataSource::state_ == DataSourceState::GOT_REPLY && DataSource::reply_ == DataSourceReply::GOT_DATA)
       {
         *context_out = context_ ;
         context_ = NULL ;
@@ -600,17 +649,7 @@ namespace ZMapDataSource
 
         DataSource::state_ = DataSourceState::FINISHED ;
 
-        result = DataSourceReplyType::GOT_DATA ;
-      }
-    else if (DataSource::state_ == DataSourceState::GOT_ERROR)
-      {
-        DataSource::state_ = DataSourceState::FINISHED ;
-
-        result = DataSourceReplyType::GOT_ERROR ;
-      }
-    else if (DataSource::state_ == DataSourceState::WAITING)
-      {
-        result = DataSourceReplyType::WAITING ;
+        result = true ;
       }
 
     return result ;
@@ -621,7 +660,8 @@ namespace ZMapDataSource
   {
     bool result = false ;
 
-    if (DataSource::state_ == DataSourceState::GOT_ERROR)
+    if ((DataSource::state_ == DataSourceState::GOT_REPLY || DataSource::state_ == DataSourceState::FINISHED)
+        && DataSource::reply_ == DataSourceReply::GOT_ERROR)
       {
         *errmsg_out = err_msg_.c_str() ;
 
