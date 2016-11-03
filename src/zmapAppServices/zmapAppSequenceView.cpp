@@ -378,8 +378,6 @@ static void treePathSetLoadStatus(GtkTreeModel *model,
           gtk_tree_path_free(path_copy) ;
           path_copy = NULL ;
         }
-
-      updateInfoLabel(main_data, main_data->orig_sequence_map) ;
     }
 
   return ;
@@ -406,6 +404,8 @@ static void loadButtonToggledCB(GtkCellRendererToggle *toggle_renderer,
       gboolean load = !cur_value ;
 
       treePathSetLoadStatus(main_data->sources_model, path, load, FALSE, main_data, main_data->orig_sequence_map) ;
+
+      updateInfoLabel(main_data, main_data->orig_sequence_map) ;
     }
 
   if (path)
