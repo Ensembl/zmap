@@ -378,8 +378,6 @@ static void treePathSetLoadStatus(GtkTreeModel *model,
           gtk_tree_path_free(path_copy) ;
           path_copy = NULL ;
         }
-
-      updateInfoLabel(main_data, main_data->orig_sequence_map) ;
     }
 
   return ;
@@ -406,6 +404,8 @@ static void loadButtonToggledCB(GtkCellRendererToggle *toggle_renderer,
       gboolean load = !cur_value ;
 
       treePathSetLoadStatus(main_data->sources_model, path, load, FALSE, main_data, main_data->orig_sequence_map) ;
+
+      updateInfoLabel(main_data, main_data->orig_sequence_map) ;
     }
 
   if (path)
@@ -503,9 +503,9 @@ static void updateInfoLabel(MainFrame main_data, ZMapFeatureSequenceMap sequence
 {
   zMapReturnIfFail(main_data && main_data->info_widg && sequence_map) ;
 
-  uint num_total = 0 ;     // total number of sources
-  uint num_with_data = 0 ; // number of sources with data
-  uint num_to_load = 0 ;   // number of sources with data that are selected for loading
+  unsigned int num_total = 0 ;     // total number of sources
+  unsigned int num_with_data = 0 ; // number of sources with data
+  unsigned int num_to_load = 0 ;   // number of sources with data that are selected for loading
 
   sequence_map->countSources(num_total, num_with_data, num_to_load, !main_data->show_all) ;
 

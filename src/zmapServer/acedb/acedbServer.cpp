@@ -311,7 +311,7 @@ static gboolean createConnection(void **server_out, ZMapConfigSource config_sour
 
   GError *error = NULL ;
   gboolean use_methods = FALSE;
-  ZMapURL url = config_source->urlObj() ;
+  const ZMapURL url = config_source->urlObj() ;
   AcedbServer server ;
 
   /* Always return a server struct as it contains error message stuff. */

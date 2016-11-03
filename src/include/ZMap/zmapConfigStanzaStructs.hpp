@@ -58,7 +58,7 @@ public:
   int numFields() const ;
   std::string type() const ;
   std::string toplevelName() const ;
-  void countSources(uint &num_total, uint &num_with_data, uint &num_to_load, const bool recent = false) const ;
+  void countSources(unsigned int &num_total, unsigned int &num_with_data, unsigned int &num_to_load, const bool recent = false) const ;
 
 
   GQuark name_ ;
@@ -93,7 +93,7 @@ private:
   mutable int url_parse_error_ ; // gets set to non-zero parsing url_obj_ failed
   GQuark config_file_ ;
   std::string file_type_ ;       // describes file type e.g. "bigBed". Empty if not applicable or unknown.
-  uint num_fields_ ;             // for file sources, number of fields. 0 if not applicable or unknown.
+  unsigned int num_fields_ ;             // for file sources, number of fields. 0 if not applicable or unknown.
 } ;
 
 typedef ZMapConfigSourceStruct *ZMapConfigSource ;

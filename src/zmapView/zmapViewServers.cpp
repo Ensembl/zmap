@@ -71,7 +71,7 @@ static GHashTable *getFeatureSourceHash(GList *sources) ;
 
 static bool createStepList(ZMapView zmap_view, ZMapNewDataSource view_con, ZMapConnectionData connect_data,
                            ZMapConfigSource server,
-                           ZMapURL urlObj, const char *format, 
+                           const ZMapURL urlObj, const char *format, 
                            ZMapFeatureContext context, GList *req_featuresets, GList *req_biotypes,
                            gboolean dna_requested, gboolean req_styles, char *styles_file,
                            gboolean terminate) ;
@@ -488,7 +488,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig,
       /* OH DEAR...THINK WE MIGHT NEED THE CONFIG FILE HERE TOO.... */
 
      /* mh17: this is tedious to do for each request esp on startup */
-      sources = zMapConfigGetSources(view->view_sequence->config_file, NULL, NULL) ;
+      sources = view->view_sequence->getSources(true) ;
       ghash = getFeatureSourceHash(sources);
 
       for ( ; req_sources ; req_sources = g_list_next(req_sources))
@@ -678,9 +678,6 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig,
       zMapViewShowLoadStatus(view);
     }
 
-  if (sources)
-    zMapConfigSourcesFreeList(sources);
-
   if (ghash)
     g_hash_table_destroy(ghash);
 
@@ -750,7 +747,7 @@ static bool setUpServerConnectionByScheme(ZMapView zmap_view,
                                           GError **error)
 {
   bool result = true ;
-  ZMapURL zmap_url = current_server->urlObj() ;
+  const ZMapURL zmap_url = current_server->urlObj() ;
   terminate = FALSE ;
 
   /* URL may be empty for trackhub sources which are just parents of child data tracks */
@@ -876,7 +873,7 @@ static GHashTable *getFeatureSourceHash(GList *sources)
 
 static bool createStepList(ZMapView zmap_view, ZMapNewDataSource view_con, ZMapConnectionData connect_data,
                            ZMapConfigSource server,
-                           ZMapURL urlObj, const char *format,
+                           const ZMapURL urlObj, const char *format,
                            ZMapFeatureContext context, GList *req_featuresets, GList *req_biotypes,
                            gboolean dna_requested, gboolean req_styles, char *styles_file,
                            gboolean terminate)

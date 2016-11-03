@@ -300,7 +300,7 @@ void zMapServerDestroyViewConnection(ZMapNewDataSource view_conn)
  */
 
 /* Record initial details for a session, these are known when the session is created. */
-void zmapViewSessionAddServer(ZMapViewSessionServer server_data, ZMapURL url, char *format)
+void zmapViewSessionAddServer(ZMapViewSessionServer server_data, const ZMapURL url, char *format)
 {
   server_data->scheme = url->scheme ;
   server_data->url = g_strdup(url->url) ;

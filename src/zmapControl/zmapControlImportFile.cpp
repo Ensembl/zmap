@@ -430,7 +430,7 @@ static void createSourceData(ZMapView view,
 
   ZMapFeatureContextMap context_map = zMapViewGetContextMap(view) ;
 
-  ZMapURL zmap_url = source->urlObj() ;
+  const ZMapURL zmap_url = source->urlObj() ;
 
   if (context_map && sequence_map->runningUnderOtter() && zmap_url && zmap_url->path)
     {

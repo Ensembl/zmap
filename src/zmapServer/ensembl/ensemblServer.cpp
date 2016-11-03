@@ -316,7 +316,7 @@ static gboolean createConnection(void **server_out, ZMapConfigSource config_sour
 
   EnsemblServer server ;
   Global global = &global_init_G ;
-  ZMapURL url = config_source->urlObj() ;
+  const ZMapURL url = config_source->urlObj() ;
 
   /* Always return a server struct as it contains error message stuff. */
   server = (EnsemblServer)g_new0(EnsemblServerStruct, 1) ;
@@ -340,6 +340,7 @@ static gboolean createConnection(void **server_out, ZMapConfigSource config_sour
         server->passwd = g_strdup(url->passwd) ;
 
       server->db_name = zMapURLGetQueryValue(url->query, "db_name") ;
+      server->db_prefix = zMapURLGetQueryValue(url->query, "db_prefix") ;
 
       if (server->host && server->db_name)
         {
@@ -1759,9 +1760,20 @@ static ZMapFeature makeFeature(EnsemblServer server,
           if (transcript_ids)
             transcript_ids->insert(unique_id);
 
-          /* We can get different feature types with the same source, so ensure that the
-           * featureset id is unique by also appending the biotype or SO term */
-          featureset_unique_name = g_strdup_printf("%s_%s", featureset_name, biotype) ;
+          /* If a prefix is given, add it to the featureset name. If a prefix is not given, then
+           * duplicate features from different servers will not be shown because their names will
+           * not be unique. Specifying a prefix allows the user to show these duplicate
+           * features. Longer term we would make this a configurable option and the server would
+           * be taken into account when deciding whether a feature is unique or not. However,
+           * that's quite a far-reaching change that needs some thought. */
+          /* Another issue is that we can get different feature types with the same featureset
+           * name, so ensure that the featureset id is unique by also appending the biotype or SO
+           * term. Again, ideally this would be taken care of behind the scenes, so appending this
+           * to the featureset name is a quick and dirty fix for now. */
+          if (server->db_prefix)
+            featureset_unique_name = g_strdup_printf("%s_%s_%s", server->db_prefix, featureset_name, biotype);
+          else
+            featureset_unique_name = g_strdup_printf("%s_%s", featureset_name, biotype) ;
 
           /* Find the featureset, or create it if it doesn't exist */
           GQuark featureset_unique_id = zMapFeatureSetCreateID((char*)featureset_unique_name) ;

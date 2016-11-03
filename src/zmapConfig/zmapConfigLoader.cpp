@@ -92,7 +92,6 @@ static ZMapConfigIniContextKeyEntry get_source_group_data(const char **stanza_na
 static ZMapConfigIniContextKeyEntry get_window_group_data(const char **stanza_name, const char **stanza_type);
 static ZMapConfigIniContextKeyEntry get_blixem_group_data(const char **stanza_name, const char **stanza_type);
 static gpointer create_config_source(gpointer data);
-static void free_source_list_item(gpointer list_data, gpointer unused_data);
 static void source_set_property(char *current_stanza_name, const char *key, GType type,
 gpointer parent_data, GValue *property_value) ;
 static gpointer create_config_style(gpointer data) ;
@@ -131,27 +130,26 @@ static bool debug_loading_G = false ;                       // Use to turn debug
  */
 
 ZMapConfigSourceStruct::ZMapConfigSourceStruct()
-  : name_(0),
-    version(NULL),
-    featuresets(NULL),
-    biotypes(NULL),
-    stylesfile(NULL),
-    format(NULL),
-    timeout(0),
-    delayed(FALSE),
-    provide_mapping(FALSE),
-    req_styles(FALSE),
-    group(0),
-    recent(false),
-    parent(NULL),
-    children(),
-  url_(NULL),
-  url_obj_(NULL),
-  url_parse_error_(0),
+  : name_{0},
+  version{NULL},
+  featuresets{NULL},
+  biotypes{NULL},
+  stylesfile{NULL},
+  format{NULL},
+  timeout{0},
+  delayed{FALSE},
+  provide_mapping{FALSE},
+  req_styles{FALSE},
+  group{0},
+  recent{false},
+  parent{NULL},
+  children{},
+  url_{NULL},
+  url_obj_{NULL},
+  url_parse_error_{0},
   config_file_{0},
-  file_type_{},
+  file_type_(),
   num_fields_{0}
-  
 {
 }
 
@@ -228,18 +226,6 @@ const ZMapURL ZMapConfigSourceStruct::urlObj() const
   // fails. If the error is already set, then don't bother trying to re-parse.
   if (!url_obj_ && !url_parse_error_ && url_)
     {
-
-      // THIS SEEMS UNECESSARILY COMPLICATED...IF PARSE FAILS IT RETURNS NULL AND AN ERROR....
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      url_obj_ = url_parse(url_, &url_parse_error_) ;
-
-      if (url_parse_error_)
-        {
-          if (url_obj_)
-            url_obj_ = NULL ;
-        }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
       // Can return NULL and an error if it fails.
       url_obj_ = url_parse(url_, &url_parse_error_) ;
     }
@@ -316,9 +302,9 @@ string ZMapConfigSourceStruct::toplevelName() const
 }
 
 
-void ZMapConfigSourceStruct::countSources(uint &num_total, 
-                                          uint &num_with_data, 
-                                          uint &num_to_load, 
+void ZMapConfigSourceStruct::countSources(unsigned int &num_total, 
+                                          unsigned int &num_with_data, 
+                                          unsigned int &num_to_load, 
                                           const bool recent_only) const
 {
   if (!recent_only || recent)
@@ -477,17 +463,6 @@ GList *zMapConfigIniContextGetNamed(ZMapConfigIniContext context, char *stanza_n
     }
 
   return glist ;
-}
-
-
-void zMapConfigSourcesFreeList(GList *config_sources_list)
-{
-  zMapReturnIfFail(config_sources_list) ;
-
-  g_list_foreach(config_sources_list, free_source_list_item, NULL);
-  g_list_free(config_sources_list);
-
-  return ;
 }
 
 
@@ -2342,12 +2317,6 @@ static gpointer create_config_source(gpointer data)
   src->group = SOURCE_GROUP_START ;                         // default_value
 
   return src ;
-}
-
-static void free_source_list_item(gpointer list_data, gpointer unused_data)
-{
-  ZMapConfigSource source_to_free = (ZMapConfigSource)list_data;
-  delete source_to_free ;
 }
 
 

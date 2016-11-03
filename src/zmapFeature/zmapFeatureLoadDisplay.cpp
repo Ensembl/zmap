@@ -649,7 +649,7 @@ gbtools::trackhub::Registry ZMapFeatureSequenceMapStructType::getTrackhubRegistr
 void ZMapFeatureSequenceMapStructType::createSourceChildren(ZMapConfigSource source,
                                                             GError **error)
 {
-  ZMapURL zmap_url = source->urlObj() ;
+  const ZMapURL zmap_url = source->urlObj() ;
 
   if (zmap_url && zmap_url->scheme == SCHEME_TRACKHUB)
     {
@@ -947,9 +947,9 @@ void ZMapFeatureSequenceMapStructType::removeSource(const char *source_name_cstr
 /* Count how many sources there are (including child sources) and how many are selected for
  * loading (i.e. not delayed). Only includes "recent" sources if the recent flag is true; includes
  * all sources otherwise. */
-void ZMapFeatureSequenceMapStructType::countSources(uint &num_total, 
-                                                    uint &num_with_data,
-                                                    uint &num_to_load,
+void ZMapFeatureSequenceMapStructType::countSources(unsigned int &num_total, 
+                                                    unsigned int &num_with_data,
+                                                    unsigned int &num_to_load,
                                                     const bool recent)
 {
   if (sources)

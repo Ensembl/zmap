@@ -218,7 +218,7 @@ static gboolean createConnection(void **server_out, ZMapConfigSource config_sour
   server->source_2_sourcedata = NULL ;
   server->featureset_2_column = NULL ;
 
-  ZMapURL url = config_source->urlObj() ;
+  const ZMapURL url = config_source->urlObj() ;
 
   if (!isFileScheme(url->scheme) || (!(url->path) || !(*(url->path))))
     {

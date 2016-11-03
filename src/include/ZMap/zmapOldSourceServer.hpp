@@ -90,7 +90,7 @@ typedef struct ZMapNewDataSourceStructType
 
 void zMapServerFormatSession(ZMapViewSessionServer server_data, GString *session_text) ;
 
-void zmapViewSessionAddServer(ZMapViewSessionServer session_data, ZMapURL url, char *format) ;
+void zmapViewSessionAddServer(ZMapViewSessionServer session_data, const ZMapURL url, char *format) ;
 void zmapViewSessionAddServerInfo(ZMapViewSessionServer session_data, ZMapServerReqGetServerInfo session) ;
 
 
