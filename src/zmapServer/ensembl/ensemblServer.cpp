@@ -393,37 +393,28 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
   return result ;
 }
 
+
+static gboolean getServerInfo(EnsemblServer server, ZMapServerReqGetServerInfo info)
+{
+  gboolean result = TRUE ;
+
+  if (server->db_name)
+    info->database_name_out = g_strdup(server->db_name) ;
+
+  if (server->host)
+    info->database_path_out = g_strdup_printf("%s:%d", server->host, server->port) ;
+
+  return result ;
+}
+
+
 static ZMapServerResponseType getInfo(void *server_in, ZMapServerReqGetServerInfo info)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   EnsemblServer server = (EnsemblServer)server_in ;
 
-  if (!server->dba)
-    {
-      pthread_mutex_lock(server->mutex) ;
-      server->dba = DBAdaptor_new(server->host, server->user, server->passwd, server->db_name, server->port, NULL);
-      pthread_mutex_unlock(server->mutex) ;
-    }
-
-  if (server && server->dba && server->dba->dbc)
-    {
-      pthread_mutex_lock(server->mutex) ;
-      char *assembly_type = DBAdaptor_getAssemblyType(server->dba) ;
-      pthread_mutex_unlock(server->mutex) ;
-
-      if (assembly_type)
-        {
-          ZMAPSERVER_LOG(Message, ENSEMBL_PROTOCOL_STR, server->host,
-                         "Assembly type %s\n", assembly_type);
-
-          g_free(assembly_type) ;
-          result = ZMAP_SERVERRESPONSE_OK ;
-        }
-      else
-        {
-          setErrMsg(server, g_strdup_printf("Failed to get assembly type for database %s", server->db_name)) ;
-        }
-    }
+  if (getServerInfo(server, info))
+    result = ZMAP_SERVERRESPONSE_OK ;
 
   return result ;
 }
