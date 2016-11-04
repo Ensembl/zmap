@@ -337,47 +337,41 @@ static void updateSourcesList(MainFrame main_data, ZMapFeatureSequenceMap sequen
 
 /* Set the 'load' flag for a particular row in the tree. Also sets the delayed flag in the
  * relevant source. Recurses through child paths, and sibling paths if do_siblings is true. */
-static void treePathSetLoadStatus(GtkTreeModel *model,
-                                  GtkTreePath *path, 
+static void treeIterSetLoadStatus(GtkTreeModel *model,
+                                  GtkTreeIter *iter, 
                                   const gboolean load,
                                   const gboolean do_siblings,
                                   MainFrame main_data,
                                   ZMapFeatureSequenceMap sequence_map)
 {
-  GtkTreeIter iter ;
-  
-  if (path && gtk_tree_model_get_iter(model, &iter, path))
+  zMapReturnIfFail(iter) ;
+
+  // Update the load status for this tree row
+  gtk_tree_store_set(GTK_TREE_STORE(model), iter, SourceColumn::LOAD, load, -1);
+
+  // Find the source and update the delayed flag
+  char *source_name = NULL ;
+  gtk_tree_model_get(model, iter, SourceColumn::NAME, &source_name, -1) ;
+
+  if (source_name)
     {
-      // Update this tree path
-      gtk_tree_store_set(GTK_TREE_STORE(model), &iter, SourceColumn::LOAD, load, -1);
+      ZMapConfigSource source = sequence_map->getSource(source_name) ;
 
-      // Find the source and update the delayed flag
-      char *source_name = NULL ;
-      gtk_tree_model_get(model, &iter, SourceColumn::NAME, &source_name, -1) ;
+      if (source)
+        source->delayed = !load ;
+    }
 
-      if (source_name)
-        {
-          ZMapConfigSource source = sequence_map->getSource(source_name) ;
+  // Recurse through child paths, and siblings if applicable
+  GtkTreeIter child_iter ;
+  if (gtk_tree_model_iter_children(model, &child_iter, iter))
+    {
+      // Pass do_siblings=TRUE to do all of this child's siblings
+      treeIterSetLoadStatus(model, &child_iter, load, TRUE, main_data, sequence_map) ; 
+    }
 
-          if (source)
-            source->delayed = !load ;
-        }
-
-      // Recurse through child paths and siblings (if applicable)
-      GtkTreePath *path_copy = gtk_tree_path_copy(path) ;
-      gtk_tree_path_down(path_copy) ;
-      treePathSetLoadStatus(model, path_copy, load, TRUE, main_data, sequence_map) ; // do all child siblings
-      gtk_tree_path_free(path_copy) ;
-      path_copy = NULL ; 
-
-      if (do_siblings)
-        {
-          path_copy = gtk_tree_path_copy(path) ;
-          gtk_tree_path_next(path_copy) ;
-          treePathSetLoadStatus(model, path_copy, load, do_siblings, main_data, sequence_map) ;
-          gtk_tree_path_free(path_copy) ;
-          path_copy = NULL ;
-        }
+  if (do_siblings && gtk_tree_model_iter_next(model, iter))
+    {
+      treeIterSetLoadStatus(model, iter, load, do_siblings, main_data, sequence_map) ;
     }
 
   return ;
@@ -403,7 +397,9 @@ static void loadButtonToggledCB(GtkCellRendererToggle *toggle_renderer,
       
       gboolean load = !cur_value ;
 
-      treePathSetLoadStatus(main_data->sources_model, path, load, FALSE, main_data, main_data->orig_sequence_map) ;
+      GtkTreeIter iter ;
+      if (gtk_tree_model_get_iter(main_data->sources_model, &iter, path))
+        treeIterSetLoadStatus(main_data->sources_model, &iter, load, FALSE, main_data, main_data->orig_sequence_map) ;
 
       updateInfoLabel(main_data, main_data->orig_sequence_map) ;
     }
