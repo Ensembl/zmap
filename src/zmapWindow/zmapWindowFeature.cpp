@@ -329,34 +329,19 @@ void zmapWindowPfetchEntry(ZMapWindow window, char *sequence_name)
 
       /* It would seem that PFetchHandleFetch() calls g_spawn_async_with_pipes() which is not
        * thread safe so lock round it...should locks be in pfetch code ?? */
-      {
-        bool result ;
-        int err_num = 0 ;
-        char *err_msg = NULL ;
+      zMapThreadForkLock();   // see zmapThreads.c
 
-        if (!(result = UtilsGlobalThreadLock(&err_num)))
-          {
-            zMapLogCriticalSysErr(err_num, "%s", "Error trying to lock for pfetch") ;
-          }
+      char *err_msg = NULL ;
 
-        if (result)
-          {
-            if (!(pfetch_data->pfetch->fetch(pfetch_args_str->str, &err_msg)))
-              {
-                zMapWarning("Error fetching sequence '%s':%s", sequence_name, err_msg) ;
-                
-                free((void *)err_msg) ;
-              }
-          }
 
-        if (result)
-          {
-            if (!(result = UtilsGlobalThreadUnlock(&err_num)))
-              {
-                zMapLogCriticalSysErr(err_num, "%s", "Error trying to lock for pfetch") ;
-              }
-          }
-      }
+      if (!(pfetch_data->pfetch->fetch(pfetch_args_str->str, &err_msg)))
+        {
+          zMapWarning("Error fetching sequence '%s':%s", sequence_name, err_msg) ;
+
+          free((void *)err_msg) ;
+        }
+
+      zMapThreadForkUnlock();
 
       g_string_free(pfetch_args_str, TRUE) ;
     }
@@ -763,6 +748,7 @@ FooCanvasItem *zmapWindowFeatureFactoryRunSingle(GHashTable *ftoi_hash,
 
   if(feature_item)        // will always work
     {
+      gboolean status = FALSE;
       ZMapFrame frame;
       ZMapStrand strand;
 
@@ -796,8 +782,6 @@ FooCanvasItem *zmapWindowFeatureFactoryRunSingle(GHashTable *ftoi_hash,
 
       if(ftoi_hash)
         {
-          gboolean status ;
-
           if(!feature_stack->col_hash[strand])
             {
               feature_stack->col_hash[strand] = zmapWindowFToIGetSetHash(ftoi_hash,

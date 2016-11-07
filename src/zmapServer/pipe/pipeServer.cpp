@@ -46,7 +46,6 @@
 #include <string.h>
 #include <glib.h>
 
-#include <gbtools/gbtools.hpp>
 #include <ZMap/zmapUtils.hpp>
 #include <ZMap/zmapGLibUtils.hpp>
 #include <ZMap/zmapConfigIni.hpp>
@@ -58,10 +57,6 @@
                                                             // shouldn't be in here....
 
 #include <pipeServer_P.hpp>
-
-
-using namespace gbtools ;
-
 
 
 /* Flag values for pipeArg struct flags. */
@@ -1126,53 +1121,36 @@ static gboolean pipeSpawn(PipeServer server, GError **error)
   }
 
   /* Seems that g_spawn_async_with_pipes() is not thread safe so lock round it. */
-  {
-    bool result ;
-    int err_num = 0 ;
+  zMapThreadForkLock();
 
-    if (!(result = UtilsGlobalThreadLock(&err_num)))
-      {
-        zMapLogCriticalSysErr(err_num, "%s", "Error trying to lock for pfetch") ;
-      }
+  /* After we spawn we need access to the childs exit status so we set G_SPAWN_DO_NOT_REAP_CHILD
+   * so we can reap the child. */
+  if ((result = g_spawn_async_with_pipes(NULL, argv, NULL,
+                                         G_SPAWN_DO_NOT_REAP_CHILD, NULL, NULL, &server->child_pid,
+                                         NULL, &pipe_fd, NULL,
+                                         &pipe_error)))
+    {
+      /* Set up reading of stdout pipe. */
+      server->gff_pipe = g_io_channel_unix_new(pipe_fd) ;
 
-    if (result)
-      {
-        /* After we spawn we need access to the childs exit status so we set G_SPAWN_DO_NOT_REAP_CHILD
-         * so we can reap the child. */
-        if ((result = g_spawn_async_with_pipes(NULL, argv, NULL,
-                                               G_SPAWN_DO_NOT_REAP_CHILD, NULL, NULL, &server->child_pid,
-                                               NULL, &pipe_fd, NULL,
-                                               &pipe_error)))
-          {
-            /* Set up reading of stdout pipe. */
-            server->gff_pipe = g_io_channel_unix_new(pipe_fd) ;
+      /* Set a callback to be called when child exits. */
+      server->child_watch_id = g_child_watch_add(server->child_pid, childFullReapCB, server) ;
 
-            /* Set a callback to be called when child exits. */
-            server->child_watch_id = g_child_watch_add(server->child_pid, childFullReapCB, server) ;
+      if (child_pid_debug_G)
+        zMapLogWarning("Child pid %d created.", server->child_pid) ;
+    }
+  else
+    {
+      /* If there was an error then return it. */
+      if (error)
+        *error = pipe_error ;
 
-            if (child_pid_debug_G)
-              zMapLogWarning("Child pid %d created.", server->child_pid) ;
-          }
-        else
-          {
-            /* If there was an error then return it. */
-            if (error)
-              *error = pipe_error ;
-            
-            /* didn't run so can't have clean exit code; */
-            server->exit_code = EXIT_FAILURE ;
-          }
-      }
+      /* didn't run so can't have clean exit code; */
+      server->exit_code = EXIT_FAILURE ;
+    }
 
-    /* Unlock ! */
-    if (result)
-      {
-        if (!(result = UtilsGlobalThreadUnlock(&err_num)))
-          {
-            zMapLogCriticalSysErr(err_num, "%s", "Error trying to lock for pfetch") ;
-          }
-      }
-  }
+  /* Unlock ! */
+  zMapThreadForkUnlock();
 
   /* Clear up */
   g_free(argv) ;
