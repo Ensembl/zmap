@@ -1853,6 +1853,7 @@ static ZMapConfigIniContextKeyEntry get_app_group_data(const char **stanza_name,
     { ZMAPSTANZA_APP_SHRINKABLE,         G_TYPE_BOOLEAN, NULL, FALSE },
     { ZMAPSTANZA_APP_HIGHLIGHT_FILTERED, G_TYPE_BOOLEAN, NULL, FALSE },
     { ZMAPSTANZA_APP_ENABLE_ANNOTATION,  G_TYPE_BOOLEAN, NULL, FALSE },
+    { ZMAPSTANZA_APP_MAX_FEATURES,       G_TYPE_INT,     NULL, FALSE },
     {NULL}
   };
   static const char *name = ZMAPSTANZA_APP_CONFIG;

@@ -146,7 +146,9 @@ int ZMapFeatureCount::getLimit() const
 // Set the limit
 void ZMapFeatureCount::setLimit(const int max_features)
 {
+  mutex_.lock() ;
   max_features_ = max_features ;
+  mutex_.unlock() ;
 }
 
 

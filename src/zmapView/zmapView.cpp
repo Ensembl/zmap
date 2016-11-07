@@ -59,6 +59,7 @@
 #include <ZMap/zmapCmdLineArgs.hpp>
 #include <ZMap/zmapUrlUtils.hpp>
 #include <ZMap/zmapOldSourceServer.hpp>
+#include <ZMap/zmapFeature.hpp>
 
 #include <zmapView_P.hpp>
 
@@ -2144,6 +2145,7 @@ static void getIniData(ZMapView view, char *config_str, GList *req_sources)
   ZMapFeatureColumn column;
   GList *iter;
   char *str;
+  int int_value = 0;
   gpointer key, value;
   GList *sources;
 
@@ -2189,6 +2191,16 @@ static void getIniData(ZMapView view, char *config_str, GList *req_sources)
 
           if (view->navigator_window)
             zMapWindowNavigatorMergeInFeatureSetNames(view->navigator_window, view->navigator_set_names);
+        }
+
+      /* Feature limit */
+      if (zMapConfigIniContextGetInt(context,
+                                     ZMAPSTANZA_APP_CONFIG,
+                                     ZMAPSTANZA_APP_CONFIG,
+                                     ZMAPSTANZA_APP_MAX_FEATURES,&int_value))
+        {
+          // Set the feature limit in the feature count class
+          ZMapFeatureCount::instance().setLimit(int_value) ;
         }
 
       /*-------------------------------------
