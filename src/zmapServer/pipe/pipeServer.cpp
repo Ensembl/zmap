@@ -1127,12 +1127,18 @@ static gboolean pipeSpawn(PipeServer server, GError **error)
 
   /* Seems that g_spawn_async_with_pipes() is not thread safe so lock round it. */
   {
-    bool result ;
     int err_num = 0 ;
+    bool locked ;
 
-    if (!(result = UtilsGlobalThreadLock(&err_num)))
+    if ((locked = UtilsGlobalThreadLock(&err_num)))
+      {
+        result = TRUE ;
+      }
+    else
       {
         zMapLogCriticalSysErr(err_num, "%s", "Error trying to lock for pfetch") ;
+
+        result = FALSE ;
       }
 
     if (result)
@@ -1165,11 +1171,13 @@ static gboolean pipeSpawn(PipeServer server, GError **error)
       }
 
     /* Unlock ! */
-    if (result)
+    if (locked)
       {
-        if (!(result = UtilsGlobalThreadUnlock(&err_num)))
+        if (!(locked = UtilsGlobalThreadUnlock(&err_num)))
           {
-            zMapLogCriticalSysErr(err_num, "%s", "Error trying to lock for pfetch") ;
+            zMapLogCriticalSysErr(err_num, "%s", "Error trying to unlock for pfetch.") ;
+
+            result = FALSE ;
           }
       }
   }
