@@ -896,7 +896,7 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
                 }
 
               /* Check if it's a fatal error */
-              if (server->data_stream->terminated())
+              if (server->data_stream->terminated() || zMapFeatureErrorIsFatal(&g_error))
                 {
                   get_features_data->result = ZMAP_SERVERRESPONSE_REQFAIL ;
 

@@ -550,7 +550,7 @@ static bool checkError(GError **error)
     {
       // If it's a fatal error creating the feature then don't try to create any more
       ok = false ;
-      zMapCritical("Error creating feature: %s", (*error)->message) ;
+      zMapLogCritical("Error creating feature: %s", (*error)->message) ;
       g_error_free(*error) ;
       *error = NULL ;
     }
