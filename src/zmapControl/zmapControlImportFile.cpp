@@ -141,7 +141,7 @@ void zmapControlImportFile(ZMap zmap, ZMapFeatureSequenceMap sequence_map, int r
   int height = 0 ;
 
   if (gbtools::GUIGetTrueMonitorSize(toplevel, &width, &height) && GTK_IS_WINDOW(toplevel))
-    gtk_window_set_default_size(GTK_WINDOW(toplevel), std::min(640.0, width * 0.5), std::min(400.0, height * 0.7)) ;
+    gtk_window_set_default_size(GTK_WINDOW(toplevel), std::min(640.0, width * 0.5), std::min(600.0, height * 0.7)) ;
 
   gtk_window_set_policy(GTK_WINDOW(toplevel), FALSE, TRUE, FALSE ) ;
   gtk_container_border_width(GTK_CONTAINER(toplevel), 0) ;
