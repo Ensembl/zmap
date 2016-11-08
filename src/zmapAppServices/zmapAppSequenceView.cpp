@@ -454,15 +454,14 @@ static GtkWidget* createListWidget(ZMapFeatureSequenceMap sequence_map, MainFram
   GtkTreeSelection *tree_selection = gtk_tree_view_get_selection(tree_view) ;
   gtk_tree_selection_set_mode(tree_selection, GTK_SELECTION_MULTIPLE);
 
-  GtkCellRenderer *text_renderer = gtk_cell_renderer_text_new();
-  createTreeViewColumn(tree_view, "Name", text_renderer,   "text",   SourceColumn::NAME) ;
-  createTreeViewColumn(tree_view, "Type", text_renderer,   "text",   SourceColumn::TYPE) ;
-
   GtkCellRenderer *toggle_renderer = gtk_cell_renderer_toggle_new();
   gtk_cell_renderer_toggle_set_activatable(GTK_CELL_RENDERER_TOGGLE(toggle_renderer), TRUE) ;
   g_signal_connect(G_OBJECT(toggle_renderer), "toggled", G_CALLBACK(loadButtonToggledCB), main_data) ;
-
   createTreeViewColumn(tree_view, "Load", toggle_renderer, "active", SourceColumn::LOAD) ;
+
+  GtkCellRenderer *text_renderer = gtk_cell_renderer_text_new();
+  createTreeViewColumn(tree_view, "Name", text_renderer,   "text",   SourceColumn::NAME) ;
+  createTreeViewColumn(tree_view, "Type", text_renderer,   "text",   SourceColumn::TYPE) ;
 
   return GTK_WIDGET(tree_view) ;
 }
