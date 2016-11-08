@@ -764,13 +764,6 @@ static void importNewSource(ZMapConfigSource server,
         {
           GList *req_featuresets = NULL ;
           ZMapFeatureContextMap context_map ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-          const string url(server->url()) ;
-          const string config_file = string("") ;
-          const string version = string("") ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
           ZMapFeatureContext context ;
 
 
@@ -781,13 +774,8 @@ static void importNewSource(ZMapConfigSource server,
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
           DataSourceFeatures *my_feature_request = new DataSourceFeatures(sequence_map, req_start, req_end,
-                                                                          url, config_file, version,
-                                                                          context, &(context_map->styles)) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-          DataSourceFeatures *my_feature_request = new DataSourceFeatures(sequence_map, req_start, req_end,
                                                                           server,
                                                                           context, &(context_map->styles)) ;
-
 
           if (!(my_feature_request->SendRequest(newCallBackFunc, view)))
             {
@@ -795,6 +783,8 @@ static void importNewSource(ZMapConfigSource server,
 
               delete my_feature_request ;
             }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
@@ -807,14 +797,10 @@ static void importNewSource(ZMapConfigSource server,
           context_map = zMapViewGetContextMap(view) ;
           context = zMapViewCreateContext(view, dna_req_featuresets, NULL) ;
 
-          const string acedb_url("acedb://any:any@gen1b:20000?use_methods=false&gff_version=2") ;
+          // ah...I should be using the filename I passed in...sigh....
 
+          const string acedb_url("acedb://any:any@annosoft:20000?use_methods=false&gff_version=2") ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-          DataSourceSequence *my_sequence_request = new DataSourceSequence(sequence_map, req_start, req_end,
-                                                                           acedb_url, config_file, version,
-                                                                           context, &(context_map->styles)) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
           DataSourceSequence *my_sequence_request = new DataSourceSequence(sequence_map, req_start, req_end,
                                                                            server,
                                                                            context, &(context_map->styles)) ;
