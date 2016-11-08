@@ -337,47 +337,41 @@ static void updateSourcesList(MainFrame main_data, ZMapFeatureSequenceMap sequen
 
 /* Set the 'load' flag for a particular row in the tree. Also sets the delayed flag in the
  * relevant source. Recurses through child paths, and sibling paths if do_siblings is true. */
-static void treePathSetLoadStatus(GtkTreeModel *model,
-                                  GtkTreePath *path, 
+static void treeIterSetLoadStatus(GtkTreeModel *model,
+                                  GtkTreeIter *iter, 
                                   const gboolean load,
                                   const gboolean do_siblings,
                                   MainFrame main_data,
                                   ZMapFeatureSequenceMap sequence_map)
 {
-  GtkTreeIter iter ;
-  
-  if (path && gtk_tree_model_get_iter(model, &iter, path))
+  zMapReturnIfFail(iter) ;
+
+  // Update the load status for this tree row
+  gtk_tree_store_set(GTK_TREE_STORE(model), iter, SourceColumn::LOAD, load, -1);
+
+  // Find the source and update the delayed flag
+  char *source_name = NULL ;
+  gtk_tree_model_get(model, iter, SourceColumn::NAME, &source_name, -1) ;
+
+  if (source_name)
     {
-      // Update this tree path
-      gtk_tree_store_set(GTK_TREE_STORE(model), &iter, SourceColumn::LOAD, load, -1);
+      ZMapConfigSource source = sequence_map->getSource(source_name) ;
 
-      // Find the source and update the delayed flag
-      char *source_name = NULL ;
-      gtk_tree_model_get(model, &iter, SourceColumn::NAME, &source_name, -1) ;
+      if (source)
+        source->delayed = !load ;
+    }
 
-      if (source_name)
-        {
-          ZMapConfigSource source = sequence_map->getSource(source_name) ;
+  // Recurse through child paths, and siblings if applicable
+  GtkTreeIter child_iter ;
+  if (gtk_tree_model_iter_children(model, &child_iter, iter))
+    {
+      // Pass do_siblings=TRUE to do all of this child's siblings
+      treeIterSetLoadStatus(model, &child_iter, load, TRUE, main_data, sequence_map) ; 
+    }
 
-          if (source)
-            source->delayed = !load ;
-        }
-
-      // Recurse through child paths and siblings (if applicable)
-      GtkTreePath *path_copy = gtk_tree_path_copy(path) ;
-      gtk_tree_path_down(path_copy) ;
-      treePathSetLoadStatus(model, path_copy, load, TRUE, main_data, sequence_map) ; // do all child siblings
-      gtk_tree_path_free(path_copy) ;
-      path_copy = NULL ; 
-
-      if (do_siblings)
-        {
-          path_copy = gtk_tree_path_copy(path) ;
-          gtk_tree_path_next(path_copy) ;
-          treePathSetLoadStatus(model, path_copy, load, do_siblings, main_data, sequence_map) ;
-          gtk_tree_path_free(path_copy) ;
-          path_copy = NULL ;
-        }
+  if (do_siblings && gtk_tree_model_iter_next(model, iter))
+    {
+      treeIterSetLoadStatus(model, iter, load, do_siblings, main_data, sequence_map) ;
     }
 
   return ;
@@ -385,7 +379,9 @@ static void treePathSetLoadStatus(GtkTreeModel *model,
 
 
 /* Called when the user toggles the 'load' button for a source. It finds the source at the given
- * path and toggles its 'delayed' flag to be opposite the value of the 'load' value. */
+ * path and toggles its 'delayed' flag to be opposite the value of the 'load' value. If multiple
+ * rows in the dialog are selected, it toggles them all to be the same as the clicked one
+ * (including their children). */
 static void loadButtonToggledCB(GtkCellRendererToggle *toggle_renderer,
                                 gchar *path_str,
                                 gpointer user_data)
@@ -394,17 +390,40 @@ static void loadButtonToggledCB(GtkCellRendererToggle *toggle_renderer,
 
   GtkTreePath *path = gtk_tree_path_new_from_string(path_str) ;
   GtkTreeIter iter ;
-
+  
+  // Get the tree row iter for the row that was clicked
   if (path && gtk_tree_model_get_iter(main_data->sources_model, &iter, path))
     {
-      // The toggle button is bound to the tree model, so update the value there
+      // Get the load status from this tree row
       gboolean cur_value = FALSE ;
       gtk_tree_model_get(main_data->sources_model, &iter, SourceColumn::LOAD, &cur_value, -1) ;
-      
+
+      // The new value will be the inverse of the current value
       gboolean load = !cur_value ;
 
-      treePathSetLoadStatus(main_data->sources_model, path, load, FALSE, main_data, main_data->orig_sequence_map) ;
+      // Set the load status in the tree row for this row and any child rows
+      GtkTreeIter iter ;
+      if (gtk_tree_model_get_iter(main_data->sources_model, &iter, path))
+        treeIterSetLoadStatus(main_data->sources_model, &iter, load, FALSE, main_data, main_data->orig_sequence_map) ;
 
+      // If there are any other rows selected, then update them too
+      GtkTreeSelection *selection = gtk_tree_view_get_selection(main_data->sources_tree) ;
+      GList *rows = gtk_tree_selection_get_selected_rows(selection, &main_data->sources_model) ;
+
+      for (GList *row_item = rows; row_item; row_item = row_item->next)
+        {
+          GtkTreePath *selected_path = (GtkTreePath*)(row_item->data) ;
+          char *selected_path_str = gtk_tree_path_to_string(selected_path) ;
+          
+          // Ignore the original path, which we've already done
+          if (strcmp(path_str, selected_path_str) != 0 && 
+              gtk_tree_model_get_iter(main_data->sources_model, &iter, selected_path))
+            {
+              treeIterSetLoadStatus(main_data->sources_model, &iter, load, FALSE, main_data, main_data->orig_sequence_map) ;
+            }
+        }
+
+      // Finally, update the info label, which displays info about which sources will be loaded
       updateInfoLabel(main_data, main_data->orig_sequence_map) ;
     }
 

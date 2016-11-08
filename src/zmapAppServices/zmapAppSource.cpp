@@ -1052,7 +1052,7 @@ static void makeEnsemblWidgets(MainFrame main_data,
                    main_data->ensembl_widgets) ;
 
   main_data->dbprefix_widg = makeEntryWidget("DB prefix :", NULL, 
-                                             "OPTIONAL: By default, duplicate features from different databases are NOT loaded in ZMap. If you want to load them, then you can specify a prefix, which will be prepended to the logic name for all features from this database to make it unique. This will ensure that all features from this database will be loaded.", 
+                                             "OPTIONAL: By default, features with the same logic name are shown in the same column in ZMap, regardless of which database they came from. If you want to show them in different columns, you can specify a prefix to apply to the logic name for this database to make it unique. A prefix is also required if you want to show duplicate features from different databases, because duplicate features are not allowed in the same column", 
                                              table, &row, col, col + 2, FALSE, &main_data->ensembl_widgets) ;
 
   /* Second column */
