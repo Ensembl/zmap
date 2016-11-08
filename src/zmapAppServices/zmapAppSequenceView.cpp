@@ -1246,12 +1246,29 @@ static void applyCB(GtkWidget *widget, gpointer cb_data)
 
   const bool recent_only = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(main_data->recent_widg)) ;
 
-  if (main_data->import)
+  // Warn the user if they are about to load a lot of data
+  unsigned int warning_limit = 40 ;
+  
+  unsigned int num_total = 0 ;     // total number of sources
+  unsigned int num_with_data = 0 ; // number of sources with data
+  unsigned int num_to_load = 0 ;   // number of sources with data that are selected for loading
+
+  main_data->orig_sequence_map->countSources(num_total, num_with_data, num_to_load, !main_data->show_all) ;
+  bool ok = true ;
+  
+  if (num_to_load > warning_limit)
+    {
+      stringstream ss ;
+      ss << "You are about to load " << num_to_load << " sources.\n\nYou will not be able to cancel loading once it starts.\n\nAre you sure you want to continue?" ;
+      ok = zMapGUIMsgGetBool(NULL, ZMAP_MSG_WARNING, ss.str().c_str()) ;
+    }
+
+  if (ok && main_data->import)
     {
       /* Just call user callback with original sequence map. */
       (main_data->user_func)(main_data->orig_sequence_map, recent_only, main_data->user_data) ;
     }
-  else
+  else if (ok)
     {
       gboolean status = TRUE ;
       const char *err_msg = NULL ;
@@ -1371,6 +1388,7 @@ static void applyCB(GtkWidget *widget, gpointer cb_data)
             {
               zMapWarning("%s", err_msg) ;
               delete seq_map ;
+              ok = false ;
             }
           else
             {
@@ -1383,6 +1401,9 @@ static void applyCB(GtkWidget *widget, gpointer cb_data)
         g_error_free(tmp_error) ;
     }
 
+  if (ok)
+    gtk_widget_destroy(main_data->toplevel) ;
+  
   return ;
 }
 
@@ -1719,13 +1740,13 @@ static void clearSearchFilter(MainFrame main_data)
 
 
 /* Callback to clear the current search/filter */
-static void clear_button_cb(GtkButton *button, gpointer user_data)
-{
-  MainFrame main_data = (MainFrame)user_data ;
-  zMapReturnIfFail(main_data && main_data->sources_tree) ;
-
-  clearSearchFilter(main_data) ;
-}
+//static void clear_button_cb(GtkButton *button, gpointer user_data)
+//{
+//  MainFrame main_data = (MainFrame)user_data ;
+//  zMapReturnIfFail(main_data && main_data->sources_tree) ;
+//
+//  clearSearchFilter(main_data) ;
+//}
 
 
 /* Case insensitive version of strstr */
