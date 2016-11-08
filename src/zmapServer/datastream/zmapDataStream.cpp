@@ -99,11 +99,11 @@ namespace // unnamed namespace
  * http://www.sequenceontology.org/browser/current_svn/term/SO:0000150
  *
  */
-static const char * const ZMAP_BAM_SO_TERM  = "read" ;
-static const char * const ZMAP_BCF_SO_TERM  = "snv" ;
-static const char * const ZMAP_BED_SO_TERM  = "sequence_feature" ;
-static const char * const ZMAP_BIGBED_SO_TERM  = "sequence_feature" ;
-static const char * const ZMAP_BIGWIG_SO_TERM  = "score" ;
+#define ZMAP_BAM_SO_TERM  "read"
+#define ZMAP_BCF_SO_TERM  "snv"
+#define ZMAP_BED_SO_TERM  "sequence_feature"
+#define ZMAP_BIGBED_SO_TERM "sequence_feature"
+#define ZMAP_BIGWIG_SO_TERM "score"
 #define ZMAP_CIGARSTRING_MAXLENGTH 2048
 #define READBUFFER_SIZE 2048
 #define BED_DEFAULT_FIELDS 3       // min number of fields in a BED file
@@ -163,7 +163,7 @@ public:
   string errMsg() ;
 
 private:
-  struct errCatch *err_catch_ ;
+  struct errCatch *err_catch_{NULL} ;
 } ;
 
 
@@ -507,8 +507,7 @@ ZMapDataStreamHTSStruct::ZMapDataStreamHTSStruct(ZMapConfigSource source,
     hts_hdr(NULL),
     hts_idx(NULL),
     hts_iter(NULL),
-    hts_rec(NULL),
-    so_type(NULL)
+    hts_rec(NULL)
 {
   type = ZMapDataStreamType::HTS ;
 
@@ -523,7 +522,6 @@ ZMapDataStreamHTSStruct::ZMapDataStreamHTSStruct(ZMapConfigSource source,
   hts_rec = bam_init1() ;
   if (hts_file && hts_hdr && hts_rec)
     {
-      so_type = g_strdup(ZMAP_BAM_SO_TERM) ;
     }
   else
     {
@@ -561,7 +559,6 @@ ZMapDataStreamBCFStruct::ZMapDataStreamBCFStruct(ZMapConfigSource source,
     hts_file(NULL),
     hts_hdr(NULL),
     hts_rec(NULL),
-    so_type(NULL),
     rid_(0)
 {
   type = ZMapDataStreamType::BCF ;
@@ -574,7 +571,6 @@ ZMapDataStreamBCFStruct::ZMapDataStreamBCFStruct(ZMapConfigSource source,
   hts_rec = bcf_init1() ;
   if (hts_file && hts_hdr && hts_rec)
     {
-      so_type = g_strdup(ZMAP_BCF_SO_TERM) ;
     }
   else
     {
@@ -680,8 +676,6 @@ ZMapDataStreamHTSStruct::~ZMapDataStreamHTSStruct()
     hts_idx_destroy(hts_idx) ;
   if (hts_iter)
     hts_itr_destroy(hts_iter) ;
-  if (so_type)
-    g_free(so_type) ;
 }
 
 ZMapDataStreamBCFStruct::~ZMapDataStreamBCFStruct()
@@ -692,8 +686,6 @@ ZMapDataStreamBCFStruct::~ZMapDataStreamBCFStruct()
     bcf_destroy1(hts_rec) ;
   if (hts_hdr)
     bcf_hdr_destroy(hts_hdr) ;
-  if (so_type)
-    g_free(so_type) ;
 }
 #endif
 
@@ -2451,7 +2443,6 @@ inline semaphore::native_handle_type semaphore::native_handle() {
 
 
 BlatLibErrHandler::BlatLibErrHandler()
-  : err_catch_(NULL)
 {
 }
 

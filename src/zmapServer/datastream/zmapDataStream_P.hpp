@@ -133,24 +133,24 @@ public:
   bool endOfFile() ;
   GError* error() ;
 
-  ZMapDataStreamType type ;
+  ZMapDataStreamType type{ZMapDataStreamType::UNK} ;
 
 protected:
 
-  ZMapConfigSource source_ ;
-  char *sequence_ ;
-  int start_ ;
-  int end_ ;
-  GError *error_ ;
+  ZMapConfigSource source_{NULL} ;
+  char *sequence_{nullptr} ;
+  int start_{0} ;
+  int end_{0} ;
+  GError *error_{NULL} ;
 
-  ZMapGFFParser parser_ ;
-  ZMapFeatureSet feature_set_ ; // only used if all features go into same feature set
-  int num_features_ ;           // counts how many features we have created
-  bool end_of_file_ ;           // set to true when there is no more to read
+  ZMapGFFParser parser_{NULL} ;
+  ZMapFeatureSet feature_set_{NULL} ; // only used if all features go into same feature set
+  int num_features_{0}    ;           // counts how many features we have created
+  bool end_of_file_{false} ;          // set to true when there is no more to read
 
-  GHashTable *featureset_2_column_ ;
-  GHashTable *source_2_sourcedata_ ;
-  ZMapStyleTree *styles_ ;
+  GHashTable *featureset_2_column_{NULL} ;
+  GHashTable *source_2_sourcedata_{NULL} ;
+  ZMapStyleTree *styles_{NULL} ;
 
 } ;
 
@@ -182,10 +182,10 @@ private:
   int curLineNumber() ;
   bool parseHeader(gboolean &done_header, ZMapGFFHeaderState &header_state, GError **error) ;
 
-  GIOChannel *io_channel ;
-  int gff_version_ ;
-  bool gff_version_set_ ;
-  GString *buffer_line_ ;
+  GIOChannel *io_channel{NULL} ;
+  int gff_version_{0} ;
+  bool gff_version_set_{false} ;
+  GString *buffer_line_{NULL} ;
 } ;
 
 
@@ -203,9 +203,9 @@ public:
   bool parseBodyLine(GError **error) ;
 
 private:
-  struct bed* bed_features_ ;   // list of features read from the file
-  struct bed* cur_feature_ ;    // current feature to process in the list of bed_features_
-  int standard_fields_ ;
+  struct bed* bed_features_{NULL} ;   // list of features read from the file
+  struct bed* cur_feature_{NULL} ;    // current feature to process in the list of bed_features_
+  int standard_fields_{0} ;
 } ;
 
 
@@ -223,12 +223,12 @@ public:
   bool parseBodyLine(GError **error) ;
 
 private:
-  struct bbiFile *bbi_file_ ;
-  struct lm *lm_;                        // Memory pool to hold returned list from bbi file
-  struct bigBedInterval *list_ ;         // list of intervals returned from the file
-  struct bigBedInterval *cur_interval_ ; // current interval from list_
-  struct bed* cur_feature_ ;             // current feature from interval
-  int standard_fields_ ;
+  struct bbiFile *bbi_file_{NULL} ;
+  struct lm *lm_{NULL};                        // Memory pool to hold returned list from bbi file
+  struct bigBedInterval *list_{NULL} ;         // list of intervals returned from the file
+  struct bigBedInterval *cur_interval_{NULL} ; // current interval from list_
+  struct bed* cur_feature_{NULL} ;             // current feature from interval
+  int standard_fields_{0} ;
 } ;
 
 
@@ -246,10 +246,10 @@ public:
   bool parseBodyLine(GError **error) ;
 
 private:
-  struct bbiFile *bbi_file_ ;
-  struct lm *lm_; // Memory pool to hold returned list from bbi file
-  struct bbiInterval *list_ ;
-  struct bbiInterval *cur_interval_ ; // current item from list_
+  struct bbiFile *bbi_file_{NULL} ;
+  struct lm *lm_{NULL}; // Memory pool to hold returned list from bbi file
+  struct bbiInterval *list_{NULL} ;
+  struct bbiInterval *cur_interval_{NULL} ; // current item from list_
 } ;
 
 
@@ -269,17 +269,12 @@ public:
   bool readLine() ;
   bool parseBodyLine(GError **error) ;
 
-  htsFile *hts_file ;
+  htsFile *hts_file{NULL} ;
   /* bam header and record object */
-  bam_hdr_t *hts_hdr ;
-  hts_idx_t *hts_idx ;
-  hts_itr_t *hts_iter ;
-  bam1_t *hts_rec ;
-
-  /*
-   * Data that we need to store
-   */
-  char *so_type ;
+  bam_hdr_t *hts_hdr{NULL} ;
+  hts_idx_t *hts_idx{NULL} ;
+  hts_itr_t *hts_iter{NULL} ;
+  bam1_t *hts_rec{NULL} ;
 
 private:
   bool processRead() ;
@@ -300,18 +295,13 @@ public:
   bool readLine() ;
   bool parseBodyLine(GError **error) ;
 
-  htsFile *hts_file ;
+  htsFile *hts_file{NULL} ;
   /* bam header and record object */
-  bcf_hdr_t *hts_hdr ;
-  bcf1_t *hts_rec ;
-
-  /*
-   * Data that we need to store
-   */
-  char *so_type ;
+  bcf_hdr_t *hts_hdr{NULL} ;
+  bcf1_t *hts_rec{NULL} ;
 
 private:
-  int rid_ ; // stores the ref sequence id value used by bcf parser for our required sequence_
+  int rid_{0} ; // stores the ref sequence id value used by bcf parser for our required sequence_
   ZMapDataStreamFeatureData cur_feature_data_ ;
 } ;
 

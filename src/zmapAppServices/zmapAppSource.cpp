@@ -178,15 +178,11 @@ public:
 class SearchListData
 {
 public:
-  SearchListData() 
-    : search_entry(NULL),
-      filter_entry(NULL),
-      tree_model(NULL)
-  {} ;
+  SearchListData() {} ;
 
-  GtkEntry *search_entry ;
-  GtkEntry *filter_entry ;
-  GtkTreeModel *tree_model ;
+  GtkEntry *search_entry{NULL} ;
+  GtkEntry *filter_entry{NULL} ;
+  GtkTreeModel *tree_model{NULL} ;
 } ;
 
 
@@ -1129,14 +1125,18 @@ static void onTrackDbIdChanged(GtkEditable *editable, gpointer user_data)
   TrackDb trackdb = main_data->registry.searchTrackDb(trackdb_id, err_msg) ;
   
   if (!err_msg.empty())
-    zMapLogWarning("%s", err_msg.c_str()) ;
-      
-  gtk_entry_set_text(GTK_ENTRY(main_data->trackdb_name_widg), trackdb.name().c_str()) ;
-  gtk_entry_set_text(GTK_ENTRY(main_data->trackdb_species_widg), trackdb.species().c_str()) ;
-  gtk_entry_set_text(GTK_ENTRY(main_data->trackdb_assembly_widg), trackdb.assembly().c_str()) ;
+    {
+      zMapLogWarning("%s", err_msg.c_str()) ;
+    }
+  else
+    {
+      gtk_entry_set_text(GTK_ENTRY(main_data->trackdb_name_widg), trackdb.name().c_str()) ;
+      gtk_entry_set_text(GTK_ENTRY(main_data->trackdb_species_widg), trackdb.species().c_str()) ;
+      gtk_entry_set_text(GTK_ENTRY(main_data->trackdb_assembly_widg), trackdb.assembly().c_str()) ;
 
-  // Use the trackdb name for the source name
-  gtk_entry_set_text(GTK_ENTRY(main_data->name_widg), trackdb.name().c_str()) ;
+      // Use the trackdb name for the source name
+      gtk_entry_set_text(GTK_ENTRY(main_data->name_widg), trackdb.name().c_str()) ;
+    }
 }
 
 /* Run a dialog that asks for the user credentials and logs in to the trackhub registry. Returns

@@ -130,26 +130,6 @@ static bool debug_loading_G = false ;                       // Use to turn debug
  */
 
 ZMapConfigSourceStruct::ZMapConfigSourceStruct()
-  : name_{0},
-  version{NULL},
-  featuresets{NULL},
-  biotypes{NULL},
-  stylesfile{NULL},
-  format{NULL},
-  timeout{0},
-  delayed{FALSE},
-  provide_mapping{FALSE},
-  req_styles{FALSE},
-  group{0},
-  recent{false},
-  parent{NULL},
-  children{},
-  url_{NULL},
-  url_obj_{NULL},
-  url_parse_error_{0},
-  config_file_{0},
-  file_type_(),
-  num_fields_{0}
 {
 }
 
