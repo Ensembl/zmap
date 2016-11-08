@@ -157,7 +157,7 @@ static gboolean tree_view_search_equal_func_cb(GtkTreeModel *model, gint column,
                                                GtkTreeIter *iter, gpointer user_data) ;
 
 //static void filter_entry_activate_cb(GtkEntry *entry, gpointer user_data) ;
-static void clear_button_cb(GtkButton *button, gpointer user_data) ;
+//static void clear_button_cb(GtkButton *button, gpointer user_data) ;
 static gboolean columnMatchesText(GtkTreeModel *model, GtkTreeIter *iter, SourceColumn col_id, const char *text) ;
 static void select_invert_button_cb(GtkButton *button, gpointer user_data) ;
 static void select_none_button_cb(GtkButton *button, gpointer user_data) ;
@@ -449,14 +449,12 @@ static GtkWidget* createListWidgetButtons(MainFrame main_data)
   GtkWidget *vbox = gtk_vbox_new(FALSE, XPAD) ;
 
   GtkWidget *hbox = gtk_hbox_new(FALSE, XPAD) ;
-  gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0) ;
 
 
   /* 
    * Add buttons to control the selection 
    */
   
-  //hbox = gtk_hbox_new(FALSE, XPAD) ;
   gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0) ;
   gtk_box_pack_start(GTK_BOX(hbox), gtk_label_new("Select:"), FALSE, FALSE, 0) ;
 
@@ -1713,30 +1711,30 @@ static gboolean tree_view_search_equal_func_cb(GtkTreeModel *model,
 
 
 /* Clear the text in the search/filter boxes */
-static void clearSearchFilter(MainFrame main_data)
-{
-  zMapReturnIfFail(main_data) ;
-
-  if (main_data->search_entry)
-    gtk_entry_set_text(main_data->search_entry, "") ;
-
-//  if (main_data->filter_entry)
-//    gtk_entry_set_text(main_data->filter_entry, "") ;
-
-  /* Refilter the filtered model */
-  GtkTreeModelFilter *filter = GTK_TREE_MODEL_FILTER(main_data->sources_model_filtered) ;
-  if (filter)
-    gtk_tree_model_filter_refilter(filter) ;
-
-  /* Use the unfiltered tree model so that it can be reordered */
-  gtk_tree_view_set_model(main_data->sources_tree, main_data->sources_model) ;
-
-  /* Clear the sort column so that the tree can be reordered again manually. Note that this does
-   * not revert the sort order - use the Revert button for that. */
-  gtk_tree_sortable_set_sort_column_id(GTK_TREE_SORTABLE(main_data->sources_model), 
-                                       GTK_TREE_SORTABLE_UNSORTED_SORT_COLUMN_ID,
-                                       GTK_SORT_ASCENDING) ;
-}
+//static void clearSearchFilter(MainFrame main_data)
+//{
+//  zMapReturnIfFail(main_data) ;
+//
+//  if (main_data->search_entry)
+//    gtk_entry_set_text(main_data->search_entry, "") ;
+//
+////  if (main_data->filter_entry)
+////    gtk_entry_set_text(main_data->filter_entry, "") ;
+//
+//  /* Refilter the filtered model */
+//  GtkTreeModelFilter *filter = GTK_TREE_MODEL_FILTER(main_data->sources_model_filtered) ;
+//  if (filter)
+//    gtk_tree_model_filter_refilter(filter) ;
+//
+//  /* Use the unfiltered tree model so that it can be reordered */
+//  gtk_tree_view_set_model(main_data->sources_tree, main_data->sources_model) ;
+//
+//  /* Clear the sort column so that the tree can be reordered again manually. Note that this does
+//   * not revert the sort order - use the Revert button for that. */
+//  gtk_tree_sortable_set_sort_column_id(GTK_TREE_SORTABLE(main_data->sources_model), 
+//                                       GTK_TREE_SORTABLE_UNSORTED_SORT_COLUMN_ID,
+//                                       GTK_SORT_ASCENDING) ;
+//}
 
 
 /* Callback to clear the current search/filter */
