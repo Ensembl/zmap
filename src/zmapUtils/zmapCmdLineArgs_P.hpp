@@ -86,40 +86,41 @@
 typedef struct _ZMapCmdLineArgsStruct
 {
   /* The original argc/argv passed in. */
-  int argc ;
-  char **argv ;
+  int argc{0} ;
+  char **argv{NULL} ;
 
-  GOptionContext *opt_context ;
+  GOptionContext *opt_context{NULL} ;
 
-  char **sequence_arg ;
+  char **sequence_arg{NULL} ;
 
-  char **files_arg ;	/* non options/ remainder args */
+  char **files_arg{NULL} ;	/* non options/ remainder args */
 
   /* All option values are stored here for later reference. */
-  gboolean raw_version ;
-  gboolean version ;
-  gboolean serial ;
-  gboolean timing ;
-  gboolean single_screen ;
+  gboolean raw_version{false} ;
+  gboolean version{false} ;
+  gboolean serial{false} ;
+  gboolean timing{false} ;
+  gboolean single_screen{false} ;
 
-  int sleep ;
+  int sleep{0} ;
 
-  int start, end ;
+  int start{0} ;
+  int end{0} ;
 
-  char *config_dir ;
-  char *config_file_path ;
-  char *window ;
-  char *styles_file ;
+  char *config_dir{NULL} ;
+  char *config_file_path{NULL} ;
+  char *window{NULL} ;
+  char *styles_file{NULL} ;
 
-  char *remote_debug ;
+  char *remote_debug{NULL} ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  char *peer_name ;
-  char *peer_clipboard ;
+  char *peer_name{NULL} ;
+  char *peer_clipboard{NULL} ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-  char *peer_socket ;
+  char *peer_socket{NULL} ;
 
-  gboolean shrink ;
+  gboolean shrink{false} ;
 
 } ZMapCmdLineArgsStruct, *ZMapCmdLineArgs ;
 
