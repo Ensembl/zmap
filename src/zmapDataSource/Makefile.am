@@ -12,6 +12,7 @@ zmapDataSourceSlaveHandler.cpp \
 zmapDataSource_P.hpp \
 zmapOldSlaveHandler.cpp \
 zmapOldSourceServer.cpp \
+zmapOldSourceServer_P.hpp \
 zmapOldStepList.cpp \
 $(NULL)
 
