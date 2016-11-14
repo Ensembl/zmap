@@ -614,31 +614,39 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::createSource(const char *sour
 
 
 /* Get a trackhub registry object for performing trackhub operations */
-gbtools::trackhub::Registry ZMapFeatureSequenceMapStructType::getTrackhubRegistry()
+gbtools::trackhub::Registry& ZMapFeatureSequenceMapStructType::getTrackhubRegistry()
 {
-  gbtools::trackhub::Registry registry ;
+  // Make it static so there is only registry object. This means the user will only have to log in
+  // once.
+  static gbtools::trackhub::Registry registry ;
+  static bool done = false ;
 
-  // Set registry properties based on our config
-  registry.setDebug(getConfigBoolean(ZMAPSTANZA_APP_CURL_DEBUG));
-
-  char *proxy = getConfigString(ZMAPSTANZA_APP_PROXY) ;
-
-  if (proxy)
+  if (!done)
     {
-      registry.setProxy(proxy);
-      g_free(proxy);
-      proxy = NULL ;
-    }
+      // Set registry properties based on our config
+      registry.setDebug(getConfigBoolean(ZMAPSTANZA_APP_CURL_DEBUG));
 
-  char *cainfo = getConfigString(ZMAPSTANZA_APP_CURL_CAINFO) ;
+      char *proxy = getConfigString(ZMAPSTANZA_APP_PROXY) ;
 
-  if (cainfo)
-    {
-      registry.setCainfo(cainfo);
-      g_free(cainfo);
-      cainfo = NULL ;
+      if (proxy)
+        {
+          registry.setProxy(proxy);
+          g_free(proxy);
+          proxy = NULL ;
+        }
+
+      char *cainfo = getConfigString(ZMAPSTANZA_APP_CURL_CAINFO) ;
+
+      if (cainfo)
+        {
+          registry.setCainfo(cainfo);
+          g_free(cainfo);
+          cainfo = NULL ;
+        }
+
+      done = true ;
     }
-    
+  
   return registry ;
 }
 
@@ -658,7 +666,7 @@ void ZMapFeatureSequenceMapStructType::createSourceChildren(ZMapConfigSource sou
       if (trackdb_id)
         {
           string err_msg;
-          gbtools::trackhub::Registry registry = getTrackhubRegistry() ;
+          gbtools::trackhub::Registry &registry = getTrackhubRegistry() ;
 
           // Ok, search the registry for this track db
           gbtools::trackhub::TrackDb trackdb = registry.searchTrackDb(trackdb_id, err_msg) ;
