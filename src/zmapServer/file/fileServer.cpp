@@ -212,7 +212,6 @@ static gboolean createConnection(void **server_out, ZMapConfigSource config_sour
   server->zmap_start = 0 ;
   server->zmap_end = 0 ;
   server->req_context = NULL ;
-  server->sequence_map = NULL ;
   server->styles_file = NULL ;
 
   server->source_2_sourcedata = NULL ;
@@ -330,7 +329,6 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
   server->req_sequence = req_open->req_sequence;
   server->zmap_start = req_open->zmap_start;
   server->zmap_end = req_open->zmap_end;
-  server->sequence_map = req_open->sequence_map;
 
   /*
    * Create data source object (file or GIOChannel)
@@ -779,7 +777,7 @@ static ZMapServerResponseType fileGetSequence(FileServer server)
   // read the sequence if it's there
   server->result = ZMAP_SERVERRESPONSE_OK;   // now we have data default is 'OK'
 
-  if (server->data_stream->init(server->sequence_map->sequence, server->zmap_start, server->zmap_end))
+  if (server->data_stream->init(g_quark_to_string(server->req_sequence), server->zmap_start, server->zmap_end))
     {
       if (!server->data_stream->parseSequence(sequence_finished, err_msg))
         {
@@ -872,7 +870,7 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
   FileServer server = get_features_data->server ;
   zMapReturnIfFail(server) ;
 
-  if (server->data_stream->init(server->sequence_map->sequence, server->zmap_start, server->zmap_end))
+  if (server->data_stream->init(g_quark_to_string(server->req_sequence), server->zmap_start, server->zmap_end))
     {
       /*
        * Read lines from the source. We assume that the first line has already been read.
