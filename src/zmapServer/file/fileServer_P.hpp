@@ -50,7 +50,6 @@ typedef struct FileServerStruct_
   ZMapDataStream data_stream ;
   ZMapServerResponseType result ;
   ZMapFeatureContext req_context ;
-  ZMapFeatureSequenceMap sequence_map ;
 
   ZMapConfigSource config_source ;    /* The source the server will process */
   char *config_file ;
