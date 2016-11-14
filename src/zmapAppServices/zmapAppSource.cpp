@@ -1189,7 +1189,7 @@ static bool runLoginDialog(MainFrame main_data)
       if (main_data->registry.login(user, pass, err_msg) && err_msg.empty())
         result = true ;
       else
-        zMapCritical("%s", "Error logging in: %s", err_msg.c_str()) ;
+        zMapCritical("Error logging in: %s", err_msg.c_str()) ;
     }
 
   gtk_widget_destroy(dialog) ;
