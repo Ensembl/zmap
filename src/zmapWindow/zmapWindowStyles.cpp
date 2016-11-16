@@ -415,14 +415,14 @@ static void updateNewStyle(gpointer cb_data, gpointer user_data)
   GList *featuresets_list = zMapStyleGetFeaturesetsIDs(style, (ZMapFeatureAny)context) ;
   char *featuresets = zMap_g_list_quark_to_string(featuresets_list, ";") ;
 
-  g_free(featuresets) ;
-  g_list_free(featuresets_list) ;
-
   gtk_tree_store_set(tree_store, &iter, 
                      0, g_quark_to_string(style->original_id), 
                      1, parent_name, 
                      2, featuresets, 
                      -1);
+
+  g_free(featuresets) ;
+  g_list_free(featuresets_list) ;
 }
 
 
