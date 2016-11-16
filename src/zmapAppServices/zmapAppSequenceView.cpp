@@ -46,8 +46,13 @@
 #include <ZMap/zmapAppServices.hpp>
 #include <ZMap/zmapControl.hpp>
 #include <ZMap/zmapConfigStanzaStructs.hpp>
+#include <ZMap/zmapUtilsDebug.hpp>
 
 using namespace std;
+
+
+#define XPAD 4
+#define YPAD 4
 
 
 /* Columns in the list of sources */
@@ -88,7 +93,12 @@ typedef struct MainFrameStructName
   // A tree view and model for showing the list of sources
   GtkTreeView *sources_tree ;
   GtkTreeModel *sources_model ;
+  GtkTreeModel *sources_model_filtered ;
 
+  // Buttons for interacting with the sources list
+  GtkEntry *search_entry ;
+  //GtkEntry *filter_entry ; // could add filter but needs work to work with child rows
+  
   // Is a source window displayed ?
   GtkWidget *source_window ;
 
@@ -142,6 +152,19 @@ static void createNewSourceCB(const char *source_name, const std::string &url,
 static void cancelNewSourceCB(GtkWidget *toplevel, gpointer cb_data) ;
 
 static void updateInfoLabel(MainFrame main_data, ZMapFeatureSequenceMap sequence_map) ;
+
+static gboolean tree_view_search_equal_func_cb(GtkTreeModel *model, gint column, const gchar *key,
+                                               GtkTreeIter *iter, gpointer user_data) ;
+
+//static void filter_entry_activate_cb(GtkEntry *entry, gpointer user_data) ;
+//static void clear_button_cb(GtkButton *button, gpointer user_data) ;
+static gboolean columnMatchesText(GtkTreeModel *model, GtkTreeIter *iter, SourceColumn col_id, const char *text) ;
+static void select_invert_button_cb(GtkButton *button, gpointer user_data) ;
+static void select_none_button_cb(GtkButton *button, gpointer user_data) ;
+static void select_all_button_cb(GtkButton *button, gpointer user_data) ;
+static void set_load_cb(GtkButton *button, gpointer user_data) ;
+static void set_unload_cb(GtkButton *button, gpointer user_data) ;
+//static gboolean tree_model_filter_visible_cb(GtkTreeModel *model, GtkTreeIter *iter, gpointer user_data) ;
 
 
 /*
@@ -272,6 +295,12 @@ static void createTreeViewColumn(GtkTreeView *tree_view,
                                                                        NULL);
 
   gtk_tree_view_column_set_resizable(column, TRUE) ;
+  gtk_tree_view_column_set_reorderable(column, TRUE) ;
+  gtk_tree_view_column_set_min_width(column, 30) ;
+  gtk_tree_view_column_set_max_width(column, 800) ;
+
+  gtk_tree_view_column_set_sort_column_id(column, (int)SourceColumn::NAME) ;
+
   gtk_tree_view_append_column(tree_view, column);
 
   return ;
@@ -379,9 +408,7 @@ static void treeIterSetLoadStatus(GtkTreeModel *model,
 
 
 /* Called when the user toggles the 'load' button for a source. It finds the source at the given
- * path and toggles its 'delayed' flag to be opposite the value of the 'load' value. If multiple
- * rows in the dialog are selected, it toggles them all to be the same as the clicked one
- * (including their children). */
+ * path and toggles its 'delayed' flag to be opposite the value of the 'load' value. */
 static void loadButtonToggledCB(GtkCellRendererToggle *toggle_renderer,
                                 gchar *path_str,
                                 gpointer user_data)
@@ -406,23 +433,6 @@ static void loadButtonToggledCB(GtkCellRendererToggle *toggle_renderer,
       if (gtk_tree_model_get_iter(main_data->sources_model, &iter, path))
         treeIterSetLoadStatus(main_data->sources_model, &iter, load, FALSE, main_data, main_data->orig_sequence_map) ;
 
-      // If there are any other rows selected, then update them too
-      GtkTreeSelection *selection = gtk_tree_view_get_selection(main_data->sources_tree) ;
-      GList *rows = gtk_tree_selection_get_selected_rows(selection, &main_data->sources_model) ;
-
-      for (GList *row_item = rows; row_item; row_item = row_item->next)
-        {
-          GtkTreePath *selected_path = (GtkTreePath*)(row_item->data) ;
-          char *selected_path_str = gtk_tree_path_to_string(selected_path) ;
-          
-          // Ignore the original path, which we've already done
-          if (strcmp(path_str, selected_path_str) != 0 && 
-              gtk_tree_model_get_iter(main_data->sources_model, &iter, selected_path))
-            {
-              treeIterSetLoadStatus(main_data->sources_model, &iter, load, FALSE, main_data, main_data->orig_sequence_map) ;
-            }
-        }
-
       // Finally, update the info label, which displays info about which sources will be loaded
       updateInfoLabel(main_data, main_data->orig_sequence_map) ;
     }
@@ -432,9 +442,101 @@ static void loadButtonToggledCB(GtkCellRendererToggle *toggle_renderer,
 }
 
 
+static GtkWidget* createListWidgetButtons(MainFrame main_data)
+{
+  zMapReturnValIfFail(main_data, NULL) ;
+
+  GtkWidget *vbox = gtk_vbox_new(FALSE, XPAD) ;
+
+  GtkWidget *hbox = gtk_hbox_new(FALSE, XPAD) ;
+
+
+  /* 
+   * Add buttons to control the selection 
+   */
+  
+  gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0) ;
+  gtk_box_pack_start(GTK_BOX(hbox), gtk_label_new("Select:"), FALSE, FALSE, 0) ;
+
+  /* Add a button to select all the visible rows */
+  GtkWidget *button = gtk_button_new_with_mnemonic("Al_l") ;
+  gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
+  g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(select_all_button_cb), main_data) ;
+  gtk_widget_set_tooltip_text(button, "Select all visible sources") ;
+
+  /* Add a button to unselect all visible rows */
+  button = gtk_button_new_with_mnemonic("_None") ;
+  gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
+  g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(select_none_button_cb), main_data) ;
+  gtk_widget_set_tooltip_text(button, "Deselect all visible sources") ;
+
+  /* Add a button to invert the current selection */
+  button = gtk_button_new_with_mnemonic("_Invert") ;
+  gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
+  g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(select_invert_button_cb), main_data) ;
+  gtk_widget_set_tooltip_text(button, "Invert the current selection") ;
+
+
+  /*
+   * Add a section for actions that can be performed on the selection 
+   */
+  
+  gtk_box_pack_start(GTK_BOX(hbox), gtk_label_new(" "), FALSE, FALSE, 0) ; //separator
+  gtk_box_pack_start(GTK_BOX(hbox), gtk_label_new("Action:"), FALSE, FALSE, 0) ;
+  gtk_box_pack_start(GTK_BOX(hbox), gtk_label_new(" "), FALSE, FALSE, 0) ; //separator
+
+  /* Add a button to tick mark the selected rows for loading */
+  button = gtk_button_new_with_mnemonic("_Load") ;
+  gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
+  g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(set_load_cb), main_data) ;
+  gtk_widget_set_tooltip_text(button, "Mark the selected rows for loading") ;
+
+  /* Add a button to tick mark the selected rows for loading */
+  button = gtk_button_new_with_mnemonic("_Unload") ;
+  gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
+  g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(set_unload_cb), main_data) ;
+  gtk_widget_set_tooltip_text(button, "Unmark the selected rows for loading") ;
+
+  
+  gtk_box_pack_start(GTK_BOX(hbox), gtk_label_new(" "), FALSE, FALSE, 0) ; //separator
+
+  /* 
+   * Add search/filter boxes
+   */
+  
+  gtk_box_pack_start(GTK_BOX(hbox), gtk_label_new("Search:"), FALSE, FALSE, 0) ;
+  main_data->search_entry = GTK_ENTRY(gtk_entry_new()) ;
+  gtk_box_pack_start(GTK_BOX(hbox), GTK_WIDGET(main_data->search_entry), FALSE, FALSE, 0) ;
+  gtk_widget_set_tooltip_text(GTK_WIDGET(main_data->search_entry), "Search for sources containing this text. Press the up/down arrows to progress to next/previous match.") ;
+
+  //gtk_box_pack_start(GTK_BOX(hbox), gtk_label_new("Filter:"), FALSE, FALSE, 0) ;
+  //main_data->filter_entry = GTK_ENTRY(gtk_entry_new()) ;
+  //gtk_box_pack_start(GTK_BOX(hbox), GTK_WIDGET(main_data->filter_entry), FALSE, FALSE, 0) ;
+  //g_signal_connect(G_OBJECT(main_data->filter_entry), "activate", G_CALLBACK(filter_entry_activate_cb), main_data) ;
+  //gtk_widget_set_tooltip_text(GTK_WIDGET(main_data->filter_entry), "Show only sources containing this text. Press enter to apply the filter.") ;
+
+  /* Add a button to clear the search/filter boxes and sort order */
+  //button = gtk_button_new_with_mnemonic("C_lear") ;
+  //gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
+  //g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(clear_button_cb), main_data) ;
+  //gtk_widget_set_tooltip_text(button, "Clear the current search/filter") ;
+
+
+  
+  return vbox ;
+}
+
+
 /* Create the list widget to show all of the existing source names */
 static GtkWidget* createListWidget(ZMapFeatureSequenceMap sequence_map, MainFrame main_data)
 {
+  GtkWidget *vbox = gtk_vbox_new(FALSE, XPAD) ;
+
+  // Create some buttons for interacting with the tree (must do this to set up search_entry
+  // etc. before using these in the tree view)
+  GtkWidget *list_buttons = createListWidgetButtons(main_data) ;
+
+  
   GtkTreeStore *store = gtk_tree_store_new((gint)(SourceColumn::TOTAL),
                                            G_TYPE_STRING, 
                                            G_TYPE_STRING,
@@ -446,6 +548,25 @@ static GtkWidget* createListWidget(ZMapFeatureSequenceMap sequence_map, MainFram
     {
       main_data->sources_tree = tree_view ;
       main_data->sources_model = GTK_TREE_MODEL(store) ;
+
+      if (main_data->search_entry)
+        {
+          gtk_tree_view_set_enable_search(tree_view, FALSE);
+          gtk_tree_view_set_search_column(tree_view, (int)SourceColumn::NAME);
+          gtk_tree_view_set_search_entry(tree_view, main_data->search_entry) ;
+          gtk_tree_view_set_search_equal_func(tree_view, tree_view_search_equal_func_cb, main_data, NULL) ;
+        }
+
+      //if (main_data->filter_entry)
+      //  {
+      //    GtkTreeModel *filtered = gtk_tree_model_filter_new(GTK_TREE_MODEL(store), NULL) ;
+      //
+      //    gtk_tree_model_filter_set_visible_func(GTK_TREE_MODEL_FILTER(filtered), 
+      //                                           tree_model_filter_visible_cb, 
+      //                                           main_data,
+      //                                           NULL);
+      //    main_data->sources_model_filtered = filtered ;
+      //  }
     }
 
   /* Update the values in the store with the sources from the sequence map */
@@ -454,17 +575,26 @@ static GtkWidget* createListWidget(ZMapFeatureSequenceMap sequence_map, MainFram
   GtkTreeSelection *tree_selection = gtk_tree_view_get_selection(tree_view) ;
   gtk_tree_selection_set_mode(tree_selection, GTK_SELECTION_MULTIPLE);
 
+  GtkCellRenderer *toggle_renderer = gtk_cell_renderer_toggle_new();
+  gtk_cell_renderer_toggle_set_activatable(GTK_CELL_RENDERER_TOGGLE(toggle_renderer), TRUE) ;
+  g_signal_connect(G_OBJECT(toggle_renderer), "toggled", G_CALLBACK(loadButtonToggledCB), main_data) ;
+  createTreeViewColumn(tree_view, "Load", toggle_renderer, "active", SourceColumn::LOAD) ;
+
   GtkCellRenderer *text_renderer = gtk_cell_renderer_text_new();
   createTreeViewColumn(tree_view, "Name", text_renderer,   "text",   SourceColumn::NAME) ;
   createTreeViewColumn(tree_view, "Type", text_renderer,   "text",   SourceColumn::TYPE) ;
 
-  GtkCellRenderer *toggle_renderer = gtk_cell_renderer_toggle_new();
-  gtk_cell_renderer_toggle_set_activatable(GTK_CELL_RENDERER_TOGGLE(toggle_renderer), TRUE) ;
-  g_signal_connect(G_OBJECT(toggle_renderer), "toggled", G_CALLBACK(loadButtonToggledCB), main_data) ;
+  
+  // Put the tree in a scrolled window below the buttons
+  GtkWidget *scrolled = gtk_scrolled_window_new(NULL, NULL) ;
+  gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+  gtk_container_add(GTK_CONTAINER(scrolled), GTK_WIDGET(tree_view)) ;
 
-  createTreeViewColumn(tree_view, "Load", toggle_renderer, "active", SourceColumn::LOAD) ;
+  // Add the scrolled window and buttons to the main container
+  gtk_box_pack_start(GTK_BOX(vbox), scrolled, TRUE, TRUE, 0) ;
+  gtk_box_pack_start(GTK_BOX(vbox), list_buttons, FALSE, FALSE, 0) ;
 
-  return GTK_WIDGET(tree_view) ;
+  return vbox ;
 }
 
 
@@ -555,13 +685,9 @@ static GtkWidget *makeSourcesFrame(MainFrame main_data, ZMapFeatureSequenceMap s
   gtk_container_border_width(GTK_CONTAINER(topbox), 5) ;
   gtk_container_add (GTK_CONTAINER (frame), topbox) ;
 
-  GtkWidget *scrolled = gtk_scrolled_window_new(NULL, NULL) ;
-  gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
-  gtk_box_pack_start(GTK_BOX(topbox), scrolled, TRUE, TRUE, 0) ;
-
   GtkWidget *list_widget = createListWidget(sequence_map, main_data) ;
-  gtk_container_add(GTK_CONTAINER(scrolled), list_widget) ;
-
+  gtk_box_pack_start(GTK_BOX(topbox), list_widget, TRUE, TRUE, 0) ;
+  
   // Create a label to show how many sources will be loaded
   main_data->info_widg = gtk_label_new("") ;
   gtk_box_pack_start(GTK_BOX(topbox), main_data->info_widg, FALSE, FALSE, 0) ;
@@ -1118,12 +1244,29 @@ static void applyCB(GtkWidget *widget, gpointer cb_data)
 
   const bool recent_only = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(main_data->recent_widg)) ;
 
-  if (main_data->import)
+  // Warn the user if they are about to load a lot of data
+  unsigned int warning_limit = 40 ;
+  
+  unsigned int num_total = 0 ;     // total number of sources
+  unsigned int num_with_data = 0 ; // number of sources with data
+  unsigned int num_to_load = 0 ;   // number of sources with data that are selected for loading
+
+  main_data->orig_sequence_map->countSources(num_total, num_with_data, num_to_load, !main_data->show_all) ;
+  bool ok = true ;
+  
+  if (num_to_load > warning_limit)
+    {
+      stringstream ss ;
+      ss << "You are about to load " << num_to_load << " sources.\n\nYou will not be able to cancel loading once it starts.\n\nAre you sure you want to continue?" ;
+      ok = zMapGUIMsgGetBool(NULL, ZMAP_MSG_WARNING, ss.str().c_str()) ;
+    }
+
+  if (ok && main_data->import)
     {
       /* Just call user callback with original sequence map. */
       (main_data->user_func)(main_data->orig_sequence_map, recent_only, main_data->user_data) ;
     }
-  else
+  else if (ok)
     {
       gboolean status = TRUE ;
       const char *err_msg = NULL ;
@@ -1243,6 +1386,7 @@ static void applyCB(GtkWidget *widget, gpointer cb_data)
             {
               zMapWarning("%s", err_msg) ;
               delete seq_map ;
+              ok = false ;
             }
           else
             {
@@ -1255,6 +1399,9 @@ static void applyCB(GtkWidget *widget, gpointer cb_data)
         g_error_free(tmp_error) ;
     }
 
+  if (ok)
+    gtk_widget_destroy(main_data->toplevel) ;
+  
   return ;
 }
 
@@ -1516,3 +1663,251 @@ static list<GQuark> getSelectedSourceNames(GtkTreeView *sources_tree,
 
   return result ;
 }
+
+
+/* Callback used to determine if a search term matches a row in the tree. Returns false if it
+ * matches, true otherwise. */
+static gboolean tree_view_search_equal_func_cb(GtkTreeModel *model,
+                                               gint column,
+                                               const gchar *key,
+                                               GtkTreeIter *iter,
+                                               gpointer user_data)
+{
+  gboolean result = TRUE ;
+
+  gboolean found = FALSE ;
+
+  /* Get the column to search */
+  SourceColumn col_id = SourceColumn::NAME ;
+  found = columnMatchesText(model, iter, col_id, key) ;
+  
+  // The return value is false if it matches, true otherwise
+  result = !found ;
+
+  return result ;
+}
+
+/* Callback called when the user hits the enter key in the filter text entry box */
+//static void filter_entry_activate_cb(GtkEntry *entry, gpointer user_data)
+//{
+//  MainFrame main_data = (MainFrame)user_data ;
+//  zMapReturnIfFail(main_data && main_data->sources_tree) ;
+//
+//  GtkTreeModelFilter *filter = GTK_TREE_MODEL_FILTER(main_data->sources_model_filtered) ;
+//
+//  /* Refilter the filtered model */
+//  if (filter)
+//    gtk_tree_model_filter_refilter(filter) ;
+//
+//  /* If the entry is empty then use the unfiltered tree model so that it can be
+//   * reordered. Otherwise use the filtered model (which will disable reordering). */
+//  const char *text = gtk_entry_get_text(entry) ;
+//
+//  if (!text || *text == 0 || !filter)
+//    gtk_tree_view_set_model(main_data->sources_tree, main_data->sources_model) ;
+//  else
+//    gtk_tree_view_set_model(main_data->sources_tree, main_data->sources_model_filtered) ;
+//}
+
+
+/* Clear the text in the search/filter boxes */
+//static void clearSearchFilter(MainFrame main_data)
+//{
+//  zMapReturnIfFail(main_data) ;
+//
+//  if (main_data->search_entry)
+//    gtk_entry_set_text(main_data->search_entry, "") ;
+//
+////  if (main_data->filter_entry)
+////    gtk_entry_set_text(main_data->filter_entry, "") ;
+//
+//  /* Refilter the filtered model */
+//  GtkTreeModelFilter *filter = GTK_TREE_MODEL_FILTER(main_data->sources_model_filtered) ;
+//  if (filter)
+//    gtk_tree_model_filter_refilter(filter) ;
+//
+//  /* Use the unfiltered tree model so that it can be reordered */
+//  gtk_tree_view_set_model(main_data->sources_tree, main_data->sources_model) ;
+//
+//  /* Clear the sort column so that the tree can be reordered again manually. Note that this does
+//   * not revert the sort order - use the Revert button for that. */
+//  gtk_tree_sortable_set_sort_column_id(GTK_TREE_SORTABLE(main_data->sources_model), 
+//                                       GTK_TREE_SORTABLE_UNSORTED_SORT_COLUMN_ID,
+//                                       GTK_SORT_ASCENDING) ;
+//}
+
+
+/* Callback to clear the current search/filter */
+//static void clear_button_cb(GtkButton *button, gpointer user_data)
+//{
+//  MainFrame main_data = (MainFrame)user_data ;
+//  zMapReturnIfFail(main_data && main_data->sources_tree) ;
+//
+//  clearSearchFilter(main_data) ;
+//}
+
+
+/* Case insensitive version of strstr */
+static char* my_strcasestr(const char *haystack, const char *needle)
+{
+  char *result = 0 ;
+
+  if (haystack && needle && *haystack && *needle)
+    {
+      char *h = g_ascii_strdown(haystack, -1) ;
+      char *n = g_ascii_strdown(needle, -1) ;
+      
+      result = strstr(h, n) ;
+
+      g_free(h) ;
+      g_free(n) ;
+    }
+
+  return result ;
+}
+
+
+/* Utility to see if the value in the given column matches the given text */
+static gboolean columnMatchesText(GtkTreeModel *model,
+                                  GtkTreeIter *iter,
+                                  SourceColumn col_id, 
+                                  const char *text)
+{
+  gboolean result = FALSE ;
+
+  // Get the string value for this column from the selected row in the drop-down box
+  char *value = NULL ;
+  gtk_tree_model_get(model, iter, col_id, &value, -1) ;
+
+  if (text &&
+      value && 
+      *text != 0 &&
+      *value != 0 && 
+      my_strcasestr(value, text) != NULL)
+    {
+      result = TRUE ;
+    }
+
+  g_free(value) ;
+
+  return result ;
+}
+
+
+/* Called when the user hits the select-all button. */
+static void select_all_button_cb(GtkButton *button, gpointer user_data)
+{
+  MainFrame main_data = (MainFrame)user_data ;
+  zMapReturnIfFail(main_data && main_data->sources_model) ;
+
+  GtkTreeSelection *selection = gtk_tree_view_get_selection(main_data->sources_tree) ;
+
+  if (selection)
+    {
+      gtk_tree_selection_select_all(selection) ;
+    }
+}
+
+/* Called when the user hits the select-none button. */
+static void select_none_button_cb(GtkButton *button, gpointer user_data)
+{
+  MainFrame main_data = (MainFrame)user_data ;
+  zMapReturnIfFail(main_data && main_data->sources_model) ;
+
+  GtkTreeSelection *selection = gtk_tree_view_get_selection(main_data->sources_tree) ;
+
+  if (selection)
+    {
+      gtk_tree_selection_unselect_all(selection) ;
+    }
+}
+
+
+/* Called when the user hits the invert-selection button. */
+static void select_invert_button_cb(GtkButton *button, gpointer user_data)
+{
+  MainFrame main_data = (MainFrame)user_data ;
+  zMapReturnIfFail(main_data && main_data->sources_tree) ;
+
+  GtkTreeSelection *selection = gtk_tree_view_get_selection(main_data->sources_tree) ;
+
+  // Loop through all rows in the tree model and toggle the selection status
+  GtkTreeIter iter ;
+
+  for (GtkTreePath *path = gtk_tree_path_new_first(); 
+       gtk_tree_model_get_iter(main_data->sources_model, &iter, path);
+       gtk_tree_path_next(path))
+    {
+      if (gtk_tree_selection_path_is_selected(selection, path))
+        gtk_tree_selection_unselect_path(selection, path) ;
+      else
+        gtk_tree_selection_select_path(selection, path) ;
+    }
+}
+
+
+/* Set the load status for the currently selected tree rows */
+static void treeSelectionSetLoadStatus(MainFrame main_data, const bool load)
+{
+  // Loop through the selected rows
+  GtkTreeSelection *selection = gtk_tree_view_get_selection(main_data->sources_tree) ;
+  GList *rows = gtk_tree_selection_get_selected_rows(selection, &main_data->sources_model) ;
+
+  for (GList *row_item = rows; row_item; row_item = row_item->next)
+    {
+      GtkTreePath *selected_path = (GtkTreePath*)(row_item->data) ;
+      GtkTreeIter iter ;
+          
+      if (gtk_tree_model_get_iter(main_data->sources_model, &iter, selected_path))
+        {
+          treeIterSetLoadStatus(main_data->sources_model, &iter, load, FALSE, main_data, main_data->orig_sequence_map) ;
+        }
+    }
+  
+  // Finally, update the info label, which displays info about which sources will be loaded
+  updateInfoLabel(main_data, main_data->orig_sequence_map) ;
+}
+
+
+/* Called when the user hits the set-load-status button. */
+static void set_load_cb(GtkButton *button, gpointer user_data)
+{
+  MainFrame main_data = (MainFrame)user_data ;
+
+  treeSelectionSetLoadStatus(main_data, true) ;
+}
+
+
+/* Called when the user hits the set-unload-status button. */
+static void set_unload_cb(GtkButton *button, gpointer user_data)
+{
+  MainFrame main_data = (MainFrame)user_data ;
+
+  treeSelectionSetLoadStatus(main_data, false) ;
+}
+
+
+/* Callback used to determine if a given row in the filtered tree model is visible */
+//static gboolean tree_model_filter_visible_cb(GtkTreeModel *model, GtkTreeIter *iter, gpointer user_data)
+//{
+//  gboolean result = FALSE ;
+//
+//  MainFrame main_data = (MainFrame)user_data ;
+//  GtkEntry *search_entry = main_data->filter_entry ;
+//  zMapReturnValIfFail(search_entry, result) ;
+//
+//  const char *text = gtk_entry_get_text(search_entry) ;
+//
+//  if (!text || *text == 0)
+//    {
+//      /* If text isn't specified, show everything */
+//      result = TRUE ;
+//    }
+//  else
+//    {
+//      SourceColumn col_id = SourceColumn::NAME ;
+//      result = columnMatchesText(model, iter, col_id, text) ;
+//    }
+//
+//  return result ;
+//}

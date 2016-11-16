@@ -1,24 +1,24 @@
 
-Request Tracker Tickets Resolved from 05/07/2016 to 23/09/2016
+Request Tracker Tickets Resolved from 12/09/2016 to 11/11/2016
 
-[tviewsrv get_rt_tickets.sh (18:30:59)]  /software/bin/rt is there !!
-ticket/538309
-id: ticket/538309
+[lucid-dev64 get_rt_tickets.sh (09:48:45)]  /software/bin/rt is there !!
+ticket/508075
+id: ticket/508075
 Queue: zmap
-Subject: Ensc-core check
+Subject: Loading BAM files with htslib in zmap
 Requestors: thibaut@ebi.ac.uk
 Owner: gb10
-Resolved: Thu Jul 14 17:26:01 2016
+Resolved: Mon Sep 26 11:27:42 2016
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
-ticket/539904
-id: ticket/539904
+ticket/542513
+id: ticket/542513
 Queue: zmap
-Subject: Bad asserts in otter log from zmap.....
+Subject: Reporting unsuported extensions, e.g. acedb
 Requestors: edgrif@sanger.ac.uk
-Owner: sm23
-Resolved: Tue Jul 26 15:08:51 2016
+Owner: edgrif
+Resolved: Tue Oct 18 11:27:03 2016
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
@@ -27,18 +27,8 @@ id: ticket/542750
 Queue: zmap
 Subject: Patch for bam file index support and display of spliced reads 
 Requestors: thibaut@ebi.ac.uk
-Owner: edgrif
-Resolved: Fri Sep 23 17:55:11 2016
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/543246
-id: ticket/543246
-Queue: zmap
-Subject: Menu bar in VM
-Requestors: sm23@sanger.ac.uk
-Owner: sm23
-Resolved: Wed Aug 17 12:06:05 2016
+Owner: gb10
+Resolved: Thu Oct 06 09:24:46 2016
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
@@ -49,6 +39,26 @@ Subject: Possible model duplication
 Requestors: thibaut@ebi.ac.uk
 Owner: gb10
 Resolved: Mon Sep 12 15:51:20 2016
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
+ticket/549947
+id: ticket/549947
+Queue: zmap
+Subject: Pull request on Ensc-core
+Requestors: thibaut@ebi.ac.uk
+Owner: gb10
+Resolved: Thu Oct 06 09:21:24 2016
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
+ticket/550986
+id: ticket/550986
+Queue: zmap
+Subject: Problem with assigning group to selections
+Requestors: thibaut@ebi.ac.uk
+Owner: gb10
+Resolved: Fri Oct 14 18:02:05 2016
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 

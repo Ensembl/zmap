@@ -111,13 +111,12 @@ ZMapFeatureSet zMapFeatureSetIDCreate(GQuark original_id, GQuark unique_id,
 }
 
 
-/* If this feature has a default style, update the style from values in the feature. Currently
- * this just affects graph styles and updates the max_score to a sensible value based on all of
- * the feature that get added. */
+/* Update the style from values in the feature. Currently this just affects graph styles and
+ * updates the max and min scores to sensible values based on all of the features that get
+ * added. */
 void zMapFeatureSetUpdateStyleFromFeature(ZMapFeature feature, ZMapFeatureTypeStyle style)
 {
-  // Currently only change default styles
-  if (feature && style && style->is_default)
+  if (feature && style)
     {
       // If this featureset has a graph style, set the min/max score in the style from the added features
       if (style->mode == ZMAPSTYLE_MODE_GRAPH)

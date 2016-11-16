@@ -61,23 +61,21 @@ public:
   void countSources(unsigned int &num_total, unsigned int &num_with_data, unsigned int &num_to_load, const bool recent = false) const ;
 
 
-  GQuark name_ ;
-  char *version ;
-  char *featuresets; //, *navigatorsets ;
-  char *biotypes;
+  GQuark name_{0} ;
+  char *version{NULL} ;
+  char *featuresets{NULL}; //, *navigatorsets ;
+  char *biotypes{NULL};
+//  char *styles_list{NULL};  not used,. pointless
+  char *stylesfile{NULL} ;
+  char *format{NULL} ;
+  int timeout{0} ;
+  gboolean delayed{FALSE} ; // if true, don't load this source on start up
+  gboolean provide_mapping{FALSE};
+  gboolean req_styles{FALSE};
+  int group{0};
+  bool recent{false};
 
-//  char *styles_list;  not used,. pointless
-
-  char *stylesfile ;
-  char *format ;
-  int timeout ;
-  gboolean delayed ; // if true, don't load this source on start up
-  gboolean provide_mapping;
-  gboolean req_styles;
-  int group;
-  bool recent;
-
-  ZMapConfigSourceStruct* parent ;
+  ZMapConfigSourceStruct* parent{NULL} ;
 
   std::list<ZMapConfigSourceStruct*> children ;
 
@@ -86,14 +84,14 @@ public:
 #define SOURCE_GROUP_DELAYED  2
 #define SOURCE_GROUP_ALWAYS   3
 
-  char *url_ ; // should be private really but still used by source_set_property
+  char *url_{NULL} ; // should be private really but still used by source_set_property
 
 private:
-  mutable ZMapURL url_obj_ ;     // lazy-evaluated parsed version of the url_
-  mutable int url_parse_error_ ; // gets set to non-zero parsing url_obj_ failed
-  GQuark config_file_ ;
-  std::string file_type_ ;       // describes file type e.g. "bigBed". Empty if not applicable or unknown.
-  unsigned int num_fields_ ;             // for file sources, number of fields. 0 if not applicable or unknown.
+  mutable ZMapURL url_obj_{NULL} ;    // lazy-evaluated parsed version of the url_
+  mutable int url_parse_error_{0} ;   // gets set to non-zero parsing url_obj_ failed
+  GQuark config_file_{0} ;
+  std::string file_type_ ;            // describes file type e.g. "bigBed". Empty if not applicable or unknown.
+  unsigned int num_fields_{0} ;       // for file sources, number of fields. 0 if not applicable or unknown.
 } ;
 
 typedef ZMapConfigSourceStruct *ZMapConfigSource ;

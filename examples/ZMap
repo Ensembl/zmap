@@ -22,7 +22,7 @@ start=2696324
 end=2864370
 
 # Individual stanzas for particular sources can be specified for sources listed here
-sources=chr6-18
+sources = ensembl_core ; ensembl_cdna ; trackhub_captureseq ; trackhub_blueprint ; pipe_pseudogenes ; file_hsAll_bam ; file_hsAll_bigbed ; file_S00XEI11_bed
 stylesfile=styles.ini
 
 # Set data-dir to absolute path if not running from the examples directory; 
@@ -72,7 +72,36 @@ scope = 200000
 #
 # Source stanzas: these control individual settings for particular sources
 # They are not required if just passing GFF files on the command-line
-#
-#[chr6-18]
-#url=file:///features.gff
-#featuresets = DNA ; 3 Frame ; 3 Frame Translation ; Scratch 
+
+[ensembl_core]
+url=ensembl://anonymous:@ensembldb.ensembl.org:3306?db_name=homo_sapiens_core_86_38&db_prefix=ens_core
+delayed=true
+
+[ensembl_cdna]
+url=ensembl://anonymous:@ensembldb.ensembl.org:3306?db_name=homo_sapiens_core_86_38&db_prefix=ens_cdna
+delayed=true
+
+[trackhub_captureseq]
+url=trackhub:///AVTdr2tYYAv0XSJwlFkB
+delayed=true
+
+[trackhub_blueprint]
+url=trackhub:///AVgdMDRwYAv0XSJwlIJN
+delayed=true
+
+[pipe_pseudogenes]
+#sequence name in this file is chr6-38
+url = pipe:///filter_get?analysis=2way_pseudogenes&chr=chr6-38&client=otter&cookie_jar=%2FUsers%2Fgb10%2F.otter%2Fns_cookie_jar&cs=chromosome&csver=Otter&dataset=human_test&end=2588301&gff_seqname=chr6-38&gff_source=2_way_pseudogenes_not_overlap_gencode_model&gff_version=3&metakey=2way_pseudogenes&name=6&server_script=get_gff%2Fgenes&session_dir=%2Fvar%2Ftmp%2Fotter_gb10%2Fv105.20161.1&start=2231363&transcript_analyses=2way_pseudogenes&url_root=https%3A%2F%2Fotter.sanger.ac.uk%2Fcgi-bin%2Fotter%2F105
+delayed=true
+
+[file_hsAll_bam]
+url=http://genome.crg.es/~jlagarde/gencode/trackHubs/captureSeq/dataFiles/hsAll_Cap1_Brain_bothAdapters.bam
+delayed=true
+
+[file_hsAll_bigbed]
+url=http://genome.crg.es/~jlagarde/gencode/trackHubs/captureSeq/dataFiles/bigBeds/hsAll_Cap1_all_stranded.exons.all.gtag.anchor.compmerge.all.bb
+delayed=true
+
+[file_S00XEI11_bed]
+url=file:////Users/gb10/work/data/bed/blueprint/S00XEI11.contigs.star_grape2_crg.GRCh38.20160531.bed
+delayed=true

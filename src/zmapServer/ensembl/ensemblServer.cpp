@@ -174,13 +174,13 @@ static void setErrMsg(EnsemblServer server, char *new_msg) ;
 static void eachAlignment(gpointer key, gpointer data, gpointer user_data) ;
 static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data) ;
 
-static gboolean getAllSimpleFeatures(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block, GError **error) ;
-static gboolean getAllDNAAlignFeatures(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block, GError **error) ;
-static gboolean getAllDNAPepAlignFeatures(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block, GError **error) ;
-static gboolean getAllRepeatFeatures(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block, GError **error) ;
-static gboolean getAllTranscripts(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block, set<GQuark> &transcript_ids, GError **error) ;
-static gboolean getAllPredictionTranscripts(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block, GError **error) ;
-static gboolean getAllGenes(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block, set<GQuark> &transcript_ids, GError **error) ;
+static bool getAllSimpleFeatures(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
+static bool getAllDNAAlignFeatures(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
+static bool getAllDNAPepAlignFeatures(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
+static bool getAllRepeatFeatures(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
+static bool getAllTranscripts(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block, set<GQuark> &transcript_ids) ;
+static bool getAllPredictionTranscripts(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block) ;
+static bool getAllGenes(EnsemblServer server, GetFeaturesData get_features_data, ZMapFeatureBlock feature_block, set<GQuark> &transcript_ids) ;
 
 static const char* featureGetSOTerm(SeqFeature *rsf) ;
 
@@ -548,12 +548,38 @@ static ZMapServerResponseType getFeatures(void *server_in, ZMapStyleTree &styles
 }
 
 
-static gboolean getAllSimpleFeatures(EnsemblServer server,
-                                     GetFeaturesData get_features_data,
-                                     ZMapFeatureBlock feature_block,
-                                     GError **error)
+/* Check if the given error is set and report it if it's a fatal error, or log a warning if it's
+ * not fatal. Returns true if ok to continue, false if it's a fatal error. Free's and nulls the
+ * error if it was set. */
+static bool checkError(GError **error)
 {
-  gboolean result = TRUE ;
+  bool ok = true ;
+  
+  if (zMapFeatureErrorIsFatal(error))
+    {
+      // If it's a fatal error creating the feature then don't try to create any more
+      ok = false ;
+      zMapLogCritical("Error creating feature: %s", (*error)->message) ;
+      g_error_free(*error) ;
+      *error = NULL ;
+    }
+  else if (error && *error)
+    {
+      // Non-fatal error. Log a warning and free the error.
+      zMapLogWarning("Warning while creating feature: %s", (*error)->message) ;
+      g_error_free(*error) ;
+      *error = NULL ;
+    }
+
+  return ok ;
+}
+
+
+static bool getAllSimpleFeatures(EnsemblServer server,
+                                 GetFeaturesData get_features_data,
+                                 ZMapFeatureBlock feature_block)
+{
+  bool ok = true ;
 
   Vector *features = NULL;
 
@@ -579,19 +605,18 @@ static gboolean getAllSimpleFeatures(EnsemblServer server,
 
   const int num_element = features ? Vector_getNumElement(features) : 0;
   int i = 0 ;
+  GError *g_error = NULL ;
 
-  for (i = 0; i < num_element && result; ++i)
+  // Loop breaks if ok set to false
+  for (i = 0; i < num_element && ok; ++i)
     {
       SimpleFeature *sf = (SimpleFeature*)Vector_getElementAt(features,i) ;
       SimpleFeature *rsf = (SimpleFeature*)SeqFeature_transform((SeqFeature*)sf,  (char *)(server->coord_system), NULL ,NULL) ;
 
       if (rsf)
         {
-          makeFeatureSimple(server, rsf, get_features_data, feature_block, error) ;
-
-          // If it's a fatal error creating the feature then don't try to create any more
-          if (zMapFeatureErrorIsFatal(error))
-            break ;
+          makeFeatureSimple(server, rsf, get_features_data, feature_block, &g_error) ;
+          ok = checkError(&g_error) ;
         }
       else
         {
@@ -602,21 +627,16 @@ static gboolean getAllSimpleFeatures(EnsemblServer server,
       //          free(rsf);
       //          Object_decRefCount(sf);
       //          free(sf);
-
-      // If it's a fatal error creating the feature then don't try to create any more
-      if (zMapFeatureErrorIsFatal(error))
-        break ;
     }
 
-  return result;
+  return ok;
 }
 
-static gboolean getAllDNAAlignFeatures(EnsemblServer server,
-                                       GetFeaturesData get_features_data,
-                                       ZMapFeatureBlock feature_block,
-                                       GError **error)
+static bool getAllDNAAlignFeatures(EnsemblServer server,
+                                   GetFeaturesData get_features_data,
+                                   ZMapFeatureBlock feature_block)
 {
-  gboolean result = TRUE ;
+  bool ok = true ;
 
   Vector *features = NULL;
   
@@ -641,19 +661,17 @@ static gboolean getAllDNAAlignFeatures(EnsemblServer server,
 
   const int num_element = features ? Vector_getNumElement(features) : 0;
   int i = 0 ;
-
-  for (i = 0; i < num_element && result; ++i)
+  GError *g_error = NULL ;
+  
+  for (i = 0; i < num_element && ok; ++i)
     {
       DNAAlignFeature *sf = (DNAAlignFeature*)Vector_getElementAt(features,i);
       DNAAlignFeature *rsf = (DNAAlignFeature*)SeqFeature_transform((SeqFeature*)sf, (char *)(server->coord_system), NULL, NULL);
 
       if (rsf)
         {
-          makeFeatureBaseAlign(server, (BaseAlignFeature*)rsf, ZMAPHOMOL_N_HOMOL, get_features_data, feature_block, error) ;
-
-          // If it's a fatal error creating the feature then don't try to create any more
-          if (zMapFeatureErrorIsFatal(error))
-            break ;
+          makeFeatureBaseAlign(server, (BaseAlignFeature*)rsf, ZMAPHOMOL_N_HOMOL, get_features_data, feature_block, &g_error) ;
+          ok = checkError(&g_error) ;
         }
       else
         {
@@ -666,15 +684,14 @@ static gboolean getAllDNAAlignFeatures(EnsemblServer server,
       //        free(sf);
     }
 
-  return result;
+  return ok;
 }
 
-static gboolean getAllDNAPepAlignFeatures(EnsemblServer server,
-                                          GetFeaturesData get_features_data,
-                                          ZMapFeatureBlock feature_block,
-                                          GError **error)
+static bool getAllDNAPepAlignFeatures(EnsemblServer server,
+                                      GetFeaturesData get_features_data,
+                                      ZMapFeatureBlock feature_block)
 {
-  gboolean result = TRUE ;
+  bool ok = true ;
 
   Vector *features = NULL;
 
@@ -699,19 +716,17 @@ static gboolean getAllDNAPepAlignFeatures(EnsemblServer server,
 
   const int num_element = features ? Vector_getNumElement(features) : 0;
   int i = 0 ;
+  GError *g_error = NULL ;
 
-  for (i = 0; i < num_element && result; ++i)
+  for (i = 0; i < num_element && ok; ++i)
     {
       DNAPepAlignFeature *sf = (DNAPepAlignFeature*)Vector_getElementAt(features,i);
       DNAPepAlignFeature *rsf = (DNAPepAlignFeature*)SeqFeature_transform((SeqFeature*)sf, (char *)(server->coord_system), NULL, NULL);
 
       if (rsf)
         {
-          makeFeatureBaseAlign(server, (BaseAlignFeature*)rsf, ZMAPHOMOL_X_HOMOL, get_features_data, feature_block, error) ;
-
-          // If it's a fatal error creating the feature then don't try to create any more
-          if (zMapFeatureErrorIsFatal(error))
-            break ;
+          makeFeatureBaseAlign(server, (BaseAlignFeature*)rsf, ZMAPHOMOL_X_HOMOL, get_features_data, feature_block, &g_error) ;
+          ok = checkError(&g_error) ;
         }
       else
         {
@@ -724,16 +739,15 @@ static gboolean getAllDNAPepAlignFeatures(EnsemblServer server,
       //        free(sf);
     }
 
-  return result;
+  return ok;
 }
 
 
-static gboolean getAllRepeatFeatures(EnsemblServer server,
-                                     GetFeaturesData get_features_data,
-                                     ZMapFeatureBlock feature_block,
-                                     GError **error)
+static bool getAllRepeatFeatures(EnsemblServer server,
+                                 GetFeaturesData get_features_data,
+                                 ZMapFeatureBlock feature_block)
 {
-  gboolean result = TRUE ;
+  bool ok = true ;
 
   Vector *features = NULL;
 
@@ -758,19 +772,17 @@ static gboolean getAllRepeatFeatures(EnsemblServer server,
 
   const int num_element = features ? Vector_getNumElement(features) : 0;
   int i = 0 ;
+  GError *g_error = NULL ;
 
-  for (i = 0; i < num_element && result; ++i)
+  for (i = 0; i < num_element && ok; ++i)
     {
       RepeatFeature *sf = (RepeatFeature*)Vector_getElementAt(features,i);
       RepeatFeature *rsf = (RepeatFeature*)SeqFeature_transform((SeqFeature*)sf, (char *)(server->coord_system), NULL, NULL);
 
       if (rsf)
         {
-          makeFeatureRepeat(server, rsf, get_features_data, feature_block, error) ;
-
-          // If it's a fatal error creating the feature then don't try to create any more
-          if (zMapFeatureErrorIsFatal(error))
-            break ;
+          makeFeatureRepeat(server, rsf, get_features_data, feature_block, &g_error) ;
+          ok = checkError(&g_error) ;
         }
       else
         {
@@ -783,17 +795,16 @@ static gboolean getAllRepeatFeatures(EnsemblServer server,
       //        free(sf);
     }
 
-  return result;
+  return ok;
 }
 
 
-static gboolean getAllTranscripts(EnsemblServer server,
+static bool getAllTranscripts(EnsemblServer server,
                                   GetFeaturesData get_features_data,
                                   ZMapFeatureBlock feature_block,
-                                  set<GQuark> &transcript_ids,
-                                  GError **error)
+                                  set<GQuark> &transcript_ids)
 {
-  gboolean result = TRUE ;
+  bool ok = true ;
 
   Vector *features = NULL;
 
@@ -818,8 +829,9 @@ static gboolean getAllTranscripts(EnsemblServer server,
 
   const int num_element = features ? Vector_getNumElement(features) : 0;
   int i = 0 ;
+  GError *g_error = NULL ;
 
-  for (i = 0; i < num_element && result; ++i)
+  for (i = 0; i < num_element && ok; ++i)
     {
       Transcript *sf = (Transcript*)Vector_getElementAt(features,i);
       Transcript *rsf = (Transcript*)SeqFeature_transform((SeqFeature*)sf, (char *)(server->coord_system), NULL, NULL);
@@ -829,11 +841,8 @@ static gboolean getAllTranscripts(EnsemblServer server,
           const long start = SeqFeature_getStart((SeqFeature*)rsf) ;
           const long end = SeqFeature_getEnd((SeqFeature*)rsf) ;
 
-          makeFeatureTranscript(server, rsf, NULL, start, end, get_features_data, feature_block, transcript_ids, error) ;
-         
-          // If it's a fatal error creating the feature then don't try to create any more
-          if (zMapFeatureErrorIsFatal(error))
-            break ;
+          makeFeatureTranscript(server, rsf, NULL, start, end, get_features_data, feature_block, transcript_ids, &g_error) ;
+          ok = checkError(&g_error) ;
         }
       else
         {
@@ -846,16 +855,15 @@ static gboolean getAllTranscripts(EnsemblServer server,
       //        free(sf);
     }
 
-  return result;
+  return ok;
 }
 
 
-static gboolean getAllPredictionTranscripts(EnsemblServer server,
-                                            GetFeaturesData get_features_data,
-                                            ZMapFeatureBlock feature_block,
-                                            GError **error)
+static bool getAllPredictionTranscripts(EnsemblServer server,
+                                        GetFeaturesData get_features_data,
+                                        ZMapFeatureBlock feature_block)
 {
-  gboolean result = TRUE ;
+  bool ok = true ;
 
   Vector *features = NULL;
 
@@ -880,19 +888,17 @@ static gboolean getAllPredictionTranscripts(EnsemblServer server,
 
   const int num_element = Vector_getNumElement(features) ;
   int i = 0 ;
+  GError *g_error = NULL ;
 
-  for (i = 0; i < num_element && result; ++i)
+  for (i = 0; i < num_element && ok; ++i)
     {
       PredictionTranscript *sf = (PredictionTranscript*)Vector_getElementAt(features,i);
       PredictionTranscript *rsf = (PredictionTranscript*)SeqFeature_transform((SeqFeature*)sf, (char *)(server->coord_system), NULL, NULL);
 
       if (rsf)
         {
-          makeFeaturePredictionTranscript(server, rsf, get_features_data, feature_block, error) ;
-
-          // If it's a fatal error creating the feature then don't try to create any more
-          if (zMapFeatureErrorIsFatal(error))
-            break ;
+          makeFeaturePredictionTranscript(server, rsf, get_features_data, feature_block, &g_error) ;
+          ok = checkError(&g_error) ;
         }
       else
         {
@@ -905,17 +911,16 @@ static gboolean getAllPredictionTranscripts(EnsemblServer server,
       //        free(sf);
     }
 
-  return result;
+  return ok;
 }
 
 
-static gboolean getAllGenes(EnsemblServer server,
-                            GetFeaturesData get_features_data,
-                            ZMapFeatureBlock feature_block,
-                            set<GQuark> &transcript_ids,
-                            GError **error)
+static bool getAllGenes(EnsemblServer server,
+                        GetFeaturesData get_features_data,
+                        ZMapFeatureBlock feature_block,
+                        set<GQuark> &transcript_ids)
 {
-  gboolean result = TRUE ;
+  bool ok = true ;
 
   Vector *features = NULL;
 
@@ -940,8 +945,9 @@ static gboolean getAllGenes(EnsemblServer server,
 
   const int num_element = features ? Vector_getNumElement(features) : 0;
   int i = 0 ;
+  GError *g_error = NULL ;
 
-  for (i = 0; i < num_element && result; ++i)
+  for (i = 0; i < num_element && ok; ++i)
     {
       Gene *sf = (Gene*)Vector_getElementAt(features,i);
       char *cs_name = g_strdup("chromosome");
@@ -951,11 +957,8 @@ static gboolean getAllGenes(EnsemblServer server,
 
       if (rsf)
         {
-          makeFeatureGene(server, rsf, get_features_data, feature_block, transcript_ids, error) ;
-
-          // If it's a fatal error creating the feature then don't try to create any more
-          if (zMapFeatureErrorIsFatal(error))
-            break ;
+          makeFeatureGene(server, rsf, get_features_data, feature_block, transcript_ids, &g_error) ;
+          ok = checkError(&g_error) ;
         }
       else
         {
@@ -968,7 +971,7 @@ static gboolean getAllGenes(EnsemblServer server,
       //        free(sf);
     }
 
-  return result;
+  return ok;
 }
 
 
@@ -1934,23 +1937,6 @@ static void eachAlignment(gpointer key, gpointer data, gpointer user_data)
 }
 
 
-// Issue a warning if the error is set and frees the error. Returns true if it was a fatal error.
-static bool fatalError(GError **error)
-{
-  bool fatal_error = zMapFeatureErrorIsFatal(error) ;
-
-  if (error && *error)
-    {
-      zMapCritical("Error loading features for ensembl server: %s", (*error)->message) ;
-      g_error_free(*error) ;
-      *error = NULL ;
-
-    }
-
-  return fatal_error ;
-}
-
-
 /* Get features in a block */
 static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data)
 {
@@ -1962,22 +1948,22 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
     {
       pthread_mutex_lock(server->mutex) ;
 
-      GError *g_error = NULL ; 
+      bool ok = true ;
 
-      if (!fatalError(&g_error))
-        getAllSimpleFeatures(server, get_features_data, feature_block, &g_error) ;
+      if (ok)
+        ok = getAllSimpleFeatures(server, get_features_data, feature_block) ;
 
-      if (!fatalError(&g_error))      
-        getAllDNAAlignFeatures(server, get_features_data, feature_block, &g_error) ;
+      if (ok)
+        ok = getAllDNAAlignFeatures(server, get_features_data, feature_block) ;
 
-      if (!fatalError(&g_error))
-        getAllDNAPepAlignFeatures(server, get_features_data, feature_block, &g_error) ;
+      if (ok)
+        ok = getAllDNAPepAlignFeatures(server, get_features_data, feature_block) ;
 
-      if (!fatalError(&g_error))
-        getAllRepeatFeatures(server, get_features_data, feature_block, &g_error) ;
+      if (ok)
+        ok = getAllRepeatFeatures(server, get_features_data, feature_block) ;
 
-      if (!fatalError(&g_error))
-        getAllPredictionTranscripts(server, get_features_data, feature_block, &g_error) ;
+      if (ok)
+        ok = getAllPredictionTranscripts(server, get_features_data, feature_block) ;
 
       /* We get transcripts via the gene for genes whose logic_name is in the list of requested
        * featuresets. The transcript logic_name may be different to the gene logic_name so we
@@ -1987,11 +1973,11 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
        * therefore we can check all transcripts from there. We need to make sure that this won't cause
        * a performance problem, though. */
       set<GQuark> transcript_ids;
-      if (!fatalError(&g_error))
-        getAllGenes(server, get_features_data, feature_block, transcript_ids, &g_error) ;
+      if(ok)
+        ok = getAllGenes(server, get_features_data, feature_block, transcript_ids) ;
 
-      if (!fatalError(&g_error))
-        getAllTranscripts(server, get_features_data, feature_block, transcript_ids, &g_error) ;
+      if (ok)
+        ok = getAllTranscripts(server, get_features_data, feature_block, transcript_ids) ;
 
       pthread_mutex_unlock(server->mutex) ;
     }

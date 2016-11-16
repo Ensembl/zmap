@@ -139,7 +139,6 @@ typedef struct MainFrameStructName
 #endif
 
   // Trackhub
-  Registry registry;
   list<GtkWidget*> trackhub_widgets;
   GtkWidget *trackdb_id_widg;
   GtkWidget *trackdb_name_widg;
@@ -178,15 +177,11 @@ public:
 class SearchListData
 {
 public:
-  SearchListData() 
-    : search_entry(NULL),
-      filter_entry(NULL),
-      tree_model(NULL)
-  {} ;
+  SearchListData() {} ;
 
-  GtkEntry *search_entry ;
-  GtkEntry *filter_entry ;
-  GtkTreeModel *tree_model ;
+  GtkEntry *search_entry{NULL} ;
+  GtkEntry *filter_entry{NULL} ;
+  GtkTreeModel *tree_model{NULL} ;
 } ;
 
 
@@ -490,9 +485,6 @@ static GtkWidget *makePanel(GtkWidget *toplevel,
   main_data->default_type = default_type ;
   main_data->filename = NULL ;
   main_data->edit_source = edit_source ;
-
-  if (sequence_map)
-    main_data->registry = sequence_map->getTrackhubRegistry() ;
 
   if (toplevel)
     {
@@ -1114,7 +1106,8 @@ static void makeEnsemblWidgets(MainFrame main_data,
 static void onTrackDbIdChanged(GtkEditable *editable, gpointer user_data)
 {
   MainFrame main_data = (MainFrame)user_data ;
-  zMapReturnIfFail(main_data && 
+  zMapReturnIfFail(main_data &&
+                   main_data->sequence_map &&
                    main_data->name_widg &&
                    main_data->trackdb_id_widg &&
                    main_data->trackdb_name_widg &&
@@ -1126,17 +1119,22 @@ static void onTrackDbIdChanged(GtkEditable *editable, gpointer user_data)
   // Find the trackdb in the registry, if it exists, and update the trackdb details. (These will
   // be empty strings in the TrackDb class if not found so will clear the boxes.)
   string err_msg;
-  TrackDb trackdb = main_data->registry.searchTrackDb(trackdb_id, err_msg) ;
+  Registry &registry = main_data->sequence_map->getTrackhubRegistry() ;
+  TrackDb trackdb = registry.searchTrackDb(trackdb_id, err_msg) ;
   
   if (!err_msg.empty())
-    zMapLogWarning("%s", err_msg.c_str()) ;
-      
-  gtk_entry_set_text(GTK_ENTRY(main_data->trackdb_name_widg), trackdb.name().c_str()) ;
-  gtk_entry_set_text(GTK_ENTRY(main_data->trackdb_species_widg), trackdb.species().c_str()) ;
-  gtk_entry_set_text(GTK_ENTRY(main_data->trackdb_assembly_widg), trackdb.assembly().c_str()) ;
+    {
+      zMapLogWarning("%s", err_msg.c_str()) ;
+    }
+  else
+    {
+      gtk_entry_set_text(GTK_ENTRY(main_data->trackdb_name_widg), trackdb.name().c_str()) ;
+      gtk_entry_set_text(GTK_ENTRY(main_data->trackdb_species_widg), trackdb.species().c_str()) ;
+      gtk_entry_set_text(GTK_ENTRY(main_data->trackdb_assembly_widg), trackdb.assembly().c_str()) ;
 
-  // Use the trackdb name for the source name
-  gtk_entry_set_text(GTK_ENTRY(main_data->name_widg), trackdb.name().c_str()) ;
+      // Use the trackdb name for the source name
+      gtk_entry_set_text(GTK_ENTRY(main_data->name_widg), trackdb.name().c_str()) ;
+    }
 }
 
 /* Run a dialog that asks for the user credentials and logs in to the trackhub registry. Returns
@@ -1144,6 +1142,7 @@ static void onTrackDbIdChanged(GtkEditable *editable, gpointer user_data)
 static bool runLoginDialog(MainFrame main_data)
 {
   bool result = false ;
+  zMapReturnValIfFail(main_data && main_data->sequence_map, result) ;
 
   // Create a dialog to ask for username and password
   GtkWidget *dialog = gtk_dialog_new_with_buttons("Please log in",
@@ -1178,6 +1177,7 @@ static bool runLoginDialog(MainFrame main_data)
   // Run the dialog
   gtk_widget_show_all(dialog) ;
   gint response = gtk_dialog_run(GTK_DIALOG(dialog)) ;
+  Registry &registry = main_data->sequence_map->getTrackhubRegistry() ;
       
   if (response == GTK_RESPONSE_OK)
     {
@@ -1186,16 +1186,17 @@ static bool runLoginDialog(MainFrame main_data)
 
       // Attempt to log in to the registry.
       string err_msg;
-      if (main_data->registry.login(user, pass, err_msg) && err_msg.empty())
+
+      if (registry.login(user, pass, err_msg) && err_msg.empty())
         result = true ;
       else
-        zMapCritical("%s", "Error logging in: %s", err_msg.c_str()) ;
+        zMapCritical("Error logging in: %s", err_msg.c_str()) ;
     }
 
   gtk_widget_destroy(dialog) ;
 
   // Update the login button text
-  if (main_data->registry.loggedIn())
+  if (registry.loggedIn())
     gtk_button_set_label(GTK_BUTTON(main_data->login_widg), LOGOUT_LABEL) ;
   else
     gtk_button_set_label(GTK_BUTTON(main_data->login_widg), LOGIN_LABEL) ;
@@ -1208,7 +1209,7 @@ static bool runLoginDialog(MainFrame main_data)
 static void loginButtonClickedCB(GtkWidget *button, gpointer data)
 {
   MainFrame main_data = (MainFrame)data ;
-  zMapReturnIfFail(main_data) ;
+  zMapReturnIfFail(main_data && main_data->sequence_map) ;
 
   const char* label = gtk_button_get_label(GTK_BUTTON(button)) ;
 
@@ -1224,7 +1225,8 @@ static void loginButtonClickedCB(GtkWidget *button, gpointer data)
     {
       // Log out. If successful, change the button label back to "login"
       string err_msg;
-      if (main_data->registry.logout(err_msg) && err_msg.empty())
+      Registry &registry = main_data->sequence_map->getTrackhubRegistry() ;
+      if (registry.logout(err_msg) && err_msg.empty())
         {
           gtk_button_set_label(GTK_BUTTON(button), LOGIN_LABEL) ;
         }
@@ -1244,6 +1246,8 @@ static void makeTrackhubWidgets(MainFrame main_data,
                                 int &row,
                                 int &col)
 {
+  zMapReturnIfFail(sequence_map) ;
+
   /* Display the trackDb details. Don't add the trackdb_id_widg to the widgets list because it
    * should remain hidden */
   main_data->trackdb_id_widg = makeEntryWidget(NULL, NULL, "The track database ID from the Ensembl Track Hub Registry. Use the buttons below to search for a hub or register one. The source name will be set from the hub name by default, but you can edit it to anything you like.",
@@ -1292,7 +1296,8 @@ static void makeTrackhubWidgets(MainFrame main_data,
                                            table, row, col,
                                            main_data->trackhub_widgets);
 
-  if (main_data->registry.loggedIn())
+  Registry &registry = sequence_map->getTrackhubRegistry() ;
+  if (registry.loggedIn())
     gtk_button_set_label(GTK_BUTTON(main_data->login_widg), LOGOUT_LABEL) ;
 }
 
@@ -2643,6 +2648,7 @@ static void trackhubSearchResponseCB(GtkDialog *dialog, gint response_id, gpoint
   TrackhubSearchData *data = (TrackhubSearchData*)user_data ;
   MainFrame main_data = data->main_data_ ;
   gboolean done = FALSE ;
+  zMapReturnIfFail(main_data && main_data->sequence_map) ;
 
   switch (response_id)
   {
@@ -2655,12 +2661,13 @@ static void trackhubSearchResponseCB(GtkDialog *dialog, gint response_id, gpoint
       const char *assembly_text = gtk_entry_get_text(GTK_ENTRY(data->assembly_entry_)) ;
       const char *hub_text = gtk_entry_get_text(GTK_ENTRY(data->hub_entry_)) ;
       string err_msg;
+      Registry &registry = main_data->sequence_map->getTrackhubRegistry() ;
 
-      list<TrackDb> results = main_data->registry.search(search_text,
-                                                         species_text,
-                                                         assembly_text,
-                                                         hub_text,
-                                                         err_msg) ;
+      list<TrackDb> results = registry.search(search_text,
+                                              species_text,
+                                              assembly_text,
+                                              hub_text,
+                                              err_msg) ;
       if (err_msg.empty())
         {
           // Show the search results. We'll only close our dialog if this is successful 
@@ -2759,7 +2766,8 @@ static void trackhubSearchCB(GtkWidget *widget, gpointer cb_data)
 static void deleteButtonClickedCB(GtkWidget *button, gpointer data)
 {
   UserTrackhubs *user_data = (UserTrackhubs*)data ;
-  zMapReturnIfFail(user_data && user_data->main_data_ && user_data->list_widget_) ;
+  zMapReturnIfFail(user_data && user_data->main_data_ &&
+                   user_data->main_data_->sequence_map && user_data->list_widget_) ;
 
   MainFrame main_data = user_data->main_data_ ;
   GtkTreeView *tree_view = user_data->list_widget_ ;
@@ -2790,7 +2798,8 @@ static void deleteButtonClickedCB(GtkWidget *button, gpointer data)
               if (trackdb_id)
                 {
                   string err_msg;
-                  main_data->registry.deleteTrackDb(trackdb_id, err_msg) ;
+                  Registry &registry = main_data->sequence_map->getTrackhubRegistry() ;
+                  registry.deleteTrackDb(trackdb_id, err_msg) ;
 
                   if (!err_msg.empty())
                     zMapCritical("%s", "Error deleting trackDb: %s", err_msg.c_str()) ;
@@ -2812,18 +2821,19 @@ static void trackhubBrowse(MainFrame main_data)
 {
   bool ok = false ;
 
-  zMapReturnIfFail(main_data && main_data->browse_widg) ;
+  zMapReturnIfFail(main_data && main_data->sequence_map && main_data->browse_widg) ;
 
   // Log in first, if not already logged in
-  if (main_data->registry.loggedIn() || runLoginDialog(main_data))
+  Registry &registry = main_data->sequence_map->getTrackhubRegistry() ;
+  if (registry.loggedIn() || runLoginDialog(main_data))
     {
       // If the user is logged in, get the list of trackdbs they have registered, otherwise leave it
       // as an empty list for now
       list<TrackDb> trackdbs_list ;
       string err_msg;
 
-      if (main_data->registry.loggedIn())
-        trackdbs_list = main_data->registry.retrieveHub("", err_msg) ;
+      if (registry.loggedIn())
+        trackdbs_list = registry.retrieveHub("", err_msg) ;
 
       if (err_msg.empty())
         {
@@ -2882,10 +2892,11 @@ static void trackhubBrowseCB(GtkWidget *widget, gpointer cb_data)
 static void trackhubRegister(MainFrame main_data)
 {
   bool ok = false ;
-  zMapReturnIfFail(main_data && main_data->search_widg) ;
+  zMapReturnIfFail(main_data && main_data->sequence_map && main_data->search_widg) ;
 
   // Log in first, if not already logged in
-  if (main_data->registry.loggedIn() || runLoginDialog(main_data))
+  Registry &registry = main_data->sequence_map->getTrackhubRegistry() ;
+  if (registry.loggedIn() || runLoginDialog(main_data))
     {
       GtkWidget *dialog = gtk_dialog_new_with_buttons("Register a Track Hub",
                                                       NULL,
@@ -2953,7 +2964,7 @@ static void trackhubRegister(MainFrame main_data)
 
               // Register the hub
               string err_msg;
-              main_data->registry.registerHub(url, assemblies_map, type, is_public, err_msg) ;
+              registry.registerHub(url, assemblies_map, type, is_public, err_msg) ;
 
               if (err_msg.empty())
                 ok = true ;

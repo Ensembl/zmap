@@ -196,7 +196,6 @@ static gboolean createConnection(void **server_out, ZMapConfigSource config_sour
   server->zmap_start = 0 ;
   server->zmap_end = 0 ;
   server->req_context = NULL ;
-  server->sequence_map = NULL ;
   server->styles_file = NULL ;
 
   server->source_2_sourcedata = NULL ;
@@ -304,7 +303,60 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
           setErrorMsgGError(server, &error) ;
         }
       zMapLogWarning("%s", err_msg) ;
-      server->result = ZMAP_SERVERRESPONSE_REQFAIL ;
+
+      server->result = result = ZMAP_SERVERRESPONSE_REQFAIL ;
+
+      return result ;
+    }
+
+  /*
+   * Get some data from the request.
+   */
+  server->req_sequence = req_open->req_sequence;
+  server->zmap_start = req_open->zmap_start;
+  server->zmap_end = req_open->zmap_end;
+
+  /*
+   * Create data source object (file or GIOChannel)
+   */
+  server->data_stream = zMapDataStreamCreate(server->config_source,
+                                             server->path, 
+                                             (server->req_sequence ? g_quark_to_string(server->req_sequence) : NULL), 
+                                             server->zmap_start,
+                                             server->zmap_end,
+                                             &error) ;
+
+  if (server->data_stream != NULL )
+    status = TRUE ;
+
+  if (!status)
+    {
+      /* If it was a file error or failure to exec then set up message. */
+      if (error)
+        setErrorMsgGError(server, &error) ;
+      result = ZMAP_SERVERRESPONSE_SERVERDIED ;
+      server->result = result ;
+      return result ;
+    }
+
+  /*
+   * Create the Pipe object and attach to the server.
+   * Then create the parser.
+   */
+  server->sequence_server = req_open->sequence_server ;
+
+  /*
+   * Get the header data if there are any.
+   */
+  result = ZMAP_SERVERRESPONSE_OK ;
+  result = fileGetHeader(server) ;
+
+  /* Check the gff version, if applicable */
+  if (!server->data_stream->gffVersion(&server->gff_version))
+    {
+      /* sourceempty error */
+      server->last_err_msg = g_strdup("No data returned from file.") ;
+      result = ZMAP_SERVERRESPONSE_SOURCEEMPTY ;
     }
  else
    {
@@ -934,7 +986,7 @@ static ZMapServerResponseType fileGetSequence(FileServer server)
   // read the sequence if it's there
   server->result = ZMAP_SERVERRESPONSE_OK;   // now we have data default is 'OK'
 
-  if (server->data_stream->init(server->sequence_map->sequence, server->zmap_start, server->zmap_end))
+  if (server->data_stream->init(g_quark_to_string(server->req_sequence), server->zmap_start, server->zmap_end))
     {
 
       // DOH...NOW THIS FAILS BECAUSE THERE IS NO GENERAL PARSE SEQUENCE....NEED TO TEST TYPE OF OBJ AND THEN ACT ACCORDINGLY....
@@ -1045,7 +1097,7 @@ static void getBlockFeatures(ZMapFeatureBlock feature_block, GetFeaturesData get
   FileServer server = get_features_data->server ;
 
   // DUH, WHAT'S THIS ABOUT....HOW CAN IT NOT BE INIT'D ???
-  if (server->data_stream->init(server->sequence_map->sequence, server->zmap_start, server->zmap_end))
+  if (server->data_stream->init(g_quark_to_string(server->req_sequence), server->zmap_start, server->zmap_end))
     {
       /*
        * Read lines from the source. We assume that the first line has already been read.
@@ -1069,7 +1121,7 @@ static void getBlockFeatures(ZMapFeatureBlock feature_block, GetFeaturesData get
                 }
 
               /* Check if it's a fatal error */
-              if (server->data_stream->terminated())
+              if (server->data_stream->terminated() || zMapFeatureErrorIsFatal(&g_error))
                 {
                   get_features_data->result = ZMAP_SERVERRESPONSE_REQFAIL ;
 

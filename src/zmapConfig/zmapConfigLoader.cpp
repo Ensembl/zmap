@@ -130,26 +130,6 @@ static bool debug_loading_G = false ;                       // Use to turn debug
  */
 
 ZMapConfigSourceStruct::ZMapConfigSourceStruct()
-  : name_{0},
-  version{NULL},
-  featuresets{NULL},
-  biotypes{NULL},
-  stylesfile{NULL},
-  format{NULL},
-  timeout{0},
-  delayed{FALSE},
-  provide_mapping{FALSE},
-  req_styles{FALSE},
-  group{0},
-  recent{false},
-  parent{NULL},
-  children{},
-  url_{NULL},
-  url_obj_{NULL},
-  url_parse_error_{0},
-  config_file_{0},
-  file_type_(),
-  num_fields_{0}
 {
 }
 
@@ -1853,6 +1833,7 @@ static ZMapConfigIniContextKeyEntry get_app_group_data(const char **stanza_name,
     { ZMAPSTANZA_APP_SHRINKABLE,         G_TYPE_BOOLEAN, NULL, FALSE },
     { ZMAPSTANZA_APP_HIGHLIGHT_FILTERED, G_TYPE_BOOLEAN, NULL, FALSE },
     { ZMAPSTANZA_APP_ENABLE_ANNOTATION,  G_TYPE_BOOLEAN, NULL, FALSE },
+    { ZMAPSTANZA_APP_MAX_FEATURES,       G_TYPE_INT,     NULL, FALSE },
     {NULL}
   };
   static const char *name = ZMAPSTANZA_APP_CONFIG;
