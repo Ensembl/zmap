@@ -405,6 +405,14 @@ static void updateNewStyle(gpointer cb_data, gpointer user_data)
   gtk_tree_model_get_iter(data->tree_model, &parent_iter, data->selected_tree_path) ;
   gtk_tree_store_append(tree_store, &iter, &parent_iter) ;
 
+  /* Expand the parent row so the new child row is visible */
+  gtk_tree_view_expand_row(GTK_TREE_VIEW(data->tree_view), data->selected_tree_path, FALSE) ;
+  
+  /* Select the new row */ 
+  GtkTreeSelection *selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(data->tree_view)) ;
+  gtk_tree_selection_select_iter(selection, &iter) ;
+  
+  /* Update the parent name and featuresets list in the row */
   const char *parent_name = "" ;
   if (style->parent_id)
     {
