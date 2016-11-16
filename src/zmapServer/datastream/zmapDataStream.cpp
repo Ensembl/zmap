@@ -375,6 +375,9 @@ ZMapDataStreamBIGBEDStruct::ZMapDataStreamBIGBEDStruct(ZMapConfigSource source,
       char *file_name_copy = g_strdup(file_name) ; // to avoid casting away const
       bbi_file_ = bigBedFileOpen(file_name_copy);
       g_free(file_name_copy) ;
+
+      if (bbi_file_)
+        standard_fields_ = bbi_file_->definedFieldCount ;
     }
 
   bool is_err = err_handler.errCatch() ;
@@ -1186,7 +1189,14 @@ bool ZMapDataStreamBIGBEDStruct::readLine()
           char *line = g_strdup_printf("%s\t%d\t%d\t%s", 
                                        sequence_, cur_interval_->start, cur_interval_->end, cur_interval_->rest) ;
           char *row[bedKnownFields];
-          int num_fields = chopByWhite(line, row, ArraySize(row)) ;
+          const int fields_in_line = chopByWhite(line, row, ArraySize(row)) ;
+
+          // standard_fields_ contains the number of standard fields in the bed file we should
+          // read. There may be more fields in the line than this if it includes optional
+          // user-defined fields. We ignore these for now.
+          // gb10: I don't think there should be fewer than standard_fields_ in the line, but
+          // check just in case.
+          const int num_fields = min(fields_in_line, standard_fields_) ;
 
           // free previous feature, if there is one
           if (cur_feature_)
@@ -1196,7 +1206,9 @@ bool ZMapDataStreamBIGBEDStruct::readLine()
         
           // Clean up
           g_free(line) ;
-          result = true ;
+
+          if (cur_feature_)
+            result = true ;
         }
 
       if (err_handler.errCatch())
