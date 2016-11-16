@@ -160,6 +160,7 @@ void zMapWindowShowStyleDialog(ZMapWindow window,
   my_data->window = window;
   my_data->created_cb_func = created_cb_func ;
   my_data->cb_data = cb_data ;
+  my_data->create_child = create_child ;
 
   /* Add ptr so parent knows about us */
   my_data->window->style_window = (gpointer) my_data ;
