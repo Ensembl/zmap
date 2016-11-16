@@ -154,11 +154,16 @@ static ZMapServerResponseType setContext(void *server, ZMapFeatureContext featur
 static ZMapServerResponseType getFeatures(void *server_in, ZMapStyleTree &styles,
                                           ZMapFeatureContext feature_context_out) ;
 static ZMapServerResponseType getContextSequence(void *server_in,
+                                                 ZMapStyleTree &styles, ZMapFeatureContext feature_context_out,
                                                  char *sequence_name, int start, int end,
                                                  int *dna_length_out, char **dna_sequence_out) ;
 static const char *lastErrorMsg(void *server) ;
 static ZMapServerResponseType getStatus(void *server_in, gint *exit_code) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static ZMapServerResponseType getConnectState(void *server_in, ZMapServerConnectStateType *connect_state) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 static ZMapServerResponseType closeConnection(void *server_in) ;
 static ZMapServerResponseType destroyConnection(void *server) ;
 
@@ -256,7 +261,11 @@ void ensemblGetServerFuncs(ZMapServerFuncs ensembl_funcs)
   ensembl_funcs->get_context_sequences = getContextSequence ;
   ensembl_funcs->errmsg = lastErrorMsg ;
   ensembl_funcs->get_status = getStatus ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ensembl_funcs->get_connect_state = getConnectState ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
   ensembl_funcs->close = closeConnection;
   ensembl_funcs->destroy = destroyConnection ;
 
@@ -1010,6 +1019,7 @@ static void addMapping(ZMapFeatureContext feature_context, int req_start, int re
  * we have pre-read the sequence and simple copy/move the data over if it's there
  */
 static ZMapServerResponseType getContextSequence(void *server_in,
+                                                 ZMapStyleTree &styles, ZMapFeatureContext feature_context_out,
                                                  char *sequence_name, int start, int end,
                                                  int *dna_length_out, char **dna_sequence_out)
 {
@@ -1069,6 +1079,8 @@ static ZMapServerResponseType getStatus(void *server_in, gint *exit_code)
   return ZMAP_SERVERRESPONSE_OK;
 }
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* Is the server connected ? */
 static ZMapServerResponseType getConnectState(void *server_in, ZMapServerConnectStateType *connect_state)
 {
@@ -1077,6 +1089,8 @@ static ZMapServerResponseType getConnectState(void *server_in, ZMapServerConnect
 
   return result ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 /* Try to close the connection. */
 static ZMapServerResponseType closeConnection(void *server_in)

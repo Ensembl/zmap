@@ -1733,7 +1733,7 @@ static string constructFileURL(MainFrame main_frame,
       // Some file types currently have special treatment
       switch (stream_type)
         {
-        case ZMapDataStreamType::GIO: //fall through
+        case ZMapDataStreamType::GFF: //fall through
         case ZMapDataStreamType::HTS: //fall through
         case ZMapDataStreamType::BCF:
         case ZMapDataStreamType::BIGBED: //fall through

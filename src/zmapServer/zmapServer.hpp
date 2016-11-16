@@ -68,7 +68,11 @@ ZMapServerResponseType zMapServerSetContext(ZMapServer server, ZMapFeatureContex
 ZMapFeatureContext zMapServerCopyContext(ZMapServer server) ;
 const char *zMapServerLastErrorMsg(ZMapServer server) ;
 ZMapServerResponseType zMapServerGetStatus(ZMapServer server, gint *exit_code);
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 ZMapServerResponseType zMapServerGetConnectState(ZMapServer server, ZMapServerConnectStateType *connect_state) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 ZMapServerResponseType zMapServerCloseConnection(ZMapServer server) ;
 ZMapServerResponseType zMapServerFreeConnection(ZMapServer server) ;
 

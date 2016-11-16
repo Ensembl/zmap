@@ -55,8 +55,17 @@
     _(ZMAP_SERVERREQ_SEQUENCE, , "sequence", "sequence", "Get the context sequence.") \
     _(ZMAP_SERVERREQ_GETSEQUENCE, , "getsequence", "getsequence", "Get an arbitrary (named) sequence.") \
     _(ZMAP_SERVERREQ_GETSTATUS, , "getstatus", "getstatus", "Get server process exit code.") \
-    _(ZMAP_SERVERREQ_GETCONNECT_STATE, , "getconnect_state", "getconnect_state", "Get server connection state.") \
     _(ZMAP_SERVERREQ_TERMINATE, , "terminate", "terminate", "Close and destroy the connection.")
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+// I'm removing this as I can't find anywhere it's used.....
+
+    _(ZMAP_SERVERREQ_GETCONNECT_STATE, , "getconnect_state", "getconnect_state", "Get server connection state.") 
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
 
 ZMAP_DEFINE_ENUM(ZMapServerReqType, ZMAP_SERVER_REQ_LIST) ;
 
@@ -78,14 +87,19 @@ ZMAP_DEFINE_ENUM(ZMapServerReqType, ZMAP_SERVER_REQ_LIST) ;
     _(ZMAP_SERVERRESPONSE_OK,              , "ok",                       "", "")		\
     _(ZMAP_SERVERRESPONSE_SOURCEEMPTY,     , "no data in source",        "", "")		\
     _(ZMAP_SERVERRESPONSE_SOURCEERROR,     , "nothing in source",        "", "")		\
+    _(ZMAP_SERVERRESPONSE_REQFAIL,         , "request failed",           "", "")		\
     _(ZMAP_SERVERRESPONSE_BADREQ,          , "error in request args",    "", "")		\
     _(ZMAP_SERVERRESPONSE_UNSUPPORTED,     , "unsupported request",      "", "")		\
-    _(ZMAP_SERVERRESPONSE_REQFAIL,         , "request failed",           "", "")		\
     _(ZMAP_SERVERRESPONSE_TIMEDOUT,        , "timed out",                "", "")		\
+    _(ZMAP_SERVERRESPONSE_SERVERBADSTATE,  , "server in bad state",      "", "")                \
     _(ZMAP_SERVERRESPONSE_SERVERDIED,      , "server died",              "", "")
 
 ZMAP_DEFINE_ENUM(ZMapServerResponseType, ZMAP_SERVER_RESPONSE_LIST) ;
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+// I'm removing this as I can't see where it's used.
 
 /* Is server currently connected ? need error state here ??? */
 #define ZMAP_SERVER_CONNECT_STATE_LIST(_)                         \
@@ -95,6 +109,8 @@ ZMAP_DEFINE_ENUM(ZMapServerResponseType, ZMAP_SERVER_RESPONSE_LIST) ;
     _(ZMAP_SERVERCONNECT_STATE_ERROR, , "error", "error", "Server is in error, state undetermined.")
 
 ZMAP_DEFINE_ENUM(ZMapServerConnectStateType, ZMAP_SERVER_CONNECT_STATE_LIST) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 /*
@@ -291,6 +307,10 @@ typedef struct ZMapServerReqGetStatusStructType
 } ZMapServerReqGetStatusStruct, *ZMapServerReqGetStatus ;
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+// REMOVING AS UNUSED....
+
 typedef struct ZMapServerReqGetConnectStateStructType
 {
   ZMapServerReqType type ;
@@ -299,6 +319,8 @@ typedef struct ZMapServerReqGetConnectStateStructType
   ZMapServerConnectStateType connect_state ;
 
 } ZMapServerReqGetConnectStateStruct, *ZMapServerReqGetConnectState ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 typedef struct ZMapServerReqTerminateStructType

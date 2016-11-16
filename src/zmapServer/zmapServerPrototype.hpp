@@ -77,14 +77,20 @@ typedef ZMapServerResponseType (*ZMapServerGetFeatures)(void *server_conn,
 
 // ok....need to remove feature context and styles from here and replace with raw dna stuff.....   
 typedef ZMapServerResponseType (*ZMapServerGetContextSequences)(void *server_conn,
+                                                                ZMapStyleTree &styles,
+                                                                ZMapFeatureContext feature_context,
                                                                 char *sequence_name,
                                                                 int start, int end,
                                                                 int *dna_length_out, char **dna_sequence_out) ;
 
 typedef ZMapServerResponseType (*ZMapServerGetStatusFunc)(void *server_conn, gint *exit_code) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 typedef ZMapServerResponseType (*ZMapServerGetConnectStateFunc)(void *server_conn,
 								ZMapServerConnectStateType *connect_state) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 typedef const char *(*ZMapServerGetErrorMsgFunc)(void *server_conn) ;
 
@@ -108,7 +114,11 @@ typedef struct _ZMapServerFuncsStruct
   ZMapServerGetContextSequences get_context_sequences ;
   ZMapServerGetErrorMsgFunc errmsg ;
   ZMapServerGetStatusFunc get_status ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ZMapServerGetConnectStateFunc get_connect_state ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
   ZMapServerCloseFunc close ;
   ZMapServerDestroyFunc destroy ;
 } ZMapServerFuncsStruct, *ZMapServerFuncs ;

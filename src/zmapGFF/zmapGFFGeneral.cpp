@@ -146,10 +146,19 @@ gboolean zMapGFFParseSequence(ZMapGFFParser parser, char *line, gboolean *sequen
     }
   else if (parser->gff_version == ZMAPGFF_VERSION_3 )
     {
+
+      // NEEDS A RETHINK AS GFFV3 STUFF WORKS DIFFERENTLY...WOULD NEED A NUMBER OF CHANGES IN
+      // DIFFERENT PLACES....
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       /*
        * This should not be required since it's not part of the v3 spec.
        */
       bResult = FALSE ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+      bResult = zMapGFFParse_V3(parser, line) ;
+
     }
   else
     {

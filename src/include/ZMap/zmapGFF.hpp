@@ -195,22 +195,23 @@ gboolean zMapGFFFormatAttributeSetTranscript(ZMapGFFAttributeFlags ) ;
 gboolean zMapGFFFormatAttributeSetAlignment(ZMapGFFAttributeFlags ) ;
 gboolean zMapGFFFormatAttributeSetText(ZMapGFFAttributeFlags ) ;
 gboolean zMapGFFFormatAttributeUnsetAll(ZMapGFFAttributeFlags) ;
-gboolean zMapGFFOutputWriteLineToGIO(GIOChannel *gio_channel, char **err_msg_out, GString *line, gboolean truncate_after_write) ;
+gboolean zMapGFFOutputWriteLineToGIO(GIOChannel *gio_channel, char **err_msg_out,
+                                     GString *line, gboolean truncate_after_write) ;
 gboolean zMapGFFFormatAppendAttribute(GString *, GString *, gboolean, gboolean) ;
 char zMapGFFFormatStrand2Char(ZMapStrand strand) ;
 char zMapGFFFormatPhase2Char(ZMapPhase phase) ;
 gboolean zMapGFFFormatHeader(gboolean, GString *, const char *, int, int) ;
 gboolean zMapGFFFormatMandatory(gboolean, GString *, const char *, const char *, const char *,
-  int, int, float, ZMapStrand, ZMapPhase, gboolean, gboolean ) ;
+                                int, int, float, ZMapStrand, ZMapPhase, gboolean, gboolean ) ;
 gboolean zMapGFFDumpVersionSet(ZMapGFFVersion gff_version ) ;
 ZMapGFFVersion zMapGFFDumpVersionGet() ;
 gboolean zMapGFFDump(ZMapFeatureAny dump_set, ZMapStyleTree &styles, GIOChannel *file, GError **error_out);
 gboolean zMapGFFDumpRegion(ZMapFeatureAny dump_set, ZMapStyleTree &styles,
-  ZMapSpan region_span, GIOChannel *file, GError **error_out) ;
+                           ZMapSpan region_span, GIOChannel *file, GError **error_out) ;
 gboolean zMapGFFDumpList(GList *dump_list, ZMapStyleTree &styles, char *sequence,
-  GIOChannel *file, GString *text_out, GError **error_out) ;
+                         GIOChannel *file, GString *text_out, GError **error_out) ;
 gboolean zMapGFFDumpFeatureSets(ZMapFeatureAny, ZMapStyleTree &, GList*, ZMapSpan,
-  GIOChannel *, GError **) ;
+                                GIOChannel *, GError **) ;
 
 gboolean zMapWriteAttributeURL(ZMapFeature, GString *) ;
 gboolean zMapWriteAttributeName(ZMapFeature, GString *) ;

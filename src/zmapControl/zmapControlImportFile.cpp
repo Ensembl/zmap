@@ -767,12 +767,14 @@ static void importNewSource(ZMapConfigSource server,
           ZMapFeatureContext context ;
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
           // Try a feature request
           context_map = zMapViewGetContextMap(view) ;
           context = zMapViewCreateContext(view, req_featuresets, NULL) ;
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
           DataSourceFeatures *my_feature_request = new DataSourceFeatures(sequence_map, req_start, req_end,
                                                                           server,
                                                                           context, &(context_map->styles)) ;
@@ -784,7 +786,6 @@ static void importNewSource(ZMapConfigSource server,
               delete my_feature_request ;
             }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
 
 
@@ -812,6 +813,8 @@ static void importNewSource(ZMapConfigSource server,
 
               delete my_sequence_request ;
             }
+
+
 
 
 

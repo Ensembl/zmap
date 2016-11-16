@@ -36,9 +36,6 @@
 #include <zmapServerPrototype.hpp>
 #include <zmapDataStream_P.hpp>
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-#include <zmapDataSource_P.hpp>
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 /*
@@ -47,7 +44,7 @@
 typedef struct FileServerStruct_
 {
   ZMapURLScheme scheme ;
-  ZMapDataStream data_stream ;
+  ZMapDataStreamGFF data_stream ;
   ZMapServerResponseType result ;
   ZMapFeatureContext req_context ;
   ZMapFeatureSequenceMap sequence_map ;

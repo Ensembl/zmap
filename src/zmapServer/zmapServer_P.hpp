@@ -36,9 +36,23 @@
 #include <ZMap/zmapServerProtocol.hpp>
 
 
-/* A connection to a database. */
+
+// The state of the data source connection, requests can only be made to "opened" connections.
+//
+#define ZMAP_SERVER_CONNECT_STATE_LIST(_)                         \
+  _(ZMAP_SERVERCONNECT_STATE_INVALID, , "invalid", "", "")				\
+    _(ZMAP_SERVERCONNECT_STATE_CREATED, , "created", "created", "Server connection created but not opened.") \
+    _(ZMAP_SERVERCONNECT_STATE_OPENED, , "opened", "opened", "Server connection opened and ready.") \
+    _(ZMAP_SERVERCONNECT_STATE_CLOSED, , "closed", "closed", "Server connection closed.")
+
+ZMAP_DEFINE_ENUM(ZMapServerConnectStateType, ZMAP_SERVER_CONNECT_STATE_LIST) ;
+
+
+/* A connection to a data source. */
 typedef struct _ZMapServerStruct
 {
+  ZMapServerConnectStateType state ;
+
   char *config_file ;
 
   ZMapURL url ;                 /* Replace the host & protocol ... */
@@ -69,5 +83,9 @@ void acedbGetServerFuncs(ZMapServerFuncs acedb_funcs) ;
 void fileGetServerFuncs(ZMapServerFuncs file_funcs) ;
 void pipeGetServerFuncs(ZMapServerFuncs pipe_funcs) ;
 void ensemblGetServerFuncs(ZMapServerFuncs ensembl_funcs) ;
+
+ZMAP_ENUM_AS_EXACT_STRING_DEC(zMapServerConnectState2ExactStr, ZMapServerConnectStateType) ;
+
+
 
 #endif /* !ZMAP_SERVER_P_H */

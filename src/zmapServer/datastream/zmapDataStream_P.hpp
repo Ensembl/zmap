@@ -111,7 +111,14 @@ public:
   virtual bool readLine() = 0 ;
   virtual bool gffVersion(int * const p_out_val) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  // can't be made pure because some derived classes need it but it should be....so remove it...
   virtual bool parseSequence(gboolean &sequence_finished, std::string &err_msg) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
   virtual void parserInit(GHashTable *featureset_2_column, GHashTable *source_2_sourcedata, ZMapStyleTree *styles) ;
   virtual bool parseBodyLine(GError **error) = 0 ;
   virtual bool addFeaturesToBlock(ZMapFeatureBlock feature_block) ;
@@ -159,13 +166,13 @@ protected:
  *  Full declarations of concrete types to represent the specific data sources types
  */
 
-class ZMapDataStreamGIOStruct : public ZMapDataStreamStruct
+class ZMapDataStreamGFFStruct : public ZMapDataStreamStruct
 {
 public:
-  ZMapDataStreamGIOStruct(ZMapConfigSource source, 
+  ZMapDataStreamGFFStruct(ZMapConfigSource source, 
                           const char *file_name, const char *open_mode, 
                           const char *sequence, const int start, const int end) ;
-  ~ZMapDataStreamGIOStruct() ;
+  ~ZMapDataStreamGFFStruct() ;
 
   bool isOpen() ;
   bool checkHeader(std::string &err_msg, bool &empty_or_eof, const bool sequence_server) ;
@@ -318,7 +325,7 @@ private:
 #endif
 
 
-typedef ZMapDataStreamGIOStruct *ZMapDataStreamGIO ;
+typedef ZMapDataStreamGFFStruct *ZMapDataStreamGFF ;
 typedef ZMapDataStreamBEDStruct *ZMapDataStreamBED ;
 typedef ZMapDataStreamBIGBEDStruct *ZMapDataStreamBIGBED ;
 typedef ZMapDataStreamBIGWIGStruct *ZMapDataStreamBIGWIG ;

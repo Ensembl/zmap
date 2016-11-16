@@ -36,6 +36,7 @@
 #include <ZMap/zmapUrl.hpp>
 #include <ZMap/zmapUtils.hpp>
 #include <ZMap/zmapGLibUtils.hpp>
+
 #include <zmapServer_P.hpp>
 
 
@@ -203,6 +204,7 @@ ZMapServerResponseType zMapServerCreateConnection(ZMapServer *server_out, void *
       if ((server->funcs->create)(&(server->server_conn), config_source))
         {
           zMapServerSetErrorMsg(server, NULL) ;
+
           result = ZMAP_SERVERRESPONSE_OK ;
         }
       else
@@ -210,6 +212,7 @@ ZMapServerResponseType zMapServerCreateConnection(ZMapServer *server_out, void *
           zMapServerSetErrorMsg(server,ZMAPSERVER_MAKEMESSAGE(server->url->protocol,
                                                               server->url->host, "%s",
                                                               (server->funcs->errmsg)(server->server_conn))) ;
+
           result = ZMAP_SERVERRESPONSE_REQFAIL ;
         }
     }
@@ -322,6 +325,8 @@ ZMapServerResponseType zMapServerGetStatus(ZMapServer server, gint *exit_code)
 
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 ZMapServerResponseType zMapServerGetConnectState(ZMapServer server, ZMapServerConnectStateType *connect_state)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
@@ -335,6 +340,8 @@ ZMapServerResponseType zMapServerGetConnectState(ZMapServer server, ZMapServerCo
 
   return result ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
@@ -442,6 +449,7 @@ ZMapServerResponseType zMapServerGetContextSequences(ZMapServer server, ZMapStyl
 
       result = server->last_response
         = (server->funcs->get_context_sequences)(server->server_conn,
+                                                 styles, feature_context,
                                                  sequence_name, start, end,
                                                  &dna_length, &dna_sequence) ;
 
@@ -551,6 +559,9 @@ ZMapServerResponseType zMapServerFreeConnection(ZMapServer server)
   
   if (server->config_file)
     g_free(server->config_file) ;
+
+  // Reset struct to prevent accidental reuse of free'd connection for requests.
+  memset(server, 0, sizeof(ZMapServerStruct)) ;
 
   g_free(server) ;
 

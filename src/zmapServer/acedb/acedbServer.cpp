@@ -176,11 +176,16 @@ static ZMapServerResponseType setContext(void *server, ZMapFeatureContext featur
 static ZMapServerResponseType getFeatures(void *server_in, ZMapStyleTree &styles,
                                           ZMapFeatureContext feature_context_out) ;
 static ZMapServerResponseType getContextSequence(void *server_in,
+                                                 ZMapStyleTree &styles, ZMapFeatureContext feature_context_out,
                                                  char *sequence_name, int start, int end,
                                                  int *dna_length_out, char **dna_sequence_out) ;
 static const char *lastErrorMsg(void *server) ;
 static ZMapServerResponseType getStatus(void *server_in, gint *exit_code) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static ZMapServerResponseType getConnectState(void *server_in, ZMapServerConnectStateType *connect_state) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 static ZMapServerResponseType closeConnection(void *server_in) ;
 static ZMapServerResponseType destroyConnection(void *server) ;
 
@@ -281,7 +286,11 @@ void acedbGetServerFuncs(ZMapServerFuncs acedb_funcs)
   acedb_funcs->get_context_sequences = getContextSequence ;
   acedb_funcs->errmsg = lastErrorMsg ;
   acedb_funcs->get_status = getStatus ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   acedb_funcs->get_connect_state = getConnectState ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
   acedb_funcs->close = closeConnection;
   acedb_funcs->destroy = destroyConnection ;
 
@@ -731,6 +740,8 @@ static ZMapServerResponseType getStatus(void *server_in, gint *exit_code)
 
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* Is the acedb server connected ? */
 static ZMapServerResponseType getConnectState(void *server_in, ZMapServerConnectStateType *connect_state)
 {
@@ -759,6 +770,8 @@ static ZMapServerResponseType getConnectState(void *server_in, ZMapServerConnect
 
   return result ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 static ZMapServerResponseType getSequences(void *server_in, GList *sequences_inout)
@@ -901,6 +914,7 @@ static ZMapServerResponseType getFeatures(void *server_in,
 
 /* Get features and/or sequence. */
 static ZMapServerResponseType getContextSequence(void *server_in,
+                                                 ZMapStyleTree &styles, ZMapFeatureContext feature_context_out,
                                                  char *sequence_name,
                                                  int start, int end,
                                                  int *dna_length_out, char **dna_sequence_out)

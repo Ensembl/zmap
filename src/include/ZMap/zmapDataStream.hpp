@@ -41,7 +41,7 @@ typedef ZMapDataStreamStruct *ZMapDataStream ;
 /*
  * Enumeration to represent different source types.
  */
-enum class ZMapDataStreamType {NONE, GIO, HTS, BCF, BED, BIGBED, BIGWIG,  /*UNK always last*/UNK} ;
+enum class ZMapDataStreamType {NONE, GFF, HTS, BCF, BED, BIGBED, BIGWIG,  /*UNK always last*/UNK} ;
 
 
 
@@ -52,7 +52,7 @@ enum class ZMapDataStreamType {NONE, GIO, HTS, BCF, BED, BIGBED, BIGWIG,  /*UNK 
  * only, always through a GIOChannel. Thus the abstraction of ZMapDataStream,
  * which has several types
  *
- *            ZMapDataStreamGIO       GIOChannel, synchronous OR asynchronous
+ *            ZMapDataStreamGFF       GFF through a GIOChannel, synchronous OR asynchronous
  *            ZMapDataStreamHTS       HTS bam/sam/cram file, synchronous only
  *            ZMapDataStreamBCF       HTS bcf/vcf file, synchronous only
  *            ZMapDataStreamBED       blatSrc Bed file, synchronous only

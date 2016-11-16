@@ -71,6 +71,8 @@ typedef struct DrawableStructType
 } DrawableStruct, *Drawable ;
 
 
+static ZMapServerResponseType serverRequest(ZMapServer server, ZMapServerReqAny request, char **err_msg_out) ;
+
 static gboolean protocolGlobalInitFunc(ZMapProtocolInitList protocols, ZMapURL url,
                                        void **global_init_data) ;
 static int findProtocol(gconstpointer list_protocol, gconstpointer protocol) ;
@@ -164,12 +166,16 @@ ZMapServerReqAny zMapServerRequestCreate(ZMapServerReqType request_type, ...)
 
         break ;
       }
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     case ZMAP_SERVERREQ_GETCONNECT_STATE:
       {
         size = sizeof(ZMapServerReqGetConnectStateStruct) ;
 
         break ;
       }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
     case ZMAP_SERVERREQ_TERMINATE:
       {
         size = sizeof(ZMapServerReqTerminateStruct) ;
@@ -244,7 +250,11 @@ ZMapServerReqAny zMapServerRequestCreate(ZMapServerReqType request_type, ...)
     case ZMAP_SERVERREQ_FEATURES:
     case ZMAP_SERVERREQ_SEQUENCE:
     case ZMAP_SERVERREQ_GETSTATUS:
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     case ZMAP_SERVERREQ_GETCONNECT_STATE:
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
     case ZMAP_SERVERREQ_TERMINATE:
       {
         break ;
@@ -300,7 +310,11 @@ void zMapServerRequestDestroy(ZMapServerReqAny request)
     case ZMAP_SERVERREQ_SEQUENCE:
     case ZMAP_SERVERREQ_GETSEQUENCE:
     case ZMAP_SERVERREQ_GETSTATUS:
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     case ZMAP_SERVERREQ_GETCONNECT_STATE:
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
     case ZMAP_SERVERREQ_TERMINATE:
       {
         break ;
@@ -350,6 +364,12 @@ ZMapServerResponseType zMapServerRequest(ZMapServer *server_inout, ZMapServerReq
                 != ZMAP_SERVERRESPONSE_OK)
               {
                 *err_msg_out = g_strdup(zMapServerLastErrorMsg(server)) ;
+
+                server->state = ZMAP_SERVERCONNECT_STATE_INVALID ;
+              }
+            else
+              {
+                server->state = ZMAP_SERVERCONNECT_STATE_CREATED ;
               }
 
             // Server always created here even if there is an error so we must always return it.
@@ -366,9 +386,43 @@ ZMapServerResponseType zMapServerRequest(ZMapServer *server_inout, ZMapServerReq
           {
             *err_msg_out = g_strdup(zMapServerLastErrorMsg(server)) ;
           }
+        else
+          {
+            server->state = ZMAP_SERVERCONNECT_STATE_OPENED ;
+          }
 
         break ;
       }
+
+    case ZMAP_SERVERREQ_GETSERVERINFO:
+    case ZMAP_SERVERREQ_FEATURESETS:
+    case ZMAP_SERVERREQ_STYLES:
+    case ZMAP_SERVERREQ_NEWCONTEXT:
+    case ZMAP_SERVERREQ_FEATURES:
+    case ZMAP_SERVERREQ_SEQUENCE:
+    case ZMAP_SERVERREQ_GETSEQUENCE:
+    case ZMAP_SERVERREQ_GETSTATUS:
+      {
+        if (server->state == ZMAP_SERVERCONNECT_STATE_OPENED)
+          {
+            reply = serverRequest(server, request, err_msg_out) ;
+          }
+        else
+          {
+            *err_msg_out = g_strdup_printf("Request \"%s\" failed because server state is: \"%s\".",
+                                           zMapServerReqType2ExactStr(request->type),
+                                           zMapServerConnectState2ExactStr(server->state)) ;
+
+            reply = ZMAP_SERVERRESPONSE_SERVERBADSTATE ;
+          }
+
+        break ;
+      }
+
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     case ZMAP_SERVERREQ_GETSERVERINFO:
       {
         ZMapServerReqGetServerInfo get_info = (ZMapServerReqGetServerInfo)request ;
@@ -422,13 +476,6 @@ ZMapServerResponseType zMapServerRequest(ZMapServer *server_inout, ZMapServerReq
       {
         ZMapServerReqStyles styles = (ZMapServerReqStyles)request ;
         GHashTable *tmp_styles = NULL ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-        // SORT THIS OUT.....
-
-        /* Sets thread_rc and err_msg_out properly. */
-        thread_rc = getStyles(server, styles, err_msg_out) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
         /* If there's a styles file get the styles from that, otherwise get them from the source.
          * At the moment we don't merge styles from files and sources, perhaps we should...
@@ -582,6 +629,8 @@ ZMapServerResponseType zMapServerRequest(ZMapServer *server_inout, ZMapServerReq
 
         break ;
       }
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     case ZMAP_SERVERREQ_GETCONNECT_STATE:
       {
         ZMapServerReqGetConnectState get_connect_state = (ZMapServerReqGetConnectState)request ;
@@ -594,25 +643,37 @@ ZMapServerResponseType zMapServerRequest(ZMapServer *server_inout, ZMapServerReq
 
         break ;
       }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+
     case ZMAP_SERVERREQ_TERMINATE:
       {
+        // OK..THIS IT KIND OF CONFUSING...NO APP ACTUALLY CALLS CLOSE AND THEN DESTROY...THIS IS
+        // TOO OPAQUE....
+
         // this function should log and free the server whatever happens....not just leave it....
 
         if ((request->response = zMapServerCloseConnection(server)) != ZMAP_SERVERRESPONSE_OK)
           {
             *err_msg_out = g_strdup(zMapServerLastErrorMsg(server)) ; /* get error msg here because next call destroys the struct */
           }
-        else
-          {
-            if ((request->response = zMapServerFreeConnection(server)) != ZMAP_SERVERRESPONSE_OK)
-              {
-                *err_msg_out = g_strdup("FreeConnectin of server failed.") ;
-              }
 
-            // Can no longer be sure of server struct state so don't reference it any more.
-            server = NULL ;
-            *server_inout = NULL ;
+        // Set closed state even if "close" fails as either way the connection should no longer be used.
+        server->state = ZMAP_SERVERCONNECT_STATE_CLOSED ;
+
+        if ((request->response = zMapServerFreeConnection(server)) != ZMAP_SERVERRESPONSE_OK)
+          {
+            *err_msg_out = g_strdup("Connection destroy failed.") ;
           }
+
+        // Can no longer be sure of server struct state so don't reference it any more.
+        server = NULL ;
+        *server_inout = NULL ;
 
         break ;
       }
@@ -710,7 +771,7 @@ static gboolean protocolGlobalInitFunc(ZMapProtocolInitList protocols, ZMapURL u
  *  */
 ZMAP_ENUM_AS_EXACT_STRING_FUNC(zMapServerReqType2ExactStr, ZMapServerReqType, ZMAP_SERVER_REQ_LIST) ;
 ZMAP_ENUM_AS_EXACT_STRING_FUNC(zMapServerResponseType2ExactStr, ZMapServerResponseType, ZMAP_SERVER_RESPONSE_LIST) ;
-
+ZMAP_ENUM_AS_EXACT_STRING_FUNC(zMapServerConnectState2ExactStr, ZMapServerConnectStateType, ZMAP_SERVER_CONNECT_STATE_LIST) ;
 
 
 /* Compare a protocol in the list with the supplied one. Just a straight string
@@ -737,5 +798,251 @@ static int findProtocol(gconstpointer list_data, gconstpointer custom_data)
   return result ;
 }
 
+
+
+static ZMapServerResponseType serverRequest(ZMapServer server, ZMapServerReqAny request, char **err_msg_out)
+{
+  ZMapServerResponseType reply = ZMAP_SERVERRESPONSE_OK ;
+
+  switch (request->type)
+    {
+    case ZMAP_SERVERREQ_GETSERVERINFO:
+      {
+        ZMapServerReqGetServerInfo get_info = (ZMapServerReqGetServerInfo)request ;
+        ZMapServerReqGetServerInfoStruct info = {ZMAP_SERVERREQ_INVALID} ;
+
+        if ((request->response
+             = zMapServerGetServerInfo(server, &info)) != ZMAP_SERVERRESPONSE_OK)
+          {
+            *err_msg_out = g_strdup(zMapServerLastErrorMsg(server)) ;
+          }
+        else
+          {
+            get_info->data_format_out = info.data_format_out ;
+            get_info->database_name_out = info.database_name_out  ;
+            get_info->database_title_out = info.database_title_out  ;
+            get_info->database_path_out = info.database_path_out  ;
+            get_info->request_as_columns = info.request_as_columns  ;
+          }
+
+        break ;
+      }
+    case ZMAP_SERVERREQ_FEATURESETS:
+      {
+        ZMapServerReqFeatureSets feature_sets = (ZMapServerReqFeatureSets)request ;
+
+        request->response = zMapServerFeatureSetNames(server,
+                                                      &(feature_sets->feature_sets_inout),
+                                                      &(feature_sets->biotypes_inout),
+                                                      feature_sets->sources,
+                                                      &(feature_sets->required_styles_out),
+                                                      &(feature_sets->featureset_2_stylelist_out),
+                                                      &(feature_sets->featureset_2_column_inout),
+                                                      &(feature_sets->source_2_sourcedata_inout)) ;
+
+
+        if (request->response == ZMAP_SERVERRESPONSE_OK)
+          {
+            if(zmap_server_feature2style_debug_G)       // OK status: only do this for active databases not files
+              {
+                /* Print out the featureset -> styles lists. */
+                zMap_g_hashlist_print(feature_sets->featureset_2_stylelist_out);
+              }
+          }
+        else if(request->response != ZMAP_SERVERRESPONSE_UNSUPPORTED)
+          {
+            *err_msg_out = g_strdup(zMapServerLastErrorMsg(server)) ;
+          }
+        break ;
+      }
+    case ZMAP_SERVERREQ_STYLES:
+      {
+        ZMapServerReqStyles styles = (ZMapServerReqStyles)request ;
+        GHashTable *tmp_styles = NULL ;
+
+        /* If there's a styles file get the styles from that, otherwise get them from the source.
+         * At the moment we don't merge styles from files and sources, perhaps we should...
+         *
+         * mgh: function modified to return all styles in file if style list not specified
+         * pipe and file servers should not need to do this as zmapView will read the file anyway
+         */
+
+        if (styles->req_styles)
+          {
+            /* get from server */
+
+            if ((styles->response = zMapServerGetStyles(server, &(styles->styles_out))) != ZMAP_SERVERRESPONSE_OK)
+              {
+                *err_msg_out = g_strdup(zMapServerLastErrorMsg(server)) ;
+              }
+          }
+        else if (styles->styles_file_in)
+          {
+            /* server specific file not global: return from thread */
+
+            if (!zMapConfigIniGetStylesFromFile(server->config_file,
+                                                styles->styles_list_in, styles->styles_file_in, &(styles->styles_out),
+                                                NULL))
+              {
+                styles->response = ZMAP_SERVERRESPONSE_REQFAIL ;
+                *err_msg_out = g_strdup_printf("Could not read types from styles file \"%s\"",
+                                               styles->styles_file_in) ;
+              }
+
+            // Wonder how we know this !!
+            styles->server_styles_have_mode = TRUE;
+          }
+
+        if (styles->response == ZMAP_SERVERRESPONSE_OK)
+          {
+            tmp_styles = styles->styles_out;
+
+            /* Now we have all the styles do the inheritance for them all. */
+            if (tmp_styles)
+              {
+                if(!zMapStyleInheritAllStyles(tmp_styles))
+                  zMapLogWarning("%s", "There were errors in inheriting styles.") ;
+
+                /* this is not effective as a subsequent style copy will not copy this internal data */
+                zMapStyleSetSubStyles(tmp_styles);
+              }
+          }
+
+
+        if (styles->response == ZMAP_SERVERRESPONSE_OK)
+          {
+            /* Find out if the styles will need to have their mode set from the features.
+             * I'm feeling like this is a bit hacky because it's really an acedb issue. */
+            /* mh17: these days ACE can be set to use a styles file */
+
+            if (!(styles->styles_file_in))
+              {
+                if (zMapServerStylesHaveMode(server, &(styles->server_styles_have_mode))
+                    != ZMAP_SERVERRESPONSE_OK)
+                  {
+                    styles->response = ZMAP_SERVERRESPONSE_REQFAIL ;
+                    *err_msg_out = g_strdup(zMapServerLastErrorMsg(server)) ;
+                  }
+              }
+          }
+
+
+        if (styles->response == ZMAP_SERVERRESPONSE_OK)
+          {
+            /* return the styles in the styles struct... */
+            styles->styles_out = tmp_styles ;
+          }
+
+
+        break ;
+      }
+    case ZMAP_SERVERREQ_NEWCONTEXT:
+      {
+        ZMapServerReqNewContext context = (ZMapServerReqNewContext)request ;
+
+        /* Create a sequence context from the sequence and start/end data. */
+        if ((request->response = zMapServerSetContext(server, context->context))
+            != ZMAP_SERVERRESPONSE_OK)
+          {
+            *err_msg_out = g_strdup(zMapServerLastErrorMsg(server)) ;
+          }
+
+        break ;
+      }
+    case ZMAP_SERVERREQ_FEATURES:
+      {
+        ZMapServerReqGetFeatures features = (ZMapServerReqGetFeatures)request ;
+
+        if (features->styles && (request->response = zMapServerGetFeatures(server, *features->styles, features->context))
+            != ZMAP_SERVERRESPONSE_OK)
+          {
+            *err_msg_out = g_strdup(zMapServerLastErrorMsg(server)) ;
+          }
+
+        break ;
+      }
+    case ZMAP_SERVERREQ_SEQUENCE:
+      {
+        ZMapServerReqGetFeatures features = (ZMapServerReqGetFeatures)request ;
+
+        /* If DNA is one of the requested cols and there is an error report it, but not if its
+         * just unsupported. */
+        GList *req_sets = features->context->req_feature_set_names ;
+        GQuark dna_quark = zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME) ;
+        GQuark threeft_quark = zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME) ;
+        GQuark showtrans_quark = zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME) ;
+
+        /* We need to load the DNA if we are showing DNA, 3FT or ShowTranslation */
+        if (zMap_g_list_find_quark(req_sets, dna_quark) ||
+            zMap_g_list_find_quark(req_sets, threeft_quark) ||
+            zMap_g_list_find_quark(req_sets, showtrans_quark))
+          {
+            if (features->styles)
+              request->response = zMapServerGetContextSequences(server, *features->styles, features->context) ;
+            else
+              request->response = ZMAP_SERVERRESPONSE_REQFAIL ;
+
+            if (request->response != ZMAP_SERVERRESPONSE_OK && request->response != ZMAP_SERVERRESPONSE_UNSUPPORTED)
+              {
+                *err_msg_out = g_strdup(zMapServerLastErrorMsg(server)) ;
+              }
+          }
+
+        break ;
+      }
+    case ZMAP_SERVERREQ_GETSEQUENCE:
+      {
+        ZMapServerReqGetSequence get_sequence = (ZMapServerReqGetSequence)request ;
+
+        if ((request->response = zMapServerGetSequence(server, get_sequence->sequences)) != ZMAP_SERVERRESPONSE_OK)
+          {
+            *err_msg_out = g_strdup(zMapServerLastErrorMsg(server)) ;
+          }
+
+        break ;
+      }
+    case ZMAP_SERVERREQ_GETSTATUS:
+      {
+        ZMapServerReqGetStatus get_status = (ZMapServerReqGetStatus)request ;
+
+        if ((request->response = zMapServerGetStatus(server, &(get_status->exit_code))) != ZMAP_SERVERRESPONSE_OK)
+          {
+            *err_msg_out = g_strdup(zMapServerLastErrorMsg(server)) ;
+          }
+
+        break ;
+      }
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+    case ZMAP_SERVERREQ_GETCONNECT_STATE:
+      {
+        ZMapServerReqGetConnectState get_connect_state = (ZMapServerReqGetConnectState)request ;
+
+        if ((request->response = zMapServerGetConnectState(server, &(get_connect_state->connect_state)))
+            != ZMAP_SERVERRESPONSE_OK)
+          {
+            *err_msg_out = g_strdup(zMapServerLastErrorMsg(server)) ;
+          }
+
+        break ;
+      }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+    default:
+      {
+        zMapWarnIfReached() ;
+        
+        request->response = ZMAP_SERVERRESPONSE_BADREQ ;
+        *err_msg_out = g_strdup_printf("Unknown request number: %d", request->type) ;
+
+        break ;
+      }
+    }
+
+  reply = request->response ;
+
+  return reply ;
+}
 
 

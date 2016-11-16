@@ -54,9 +54,6 @@
 #include <ZMap/zmapGFF.hpp>
 #include <ZMap/zmapServerProtocol.hpp>
 
-#include <ZMap/zmapThreadsLib.hpp>                             // for threadforklock/unlock which
-                                                            // shouldn't be in here....
-
 #include <pipeServer_P.hpp>
 
 
@@ -96,12 +93,6 @@ typedef struct GetFeaturesDataStructType
 
 static gboolean globalInit(void) ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static gboolean createConnection(void **server_out,
-                                 GQuark source_name, char *config_file, ZMapURL url, char *format,
-                                 char *version_str, int timeout,
-                                 pthread_mutex_t *mutex) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 static gboolean createConnection(void **server_out,ZMapConfigSource config_source) ;
 
 static ZMapServerResponseType openConnection(void *server, ZMapServerReqOpen req_open) ;
@@ -121,11 +112,16 @@ static ZMapServerResponseType setContext(void *server,  ZMapFeatureContext featu
 static ZMapServerResponseType getFeatures(void *server_in, ZMapStyleTree &styles,
                                           ZMapFeatureContext feature_context_out) ;
 static ZMapServerResponseType getContextSequence(void *server_in,
+                                                 ZMapStyleTree &styles, ZMapFeatureContext feature_context_out,
                                                  char *sequence_name, int start, int end,
                                                  int *dna_length_out, char **dna_sequence_out) ;
 static const char *lastErrorMsg(void *server) ;
 static ZMapServerResponseType getStatus(void *server_conn, gint *exit_code) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static ZMapServerResponseType getConnectState(void *server_conn, ZMapServerConnectStateType *connect_state) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 static ZMapServerResponseType closeConnection(void *server_in) ;
 static ZMapServerResponseType destroyConnection(void *server) ;
 
@@ -148,6 +144,7 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
 
 static void setErrorMsgGError(PipeServer server, GError **gff_pipe_err_inout) ;
 static void setErrMsg(PipeServer server, const char *new_msg) ;
+
 
 /*
  *                   Globals
@@ -203,7 +200,11 @@ void pipeGetServerFuncs(ZMapServerFuncs pipe_funcs)
   pipe_funcs->get_context_sequences = getContextSequence ;
   pipe_funcs->errmsg = lastErrorMsg ;
   pipe_funcs->get_status = getStatus;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   pipe_funcs->get_connect_state = getConnectState ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
   pipe_funcs->close = closeConnection;
   pipe_funcs->destroy = destroyConnection ;
 
@@ -244,7 +245,7 @@ static gboolean createConnection(void **server_out, ZMapConfigSource config_sour
 
   const ZMapURL url = config_source->urlObj() ;
   
-  if ((url->scheme != SCHEME_FILE || url->scheme != SCHEME_PIPE) && (!(url->path) || !(*(url->path))))
+  if ((url->scheme != SCHEME_PIPE) && (!(url->path) || !(*(url->path))))
     {
       server->last_err_msg = g_strdup_printf("Connection failed because pipe url had wrong scheme or no path: %s.",
                                              url->url) ;
@@ -267,68 +268,29 @@ static gboolean createConnection(void **server_out, ZMapConfigSource config_sour
       server->scheme = url->scheme ;
       url_script_path = url->path ;
 
-      if (server->scheme == SCHEME_FILE)
+      if (g_path_is_absolute(url_script_path))
         {
-          if (g_path_is_absolute(url_script_path))
-            {
-              server->script_path = g_strdup(url_script_path) ;
+          server->script_path = g_strdup(url_script_path) ;
 
+          result = TRUE ;
+        }
+      else
+        {
+          /* Look for an _executable_ script on our path. */
+          if ((server->script_path = g_find_program_in_path(url_script_path)))
+            {
               result = TRUE ;
             }
           else
             {
-              gchar *dir;
-              char *tmp_path ;
+              server->last_err_msg = g_strdup_printf("Cannot find executable script %s in PATH",
+                                                     url_script_path) ;
+              ZMAPSERVER_LOG(Warning, server->protocol, server->script_path, "%s", server->last_err_msg) ;
 
-              dir = server->data_dir ;
-
-              if (dir && *dir)
-                {
-                  tmp_path = g_strdup_printf("%s/%s", dir, url_script_path) ;                /* NB '//' works as '/' */
-
-                  server->script_path = zMapGetPath(tmp_path) ;
-
-                  g_free(tmp_path) ;
-
-                  result = TRUE ;
-                }
-              else
-                {
-                  server->last_err_msg = g_strdup_printf("Cannot find path to relative file specified by url"
-                                                         " because no data directory was specified in config file,"
-                                                         " url was: \"%s\"",
-                                                         url->url) ;
-                  ZMAPSERVER_LOG(Warning, server->protocol, server->script_path, "%s", server->last_err_msg) ;
-
-                  result = FALSE ;
-                }
+              result = FALSE ;
             }
         }
-      else                                                    /* SCHEME_PIPE */
-        {
-          if (g_path_is_absolute(url_script_path))
-            {
-              server->script_path = g_strdup(url_script_path) ;
 
-              result = TRUE ;
-            }
-          else
-            {
-              /* Look for an _executable_ script on our path. */
-              if ((server->script_path = g_find_program_in_path(url_script_path)))
-                {
-                  result = TRUE ;
-                }
-              else
-                {
-                  server->last_err_msg = g_strdup_printf("Cannot find executable script %s in PATH",
-                                                         url_script_path) ;
-                  ZMAPSERVER_LOG(Warning, server->protocol, server->script_path, "%s", server->last_err_msg) ;
-
-                  result = FALSE ;
-                }
-            }
-        }
 
       if (result)
         {
@@ -337,10 +299,9 @@ static gboolean createConnection(void **server_out, ZMapConfigSource config_sour
           else
             server->script_args = g_strdup("") ;
 
-          if (server->scheme == SCHEME_FILE)
-            server->protocol = FILE_PROTOCOL_STR ;
-          else
-            server->protocol = PIPE_PROTOCOL_STR ;
+
+
+          server->protocol = PIPE_PROTOCOL_STR ;
         }
     }
 
@@ -358,11 +319,10 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   PipeServer server = (PipeServer)server_in ;
-  
   GError *gff_pipe_err = NULL ;
   GIOStatus pipe_status = G_IO_STATUS_NORMAL ;
 
-  zMapReturnValIfFail(server && req_open, result ) ;
+  zMapReturnValIfFail((server && req_open), result ) ;
 
   if (server->gff_pipe)
     {
@@ -378,7 +338,7 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
   else
     {
       gboolean status = FALSE ;
-      const char* filename = server->url + 8 ; /* remove "file:///" prefix */
+      const char* filename = server->url + 8 ; /* remove "pipe:///" prefix */
 
       GQuark file_quark = g_quark_from_string(filename) ;
       ZMapFeatureParserCache parser_cache = NULL ;
@@ -392,7 +352,8 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
       /* See if there's already a parser cached (i.e. parsing has already been started) */
       if (server->sequence_map && server->sequence_map->cached_parsers)
         {
-          parser_cache = (ZMapFeatureParserCache)g_hash_table_lookup(server->sequence_map->cached_parsers, GINT_TO_POINTER(file_quark)) ;
+          parser_cache = (ZMapFeatureParserCache)g_hash_table_lookup(server->sequence_map->cached_parsers,
+                                                                     GINT_TO_POINTER(file_quark)) ;
 
           if (parser_cache)
             {
@@ -403,16 +364,7 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
             }
         }
 
-      if (server->scheme == SCHEME_FILE)   // could spawn /bin/cat but there is no need
-        {
-          if (server->gff_pipe ||
-              (server->gff_pipe = g_io_channel_new_file(server->script_path, "r", &gff_pipe_err)))
-            status = TRUE ;
-        }
-      else
-        {
-          status = pipeSpawn(server, &gff_pipe_err) ;
-        }
+      status = pipeSpawn(server, &gff_pipe_err) ;
 
       if (!status)
         {
@@ -492,7 +444,7 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
                   else
                     result = ZMAP_SERVERRESPONSE_OK ;
 
-                  /* Then parser the sequence */
+                  /* Then parse the sequence if gff v2 */
                   if (result == ZMAP_SERVERRESPONSE_OK && server->gff_version == ZMAPGFF_VERSION_2)
                     pipeGetSequence(server);
                 }
@@ -684,6 +636,8 @@ static ZMapServerResponseType getFeatures(void *server_in, ZMapStyleTree &styles
         }
       else
         {
+          int num_features, n_lines_bod, n_lines_fas, n_lines_seq ;
+
           get_features_data.server = server ;
 
           zMapGFFParseSetSourceHash(server->parser, server->featureset_2_column, server->source_2_sourcedata) ;
@@ -705,10 +659,10 @@ static ZMapServerResponseType getFeatures(void *server_in, ZMapStyleTree &styles
           /* Fetch all the features for all the blocks in all the aligns. */
           g_hash_table_foreach(feature_context->alignments, eachAlignmentGetFeatures, &get_features_data) ;
 
-          int num_features = zMapGFFParserGetNumFeatures(server->parser) ,
-            n_lines_bod = zMapGFFGetLineBod(server->parser),
-            n_lines_fas = zMapGFFGetLineFas(server->parser),
-            n_lines_seq = zMapGFFGetLineSeq(server->parser) ;
+          num_features = zMapGFFParserGetNumFeatures(server->parser) ;
+          n_lines_bod = zMapGFFGetLineBod(server->parser) ;
+          n_lines_fas = zMapGFFGetLineFas(server->parser) ;
+          n_lines_seq = zMapGFFGetLineSeq(server->parser) ;
 
           if (!num_features)
             {
@@ -721,7 +675,8 @@ static ZMapServerResponseType getFeatures(void *server_in, ZMapStyleTree &styles
             result = server->result = ZMAP_SERVERRESPONSE_SOURCEEMPTY ;
           else if (   (!num_features && n_lines_bod)
                       || (n_lines_fas && !zMapGFFGetSequenceNum(server->parser))
-                      || (n_lines_seq && !zMapGFFGetSequenceNum(server->parser) && zMapGFFGetVersion(server->parser) == ZMAPGFF_VERSION_2)  )
+                      || (n_lines_seq && !zMapGFFGetSequenceNum(server->parser)
+                          && zMapGFFGetVersion(server->parser) == ZMAPGFF_VERSION_2)  )
             result = server->result = ZMAP_SERVERRESPONSE_SOURCEERROR ;
 
           /*
@@ -740,11 +695,13 @@ static ZMapServerResponseType getFeatures(void *server_in, ZMapStyleTree &styles
 
 
 
-
+// I DON'T THINK THIS WORKS IF YOU TRY TO JUST GET SEQUENCE....BECAUSE I THINK IT NEEDS TO HAVE
+// GOT THE FEATURES FIRST....
 /*
  * we have pre-read the sequence and simple copy/move the data over if it's there
  */
 static ZMapServerResponseType getContextSequence(void *server_in,
+                                                 ZMapStyleTree &styles, ZMapFeatureContext feature_context_out,
                                                  char *sequence_name, int start, int end,
                                                  int *dna_length_out, char **dna_sequence_out)
 {
@@ -839,6 +796,8 @@ static ZMapServerResponseType getStatus(void *server_conn, gint *exit_code)
 }
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* Is the pipe server connected ? */
 static ZMapServerResponseType getConnectState(void *server_conn, ZMapServerConnectStateType *connect_state)
 {
@@ -856,6 +815,8 @@ static ZMapServerResponseType getConnectState(void *server_conn, ZMapServerConne
 
   return result ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 static ZMapServerResponseType closeConnection(void *server_in)

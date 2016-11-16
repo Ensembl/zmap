@@ -196,7 +196,7 @@ static semaphore semaphore_G(MAX_FILE_THREADS) ;
 /* Map of file types to a data-source types */
 const map<string, ZMapDataStreamType> file_type_to_stream_type_G =
   {
-    {"GFF",     ZMapDataStreamType::GIO}
+    {"GFF",     ZMapDataStreamType::GFF}
     ,{"Bed",    ZMapDataStreamType::BED}
     ,{"bigBed", ZMapDataStreamType::BIGBED}
     ,{"bigWig", ZMapDataStreamType::BIGWIG}
@@ -241,7 +241,7 @@ ZMapDataStreamStruct::ZMapDataStreamStruct(ZMapConfigSource source,
   return ;
 }
 
-ZMapDataStreamGIOStruct::ZMapDataStreamGIOStruct(ZMapConfigSource source, 
+ZMapDataStreamGFFStruct::ZMapDataStreamGFFStruct(ZMapConfigSource source, 
                                                  const char *file_name,
                                                  const char *open_mode,
                                                  const char *sequence,
@@ -251,7 +251,7 @@ ZMapDataStreamGIOStruct::ZMapDataStreamGIOStruct(ZMapConfigSource source,
     gff_version_(ZMAPGFF_VERSION_UNKNOWN),
     gff_version_set_(false)
 {
-  type = ZMapDataStreamType::GIO ;
+  type = ZMapDataStreamType::GFF ;
   io_channel = g_io_channel_new_file(file_name, open_mode, &error_) ;
 
   gffVersion(&gff_version_) ;
@@ -620,7 +620,7 @@ ZMapDataStreamStruct::~ZMapDataStreamStruct()
     zMapGFFDestroyParser(parser_) ;
 }
 
-ZMapDataStreamGIOStruct::~ZMapDataStreamGIOStruct()
+ZMapDataStreamGFFStruct::~ZMapDataStreamGFFStruct()
 {
   GIOStatus gio_status = G_IO_STATUS_NORMAL ;
   GError *err = NULL ;
@@ -709,7 +709,7 @@ GError* ZMapDataStreamStruct::error()
   return error_ ;
 }
 
-bool ZMapDataStreamGIOStruct::isOpen()
+bool ZMapDataStreamGFFStruct::isOpen()
 {
   bool result = false ;
 
@@ -775,7 +775,7 @@ bool ZMapDataStreamBCFStruct::isOpen()
 #endif
 
 
-
+// THIS DOESN'T MAKE SENSE....ONLY ZMapDataStreamGFF is GFF ?? Should get rid of this..it's confusing.
 /*
  * Get the GFF version. We must always return ZMAPGFF_VERSION_3 for any type 
  * where we are converting the input data to GFF later on.
@@ -786,7 +786,7 @@ bool ZMapDataStreamStruct::gffVersion(int * const p_out_val)
   return true ;
 }
 
-bool ZMapDataStreamGIOStruct::gffVersion(int * const p_out_val)
+bool ZMapDataStreamGFFStruct::gffVersion(int * const p_out_val)
 {
   if (gff_version_set_)
     {
@@ -828,7 +828,7 @@ bool ZMapDataStreamGIOStruct::gffVersion(int * const p_out_val)
 }
 
 
-bool ZMapDataStreamGIOStruct::checkHeader(string &err_msg, bool &empty_or_eof, const bool sequence_server)
+bool ZMapDataStreamGFFStruct::checkHeader(string &err_msg, bool &empty_or_eof, const bool sequence_server)
 {
   bool result = false ;
 
@@ -1109,7 +1109,7 @@ bool ZMapDataStreamBCFStruct::checkHeader(std::string &err_msg, bool &empty_or_e
  * "<string_data>\n" -> "<string_data>"
  * (It is still a NULL terminated c-string though.)
  */
-bool ZMapDataStreamGIOStruct::readLine()
+bool ZMapDataStreamGFFStruct::readLine()
 {
   bool result = false ;
   GError *pErr = NULL ;
@@ -1343,6 +1343,9 @@ bool ZMapDataStreamBCFStruct::readLine()
           if (name && *name == '.')
             name = NULL ;
 
+
+          // The first/deletion/insertion bit looks unimplemented as yet...EG
+
           /* Construct the ensembl_vartiation string for the attributes */
           string var_str ;
           bool first = true ;
@@ -1386,6 +1389,7 @@ bool ZMapDataStreamBCFStruct::readLine()
           else if (!snv)
             so_term = "substitution" ;
 
+
           cur_feature_data_ = ZMapDataStreamFeatureData(iStart, iEnd, 0.0, '.', '.', 
                                                         name, 0, 0) ;
 
@@ -1406,7 +1410,7 @@ bool ZMapDataStreamBCFStruct::readLine()
  * Parse a header line from the source. Returns true if successful. Sets done_header if there are
  * no more header lines to read.
  */
-bool ZMapDataStreamGIOStruct::parseHeader(gboolean &done_header,
+bool ZMapDataStreamGFFStruct::parseHeader(gboolean &done_header,
                                           ZMapGFFHeaderState &header_state,
                                           GError **error)
 {
@@ -1421,6 +1425,9 @@ bool ZMapDataStreamGIOStruct::parseHeader(gboolean &done_header,
 }
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+// If the base class does nothing why do we have it ? EG
 /*
  * Parse sequence data from the source. Returns true if successful. Sets sequence_finished if
  * there is no more sequence to read.
@@ -1431,8 +1438,14 @@ bool ZMapDataStreamStruct::parseSequence(gboolean &sequence_finished, string &er
   bool result = true ;
   return result ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-bool ZMapDataStreamGIOStruct::parseSequence(gboolean &sequence_finished, string &err_msg)
+
+
+// The function that this calls in gff doesn't work for gffv3, it does NOTHING !!
+// this has to be changed to handle v3 of gff....
+//
+bool ZMapDataStreamGFFStruct::parseSequence(gboolean &sequence_finished, string &err_msg)
 {
   bool result = true ;
 
@@ -1470,6 +1483,8 @@ bool ZMapDataStreamGIOStruct::parseSequence(gboolean &sequence_finished, string 
     }
   else if (!sequence_finished)
     {
+      err_msg += "No sequence found." ; 
+
       result = false ;
     }
 
@@ -1488,7 +1503,7 @@ void ZMapDataStreamStruct::parserInit(GHashTable *featureset_2_column,
   styles_ = styles ;
 }
 
-void ZMapDataStreamGIOStruct::parserInit(GHashTable *featureset_2_column,
+void ZMapDataStreamGFFStruct::parserInit(GHashTable *featureset_2_column,
                                          GHashTable *source_2_sourcedata,
                                          ZMapStyleTree *styles)
 {
@@ -1612,7 +1627,7 @@ ZMapFeature ZMapDataStreamStruct::makeBEDFeature(struct bed *bed_feature,
       if (bed_feature->thickEnd != bed_feature->thickStart)
         zMapFeatureAddTranscriptCDS(feature, TRUE, bed_feature->thickStart, bed_feature->thickEnd);
 
-      for (int i = 0; i < bed_feature->blockCount; ++i)
+      for (unsigned int i = 0; i < bed_feature->blockCount; ++i)
         {
           const int exon_start = bed_feature->chromStarts[i] + bed_feature->chromStart ;
           const int exon_end = exon_start + bed_feature->blockSizes[i] ;
@@ -1746,7 +1761,7 @@ ZMapFeature ZMapDataStreamStruct::makeFeature(const char *sequence,
 /*
  * Parse a body line from the source. Returns true if successful.
  */
-bool ZMapDataStreamGIOStruct::parseBodyLine(GError **error)
+bool ZMapDataStreamGFFStruct::parseBodyLine(GError **error)
 {
   // The buffer line has already been read by the functions that read the header etc. so parse it
   // first and then read the next line ready for next time.
@@ -1887,7 +1902,7 @@ bool ZMapDataStreamStruct::addFeaturesToBlock(ZMapFeatureBlock feature_block)
   return true ;
 }
 
-bool ZMapDataStreamGIOStruct::addFeaturesToBlock(ZMapFeatureBlock feature_block)
+bool ZMapDataStreamGFFStruct::addFeaturesToBlock(ZMapFeatureBlock feature_block)
 {
   bool result = zMapGFFGetFeatures(parser_, feature_block) ;
 
@@ -1902,8 +1917,7 @@ bool ZMapDataStreamGIOStruct::addFeaturesToBlock(ZMapFeatureBlock feature_block)
 /*
  * This validates the number of features that were found and the length of sequence etc.
  */
-bool ZMapDataStreamStruct::checkFeatureCount(bool &empty, 
-                                             string &err_msg)
+bool ZMapDataStreamStruct::checkFeatureCount(bool &empty, string &err_msg)
 {
   bool result = true ;
 
@@ -1945,8 +1959,7 @@ GList* ZMapDataStreamStruct::getFeaturesets()
 /*
  * This returns the dna/peptide sequence that was parsed from the file, if it contained any
  */
-ZMapSequence ZMapDataStreamStruct::getSequence(GQuark seq_id, 
-                                               GError **error)
+ZMapSequence ZMapDataStreamStruct::getSequence(GQuark seq_id, GError **error)
 {
   ZMapSequence result = zMapGFFGetSequence(parser_, seq_id) ;
 
@@ -1961,7 +1974,7 @@ ZMapSequence ZMapDataStreamStruct::getSequence(GQuark seq_id,
 /*
  * Utility to return the current line number
  */
-int ZMapDataStreamGIOStruct::curLineNumber()
+int ZMapDataStreamGFFStruct::curLineNumber()
 {
   return zMapGFFGetLineNumber(parser_) ;
 }
@@ -1970,7 +1983,7 @@ int ZMapDataStreamGIOStruct::curLineNumber()
 /*
  * Utility to return the current line string
  */
-const char* ZMapDataStreamGIOStruct::curLine()
+const char* ZMapDataStreamGFFStruct::curLine()
 {
   return buffer_line_->str ;
 }
@@ -2057,7 +2070,6 @@ gboolean ZMapDataStreamHTSStruct::init(const char *region_name, int start, int e
 bool ZMapDataStreamHTSStruct::processRead()
 {
   gboolean result = FALSE ;
-  gboolean bHasCigarAttribute = FALSE ;
   char cStrand = '\0',
     cPhase = '.',
     cTargetStrand = '.' ;
@@ -2095,7 +2107,6 @@ bool ZMapDataStreamHTSStruct::processRead()
   nCigar = hts_rec->core.n_cigar ;
   if (nCigar)
     {
-      bHasCigarAttribute = TRUE ;
       pCigar = bam_get_cigar(hts_rec) ;
 
       for (iCigar=0; iCigar<nCigar; ++iCigar)
@@ -2162,8 +2173,8 @@ ZMapDataStream zMapDataStreamCreate(ZMapConfigSource source,
     {
       switch (stream_type)
         {
-        case ZMapDataStreamType::GIO:
-          data_source = new ZMapDataStreamGIOStruct(source, file_name, open_mode, sequence, start, end) ;
+        case ZMapDataStreamType::GFF:
+          data_source = new ZMapDataStreamGFFStruct(source, file_name, open_mode, sequence, start, end) ;
           break ;
         case ZMapDataStreamType::BED:
           data_source = new ZMapDataStreamBEDStruct(source, file_name, open_mode, sequence, start, end) ;
@@ -2260,7 +2271,7 @@ ZMapDataStreamType zMapDataStreamGetType(ZMapDataStream data_source )
  * Inspect the filename string (might include the path on the front, but this is
  * (ignored) for the extension to determine type:
  *
- *       *.gff                            ZMapDataStreamType::GIO
+ *       *.gff                            ZMapDataStreamType::GFF
  *       *.bed                            ZMapDataStreamType::BED
  *       *.[bb,bigBed]                    ZMapDataStreamType::BIGBED
  *       *.[bw,bigWig]                    ZMapDataStreamType::BIGWIG
@@ -2519,7 +2530,7 @@ static string toLower(const string &s)
 {
   string result(s) ;
   
-  for (int i = 0; i < s.length(); ++i)
+  for (unsigned int i = 0; i < s.length(); ++i)
     result[i] = std::tolower(result[i]) ;
 
   return result ;
@@ -2533,8 +2544,8 @@ static ZMapDataStreamType dataSourceTypeFromExtension(const string &file_ext, GE
 
   static const map<string, ZMapDataStreamType, caseInsensitiveCmp> file_extensions = 
     {
-      {"gff",     ZMapDataStreamType::GIO}
-      ,{"gff3",   ZMapDataStreamType::GIO}
+      {"gff",     ZMapDataStreamType::GFF}
+      ,{"gff3",   ZMapDataStreamType::GFF}
       ,{"bed",    ZMapDataStreamType::BED}
       ,{"bb",     ZMapDataStreamType::BIGBED}
       ,{"bigBed", ZMapDataStreamType::BIGBED}
