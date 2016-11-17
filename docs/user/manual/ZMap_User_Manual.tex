@@ -24,6 +24,7 @@
 \usepackage[pdftex]{graphicx}
 \usepackage{parskip}
 \usepackage{listings}
+\usepackage{url}
 % Paragraph styles
 %\setlength{\parindent}{0pt}
 % Text styles
@@ -327,10 +328,28 @@ If you run ZMap without any arguments then you will be presented with the Main W
 \label{img_main_window}
 \end{figure}
 
-Click on the \lstinline{+} button to add a new source. This will open the Create Source dialog. From the drop-down menu, select the type of source. Choose \lstinline{File} for a local/remote file (figure \ref{img_create_source_file}) or \lstinline{Ensembl} for an Ensembl database (figure \ref{img_create_source_ensembl}).
+Click on the \lstinline{+} button to add a new source. This will open the Create Source dialog. From the drop-down menu, select the type of source:
+\begin{enumerate}
+\item \lstinline{File/URL}: a local or remote file (figure \ref{img_create_source_file})
+\item \lstinline{Ensembl}: an Ensembl database (figure \ref{img_create_source_ensembl})
+\item \lstinline{Track hub}: find or register a track hub using the \href{http://trackhubregistry.org/}{Track Hub Registry}
+\end{enumerate}
 
-\textbf{Local/remote file}
-For File sources, you just need to enter the path of the file (or URL if it is a remote file). This file can be in any of the file formats supported by ZMap, e.g. GFF3 or BAM. You also need to enter a name for the source - this can be anything you like but should be a short, descriptive name with no special characters (except underscores or dashes).
+After you click OK on the Create Source dialog, the new source will appear in the Main Window. You can enter multiple sources in the same way. If you want to remove a source, select it in the list and click the delete button. You also need to enter the sequence details for the region you want to load. Then click \lstinline{Execute} to open ZMap on that region. You can edit the sources/sequence details at any time and click \lstinline{Execute} again to start a new ZMap on a different region.
+
+You can save the source details to a config file so that they can easily be re-loaded later. Simply click the \lstinline{Save} button and select a file location. To re-use the config, you can either open the Main Window again and select the file using the file chooser button, or you can run ZMap on the file from the command-line as follows:
+\begin{lstlisting}
+zmap --conf_file=/path/to/file
+\end{lstlisting}
+
+\subsubsection{File/URL}
+For File sources, you can click the file chooser button, or type the path/URL of the file into the box. The source name will be taken from the file name by default if you use the file chooser; otherwise you must specify a source name manually. The source name can be anything you like but must be unique and must not contain any special characters (except underscores or dashes). The file can be in any of the file formats supported by ZMap:
+\begin{enumerate}
+\item GFF3
+\item BAM/SAM/CRAM
+\item VCF/BCF
+\item Bed/bigBed/bigWig
+\end{enumerate}
 
 \begin{figure}
 \centering
@@ -340,8 +359,24 @@ For File sources, you just need to enter the path of the file (or URL if it is a
 \label{img_create_source_file}
 \end{figure}
 
-\textbf{Ensembl database}
-For Ensembl sources, the public host details are pre-filled for you by default. You may change these if you wish but the public host should be fine for most users (note that a password is not required). You can click the magnifying glass icon next to the ``Database'' box to search for available databases in the host (figure \ref{img_create_source_ensembl_search_db}). You may optionally also enter a list of featuresets or biotypes that you are interested in - in this case, ZMap will only load features of those types; otherwise, ZMap will load all of the features from the database. You can click the magnifying glass icon next to the featuresets/biotypes boxes to search for available featuresets/biotypes. Note that you can select multiple featuresets/biotypes from the search box by holding down Ctrl (for individual selection) or Shift (for range selection) when you click with the mouse button. You can also enter multiple featuresets/biotypes directly into the Create Source dialog as a semi-colon separated list.
+\subsubsection{Ensembl}
+For Ensembl sources, a host and user/password is required for the database you want to load data from. The public Ensembl host details are pre-filled for you by default. You may change these if you wish but the public host should be fine for most users (note that a password is not required).
+
+\textbf{Specifying a database}
+
+You need to select which database you wish to load data from. You can type the database name into the \texttt{Database} box if you know it, or click the search button (the magnifying glass icon) next to the \texttt{Database} box to search for available databases from the current host. On the search results dialog (figure \ref{img_create_source_ensembl_search_db}), select the database from the list shown and click OK (or double-click to quickly select a database and OK the dialog at the same time).
+
+You can use the Search and Filter boxes to help find a specific database in the list. When you type some text in the Search box, the selection will jump to the first row matching that text. You can press the down array to jump to the next row matching the text. In the Filter dialog, you can type some text and press Enter to filter the list by items containing that text. Click the Clear button to reset back to the original list.
+
+\textbf{Specifying featuresets/biotypes}
+
+On the Create Source dialog, you may optionally enter a list of featuresets and/or biotypes that you want to load. In this case, ZMap will only load features of those types; otherwise, ZMap will load all of the features from the database. Click the search button (magnifying glass icon) next to the Featuresets or Biotypes box to search for available featuresets/biotypes in the current database.
+
+The search results list works in the same way as the database search results dialog, except that you can select multiple featuresets/biotypes by holding down Ctrl (for individual selection) or Shift (for range selection) when you click with the mouse button. When you click OK, this will create a semi-colon separated list on the Create Source dialog. You can also manually type in a semi-colon separated list of featureset/biotype names.
+
+\textbf{Loading DNA}
+
+Tick the \texttt{Load DNA} button on the Create Source dialog to tell ZMap to load the DNA for the reference sequence from this database. This is not recommended for very large regions because ZMap will need to store all of the sequence for the region in memory, and will also calculate and store the 3-frame translation.
 
 \begin{figure}
 \centering
@@ -359,19 +394,76 @@ For Ensembl sources, the public host details are pre-filled for you by default. 
 \label{img_create_source_ensembl_search_db}
 \end{figure}
 
-After you click OK on the Create Source dialog, the new source will appear in the Main Window. You can enter multiple sources in the same way. If you want to remove a source, select it in the list and click the delete button. You also need to enter the sequence details for the region you want to load. Then click \lstinline{Execute} to open ZMap on that region. You can edit the sources/sequence details at any time and click \lstinline{Execute} again to start a new ZMap on a different region.
+\subsubsection{Track  hub}
+ZMap can load data from a collection of tracks in a track hub using the \href{http://trackhubregistry.org/}{Track Hub Registry}. You can search for existing track hubs or register and manage new ones.
 
-You can save the source details to a config file so that they can easily be re-loaded later. Simply click the \lstinline{Save} button and select a file location. To re-use the config, you can either open the Main Window again and select the file using the file chooser button, or you can run ZMap on the file from the command-line as follows:
-\begin{lstlisting}
-zmap --conf_file=/path/to/file
-\end{lstlisting}
+\textbf{Searching for track hubs}
+
+To search for track hubs in the registry, press the Search button on the Create Source dialog. This will open the Search dialog (figure \ref{create_source_trackhub_search}). In the \texttt{Search text} box you can enter any query to search for. The search is case insensitive and you can use wildcards, regular expressions and powerful, advanced search operations such as proximity searches. See the documentation here for details: \url{http://trackhubregistry.org/docs/search}. 
+
+You may also filter the results by specifying the species, assembly or hub. These fields are case sensitive and must be entered exactly as they appear in the registry, e.g. ``Mus musculus'' and not ``Mus Musculus''. If you are not sure of the case, it is generally fine to use the \texttt{Search text} box instead, e.g. at the time of writing, searching for ``mus musculus'' in the \texttt{Search text} box gives the same results as searching for ``Mus musculus'' in the species box, while searching for ``mouse'' returns one extra, spurious match from a different species which happens to contain the text ``mouse'' somewhere in its description.
+
+\begin{figure}
+\centering
+\color[rgb]{0.30980393,0.5058824,0.7411765}
+\includegraphics[resolution=150]{images/create_source_trackhub.png}
+\caption{Create a new Track Hub source. Click on the Search button to search the Track Hub Registry, or Register to register a new one. Click My Hubs to view all of the track hubs you have registered.}
+\label{img_create_source_trackhub}
+\end{figure}
+
+\begin{figure}
+\centering
+\color[rgb]{0.30980393,0.5058824,0.7411765}
+\includegraphics[resolution=150]{images/create_source_trackhub_search.png}
+\caption{Search for hubs in the Track Hub Registry. The Search Text is case insensitive and can contain wildcards. The other fields are case sensitive and must be entered exactly.}
+\label{img_create_source_trackhub_search}
+\end{figure}
+
+\textbf{Register a track hub}
+
+ZMap provides the facility to register and manage track hubs in the Track Hub Registry. For this you will first need to sign up for an account on \url{http://trackhubregistry.org/}. To register a new track hub, click the Register button on the Create Source dialog. You will be prompted to log in (if you have not already logged in during the current ZMap session). You will then be asked to enter details about the new track hub (figure \ref{img_create_source_trackhub_register}).
+
+The only mandatory field is the URL. This is the url of the main track hub file, which is usually named hub.txt, e.g. \url{http://genome-test.cse.ucsc.edu/~hiram/hubs/Plants/hub.txt}.
+
+The Assemblies field is only required if the hub genome subdirectory names are not valid UCSC DB names. In this case you must provide a map from the hub's genome names to their corresponding INSDC accessions as a semi-colon separated list of key=value pairs, e.g. araTha1=GCA\_000001735.1 ; ricCom1=GCA\_000151685.2.
+
+You can use the Type field to enter the type of the assembly data contained in the hub, which can be one of "genomics", "epigenomics", "transcriptomics", "proteomics" (default: "genomics"). By specifying the type you allow the user to search for track hubs based on particular types.
+
+\begin{figure}
+\centering
+\color[rgb]{0.30980393,0.5058824,0.7411765}
+\includegraphics[resolution=150]{images/create_source_trackhub_register.png}
+\caption{Register a hub in the Track Hub Registry. Enter the URL of the hub.txt file and optionally a mapping of genome names to UCSC DB names and the type. Tick the Public box if you want the track hub to be publically searchable.}
+\label{img_create_source_trackhub_register}
+\end{figure}
+
+\textbf{Managing registered track hubs}
+
+You can use the My Hubs button on the Create Source to view a list of all track hubs that you have registered via your account. You will be asked to log in if necessary before you can view your hubs. This will open a dialog showing a list of all the hubs you have registered (figure \ref{create_source_trackhub_view}). The list shows each genome in the hub on a separate line. Select one of the hubs in the list and click OK to use it as a source to load data into ZMap.
+
+\begin{figure}
+\centering
+\color[rgb]{0.30980393,0.5058824,0.7411765}
+\includegraphics[resolution=150]{images/create_source_trackhub_view.png}
+\caption{View any hubs you have registered in the Track Hub Registry.}
+\label{img_create_source_trackhub_view}
+\end{figure}
+
+You can also use this dialog to delete your track hubs from the registry. Select a hub from the list and press the Delete button, and then click OK on the dialog. Note that this will only delete the particular genome from the registry, so to delete all of the genomes for a hub you will need to select and delete them separately. Note that deleting a hub only deletes it from the Track Hub Registry; it does not affect the original data at all.
+
+Track hubs can also be managed directly from \url{http://trackhubregistry.org/}.
+
+\textbf{Logging in/out}
+
+You will be prompted to log if necessary any time you attempt to register a hub or view registered hubs. You can also use the \texttt{Log in} button on the Create Source dialog. If you want to log in with a different account, you can first log out using the \texttt{Log out} button on the Create Source dialog.
+
 
 \subsection{Running ZMap with a config file}
 If you have several sources, it can be convenient to specify them in a config file rather than typing them on the command-line. You can also then set up many different options and styles to use for these sources. To use a local GFF file as a source, a simple config file would look something like this:
 \begin{lstlisting}
 [ZMap]
 # The list of sources
-sources=chr6-18
+sources=features
 
 # Sequence name/start/end can be specified here, on the command-line, or
 # omitted if they are to be taken from the file
@@ -380,7 +472,7 @@ start=2696324
 end=2864370
 
 # Source stanzas (one per source)
-[chr6-18]
+[features]
 url=file:////Users/gb10/work/checkout/zmap/examples/features.gff
 \end{lstlisting}
 
@@ -390,6 +482,13 @@ zmap --conf_file=/path/to/file
 \end{lstlisting}
 
 Alternatively, the config file can be saved as \lstinline{~/.ZMap/ZMap} and will be picked up by default.
+
+By default, all sources in the config file are loaded on startup. This can be changed using the ``delayed'' config value. If a source is marked as delayed, it will be created and will be visible in the Main Window, but no data will be loaded unless you select it.
+\begin{lstlisting}
+[features]
+url=file:////Users/gb10/work/checkout/zmap/examples/features.gff
+delayed=true
+\end{lstlisting}
 
 \subsection{Starting ZMap from Otter}
 ZMap is opened via the Tools menu bar in Otter (figure \ref{img_open_from_otterlace}).
