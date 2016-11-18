@@ -380,6 +380,10 @@ You need to select which database you wish to load data from. You can type the d
 
 You can use the Search and Filter boxes to help find a specific database in the list. When you type some text in the Search box, the selection will jump to the first row matching that text. You can press the down array to jump to the next row matching the text. In the Filter dialog, you can type some text and press Enter to filter the list by items containing that text. Click the Clear button to reset back to the original list.
 
+\textbf{Displaying duplicate features from different databases}
+
+ZMap will not show features that are duplicates, even if they come from different database sources. If you want duplicate features to displayed, you can specify a ``DB prefix'' for the database. This will be prepended to the logic name for all features from that database, meaning that their logic name is unique and therefore the features will not be considered duplicates of features from another database with a different prefix (or no prefix).
+
 \textbf{Selecting featuresets/biotypes}
 
 On the Create Source dialog, you may optionally enter a list of featuresets and/or biotypes that you want to load. In this case, ZMap will only load features of those types; otherwise, ZMap will load all of the features from the database. Click the search button (magnifying glass icon) next to the Featuresets or Biotypes box to search for available featuresets/biotypes in the current database.
