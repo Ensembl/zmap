@@ -276,32 +276,15 @@ Ed Griffiths, James Gilbert and Jennifer Harrow}\par
 \clearpage
 \section{Introduction}
 
-ZMap is a software package that provides a visualisation and editing tool for
-genomic features. The software is written in C++ utilising the GTK version 2
-toolkit and is supported on Linux, Apple OS X and MS Windows.
+ZMap is a software package that provides a visualisation and editing tool for genomic features. The software is written in C++ utilising the GTK version 2 toolkit and is supported on Linux, Apple OS X and MS Windows.
 
-ZMap accepts input from multiple sources in multiple formats across multiple
-genomes and is written in a way so that the addition of further formats is made
-as easy as possible. Currently there is support for GFF versions 2 and 3, and
-BAM and CRAM (which may reside in a file, an acedb instance, or an http server)
-and Ensembl databases. ZMap supports multiple top level windows and multiple
-windows within those top level windows allowing multiple genomes and their
-associated features to be displayed in any combination those windows. This
-makes it a good tool for all sorts of annotation activities including
-comparative genomics. ZMap provides facilities for exploring, editing and
-creating features which can currently be saved/exported as GFF version 3
-files.
+ZMap accepts input from multiple sources in multiple formats across multiple genomes and is written in a way so that the addition of further formats is made as easy as possible. Currently there is support for flat files (GFF2, GFF3, BAM, SAM, CRAM, BCF, VCF, Bed, bigBed, bigWig), which may reside in a file or on a server, Ensembl databases, and Track hubs.
 
-ZMap can be used completely stand alone to view/edit GFF files or to view
-Ensembl websites or using its two-way communication protocol it can be
-integrated into existing annotation suites so that it operates seamlessly as an
-additional display. The latter use includes the Otter system used for
-vertebrate annotation at the Sanger Institute but also the Acedb-based system
-used by Wormbase.
+ZMap supports multiple top level windows and multiple windows within those top level windows allowing multiple genomes and their associated features to be displayed in any combination those windows. This makes it a good tool for all sorts of annotation activities including comparative genomics. ZMap provides facilities for exploring, editing and creating features which can currently be saved/exported as GFF3 files.
 
-ZMap comes with an additional suite of sequence visualisation tools called
-SeqTools which it calls to provide sophisticated analysis of alignments in more
-detail.
+ZMap can be used completely stand alone to view/edit files or to view Ensembl websites or using its two-way communication protocol it can be integrated into existing annotation suites so that it operates seamlessly as an additional display. The latter use includes the Otter system used for vertebrate annotation at the Sanger Institute but also the Acedb-based system used by Wormbase.
+
+ZMap comes with an additional suite of sequence visualisation tools called SeqTools which it calls to provide sophisticated analysis of alignments in more detail.
 
 \clearpage
 \section{Starting ZMap}
@@ -318,32 +301,56 @@ The sequence region will default to the region available in the GFF file. Altern
 If all of the files contain the same reference sequence, then their contents will be shown in the same view. If the files contain multiple sequences/regions, then they will be shown in multiple views.
 
 \subsection{Choosing sources on startup}
-If you run ZMap without any arguments then you will be presented with the Main Window where you can choose data sources to load (see Figure \ref{img_main_window}).
+If you run ZMap without any arguments then you will be presented with the Main
+Window where you can choose data sources to load (see Figure
+\ref{img_main_window}).
 
 \begin{figure}
 \centering
 \color[rgb]{0.30980393,0.5058824,0.7411765}
 \includegraphics[resolution=150]{images/main_window.png}
-\caption{ZMap's Main Window. Use the '+' button to add new sources, enter the sequence details for the region you want to view, and then click 'Execute'.}
+\caption{ZMap's Main Window. Use the '+' button to add new sources, enter the sequence details for the region you want to view, and then click 'OK' to start ZMap.}
 \label{img_main_window}
 \end{figure}
 
-Click on the \lstinline{+} button to add a new source. This will open the Create Source dialog. From the drop-down menu, select the type of source:
-\begin{enumerate}
-\item \lstinline{File/URL}: a local or remote file (figure \ref{img_create_source_file})
-\item \lstinline{Ensembl}: an Ensembl database (figure \ref{img_create_source_ensembl})
-\item \lstinline{Track hub}: find or register a track hub using the \href{http://trackhubregistry.org/}{Track Hub Registry}
-\end{enumerate}
+Create one or more sources from which to load data (see section \ref{sec_managing_sources}). Then enter the sequence details for the region you want to load. Click \lstinline{OK} to start a ZMap instance on that region using the selected sources.
 
-After you click OK on the Create Source dialog, the new source will appear in the Main Window. You can enter multiple sources in the same way. If you want to remove a source, select it in the list and click the delete button. You also need to enter the sequence details for the region you want to load. Then click \lstinline{Execute} to open ZMap on that region. You can edit the sources/sequence details at any time and click \lstinline{Execute} again to start a new ZMap on a different region.
+You can start a new ZMap with a different region or different sources at any time by editing the sources/sequence in the Main Window and hitting OK. This will not affect any existing running ZMaps.
+
+If you want to load additional data into a running ZMap, you should use the Import dialog instead (see section \ref{sec_import}).
 
 You can save the source details to a config file so that they can easily be re-loaded later. Simply click the \lstinline{Save} button and select a file location. To re-use the config, you can either open the Main Window again and select the file using the file chooser button, or you can run ZMap on the file from the command-line as follows:
+
 \begin{lstlisting}
 zmap --conf_file=/path/to/file
 \end{lstlisting}
 
+\subsection{Managing sources}
+\label{sec_managing_sources}
+Both the Main Window and Import dialog show the list of sources available in ZMap. Here, you can view existing sources, create new sources, and select which sources to load.
+
+Click on the \lstinline{+} button to add a new source. This will open the Create Source dialog, where you can create a source of one of the following types:
+
+\begin{enumerate}
+\item \lstinline{File/URL}: a local or remote file (see section \ref{sec_file})
+\item \lstinline{Ensembl}: an Ensembl database (see section \ref{sec_ensembl})
+\item \lstinline{Track hub}: a track hub in the \href{http://trackhubregistry.org/}{Track Hub Registry} (see section \ref{sec_trackhub})
+\end{enumerate}
+
+After you have created the new source, it will appear in the sources list. You can enter multiple new sources in the same way. If you want to delete a source, select it in the list and click the delete button, or click the edit button to edit the selected source's details.
+
+Note that for track hub sources, a single hub may contain many data tracks. These are shown as child sources in the list. There will be a small triangle expander icon to the left of the source name to indicate that it contains child sources. There may be an hiercarchy several levels deep depending on the hierarchy of the track hub.
+
+To mark sources for loading, tick the check button in the Load column. Note that selecting a parent source will also select all of its child sources. The text at the bottom of the list will show you how many sources are currently selected for loading, e.g. figure \ref{img_import} shows that ``20 sources will be loaded out of 146 with data (152 total)''. This means that under the selected ``ProjectedSegments'' and ``RegBuildOverview'' sources there are 20 child sources containing data. There are 152 sources in total, but 6 of these are parent sources that just exist to construct the hierarchy and do not contain data themselves, so there are 146 sources in total that contain data.
+
+There are some convenience buttons at the bottom of the sources list to help you find and mark sources, e.g. if you click the \lstinline{All} button and then click the \lstinline{Load} button, all sources will be marked for loading. You can select multiple rows in the sources list using Shift or Ctrl while clicking with the mouse button, and the use the \lstinline{Load} and \lstinline{Unload} buttons to mark/unmark the selected sources for loading.
+
+Typing some text in the \lstinline{Search} box will jump to the first source whose name matches that text. You can jump to the next/previous match with the down/up arrows. Note that the search will only find visible rows, so expand any parent sources first if you also want it to act on child sources.
+
 \subsubsection{File/URL}
-For File sources, you can click the file chooser button, or type the path/URL of the file into the box. The source name will be taken from the file name by default if you use the file chooser; otherwise you must specify a source name manually. The source name can be anything you like but must be unique and must not contain any special characters (except underscores or dashes). The file can be in any of the file formats supported by ZMap:
+\label{sec_file}
+To add a new File source, select \lstinline{File/URL} on the Create Source dialog. Click the file chooser button, or type the path/URL of the file into the box. The source name will be taken from the file name by default if you use the file chooser; otherwise you must specify a source name manually. The source name can be anything you like but must be unique and must not contain any special characters (except underscores or dashes). The file can be in any of the file formats supported by ZMap:
+
 \begin{enumerate}
 \item GFF3
 \item BAM/SAM/CRAM
@@ -360,15 +367,17 @@ For File sources, you can click the file chooser button, or type the path/URL of
 \end{figure}
 
 \subsubsection{Ensembl}
-For Ensembl sources, a host and user/password is required for the database you want to load data from. The public Ensembl host details are pre-filled for you by default. You may change these if you wish but the public host should be fine for most users (note that a password is not required).
+\label{sec_ensembl}
+To create an Ensembl source, select \lstinline{Ensembl} on the Create Source dialog. A host and user/password is required for the source you want to load data from. The public Ensembl host details are pre-filled for you by default. You may change these if you wish but the public host should be fine for most users (note that a password is not required).
 
-\textbf{Specifying a database}
+\textbf{Selecting a database}
+\label{sec_ensembl_select_database}
 
-You need to select which database you wish to load data from. You can type the database name into the \texttt{Database} box if you know it, or click the search button (the magnifying glass icon) next to the \texttt{Database} box to search for available databases from the current host. On the search results dialog (figure \ref{img_create_source_ensembl_search_db}), select the database from the list shown and click OK (or double-click to quickly select a database and OK the dialog at the same time).
+You need to select which database you wish to load data from. You can type the database name into the \lstinline{Database} box if you know it, or click the search button (the magnifying glass icon) next to the \lstinline{Database} box to search for available databases from the current host. On the search results dialog (figure \ref{img_create_source_ensembl_search_db}), select the database from the list shown and click OK (or double-click to quickly select a database and OK the dialog at the same time).
 
 You can use the Search and Filter boxes to help find a specific database in the list. When you type some text in the Search box, the selection will jump to the first row matching that text. You can press the down array to jump to the next row matching the text. In the Filter dialog, you can type some text and press Enter to filter the list by items containing that text. Click the Clear button to reset back to the original list.
 
-\textbf{Specifying featuresets/biotypes}
+\textbf{Selecting featuresets/biotypes}
 
 On the Create Source dialog, you may optionally enter a list of featuresets and/or biotypes that you want to load. In this case, ZMap will only load features of those types; otherwise, ZMap will load all of the features from the database. Click the search button (magnifying glass icon) next to the Featuresets or Biotypes box to search for available featuresets/biotypes in the current database.
 
@@ -376,7 +385,7 @@ The search results list works in the same way as the database search results dia
 
 \textbf{Loading DNA}
 
-Tick the \texttt{Load DNA} button on the Create Source dialog to tell ZMap to load the DNA for the reference sequence from this database. This is not recommended for very large regions because ZMap will need to store all of the sequence for the region in memory, and will also calculate and store the 3-frame translation.
+Tick the \lstinline{Load DNA} button on the Create Source dialog to tell ZMap to load the DNA for the reference sequence from this database. This is not recommended for very large regions because ZMap will need to store all of the sequence for the region in memory, and will also calculate and store the 3-frame translation.
 
 \begin{figure}
 \centering
@@ -395,13 +404,16 @@ Tick the \texttt{Load DNA} button on the Create Source dialog to tell ZMap to lo
 \end{figure}
 
 \subsubsection{Track  hub}
+\label{sec_trackhub}
 ZMap can load data from a collection of tracks in a track hub using the \href{http://trackhubregistry.org/}{Track Hub Registry}. You can search for existing track hubs or register and manage new ones.
 
 \textbf{Searching for track hubs}
 
-To search for track hubs in the registry, press the Search button on the Create Source dialog. This will open the Search dialog (figure \ref{create_source_trackhub_search}). In the \texttt{Search text} box you can enter any query to search for. The search is case insensitive and you can use wildcards, regular expressions and powerful, advanced search operations such as proximity searches. See the documentation here for details: \url{http://trackhubregistry.org/docs/search}. 
+To search for track hubs in the registry, press the Search button on the Create Source dialog. This will open the Search dialog (figure \ref{img_create_source_trackhub_search}). In the \lstinline{Search text} box you can enter any query to search for. The search is case insensitive and you can use wildcards, regular expressions and powerful, advanced search operations such as proximity searches. See the documentation here for details: \url{http://trackhubregistry.org/docs/search}. 
 
-You may also filter the results by specifying the species, assembly or hub. These fields are case sensitive and must be entered exactly as they appear in the registry, e.g. ``Mus musculus'' and not ``Mus Musculus''. If you are not sure of the case, it is generally fine to use the \texttt{Search text} box instead, e.g. at the time of writing, searching for ``mus musculus'' in the \texttt{Search text} box gives the same results as searching for ``Mus musculus'' in the species box, while searching for ``mouse'' returns one extra, spurious match from a different species which happens to contain the text ``mouse'' somewhere in its description.
+You may also filter the results by specifying the species, assembly or hub. These fields are case sensitive and must be entered exactly as they appear in the registry, e.g. ``Mus musculus'' and not ``Mus Musculus''. If you are not sure of the case, it is generally fine to use the \lstinline{Search text} box instead, e.g. at the time of writing, searching for ``mus musculus'' in the \lstinline{Search text} box gives the same results as searching for ``Mus musculus'' in the species box, while searching for ``mouse'' returns one extra, spurious match from a different species which happens to contain the text ``mouse'' somewhere in its description.
+
+After clicking OK on the search dialog, you will be presented with a list of results. You can search/filter the results list in the same manner as the Ensembl search results dialog (see section \ref{sec_ensembl_select_database} and figure \ref{img_create_source_ensembl_search_db}).
 
 \begin{figure}
 \centering
@@ -425,7 +437,10 @@ ZMap provides the facility to register and manage track hubs in the Track Hub Re
 
 The only mandatory field is the URL. This is the url of the main track hub file, which is usually named hub.txt, e.g. \url{http://genome-test.cse.ucsc.edu/~hiram/hubs/Plants/hub.txt}.
 
-The Assemblies field is only required if the hub genome subdirectory names are not valid UCSC DB names. In this case you must provide a map from the hub's genome names to their corresponding INSDC accessions as a semi-colon separated list of key=value pairs, e.g. araTha1=GCA\_000001735.1 ; ricCom1=GCA\_000151685.2.
+The Assemblies field is only required if the hub genome subdirectory names are not valid UCSC DB names. In this case you must provide a map from the hub's genome names to their corresponding INSDC accessions as a semi-colon separated list of key=value pairs, e.g.
+\begin{lstlisting}
+araTha1=GCA_000001735.1 ; ricCom1=GCA_000151685.2
+\end{lstlisting}
 
 You can use the Type field to enter the type of the assembly data contained in the hub, which can be one of "genomics", "epigenomics", "transcriptomics", "proteomics" (default: "genomics"). By specifying the type you allow the user to search for track hubs based on particular types.
 
@@ -439,7 +454,7 @@ You can use the Type field to enter the type of the assembly data contained in t
 
 \textbf{Managing registered track hubs}
 
-You can use the My Hubs button on the Create Source to view a list of all track hubs that you have registered via your account. You will be asked to log in if necessary before you can view your hubs. This will open a dialog showing a list of all the hubs you have registered (figure \ref{create_source_trackhub_view}). The list shows each genome in the hub on a separate line. Select one of the hubs in the list and click OK to use it as a source to load data into ZMap.
+You can use the My Hubs button on the Create Source dialog to view a list of all track hubs that you have registered via your account. You will be asked to log in if necessary before you can view your hubs. This will open a dialog showing a list of all the hubs you have registered (figure \ref{img_create_source_trackhub_view}). The list shows each genome in the hub on a separate line. Select one of the hubs in the list and click OK to use it as a source.
 
 \begin{figure}
 \centering
@@ -449,21 +464,26 @@ You can use the My Hubs button on the Create Source to view a list of all track 
 \label{img_create_source_trackhub_view}
 \end{figure}
 
-You can also use this dialog to delete your track hubs from the registry. Select a hub from the list and press the Delete button, and then click OK on the dialog. Note that this will only delete the particular genome from the registry, so to delete all of the genomes for a hub you will need to select and delete them separately. Note that deleting a hub only deletes it from the Track Hub Registry; it does not affect the original data at all.
+You can also use this dialog to delete your track hubs from the registry. Select a hub from the list and press the Delete button, and then click OK on the confirmation dialog. Note that this will only delete the selected genome from the registry, so to delete all of the genomes for a hub you will need to select and delete them separately. Note that deleting a hub only deletes it from the Track Hub Registry; it does not affect the original data at all.
 
-Track hubs can also be managed directly from \url{http://trackhubregistry.org/}.
+Track hubs can also be managed directly via your dashboard at \url{http://trackhubregistry.org/}.
 
 \textbf{Logging in/out}
 
-You will be prompted to log if necessary any time you attempt to register a hub or view registered hubs. You can also use the \texttt{Log in} button on the Create Source dialog. If you want to log in with a different account, you can first log out using the \texttt{Log out} button on the Create Source dialog.
+You will be prompted to log if necessary any time you attempt to register a hub or view registered hubs. You can also use the \lstinline{Log in} button on the Create Source dialog. If you want to log in with a different account, you can first log out using the \lstinline{Log out} button on the Create Source dialog.
 
 
 \subsection{Running ZMap with a config file}
-If you have several sources, it can be convenient to specify them in a config file rather than typing them on the command-line. You can also then set up many different options and styles to use for these sources. To use a local GFF file as a source, a simple config file would look something like this:
+If you have several sources, it can be convenient to specify them in a config file rather than typing them on the command-line. You can also then set up many different options and styles to use for these sources. The following config file shows examples of a GFF file source, an ensembl source and a track hub source. The ensembl and track hub sources are delayed but the GFF file source will be loaded on startup.
+
 \begin{lstlisting}
+#
+# The ZMap stanza contains general ZMap properties
+#
+
 [ZMap]
 # The list of sources
-sources=features
+sources=features ; homo_sapiens_core_86_38 ; EnsemblRegulatoryBuild
 
 # Sequence name/start/end can be specified here, on the command-line, or
 # omitted if they are to be taken from the file
@@ -471,24 +491,32 @@ sequence=chr6-18
 start=2696324
 end=2864370
 
+# Custom styles file to control the display properties of features
+stylesfile=/Users/gb10/work/checkout/annotools/zmap/examples/styles.ini
+
+#
 # Source stanzas (one per source)
-[features]
-url=file:////Users/gb10/work/checkout/zmap/examples/features.gff
+#
+
+[features.gff]
+url=file:////Users/gb10/work/checkout/annotools/zmap/examples/features.gff
+
+[homo_sapiens_core_86_38]
+url=ensembl://anonymous:@ensembldb.ensembl.org:3306?db_name=homo_sapiens_core_86_38
+featuresets=ensembl; ensembl_havana_gene; ensembl_havana_transcript; havana
+delayed=true
+
+[EnsemblRegulatoryBuild]
+url=trackhub:///AVgdMa38PO47wJF0u-tI
+delayed=true
 \end{lstlisting}
 
-ZMap can then be started by passing the config file on the command line:
+ZMap can be started by passing the config file on the command line:
 \begin{lstlisting}
 zmap --conf_file=/path/to/file
 \end{lstlisting}
 
-Alternatively, the config file can be saved as \lstinline{~/.ZMap/ZMap} and will be picked up by default.
-
-By default, all sources in the config file are loaded on startup. This can be changed using the ``delayed'' config value. If a source is marked as delayed, it will be created and will be visible in the Main Window, but no data will be loaded unless you select it.
-\begin{lstlisting}
-[features]
-url=file:////Users/gb10/work/checkout/zmap/examples/features.gff
-delayed=true
-\end{lstlisting}
+Alternatively, the config file can be saved as \lstinline{~/.ZMap/ZMap} and will be picked up by default (although it is recommended not to include the sequence details in this case because it can cause confusion).
 
 \subsection{Starting ZMap from Otter}
 ZMap is opened via the Tools menu bar in Otter (figure \ref{img_open_from_otterlace}).
@@ -501,15 +529,37 @@ ZMap is opened via the Tools menu bar in Otter (figure \ref{img_open_from_otterl
 \label{img_open_from_otterlace}
 \end{figure}
 
+\subsection{Importing data into an existing ZMap}
+\label{sec_import}
+You do not need to load all data up front when you first start ZMap. Data from all types of source can be loaded on the fly into an existing ZMap instance using the Import dialog. Data can be loaded for the entire region in the ZMap instance, or just a sub-region.
+
+Optionally, you can first set the mark if you want to load data just into a specific marked region.
+
+To open the Import dialog (figure \ref{img_import}), go to the \lstinline{File} menu and select \lstinline{Import}, or press \lstinline{Ctrl-I}.
+
+At the top of the Import dialog is a section showing the sequence region that you are importing data into. If the mark is set, then the default range will be taken from the mark; otherwise it will be the full ZMap range. You can edit the values to whatever you want.
+
+Note that the sequence name is the name the ZMap will attempt to look up in the source. This may be different to the sequence name in ZMap and must be edited to be a valid name in the source. If you are loading data from sources with different name formats then you must load them separately (chromosome names in Ensembl are generally just the digit, e.g. ``1'', while in track hubs they tend to be prefixed with ``chr'', e.g. ``chr1''). If you get the name wrong, ZMap will pop up a warning telling you what sequence names are available in the source when you attempt to load the data.
+
+The greyed-out sequence details on the bottom right of the dialog show the original sequence name and full range in ZMap. This is just for reference.
+
+\begin{figure}
+\centering
+\color[rgb]{0.30980393,0.5058824,0.7411765}
+\includegraphics[width=15.231cm]{images/import.png}
+\caption{The Import dialog}
+\label{img_import}
+\end{figure}
+
+When you have specified the region, you must then select some source(s) to load data from (see section \ref{sec_managing_sources}). By default, only recent sources are shown (that is, sources you have added manually via the Import dialog), so the sources list will be empty when you first open the Import dialog. If you want to see all sources, untick the \lstinline{Recent} button. If you want to clear the list of recent sources, click the clear button - this will clear the list of sources that are shown when \lstinline{Recent} is ticked, but all sources will still be available when \lstinline{Recent} is unticked.
+
+When you have selected all of the sources you want to load, click OK, and ZMap will start loading the data.
+
+
 \clearpage
 \section{The ZMap interface}
 
-The main ZMap display (figure \ref{img_main_interface}) consists of a canvas,
-which is a drawing area where any analysis and annotation that is present in
-your region of interest is shown. There is a toolbar, information bar and menu
-at the top, and a ruler showing the coordinates at the current position based
-on the current coordinate system. There is also a navigator pane to the left of
-the ruler, which is hidden by default.
+The main ZMap display (figure \ref{img_main_interface}) consists of a canvas, which is a drawing area where any analysis and annotation that is present in your region of interest is shown. There is a toolbar, information bar and menu at the top, and a ruler showing the coordinates at the current position based on the current coordinate system. There is also a navigator pane to the left of the ruler, which is hidden by default.
 
 \begin{figure}
 \centering
@@ -521,20 +571,11 @@ the ruler, which is hidden by default.
 
 
 \subsection{Navigating around the canvas}
-Navigate by using the scroll bars or the middle mouse button (figure
-\ref{img_navigating}). By clicking the middle mouse anywhere in ZMap you will
-see a horizontal line. You can move this up and down and the coordinate of the
-clicked position will be displayed along the line. By default the coordinate
-display is relative to the start of the loaded region. To toggle to toplevel
-coordinates, go to the main menu and select \lstinline{View -> Toggle coords}.
+Navigate by using the scroll bars or the middle mouse button (figure \ref{img_navigating}). By clicking the middle mouse anywhere in ZMap you will see a horizontal line. You can move this up and down and the coordinate of the clicked position will be displayed along the line. By default the coordinate display is relative to the start of the loaded region. To toggle to toplevel coordinates, go to the main menu and select \lstinline{View -> Toggle coords}.
 
-When the button is released, the window will refresh, centering on the position
-of the line. You can also click in the window to make it active and use the
-scroll wheel to navigate up and down or achieve the same result using the
-scroll bar on the right hand side of the window.
+When the button is released, the window will refresh, centering on the position of the line. You can also click in the window to make it active and use the scroll wheel to navigate up and down or achieve the same result using the scroll bar on the right hand side of the window.
 
-If you release the mouse outside the ZMap window, you can then check the
-sequence position displayed, without re-centering.
+If you release the mouse outside the ZMap window, you can then check the sequence position displayed, without re-centering.
 
 \begin{figure}
 \centering
@@ -819,41 +860,22 @@ ZMap has rich feature display capabilities, which are highly configurable. Diffe
 \end{figure}
 
 \begin{enumerate}
-\item The thick yellow line represents the genomic sequence; everything to the
-  left represents the reverse strand and everything to the right the forward
-  strand. DNA matches (i.e. ESTs, mRNAs and RefSeq) and repeats have been
-  configured so that they are all displayed on the current forward strand
-  although they may align to either strand. Other features are configured to
-  display only on their relevant strand. The thin bar to the right is the clone
-  that the genomic sequence is made up from. When connected to the Otter peer,
-  double-clicking on this gives access to the DE editing window.
-\item Annotated transcripts; green is coding (CDS), red is non-coding (UTR and
-transcript variants) and purple shows the ``coding'' region of NMD variants.
-Grey transcripts (see dotted line) contain exons outside the sequence slice
-being viewed and should not be confused with Halfwise hits.
-\item Curated features, such as PolyA features are seen as horizontal black
-lines.
-\item Phastcons44 - conserved regions detected using multiple sequence
-alignments of 44 organisms.
+\item The thick yellow line represents the genomic sequence; everything to the left represents the reverse strand and everything to the right the forward strand. DNA matches (i.e. ESTs, mRNAs and RefSeq) and repeats have been configured so that they are all displayed on the current forward strand although they may align to either strand. Other features are configured to display only on their relevant strand. The thin bar to the right is the clone that the genomic sequence is made up from. When connected to the Otter peer, double-clicking on this gives access to the DE editing window.
+\item Annotated transcripts; green is coding (CDS), red is non-coding (UTR and transcript variants) and purple shows the ``coding'' region of NMD variants. Grey transcripts (see dotted line) contain exons outside the sequence slice being viewed and should not be confused with Halfwise hits.
+\item Curated features, such as PolyA features are seen as horizontal black lines.
+\item Phastcons44 - conserved regions detected using multiple sequence alignments of 44 organisms.
 \item Imported annotation from CCDS (human and mouse only).
 \item Imported transcripts via DAS source. Here PASA\_ESTs are shown.
-\item Predicted transcripts such as Genscan (pale blue), Augustus (gold) and
-Halfwise predictions of Pfam (grey).
+\item Predicted transcripts such as Genscan (pale blue), Augustus (gold) and Halfwise predictions of Pfam (grey).
 \item Imported annotation from Ensembl.
-\item gis\_pet\_ditags and chip\_pet\_ditags are indicators of transcript
-boundaries.
-\item Repeats ( blue=Line , light green=Sine , gold=other ), tandem repeats are
-red.
+\item gis\_pet\_ditags and chip\_pet\_ditags are indicators of transcript boundaries.
+\item Repeats ( blue=Line , light green=Sine , gold=other ), tandem repeats are red.
 \item CpG islands appear as yellow boxes.
-\item Protein matches are strand specific - SwissProt are light blue and Trembl
-pink.
-\item EST matches are displayed as purple blocks and are broken down into human
-ESTs, mouse ESTs, and other ESTs from other organisms. 5' reads are on the left
-and 3' on the right.
+\item Protein matches are strand specific - SwissProt are light blue and Trembl pink.
+\item EST matches are displayed as purple blocks and are broken down into human ESTs, mouse ESTs, and other ESTs from other organisms. 5' reads are on the left and 3' on the right.
 \item mRNA matches contains all species and are displayed as brown blocks,
 \item RefSeq matches are the orange blocks.
-\item View and configure columns (i.e. the available features and analysis) -
-see section \ref{sec_track_configuration}.
+\item View and configure columns (i.e. the available features and analysis) - see section \ref{sec_track_configuration}.
 \end{enumerate}
 
 
