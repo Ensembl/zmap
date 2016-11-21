@@ -907,6 +907,8 @@ You can quickly jump to a row containing specific text using the \lstinline{Sear
 
 You can filter the displayed rows by specific text using the \lstinline{Filter} box. Type in the required text and press \lstinline{Enter} and the rows will be filtered. Click the \lstinline{Clear} button to clear the filter and go back to viewing all rows.
 
+By default, search and filter operations will match text in any text field in the row. You can use the drop-down box to specify a specific field you want the search/filter to operate on.
+
 \subsubsection{Track visibility}
 The visibility of each track (for both the forward and reverse strand) is controlled by a set of radio buttons with the options \lstinline{show}, \lstinline{auto} and \lstinline{hide}:
 \begin{itemize}
@@ -915,9 +917,14 @@ The visibility of each track (for both the forward and reverse strand) is contro
 \item \textbf{Hide} - the column will always be hidden
 \end{itemize}
 
-To change the visibility, select the track(s) you want to change and then click the relevant radio button in any of the selected tracks. Note that all highlighted tracks will be changed.
+To change the visibility, select the track(s) you want to change. Then click the relevant radio button in any of the selected tracks, or click the \lstinline{Show}/\lstinline{Auto}/\lstinline{Hide} button to change the visibility for both strands. Note that all highlighted tracks will be changed.
 
 Note that you can also hide a track directly from the ZMap canvas by right-clicking on the column and selecting \lstinline{Column Hide}.
+
+\subsubsection{Bump/unbump tracks}
+Tracks can be bumped (expanded) or unbumped (expanded) from the Colums dialog. Select the tracks you want to change and then click the \lstinline{Bump}/\lstinline{Unbump} button. All of the selected tracks will be changed. You must click \lstinline{Apply} or \lstinline{OK} to apply the changes to the ZMap canvas area.
+
+Note that when tracks are bumped from the Columns dialog, the default bump mode is used. To use another bump mode, you must currently right-click on the track in the ZMap canvas area and use the menu \lstinline{Column Configuration -> Column Bump More Options}.
 
 \subsubsection{Assigning groups} \label{sec_groups}
 You can assign a group to one or more tracks by selecting the tracks and clicking \lstinline{Assign Group}. You will be prompted to enter a name for the group. The new group name will be populated on the Columns dialog. Remember to click \lstinline{Apply} or \lstinline{OK} on the Columns dialog to apply the changes.
@@ -928,25 +935,47 @@ Groups are used by various operations in ZMap such as running Blixem (see sectio
 You can assign a style to one or more tracks by selecting the tracks and clicking \lstinline{Assign Style}. This will open the \lstinline{Choose Style} dialog where you can select the required style, or create a new one (see section \ref{sec_style_configuration}). After choosing a style, the new style name will be populated on the Columns dialog. Remember to click \lstinline{Apply} or \lstinline{OK} on the Columns dialog to apply the changes.
 
 \subsubsection{Reordering tracks}
-Tracks can be reordered by dragging and dropping rows in the Columns dialog. You can also sort the rows by name, group or style by clicking on the appropriate header. You must click the \lstinline{Apply Order} button to apply the new track order in ZMap. Note that the main \lstinline{Apply} and \lstinline{OK} buttons do NOT apply the column order in ZMap.
+Tracks can be reordered by dragging and dropping rows in the Columns dialog. You can also sort the rows by name, group, style, source, etc. by clicking on the appropriate header. You must click the \lstinline{Apply Order} button to apply the new track order in ZMap.
+
+Note that the \lstinline{Apply} and \lstinline{OK} buttons do NOT change the column order in ZMap. This is so you can reorder the tracks in the dialog for convenience when viewing tracks, without affecting the original order in ZMap unless you explcitly request to.
 
 \subsubsection{Saving configuration}
-Column configuration can be saved in one of two ways. To save the configuration to your general ZMap settings so that will apply in all future sessions, go use the menu option \lstinline{File->Save} on the \lstinline{Column configuration} dialog. Alternatively, to save the configuration to a separate config file, so that you can load it selectively in future, use the menu option \lstinline{File->Export->Configuration} from ZMap's main menu.
+Column configuration can be saved in one of two ways. To save the configuration to your general ZMap settings so that will apply in all future sessions, go use the menu option \lstinline{File->Save} on the \lstinline{Column configuration} dialog. Note that you must click \lstinline{Apply} first to make sure the changes have been applied to ZMap before saving.
+
+Alternatively, to save the configuration to a separate config file, so that you can load it selectively in future, use the menu option \lstinline{File->Export->Configuration} from ZMap's main menu.
 
 
 \subsection{Style configuration} \label{sec_style_configuration}
-You can view and edit the styles of all featuresets in ZMap from the \lstinline{Styles} dialog. Open the dialog by going to the menu \lstinline{Edit->Styles}. You can also open the Styles dialog from the \lstinline{Column configuration} dialog by selecting \lstinline{Assign Style}.
+You can view and edit the styles of all featuresets in ZMap from the \lstinline{Styles} dialog (figure \ref{img_styles}). Open the dialog by going to the menu \lstinline{Edit->Styles}. You can also open the Styles dialog from the \lstinline{Column configuration} dialog by selecting \lstinline{Assign Style}.
+
+\begin{figure}
+\centering
+\color[rgb]{0.30980393,0.5058824,0.7411765}
+\includegraphics[resolution=150]{images/styles.png}
+\caption{Styles dialog. Default styles are under the \lstinline{root} parent style.}
+\label{img_styles}
+\end{figure}
 
 All featuresets are assigned a default style on startup if they do not already have styles configured (see the styles.shtml help file for information about pre-configuring styles). Styles are usually organised into an heirarchy whereby child styles inherit the properties of their parent styles. The Styles dialog shows a tree of the styles heirarchy. The primary default styles, ``basic'', ``alignment'' and ``transcript'', are derived from ``root''. 
 
-Existing styles can be edited by selecting the row in the Styles dialog and clicking the \lstinline{Edit} button. This will open the \lstinline{Edit Style} dialog (see section \ref{sec_edit_style}). You can add a new child style to the currently-selected row by clicking the \lstinline{Add} button, or delete the currently-selected style using the \lstinline{Delete} button.
+Existing styles can be edited by selecting the row in the Styles dialog and clicking the \lstinline{Edit} button. This will open the \lstinline{Edit Style} dialog (see section \ref{sec_edit_style}). You can add a new child style to the currently-selected row by clicking the \lstinline{Add} button(see also \ref{sec_edit_style}), or delete the currently-selected style using the \lstinline{Delete} button.
 
-\subsubsection{Editing styles} \label{sec_edit_style}
-The \lstinline{Edit Style} dialog is opened from the \lstinline{Styles} dialog when you Edit or Add a style. It can also be opened by right-clicking on a feature and going to the menu options \lstinline{Column configuration->Edit Style}.
+\subsubsection{Creating/editing styles} \label{sec_edit_style}
+The \lstinline{Edit Style} dialog (figure \ref{img_edit_style}) is opened from the \lstinline{Styles} dialog when you Edit or Add a style. It can also be opened by right-clicking on a feature and going to the menu options \lstinline{Column configuration->Edit Style}.
 
-When editing an existing style, the new name will default to the same as the existing name. This can be changed if you want to rename the style. The list of featuresets that currently use the style are shown. This is so that you can be sure you want to edit the style for all of those featuresets.
+\begin{figure}
+\centering
+\color[rgb]{0.30980393,0.5058824,0.7411765}
+\includegraphics[resolution=150]{images/edit_style.png}
+\caption{Edit Style dialog}
+\label{img_edit_style}
+\end{figure}
 
-If you do not want to change the style for of the featuresets you can create a new child style by clicking the \lstinline{Create child style} button. This style will be assigned to just the selected featureset (if editing the style of a particular feature), or will be assigned to no featuresets otherwise (in which case you can assign it to featuresets later e.g. via the \lstinline{Column configuration} dialog).
+The dialog allows you to set various properties of a style such as the fill and outline colour, the score range, and whether features should be displayed as stranded or not.
+
+When editing an existing style, the new name will default to the same as the existing name. This can be changed if you want to rename the style. The list of featuresets that currently use the style are shown. This is so that you can be sure you want to edit the style for all of those featuresets. If you do not want to change the style for all of the featuresets, you can create a new child style by clicking the \lstinline{Create child style} button.
+
+This style will be assigned to just the selected featureset (if editing the style of a particular feature), or will be assigned to no featuresets otherwise (in which case you can assign it to featuresets later e.g. via the \lstinline{Column configuration} dialog).
 
 \subsubsection{Saving styles}
 Styles can be saved to an .ini style configuration file. To do this, go to the menu \lstinline{File->Save->Styles}. To load the styles in a future ZMap session, set up a configuration file and use the \lstinline{stylesfile} key (see the configuration.shtml help file for details).
@@ -1123,7 +1152,7 @@ You can edit exon coordinates manually in the attributes dialog (see section \re
 When you create the temporary feature, the CDS will be copied from the original feature, if it had one. The CDS can be edited in the attributes dialog (see section \ref{sec_annotation_attributes}). You can also set the CDS based on other features. To do this, right-click on the feature you want to base the CDS on and go to the menu \lstinline{Annotation -> Set CDS}. From here, you have the option to set just the \lstinline{Start} or \lstinline{End} of the CDS from this feature, or to set both (\lstinline{Range}). There is then a further option to choose whether you want to use the entire feature or just the clicked subfeature to set the CDS from.
 
 \subsubsection{Editing the transcript's sequence} \label{sec_edit_sequence}
-You can edit the transcript's sequence to see the effect of variation. This works by copying variation features into the Annotation column so you must have a variation column loaded. You will probably want to show the translation for the temporary feature first so you can see the effect of the changes. Click on the temporary feature and press \lstinline{t} to show the translation (or right-click on it and select \lstinline{Show Translation}). You may also want to show the three-frame translation (click the \lstinline{3 Frame} button on the toolbar to show it).
+You can edit the transcript's sequence to see the effect of variation. This works by copying variation features into the Annotation column so you must have a variation column loaded (e.g. from a VCF file). You will probably want to show the translation for the temporary feature first so you can see the effect of the changes. Click on the temporary feature and press \lstinline{t} to show the translation (or right-click on it and select \lstinline{Show Translation}). You may also want to show the three-frame translation (click the \lstinline{3 Frame} button on the toolbar to show it).
 
 To apply a variation, right-click on the variation and go to the right-click menu \lstinline{Annotation -> Copy}. Select \lstinline{This feature} to copy just the clicked variation, or \lstinline{Selected feature(s)} to copy all selected features. You can use the keyboard shortcut \lstinline{Ctrl-K} to copy all selected features.
 
