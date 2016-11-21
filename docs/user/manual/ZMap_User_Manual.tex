@@ -245,6 +245,9 @@ Ed Griffiths, James Gilbert and Jennifer Harrow}\par
  Updated for ZMap v2.5.1 &
  12/02/2016 &
  Gemma Guest\\\hline
+ Updated for ZMap v2.12.0 &
+ 18/11/2016 &
+ Gemma Guest\\\hline
  &
  &
  \\\hline
@@ -376,6 +379,10 @@ To create an Ensembl source, select \lstinline{Ensembl} on the Create Source dia
 You need to select which database you wish to load data from. You can type the database name into the \lstinline{Database} box if you know it, or click the search button (the magnifying glass icon) next to the \lstinline{Database} box to search for available databases from the current host. On the search results dialog (figure \ref{img_create_source_ensembl_search_db}), select the database from the list shown and click OK (or double-click to quickly select a database and OK the dialog at the same time).
 
 You can use the Search and Filter boxes to help find a specific database in the list. When you type some text in the Search box, the selection will jump to the first row matching that text. You can press the down array to jump to the next row matching the text. In the Filter dialog, you can type some text and press Enter to filter the list by items containing that text. Click the Clear button to reset back to the original list.
+
+\textbf{Displaying duplicate features from different databases}
+
+ZMap will not show features that are duplicates, even if they come from different database sources. If you want duplicate features to displayed, you can specify a ``DB prefix'' for the database. This will be prepended to the logic name for all features from that database, meaning that their logic name is unique and therefore the features will not be considered duplicates of features from another database with a different prefix (or no prefix).
 
 \textbf{Selecting featuresets/biotypes}
 
