@@ -1,6 +1,9 @@
 
 Git commits for  from commit "production" until commit "release/2.12.0"
 
+03780e4 2016-11-16 Fix potential access of free'd variable - BUG FIX
+7821422 2016-11-15 Fix bug editing non-default styles with auto score range - BUG FIX
+4a734e6 2016-11-14 Fix bug looking up incorrect name in bam files - REGRESSION FIX
 ae8b410 2016-11-10 fix to makefile
 c68dc27 2016-11-08 Add buttons to interact with sources list - NEW FEATURE 'Sources list'
 c5cccf2 2016-11-08 Update examples config with different source types - DOC

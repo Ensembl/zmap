@@ -1,3 +1,53 @@
+2016-11-16  Gemma Guest  <gb10@sanger.ac.uk>
+ New style is selected after creating it - TRIVIAL
+ src/zmapWindow/zmapWindowStyles.cpp | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+2016-11-16  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix potential access of free'd variable - BUG FIX
+ src/zmapWindow/zmapWindowStyles.cpp | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+2016-11-16  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix minor bug in dialog layout creating new style - TRIVIAL
+ src/zmapWindow/zmapWindowStyle.cpp | 1 +
+ 1 file changed, 1 insertion(+)
+
+2016-11-15  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix bug editing non-default styles with auto score range - BUG FIX
+ src/zmapFeature/zmapFeatureContextSet.cpp | 9 ++++-----
+ 1 file changed, 4 insertions(+), 5 deletions(-)
+
+2016-11-15  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix spurious error setting style - TRIVIAL
+ src/zmapWindow/zmapWindowStyle.cpp | 45 +++++++++++++++++++++++++++++++-------
+ 1 file changed, 37 insertions(+), 8 deletions(-)
+
+2016-11-14  Gemma Guest  <gb10@sanger.ac.uk>
+ Trackhub login only required once - WIP
+ src/include/ZMap/zmapFeatureLoadDisplay.hpp |  2 +-
+ src/zmapAppServices/zmapAppSource.cpp       | 61 +++++++++++++++++------------
+ src/zmapFeature/zmapFeatureLoadDisplay.cpp  | 46 +++++++++++++---------
+ 3 files changed, 64 insertions(+), 45 deletions(-)
+
+2016-11-14  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix bad error string - TRIVIAL
+ src/zmapAppServices/zmapAppSource.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+2016-11-14  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix bug looking up incorrect name in bam files - REGRESSION FIX
+ src/zmapServer/file/fileServer.cpp   | 6 ++----
+ src/zmapServer/file/fileServer_P.hpp | 1 -
+ 2 files changed, 2 insertions(+), 5 deletions(-)
+
+2016-11-11  zmap  <zmap@sanger.ac.uk>
+ ZMap version 2.11.6-253-gae8b410 - Update RT and git commit reports
+ src/ChangeLog                                  | 2330 +++++++++++++++---------
+ src/build/release_docs/GIT_COMMITS.txt         |   72 +-
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt |   56 +-
+ 3 files changed, 1522 insertions(+), 936 deletions(-)
+
 2016-11-10  Steve Miller  <sm23@sanger.ac.uk>
  fix to makefile
  src/zmapDataSource/Makefile.am | 1 +

@@ -17,4 +17,6 @@ ZMap_User_Manual.out - generated file (can be ignored)
 ZMap_User_Manual.toc - generated file (can be ignored)
 
 images               - this directory contains all of the images that are referenced from
-                       the ZMap_User_Manual.tex document
+                       the ZMap_User_Manual.tex document. To change an image, e.g. with an
+                       updated screenshot, you can simply overwrite the original image with
+                       a new one of the same name and re-generate the pdf file.
