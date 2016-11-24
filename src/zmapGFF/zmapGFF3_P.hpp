@@ -132,14 +132,14 @@ typedef struct ZMapGFF3ParserStruct_
     /*
      * Data for V3 only.
      */
-    ZMapSequenceStruct *pSeqData;
     ZMapGFFHeader pHeader ;
     ZMapSOErrorLevel cSOErrorLevel ;
     /*ZMapMLF pMLF ; */
     ZMapSOSetInUse cSOSetInUse ;
 
-    int iNumWrongSequence,
-      nSequenceRecords;
+    int iNumWrongSequence ;
+    int nSequenceRecords ;
+    ZMapSequenceStruct *pSeqData;
 
     gboolean bLogWarnings,
              bCheckSequenceLength;
@@ -153,6 +153,10 @@ typedef struct ZMapGFF3ParserStruct_
 ZMapGFFParser zMapGFFCreateParser_V3(const char *sequence, int features_start, int features_end, ZMapConfigSource source) ;
 void zMapGFFDestroyParser_V3(ZMapGFFParser parser) ;
 gboolean zMapGFFParse_V3(ZMapGFFParser parser_base, char* const line ) ;
+
+gboolean zMapGFFParseSequence_V3(ZMapGFFParser pParserBase, char * const sLine, gboolean *sequence_finished) ;
+
+
 gboolean zMapGFFGetLogWarnings(ZMapGFFParser pParser );
 gboolean zMapGFFSetSOSetInUse(ZMapGFFParser pParser, ZMapSOSetInUse );
 ZMapSOSetInUse zMapGFFGetSOSetInUse(ZMapGFFParser pParser );

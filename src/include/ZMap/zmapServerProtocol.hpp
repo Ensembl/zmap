@@ -308,21 +308,6 @@ typedef struct ZMapServerReqGetStatusStructType
 
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-// REMOVING AS UNUSED....
-
-typedef struct ZMapServerReqGetConnectStateStructType
-{
-  ZMapServerReqType type ;
-  ZMapServerResponseType response ;
-
-  ZMapServerConnectStateType connect_state ;
-
-} ZMapServerReqGetConnectStateStruct, *ZMapServerReqGetConnectState ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
 typedef struct ZMapServerReqTerminateStructType
 {
   ZMapServerReqType type ;

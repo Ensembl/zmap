@@ -61,6 +61,9 @@ typedef struct GetFeaturesDataStruct_
 
   char *err_msg ;
 
+  // for getcontextsequence
+  GQuark seq_id ;
+
 } GetFeaturesDataStruct, *GetFeaturesData ;
 
 
@@ -89,11 +92,6 @@ static ZMapServerResponseType getContextSequence(void *server_in,
                                                  int *dna_length_out, char **dna_sequence_out) ;
 static const char *lastErrorMsg(void *server) ;
 static ZMapServerResponseType getStatus(void *server_conn, gint *exit_code) ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static ZMapServerResponseType getConnectState(void *server_conn, ZMapServerConnectStateType *connect_state) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 static ZMapServerResponseType closeConnection(void *server_in) ;
 static ZMapServerResponseType destroyConnection(void *server) ;
 
@@ -101,7 +99,7 @@ static gboolean isFileScheme(const ZMapURLScheme scheme) ;
 static gboolean isRemoteFileScheme(const ZMapURLScheme scheme) ;
 
 static ZMapServerResponseType fileGetHeader(FileServer server);
-static ZMapServerResponseType fileGetSequence(FileServer server);
+static ZMapServerResponseType fileGetSequenceGFF2(FileServer server, bool get_landmark);
 
 static void getConfiguration(FileServer server) ;
 static gboolean getServerInfo(FileServer server, ZMapServerReqGetServerInfo info) ;
@@ -111,6 +109,7 @@ static void addMapping(ZMapFeatureContext feature_context, int req_start, int re
 static void eachAlignmentGetFeatures(gpointer key, gpointer data, gpointer user_data) ;
 static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data) ;
 static void getBlockFeatures(ZMapFeatureBlock feature_block, GetFeaturesData get_features_data) ;
+static void getBlockLandmarkSequence(ZMapFeatureBlock feature_block, GetFeaturesData get_features_data) ;
 static void getBlockSequence(ZMapFeatureBlock feature_block, GetFeaturesData get_features_data) ;
 
 
@@ -152,11 +151,6 @@ void fileGetServerFuncs(ZMapServerFuncs file_funcs)
   file_funcs->get_context_sequences = getContextSequence ;
   file_funcs->errmsg = lastErrorMsg ;
   file_funcs->get_status = getStatus;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  file_funcs->get_connect_state = getConnectState ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
   file_funcs->close = closeConnection;
   file_funcs->destroy = destroyConnection ;
 
@@ -319,12 +313,12 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
   /*
    * Create data source object (file or GIOChannel)
    */
-  server->data_stream = zMapDataStreamCreate(server->config_source,
+  server->data_stream = static_cast<ZMapDataStreamGFF>(zMapDataStreamCreate(server->config_source,
                                              server->path, 
                                              (server->req_sequence ? g_quark_to_string(server->req_sequence) : NULL), 
                                              server->zmap_start,
                                              server->zmap_end,
-                                             &error) ;
+                                                                            &error)) ;
 
   if (server->data_stream != NULL )
     status = TRUE ;
@@ -366,7 +360,11 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
      server->req_sequence = req_open->req_sequence;
      server->zmap_start = req_open->zmap_start;
      server->zmap_end = req_open->zmap_end;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
      server->sequence_map = req_open->sequence_map;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
      /*
       * Create data source object (file/GIOChannel)
@@ -414,11 +412,17 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
          result = ZMAP_SERVERRESPONSE_SOURCEEMPTY ;
        }
 
+
+     // WE SHOULDN'T DO THIS HERE....INSTEAD IT SHOULD ALL BE DONE FROM THE GETCONTEXTSEQUENCE CALL
+     // OR THE GET OTHER SEQUENCES CALL.....
+
+     // I want to get change this eventually so we don't read the dna into memory when we don't
+     // need to.......
      /*
       * Only look for ##DNA if we are reading gffv2.
       */
      if (result == ZMAP_SERVERRESPONSE_OK && server->gff_version == ZMAPGFF_VERSION_2)
-       fileGetSequence(server) ;
+       fileGetSequenceGFF2(server, false) ;
    }
 
   server->result = result ;
@@ -549,7 +553,7 @@ static ZMapServerResponseType setContext(void *server_in, ZMapFeatureContext fea
 
 
 /* Get all features on a sequence.
- * we assume we called fileGetHeader() already and also fileGetSequence()
+ * we assume we called fileGetHeader() already and also fileGetSequenceGFF2()
  * so we are at the start of the BODY part of the stream. BUT note that
  * there may be no more lines in the file, we handle that as this point
  * as it's only here that the caller has asked for the features.
@@ -574,13 +578,8 @@ static ZMapServerResponseType getFeatures(void *server_in,
     }
   else
     {
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      int num_features, n_lines_bod, n_lines_fas, n_lines_seq ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
       get_features_data.server = server ;
+      get_features_data.request = ZMAP_SERVERREQ_FEATURES ;
 
       server->data_stream->parserInit(server->featureset_2_column, server->source_2_sourcedata, &styles) ;
 
@@ -591,17 +590,6 @@ static ZMapServerResponseType getFeatures(void *server_in,
 
       /* Fetch all the features for all the blocks in all the aligns. */
       g_hash_table_foreach(feature_context->alignments, eachAlignmentGetFeatures, &get_features_data) ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      // pointless as done in checkFeatureCount() below !!
-
-      num_features = zMapGFFParserGetNumFeatures(server->parser) ;
-      n_lines_bod = zMapGFFGetLineBod(server->parser) ;
-      n_lines_fas = zMapGFFGetLineFas(server->parser) ;
-      n_lines_seq = zMapGFFGetLineSeq(server->parser) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
       bool empty = false ;
       std::string err_msg ;
@@ -631,62 +619,8 @@ static ZMapServerResponseType getFeatures(void *server_in,
 }
 
 
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/*
- * we have pre-read the sequence and simple copy/move the data over if it's there
- */
-static ZMapServerResponseType getContextSequence(void *server_in,
-                                                 char *sequence_name, int start, int end,
-                                                 int *dna_length_out, char **dna_sequence_out)
-{
-  FileServer server = (FileServer)server_in ;
-
-  if (server->result == ZMAP_SERVERRESPONSE_OK)
-    {
-      ZMapSequence sequence = NULL ;
-      GQuark seq_id = g_quark_from_string(sequence_name) ;
-      GError *error = NULL ;
-
-      if ((sequence = server->data_stream->getSequence(seq_id, &error)))
-        {
-          // Why do we do this....because zmap expects lowercase dna...operations like revcomp
-          // will fail with uppercase currently.....seems wasteful....but simplifies searches etc.   
-          char *tmp = sequence->sequence ;
-
-          sequence->sequence = g_ascii_strdown(sequence->sequence, -1) ;
-
-          g_free(tmp) ;
-
-          *dna_length_out = sequence->length ;
-
-          *dna_sequence_out = sequence->sequence ;
-
-          g_free(sequence) ;
-
-          server->result = ZMAP_SERVERRESPONSE_OK ;
-        }
-      else
-        {
-          const char *estr;
-
-          if (error)
-            estr = error->message;
-          else
-            estr = "No error reported";
-
-          setErrMsg(server, estr) ;
-
-          ZMAPSERVER_LOG(Warning, "File", server->path, "%s", server->last_err_msg);
-        }
-    }
-
-  return server->result ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
+// Get the context sequence.
+//
 static ZMapServerResponseType getContextSequence(void *server_in,
                                                  ZMapStyleTree &styles, ZMapFeatureContext feature_context,
                                                  char *sequence_name, int start, int end,
@@ -708,27 +642,10 @@ static ZMapServerResponseType getContextSequence(void *server_in,
     }
   else
     {
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-
-      // NOT SURE WHERE THIS BIT CAME FROM....
-  if (server->result == ZMAP_SERVERRESPONSE_OK)
-    {
-      ZMapSequence sequence = NULL ;
-      GQuark seq_id = g_quark_from_string(sequence_name) ;
-      GError *error = NULL ;
-    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      int num_features, n_lines_bod, n_lines_fas, n_lines_seq ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
+      get_features_data.seq_id = g_quark_from_string(sequence_name) ;
 
       get_features_data.server = server ;
+      get_features_data.request = ZMAP_SERVERREQ_SEQUENCE ;
 
       server->data_stream->parserInit(server->featureset_2_column, server->source_2_sourcedata, &styles) ;
 
@@ -737,65 +654,62 @@ static ZMapServerResponseType getContextSequence(void *server_in,
       /* Get block to parent mapping.  */
       addMapping(feature_context, server->zmap_start, server->zmap_end) ;
 
-      // GET DNA INSTEAD OF FEATURES....
 
       /* Fetch the sequence from whichever align/block it's in. */
       g_hash_table_foreach(feature_context->alignments, eachAlignmentGetFeatures, &get_features_data) ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      num_features = zMapGFFParserGetNumFeatures(server->parser) ;
-      n_lines_bod = zMapGFFGetLineBod(server->parser) ;
-      n_lines_fas = zMapGFFGetLineFas(server->parser) ;
-      n_lines_seq = zMapGFFGetLineSeq(server->parser) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-      bool empty = false ;
-      std::string err_msg ;
-
-      if (!server->data_stream->checkFeatureCount(empty, err_msg))
-        result = server->result = ZMAP_SERVERRESPONSE_SOURCEERROR ;
-      else if (empty)
-        result = server->result = ZMAP_SERVERRESPONSE_SOURCEEMPTY ;
-
-      if (!err_msg.empty())
+      if (server->result == ZMAP_SERVERRESPONSE_OK)
         {
-          // NEED TO SET SEQUENCE NAME IN THIS MESSAGE...
+          bool empty = false ;
+          std::string err_msg ;
 
-          setErrMsg(server, "No dna found.") ;
+          if (!server->data_stream->checkSequenceCount(empty, err_msg))
+            {
+              result = server->result = ZMAP_SERVERRESPONSE_SOURCEERROR ;
 
-          //ZMAPSERVER_LOG(Warning, PROTOCOL_NAME, server->path, "%s", server->last_err_msg) ;
+         
+              if (!err_msg.empty())
+                {
+                  // NEED TO SET SEQUENCE NAME IN THIS MESSAGE...and use the returned error message....
+              
+                  setErrMsg(server, "No dna found.") ;
+
+                  //ZMAPSERVER_LOG(Warning, PROTOCOL_NAME, server->path, "%s", server->last_err_msg) ;
+                }
+            }
+          else if (empty)
+            {
+              result = server->result = ZMAP_SERVERRESPONSE_SOURCEEMPTY ;
+
+              setErrMsg(server, "No dna found.") ;
+            }
+          else
+            {
+              // need to set up dna seq and length....
+              ZMapSequence sequence ;
+              GQuark seq_id ;
+              GError *g_error = NULL ;
+
+              // LASH UP FOR NOW....
+              seq_id = g_quark_from_string("CHROMOSOME_II") ;
+
+              if ((sequence = server->data_stream->getSequence(seq_id, &g_error)))
+                {
+                  // fill out dna length and dna and deal with sequence struct.
+                  *dna_length_out = sequence->length ;
+                  *dna_sequence_out = sequence->sequence ;
+
+                  // free zmapsequence struct ?? null the sequence pointer first ?
+                  g_free(sequence) ;
+
+                }
+            }
         }
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      // Not needed for sequence.
-
-      /*
-       * get the list of source featuresets
-       */
-      if (!empty)
-        {
-          feature_context->src_feature_set_names = server->data_stream->getFeaturesets() ;
-          result = server->result ;
-        }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
     }
-
 
 
   return result ;
 }
-
-
-
-
-
-
-
-
 
 
 /* Return the last error message. */
@@ -975,23 +889,25 @@ static ZMapServerResponseType fileGetHeader(FileServer server)
 }
 
 
-
-
 // read any DNA data at the head of the stream and quit after error or ##end-dna
-static ZMapServerResponseType fileGetSequence(FileServer server)
+static ZMapServerResponseType fileGetSequenceGFF2(FileServer server, bool landmark_sequence)
 {
   gboolean sequence_finished = false ;
   std::string err_msg ;
 
   // read the sequence if it's there
-  server->result = ZMAP_SERVERRESPONSE_OK;   // now we have data default is 'OK'
+  server->result = ZMAP_SERVERRESPONSE_OK ;                 // now we have data default is 'OK'
 
   if (server->data_stream->init(g_quark_to_string(server->req_sequence), server->zmap_start, server->zmap_end))
     {
+      bool result ;
 
-      // DOH...NOW THIS FAILS BECAUSE THERE IS NO GENERAL PARSE SEQUENCE....NEED TO TEST TYPE OF OBJ AND THEN ACT ACCORDINGLY....
+      if (landmark_sequence)
+        result = server->data_stream->parseLandmarkSequence(sequence_finished, err_msg) ;
+      else
+        result = server->data_stream->parseSequence(sequence_finished, err_msg) ;
 
-      if (!server->data_stream->parseSequence(sequence_finished, err_msg))
+      if (!result)
         {
           if (!sequence_finished)
             server->result = ZMAP_SERVERRESPONSE_UNSUPPORTED ;
@@ -1080,14 +996,14 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
     {
       if (get_features_data->request == ZMAP_SERVERREQ_FEATURES)
         getBlockFeatures(feature_block, get_features_data) ;
+      else if (get_features_data->request == ZMAP_SERVERREQ_SEQUENCE)
+        getBlockLandmarkSequence(feature_block, get_features_data) ;
       else
         getBlockSequence(feature_block, get_features_data) ;
     }
 
   return ;
 }
-
-
 
 
 
@@ -1174,16 +1090,22 @@ static void getBlockFeatures(ZMapFeatureBlock feature_block, GetFeaturesData get
 }
 
 
+
+static void getBlockLandmarkSequence(ZMapFeatureBlock feature_block, GetFeaturesData get_features_data)
+{
+  FileServer server = get_features_data->server ;
+
+  get_features_data->result = fileGetSequenceGFF2(server, true) ;
+
+  return ;
+}
+
+
 static void getBlockSequence(ZMapFeatureBlock feature_block, GetFeaturesData get_features_data)
 {
   FileServer server = get_features_data->server ;
 
-  fileGetSequence(server) ;
-
-
-  // need a new sequence to parse the file and then get the sequence out.....
-
-
+  get_features_data->result = fileGetSequenceGFF2(server, false) ;
 
   return ;
 }

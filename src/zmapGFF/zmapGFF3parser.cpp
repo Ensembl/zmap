@@ -57,8 +57,12 @@ static gboolean resizeBuffers(ZMapGFFParser pParser, gsize iLineLength) ;
 static gboolean isCommentLine(const char * const sLine) ;
 static gboolean isAcedbError(const char* const ) ;
 static gboolean parserStateChange(ZMapGFFParser pParser, ZMapGFFParserState eOldState, ZMapGFFParserState eNewState, const char * const sLine) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static gboolean initializeSequenceRead(ZMapGFFParser pParser, const char * const sLine) ;
 static gboolean finalizeSequenceRead(ZMapGFFParser pParser , const char* const sLine) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 static gboolean initializeFastaRead(ZMapGFFParser pParser, const char * const sLine) ;
 static gboolean actionUponClosure(ZMapGFFParser pParser, const char* const sLine)  ;
 /*static gboolean iterationFunctionID(GQuark gqID, GHashTable *pValueTable) ; */
@@ -153,7 +157,7 @@ static FILE *pFile = NULL ;
  */
 static const ZMapGFFParserState ZMAP_GFF_PARSER_TRANSITIONS[ZMAPGFF_NUMBER_PARSER_STATES][ZMAPGFF_NUMBER_LINE_TYPES] =
 {
-/*   ZMAPGFF_LINE_EMP,   ZMAPGFF_LINE_DNA,   ZMAPGFF_LINE_EDN,   ZMAPGFF_LINE_DIR,   ZMAPGFF_LINE_COM,   ZMAPGFF_LINE_BOD,   ZMAPGFF_LINE_FAS,   ZMAPGFF_LINE_CLO, ZMAPGFF_LINE_OTH */
+/*        ZMAPGFF_LINE_EMP,   ZMAPGFF_LINE_DNA,   ZMAPGFF_LINE_EDN,   ZMAPGFF_LINE_DIR,   ZMAPGFF_LINE_COM,   ZMAPGFF_LINE_BOD,   ZMAPGFF_LINE_FAS,   ZMAPGFF_LINE_CLO,   ZMAPGFF_LINE_OTH */
 /* NON */{ZMAPGFF_PARSER_NON, ZMAPGFF_PARSER_SEQ, ZMAPGFF_PARSER_ERR, ZMAPGFF_PARSER_DIR, ZMAPGFF_PARSER_NON, ZMAPGFF_PARSER_BOD, ZMAPGFF_PARSER_FAS, ZMAPGFF_PARSER_ERR, ZMAPGFF_PARSER_NON},
 /* HED */{ZMAPGFF_PARSER_DIR, ZMAPGFF_PARSER_SEQ, ZMAPGFF_PARSER_ERR, ZMAPGFF_PARSER_DIR, ZMAPGFF_PARSER_DIR, ZMAPGFF_PARSER_BOD, ZMAPGFF_PARSER_FAS, ZMAPGFF_PARSER_CLO, ZMAPGFF_PARSER_ERR},
 /* BOD */{ZMAPGFF_PARSER_BOD, ZMAPGFF_PARSER_SEQ, ZMAPGFF_PARSER_ERR, ZMAPGFF_PARSER_DIR, ZMAPGFF_PARSER_BOD, ZMAPGFF_PARSER_BOD, ZMAPGFF_PARSER_FAS, ZMAPGFF_PARSER_CLO, ZMAPGFF_PARSER_ERR},
@@ -191,11 +195,13 @@ ZMapGFFParser zMapGFFCreateParser_V3(const char *sequence, int features_start, i
       pParser->parse_only                       = FALSE ;
       pParser->free_on_destroy                  = TRUE ;
       pParser->bLogWarnings                     = FALSE ;
-      pParser->iNumWrongSequence                = 0 ;
-
-
       pParser->bCheckSequenceLength             = FALSE ;
       pParser->raw_line_data                    = NULL ;
+
+      pParser->get_landmark_seq = FALSE ;
+      pParser->found_landmark_seq = FALSE ;
+
+      pParser->iNumWrongSequence                = 0 ;
       pParser->nSequenceRecords                 = 0 ;
       pParser->pSeqData                         = NULL ;
 
@@ -728,78 +734,26 @@ static gboolean isAcedbError(const char * const sLine)
 }
 
 
-
-
-
-/*
- * Actions to initialize reading a sequence section. Current line must
- * be "##DNA" only.
- */
-static gboolean initializeSequenceRead(ZMapGFFParser pParserBase, const char * const sLine)
+// Only use while in ZMAPGFF_PARSER_BOD state !
+// Tests gffv3 content to see if it is either empty or the start of sequence.
+//
+// Note that in GFFv3 body content _always_ comes before sequence so this function does not need
+// to be particularly smart.
+static gboolean isBodyLine(const char * const sLine)
 {
-  gboolean bResult = TRUE ;
-  ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
+  gboolean result = TRUE ;
 
-  zMapReturnValIfFail(pParser && pParser->pHeader, FALSE) ;
-
-  /*
-   * We must have already made the transition into the
-   * parser state ZMAPGFF_PARSER_SEQ
-   */
-  if (pParser->state != ZMAPGFF_PARSER_SEQ)
-    return FALSE ;
-
-  if (!g_str_has_prefix(sLine, "##DNA"))
+  if (!sLine || !*sLine)
     {
-      bResult = FALSE ;
-      pParser->error =
-        g_error_new(pParser->error_domain, ZMAPGFF_ERROR_HEADER,
-                    "Error set in initializeSequenceRead(); current line does not have prefix ##DNA.") ;
-      return bResult ;
+      result = FALSE ;
+    }
+  else if (g_str_has_prefix(sLine, "##FASTA") || g_str_has_prefix(sLine, ">"))
+    {
+      result = FALSE ;
     }
 
-  /*
-   * If this is true then we already have already seen line = "##DNA"
-   */
-  if (pParser->pHeader->flags.got_dna)
-    {
-      bResult = FALSE ;
-      pParser->error =
-        g_error_new(pParser->error_domain, ZMAPGFF_ERROR_HEADER,
-                    "Error set in initializeSequenceRead(); have already set pHeader->flags.got_dna.") ;
-      return bResult ;
-    }
-
-  /*
-   * Then this is the first time that line = "##DNA"
-   * has been seen.
-   */
-  pParser->pHeader->flags.got_dna = TRUE ;
-
-  /*
-   * Initialize reading a sequence.
-   */
-  pParser->seq_data.type = ZMAPSEQUENCE_DNA ;
-  pParser->seq_data.name = g_quark_from_string(pParser->sequence_name) ;
-
-  /*
-   * Init parser for reading sequence data
-   */
-  if (!initParserForSequenceRead(pParserBase))
-    {
-      bResult = FALSE ;
-      pParser->error =
-        g_error_new(pParser->error_domain, ZMAPGFF_ERROR_FASTA,
-                    "Error set in initializeSequenceRead(); unable to initialize parser for sequence reading") ;
-      return bResult ;
-    }
-
-  return bResult ;
+  return result ;
 }
-
-
-
-
 
 
 
@@ -850,11 +804,6 @@ static gboolean initializeFastaRead(ZMapGFFParser pParserBase, const char * cons
 
   return bResult ;
 }
-
-
-
-
-
 
 
 
@@ -963,6 +912,10 @@ static gboolean parserStateChange(ZMapGFFParser pParserBase,
   if (eOldState == eNewState)
     return FALSE ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  // THIS SHOULDN'T BE HERE AS GFFv3 DOES NOT SUPPORT ##DNA
+
   /*
    * If we are entering ZMAPGFF_PARSER_SEQ
    * (i.e. current line is "##DNA"), call to initialize sequence reading
@@ -982,6 +935,8 @@ static gboolean parserStateChange(ZMapGFFParser pParserBase,
       bResult = finalizeSequenceRead(pParserBase, sLine) ;
       return bResult ;
     }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   /*
    * If we are entering ZMAPGFF_PARSER_FAS
@@ -1008,7 +963,9 @@ static gboolean parserStateChange(ZMapGFFParser pParserBase,
 
 
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 
+// NOT NEEDED NOW AS GFFV3 DOES NOT SUPPORT ##DNA
 
 
 /*
@@ -1072,6 +1029,8 @@ static gboolean finalizeSequenceRead(ZMapGFFParser pParserBase , const char* con
 
   return bResult ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
@@ -1238,8 +1197,8 @@ static gboolean appendToSequenceRecord(ZMapGFFParser pParserBase, const char * c
  */
 static gboolean parseFastaLine_V3(ZMapGFFParser pParserBase, const char* const sLine)
 {
-  unsigned int iFields ;
   gboolean bResult = FALSE ;
+  unsigned int iFields ;
   ZMapSequence pTheSequence = NULL ;
   unsigned int nSequenceRecords = 0 ;
   static const char *sFmt = "%1000s%1000s" ;
@@ -1284,11 +1243,16 @@ static gboolean parseFastaLine_V3(ZMapGFFParser pParserBase, const char* const s
   /*
    * Now assume there are two types of lines only that we may encounter here.
    * (1) fasta record header, sLine = ">string1 string2"
+   *     note that if looking for context sequence then the name following the
+   *     the ">" must match the context sequence name.
    * (2) fasta data line
+   *
    * The following actions deal with these possibilities.
    */
 
-  if (g_str_has_prefix(sLine, ">"))
+  if (g_str_has_prefix(sLine, ">")
+      && (!(pParser->get_landmark_seq)
+          || (g_str_has_prefix((sLine + 1), pParser->sequence_name))))
     {
       /*
        * Init for reading sequence data
@@ -1298,7 +1262,8 @@ static gboolean parseFastaLine_V3(ZMapGFFParser pParserBase, const char* const s
           bResult = FALSE ;
           pParser->error =
             g_error_new(pParser->error_domain, ZMAPGFF_ERROR_FASTA,
-                        "Error set in parseFastaLine(); unable to initialize for sequence reading with l = '%s'", sLine) ;
+                        "Error set in parseFastaLine(); unable to initialize for sequence reading with l = '%s'",
+                        sLine) ;
           return bResult ;
         }
 
@@ -2103,6 +2068,9 @@ gboolean zMapGFFParse_V3(ZMapGFFParser pParserBase, char * const sLine)
         }
 
     }
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  // THIS SHOULDN'T BE HERE AS GFFv3 DOES NOT SUPPORT ##DNA
   else if (pParser->state == ZMAPGFF_PARSER_SEQ)
     {
 
@@ -2114,6 +2082,8 @@ gboolean zMapGFFParse_V3(ZMapGFFParser pParserBase, char * const sLine)
         }
 
     }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
   else if (pParser->state == ZMAPGFF_PARSER_FAS)
     {
 
@@ -2128,6 +2098,175 @@ gboolean zMapGFFParse_V3(ZMapGFFParser pParserBase, char * const sLine)
 
   return bResult ;
 }
+
+
+
+
+
+/* Parses a single line of GFF data, should be called repeatedly with successive lines
+ * of GFF data from a GFF source. This function expects the line to be a null-terminated
+ * C string with any terminating newline char to already have been removed (this latter
+ * because we don't know how the line is stored so don't want to write to it).
+ *
+ * This function expects to find sequence in the GFF format format below, once all the
+ * sequence lines have been found or a non-comment line is found it will stop.
+ * The zMapGFFParseLine() function can then be used to parse the rest of the file.
+ *
+ * Returns FALSE if there is any error in the GFF sequence.
+ *
+ * Once an error has been returned the parser object cannot be used anymore and
+ * zMapGFFDestroyParser() should be called to free it.
+ *
+ * Returns TRUE in sequence_finished once all the sequence is parsed.
+ */
+/*
+ * New function for parsing GFF lines; incorporates the logic of the
+ * zMapGFFParseHeader and zMapGFFParseLine functions.
+ *
+ * Essentially this works by there being two series of actions. The first
+ * are actions to perform on lines whilst _in_ a given state (usually
+ * parsing those lines for data). The second are actions to perform upon
+ * encountering a change of state; there are fewer actions (and indeed
+ * fewer functions) of this second type.
+ */
+gboolean zMapGFFParseSequence_V3(ZMapGFFParser pParserBase, char * const sLine, gboolean *sequence_finished)
+{
+  gboolean bResult = TRUE ;
+  ZMapGFFParserState eOldState = ZMAPGFF_PARSER_NON,
+    eNewState = ZMAPGFF_PARSER_NON;
+  ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
+
+  zMapReturnValIfFail(pParser && pParser->pHeader, FALSE) ;
+
+  /*
+   * Increment line count and skip over blank lines and comments.
+   */
+  zMapGFFIncrementLineNumber(pParserBase) ;
+  if (zMapStringBlank(sLine))
+    return bResult ;
+  if (isCommentLine(sLine))
+    return bResult ;
+  if (isAcedbError(sLine))
+    return bResult ;
+
+  // try this out....we need to skip not parse body lines.
+  if (pParser->state == ZMAPGFF_PARSER_BOD && isBodyLine(sLine))
+    return bResult ;
+
+  /*
+   * Remove trailing comment from line. Should do nothing to
+   * directive lines (i.e. ones that start with "##").
+   */
+  /* gboolean bCommentRemoved = removeCommentFromLine( sLine ) ; */
+
+  /*
+   * Parser FSM logic. Will be unaltered if we have a blank
+   * line or a comment.
+   */
+  eOldState = pParser->state ;
+  eNewState = parserFSM(eOldState, sLine) ;
+  pParser->state = eNewState ;
+
+  /*
+   * Parser operations upon change of state.
+   */
+  if (eOldState != eNewState)
+    {
+
+      bResult = parserStateChange(pParserBase, eOldState, eNewState, sLine) ;
+      if (!bResult && pParser->error)
+        {
+          pParser->state = ZMAPGFF_PARSER_ERR ;
+          return bResult ;
+        }
+
+    }
+
+  /*
+   * Parser operations in various states.
+   */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+  // SHOULD HAVE SKIPPED THESE...
+
+  if (pParser->state == ZMAPGFF_PARSER_BOD)
+    {
+      bResult = parseBodyLine_V3(pParserBase, sLine) ;
+      if (!bResult && pParser->error && pParser->stop_on_error)
+        {
+          pParser->state = ZMAPGFF_PARSER_ERR ;
+          return bResult ;
+        }
+
+    }
+  else 
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+if (pParser->state == ZMAPGFF_PARSER_DIR)
+    {
+
+      bResult = parseHeaderLine_V3(pParserBase, sLine) ;
+        if (!bResult && pParser->error)
+        {
+          pParser->state = ZMAPGFF_PARSER_ERR ;
+          return bResult ;
+        }
+
+    }
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  // THIS SEEMS TO BE FOR V2 SO WE SHOULD THROW AN ERROR IF WE FIND IT.
+
+  else if (pParser->state == ZMAPGFF_PARSER_SEQ)
+    {
+
+      bResult = parseSequenceLine_V3(pParserBase, sLine) ;
+      if (!bResult && pParser->error && pParser->stop_on_error)
+        {
+          pParser->state = ZMAPGFF_PARSER_ERR ;
+          return bResult ;
+        }
+
+    }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  else if (pParser->state == ZMAPGFF_PARSER_FAS)
+    {
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      bResult = parseFastaLine_V3(pParserBase, sLine) ;
+      if (!bResult && pParser->error && pParser->stop_on_error)
+        {
+          pParser->state = ZMAPGFF_PARSER_ERR ;
+          return bResult ;
+        }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+      // sadly we can't reliably return end of sequence because the sequence is likely to be at
+      // the end of the file and therefore once the end of file is encountered this routine is not
+      // called and therefore we don't know the sequence has ended.....
+
+
+      bResult = parseFastaLine_V3(pParserBase, sLine) ;
+      if (!bResult)
+        {
+          if (pParser->error && pParser->stop_on_error)
+            {
+              pParser->state = ZMAPGFF_PARSER_ERR ;
+
+              *sequence_finished = false ;
+
+              return bResult ;
+            }
+        }
+    }
+
+
+  return bResult ;
+}
+
 
 
 

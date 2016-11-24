@@ -219,8 +219,11 @@ typedef struct ZMapGFFParserFeatureSetStruct_
                                               ZMapConfigSource source ;                              \
                                               ZMapGFFParserState state ;                             \
                                               ZMapGFFClipMode clip_mode ;                            \
-                                              ZMapSequenceStruct seq_data ;                          \
                                               ZMapFeatureTypeStyle locus_set_style;                  \
+                                                                                                     \
+                                              GQuark sequence_id ;                                   \
+                                              ZMapSequenceStruct seq_data ;                          \
+                                                                                                     \
                                                                                                      \
                                               int features_start,                                    \
                                                   features_end,                                      \
@@ -251,6 +254,10 @@ typedef struct ZMapGFFParserFeatureSetStruct_
                                                 stop_on_error,                                       \
                                                 default_to_basic,                                    \
                                                 SO_compliant;                                        \
+                                                                                                     \
+                                              bool get_landmark_seq ;                                \
+                                              bool found_landmark_seq ;                              \
+                                                                                                     \
                                                                                                      \
                                               GString *raw_line_data ;                               \
                                                                                                      \
@@ -285,7 +292,6 @@ typedef struct ZMapGFFParserStruct_
 
 
 } ZMapGFFParserStruct ;
-
 
 
 

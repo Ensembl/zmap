@@ -118,6 +118,7 @@ static string toLower(const string &s) ;
 static ZMapDataStreamType dataSourceTypeFromExtension(const string &file_ext, GError **error_out) ;
 
 
+
 /* 
  * Utility classes
  */
@@ -1106,15 +1107,19 @@ bool ZMapDataStreamGFFStruct::readLine()
   bool result = false ;
   GError *pErr = NULL ;
   gsize pos = 0 ;
-  GIOStatus cIOStatus = G_IO_STATUS_NORMAL;
 
-  cIOStatus = g_io_channel_read_line_string(io_channel, buffer_line_, &pos, &pErr) ;
-  if (cIOStatus == G_IO_STATUS_NORMAL && !pErr )
+  cIOStatus_ = g_io_channel_read_line_string(io_channel, buffer_line_, &pos, &pErr) ;
+  if (cIOStatus_ == G_IO_STATUS_NORMAL)
     {
       result = true ;
       buffer_line_->str[pos] = '\0';
     }
+  else if (cIOStatus_ == G_IO_STATUS_EOF)
+    {
+      end_of_file_ = true ;
+    }
 
+  // not sure about all this, seems to conflict....where is end_of_file_ used....
   if (!result)
     end_of_file_ = true ;
 
@@ -1417,30 +1422,37 @@ bool ZMapDataStreamGFFStruct::parseHeader(gboolean &done_header,
 }
 
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-// If the base class does nothing why do we have it ? EG
-/*
- * Parse sequence data from the source. Returns true if successful. Sets sequence_finished if
- * there is no more sequence to read.
- */
-bool ZMapDataStreamStruct::parseSequence(gboolean &sequence_finished, string &err_msg)
+// Get the landmark sequence from a gff file.
+//
+bool ZMapDataStreamGFFStruct::parseLandmarkSequence(gboolean &sequence_finished, string &err_msg)
 {
-  // Base class does nothing
   bool result = true ;
+
+  zMapGFFSetLandMarkSequence(parser_) ;
+
+  result = sequenceParse(sequence_finished, err_msg) ;
+
   return result ;
 }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-
-// The function that this calls in gff doesn't work for gffv3, it does NOTHING !!
-// this has to be changed to handle v3 of gff....
+// Get all sequence(s) from a gff file.
 //
 bool ZMapDataStreamGFFStruct::parseSequence(gboolean &sequence_finished, string &err_msg)
 {
   bool result = true ;
 
+  result = sequenceParse(sequence_finished, err_msg) ;
+
+  return result ;
+}
+
+
+// Get a sequence(s) from a gff file.
+//
+bool ZMapDataStreamGFFStruct::sequenceParse(gboolean &sequence_finished, string &err_msg)
+{
+  bool result = true ;
   bool more_data = true ;
   GError *error = NULL ;
 
@@ -1453,9 +1465,7 @@ bool ZMapDataStreamGFFStruct::parseSequence(gboolean &sequence_finished, string 
 
     } while (more_data) ;
 
-  error = zMapGFFGetError(parser_) ;
-
-  if (error)
+  if ((error = zMapGFFGetError(parser_)))
     {
       /* If the error was serious we stop processing and return the error,
        * otherwise we just log the error. */
@@ -1475,13 +1485,25 @@ bool ZMapDataStreamGFFStruct::parseSequence(gboolean &sequence_finished, string 
     }
   else if (!sequence_finished)
     {
-      err_msg += "No sequence found." ; 
+      if (cIOStatus_ == G_IO_STATUS_EOF)
+        {
+          // if the file ends then the sequence_finished flag does not get set so we assume that
+          // whole sequence was in the file.
 
-      result = false ;
+          sequence_finished = result = true ;
+        }
+      else
+        {
+          err_msg += "No sequence found." ; 
+          
+          result = false ;
+        }
     }
 
   return result ;
 }
+
+
 
 /*
  * This sets some things up for the GFF parser and is required before calling parserBodyLine
@@ -1765,6 +1787,8 @@ bool ZMapDataStreamGFFStruct::parseBodyLine(GError **error)
       *error = g_error_copy(zMapGFFGetError(parser_)) ;
     }
 
+
+  // Gosh the result is unchecked here....that can't be good....
   readLine() ;
 
   return result ;
@@ -1922,7 +1946,7 @@ bool ZMapDataStreamGFFStruct::addFeaturesToBlock(ZMapFeatureBlock feature_block)
 
 
 /*
- * This validates the number of features that were found and the length of sequence etc.
+ * This validates the number of features that were found.
  */
 bool ZMapDataStreamStruct::checkFeatureCount(bool &empty, string &err_msg)
 {
@@ -1930,24 +1954,49 @@ bool ZMapDataStreamStruct::checkFeatureCount(bool &empty, string &err_msg)
 
   int num_features = zMapGFFParserGetNumFeatures(parser_) ;
   int n_lines_bod = zMapGFFGetLineBod(parser_) ;
-  int n_lines_fas = zMapGFFGetLineFas(parser_) ;
-  int n_lines_seq = zMapGFFGetLineSeq(parser_) ;
 
   if (!num_features)
     {
       err_msg = "No features found." ;
     }
 
-  if (!num_features && !n_lines_bod && !n_lines_fas && !n_lines_seq)
+  if (!num_features && !n_lines_bod)
     {
       // Return true to preserve old behaviour for calling function
       result = true ;
     }
-  else if ((!num_features && n_lines_bod)
-           || (n_lines_fas && !zMapGFFGetSequenceNum(parser_))
-           || (n_lines_seq && !zMapGFFGetSequenceNum(parser_) && zMapGFFGetVersion(parser_) == ZMAPGFF_VERSION_2)  )
+  else if (!num_features && n_lines_bod)
     {
+      err_msg = "error in features." ;
+
       // Unexpected error
+      result = false ;
+    }
+
+  return result ;
+}
+
+
+/*
+ * This validates the sequence(s) that were found.
+ */
+bool ZMapDataStreamStruct::checkSequenceCount(bool &empty, string &err_msg)
+{
+  bool result = true ;
+
+  int n_lines_fas = zMapGFFGetLineFas(parser_) ;
+  int n_lines_seq = zMapGFFGetLineSeq(parser_) ;
+
+  if (!n_lines_fas && !n_lines_seq)
+    {
+      // Return true to preserve old behaviour for calling function
+      result = true ;
+    }
+  else if ((n_lines_fas && !zMapGFFGetSequenceNum(parser_))
+           || (n_lines_seq && !zMapGFFGetSequenceNum(parser_) && zMapGFFGetVersion(parser_) == ZMAPGFF_VERSION_2))
+    {
+      err_msg = "error in sequence." ;
+
       result = false ;
     }
 
@@ -2585,6 +2634,9 @@ static ZMapDataStreamType dataSourceTypeFromExtension(const string &file_ext, GE
 
   return type ;
 }
+
+
+
 
 
 } // unnamed namespace

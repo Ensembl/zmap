@@ -111,18 +111,11 @@ public:
   virtual bool readLine() = 0 ;
   virtual bool gffVersion(int * const p_out_val) ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  // can't be made pure because some derived classes need it but it should be....so remove it...
-  virtual bool parseSequence(gboolean &sequence_finished, std::string &err_msg) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
   virtual void parserInit(GHashTable *featureset_2_column, GHashTable *source_2_sourcedata, ZMapStyleTree *styles) ;
   virtual bool parseBodyLine(GError **error) = 0 ;
   virtual bool addFeaturesToBlock(ZMapFeatureBlock feature_block) ;
   virtual bool checkFeatureCount(bool &empty, std::string &err_msg) ;
+  virtual bool checkSequenceCount(bool &empty, std::string &err_msg) ;
   virtual GList* getFeaturesets() ;
   virtual ZMapSequence getSequence(GQuark seq_id, GError **error) ;
   virtual bool terminated() ;
@@ -179,6 +172,7 @@ public:
   bool readLine() ;
   bool gffVersion(int * const p_out_val) ;
 
+  bool parseLandmarkSequence(gboolean &sequence_finished, std::string &err_msg) ;
   bool parseSequence(gboolean &sequence_finished, std::string &err_msg) ;
   void parserInit(GHashTable *featureset_2_column, GHashTable *source_2_sourcedata, ZMapStyleTree *styles) ;
   bool parseBodyLine(GError **error) ;
@@ -188,8 +182,11 @@ private:
   const char *curLine() ;
   int curLineNumber() ;
   bool parseHeader(gboolean &done_header, ZMapGFFHeaderState &header_state, GError **error) ;
+  bool sequenceParse(gboolean &sequence_finished, std::string &err_msg) ;
+
 
   GIOChannel *io_channel{NULL} ;
+  GIOStatus cIOStatus_{G_IO_STATUS_NORMAL} ;
   int gff_version_{0} ;
   bool gff_version_set_{false} ;
   GString *buffer_line_{NULL} ;

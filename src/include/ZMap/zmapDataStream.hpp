@@ -64,10 +64,11 @@ ZMapDataStream zMapDataStreamCreate(ZMapConfigSource config_source,
                                     const char *sequence, const int start, const int end, 
                                     GError **error_out = NULL) ;
 bool zMapDataStreamIsOpen(ZMapDataStream const source) ;
+ZMapDataStreamType zMapDataStreamGetType(ZMapDataStream source) ;
 bool zMapDataStreamDestroy( ZMapDataStream *source) ;
-ZMapDataStreamType zMapDataStreamGetType(ZMapDataStream source ) ;
-ZMapDataStreamType zMapDataStreamTypeFromFilename(const char * const, GError **error_out = NULL) ;
+
 std::string zMapDataStreamTypeToFileType(ZMapDataStreamType &stream_type) ;
+ZMapDataStreamType zMapDataStreamTypeFromFilename(const char * const, GError **error_out = NULL) ;
 ZMapDataStreamType zMapDataStreamTypeFromFileType(const std::string &file_type, GError **error_out) ;
 
 

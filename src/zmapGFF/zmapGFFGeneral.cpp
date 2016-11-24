@@ -103,7 +103,6 @@ ZMapGFFParser zMapGFFCreateParser(int iGFFVersion, const char *sequence, int fea
 }
 
 
-
 /*
  * Public interface function to parse headers. Calls version specific functions.
  */
@@ -131,6 +130,16 @@ gboolean zMapGFFParseHeader(ZMapGFFParser parser, char *line, gboolean *header_f
 }
 
 
+// set the parser to find the landmark sequence.
+void zMapGFFSetLandMarkSequence(ZMapGFFParser parser)
+{
+  parser->get_landmark_seq = true ;
+
+  return ;
+}
+
+
+
 /*
  * Public interface function to parse a section of sequence. Calls version specific functions.
  */
@@ -138,31 +147,15 @@ gboolean zMapGFFParseSequence(ZMapGFFParser parser, char *line, gboolean *sequen
 {
   gboolean bResult = FALSE ;
 
-  zMapReturnValIfFail(parser && zMapGFFIsValidVersion(parser), bResult );
+  zMapReturnValIfFail(parser && zMapGFFIsValidVersion(parser), FALSE) ;
 
-  if (parser->gff_version == ZMAPGFF_VERSION_2 )
+  if (parser->gff_version == ZMAPGFF_VERSION_2)
     {
       bResult = zMapGFFParseSequence_V2(parser, line, sequence_finished) ;
     }
-  else if (parser->gff_version == ZMAPGFF_VERSION_3 )
+  else if (parser->gff_version == ZMAPGFF_VERSION_3)
     {
-
-      // NEEDS A RETHINK AS GFFV3 STUFF WORKS DIFFERENTLY...WOULD NEED A NUMBER OF CHANGES IN
-      // DIFFERENT PLACES....
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /*
-       * This should not be required since it's not part of the v3 spec.
-       */
-      bResult = FALSE ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-      bResult = zMapGFFParse_V3(parser, line) ;
-
-    }
-  else
-    {
-      /* unknown version */
+      bResult = zMapGFFParseSequence_V3(parser, line, sequence_finished) ;
     }
 
   return bResult ;
@@ -317,6 +310,24 @@ gboolean zMapGFFParserInitForFeatures(ZMapGFFParser parser, ZMapStyleTree *sourc
   return result ;
 }
 
+/*
+ * Used for both versions.
+ *
+ * We should do this internally with a var in the parser struct....
+ * This function must be called prior to parsing feature lines, it is not required
+ * for either the header lines or sequences.
+ */
+gboolean zMapGFFParserInitForSequence(ZMapGFFParser parser, char *sequence_name)
+{
+  gboolean result = FALSE ;
+
+  zMapReturnValIfFail((parser && zMapGFFIsValidVersion(parser) && sequence_name && *sequence_name), FALSE) ;
+
+  parser->sequence_id = g_quark_from_string(sequence_name) ;
+
+  return result ;
+}
+
 
 /*
  * Used by both versions.
@@ -387,6 +398,22 @@ gboolean zMapGFFGetFeatures(ZMapGFFParser parser, ZMapFeatureBlock feature_block
 
   return result ;
 }
+
+
+//
+//                  Package functions
+//
+
+
+
+
+
+//
+//                  Internal functions
+//
+
+
+
 
 /*
  * Used by both versions.
