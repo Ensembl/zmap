@@ -3713,9 +3713,8 @@ static std::string getBAMMenuNameFromSelection(ItemMenuCBData menu_data,
                                                const bool all_fsets)
 {
   std::string item_text("") ;
-  zMapReturnValIfFail(menu_data && 
-                      (all_fsets && menu_data->feature_set ||
-                       !all_fsets && menu_data->container_set),
+  zMapReturnValIfFail((menu_data
+                       && ((all_fsets && menu_data->feature_set) || (!all_fsets && menu_data->container_set))),
                       item_text) ;
 
   const int max_chars = 20 ; // limit the length of the menu text

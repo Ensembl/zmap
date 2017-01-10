@@ -1614,7 +1614,7 @@ ZMapFeature ZMapDataStreamStruct::makeBEDFeature(struct bed *bed_feature,
       if (bed_feature->thickEnd != bed_feature->thickStart)
         zMapFeatureAddTranscriptCDS(feature, TRUE, bed_feature->thickStart, bed_feature->thickEnd);
 
-      for (int i = 0; i < bed_feature->blockCount; ++i)
+      for (unsigned int i = 0; i < bed_feature->blockCount; ++i)
         {
           const int exon_start = bed_feature->chromStarts[i] + bed_feature->chromStart ;
           const int exon_end = exon_start + bed_feature->blockSizes[i] ;
@@ -2535,7 +2535,7 @@ static string toLower(const string &s)
 {
   string result(s) ;
   
-  for (int i = 0; i < s.length(); ++i)
+  for (unsigned int i = 0; i < s.length(); ++i)
     result[i] = std::tolower(result[i]) ;
 
   return result ;

@@ -788,7 +788,7 @@ static void findViewWindowCB(gpointer key, gpointer value, gpointer user_data)
 static void *addFrameRCconfig(GtkWidget *widg)
 {
   static char *rc_text =
-    "style \""FRAME_WIDG_STYLE"\"\n"
+    "style \"" FRAME_WIDG_STYLE "\"\n"
     "{\n"
     "text[NORMAL] = \"red\"\n"
     "text[ACTIVE] = \"red\"\n"
@@ -801,7 +801,7 @@ static void *addFrameRCconfig(GtkWidget *widg)
     "xthickness = 100\n"
     "}\n"
     "\n"
-    "widget \""FRAME_WIDG_NAME"\" style \""FRAME_WIDG_STYLE"\"\n" ;
+    "widget \"" FRAME_WIDG_NAME "\" style \"" FRAME_WIDG_STYLE "\"\n" ;
 
   gtk_rc_parse_string(rc_text) ;
 

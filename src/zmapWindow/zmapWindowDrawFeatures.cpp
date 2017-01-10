@@ -2042,10 +2042,10 @@ FooCanvasItem *zmapWindowDrawSetGroupBackground(ZMapWindow window, ZMapWindowCon
     }
 
 #if 0
-  NO.... remove background if it's null, don't auto fill_col w/group colour
-    set group colour explicitly in call to this
-    need for locator dragger
-                                  and no doubt lasoo later on
+  // NO.... remove background if it's null, don't auto fill_col w/group colour
+  //  set group colour explicitly in call to this
+  //  need for locator dragger
+  //                                and no doubt lasoo later on
 
                                   /* clear highlight done by removing colours in which case we restore the default ones if they exist */
                                   if(!fill_col)

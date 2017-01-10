@@ -63,19 +63,12 @@ ZMapConfigIni zMapConfigIniNew(void)
 {
   ZMapConfigIni config = NULL;
 
-  /* if(!(config = g_new0(ZMapConfigIniStruct, 1)))
-    {
-      zMapWarnIfReached();
-    }
-  else
-    {
-      g_type_init();
-    } */
-
   config = g_new0(ZMapConfigIniStruct, 1) ; 
   zMapReturnValIfFail(config, config) ; 
 
-  g_type_init() ; 
+  // From 2.36 type init is automatic.
+  if (glib_major_version == 2 && glib_minor_version < 36)
+    g_type_init() ; 
 
   return config;
 }
