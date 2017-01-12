@@ -291,11 +291,8 @@ template<class ColType>
 static void createTreeViewTextColumn(GtkTreeView *tree_view, const char *title, 
                                      const ColType col_id, const bool hide = false) ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static GtkTreeView* createListWidget(MainFrame main_data, const list<string> &val_list, 
                                      SearchListData &search_data, const gboolean allow_multiple, GtkDialog *dialog) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 static GtkTreeView* createListWidget(MainFrame main_data, const list<TrackDb> &trackdb_list, 
                                      SearchListData &search_data, const gboolean allow_multiple, GtkDialog *dialog) ;
 
@@ -2393,7 +2390,6 @@ void listWidgetRowActivatedCB(GtkTreeView *tree_view,
 
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* Create a tree view widget to show name values in the given list */
 static GtkTreeView* createListWidget(MainFrame main_data, 
                                      const list<string> &val_list,
@@ -2444,7 +2440,6 @@ static GtkTreeView* createListWidget(MainFrame main_data,
 
   return tree_view ;
 }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 
