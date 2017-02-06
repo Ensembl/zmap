@@ -138,6 +138,8 @@ static void glibLogger(const gchar *log_domain, GLogLevelFlags log_level, const 
 static void logTime(int what, int how) ;
 #endif
 
+static bool getFuncNamePosition(const char *function_prototype, char **start_out, unsigned int *len_out) ;
+
 
 
 
@@ -422,12 +424,28 @@ void zMapLogMsg(const char *domain, GLogLevelFlags log_level,
 
       file_basename = g_path_get_basename(file) ;
 
-      g_string_append_printf(format_str, "%s[%s:%s%s:%d]\t",
+      g_string_append_printf(format_str, "%s[%s:",
                              ZMAPLOG_CODE_TUPLE,
-                             file_basename,
-                             (function ? function : ""),
-                             (function ? "()" : ""),
-                             line) ;
+                             file_basename) ;
+
+      if (function)
+        {
+          char *func_name = NULL ;
+          unsigned int func_name_len = 0 ;
+
+          // C++ functions are often reported verbosely so cut down to just function name if possible.
+          if (getFuncNamePosition(function, &func_name, &func_name_len))
+            format_str = g_string_append_len(format_str, func_name, func_name_len) ;
+          else
+            g_string_append_printf(format_str, "%s", function) ;
+        }
+      else
+        {
+          format_str = g_string_append(format_str, "NO FUNC NAME") ;
+        }
+      
+      g_string_append_printf(format_str, ":%d]\t", line) ;
+
 
       g_free(file_basename) ;
     }
@@ -943,3 +961,60 @@ static void logTime(int what, int how)
 }
 
 #endif
+
+
+
+// Find out where function name is in the function prototype, note thatk the prototype we are
+// expecting is a string in g++ format:
+//
+// "gboolean zmapMainMakeAppWindow(int, char**, ZMapAppContext, GList*)"
+//
+// Add support for other compilers as needed.
+//
+static bool getFuncNamePosition(const char *function_prototype, char **start_out, unsigned int *len_out)
+{
+  bool result = false ;
+
+#ifdef __GNUC__
+  const char *cp = function_prototype ;
+  bool return_val_found ;
+  char *start ;
+  unsigned int len ;
+
+  return_val_found = false ;
+  start = NULL ;
+  len = 0 ;
+  while(*cp)
+    {
+      if (!return_val_found)
+        {
+          if (g_ascii_isspace(*cp))
+            return_val_found = true ;
+        }
+      else
+        {
+          if (*cp == '(')
+            {
+              *start_out = start ;
+              *len_out = len ;
+
+              result = true ;
+
+              break ;
+            }
+          else if (!g_ascii_isspace(*cp))
+            {
+              if (!start)
+                start = (char *)cp ;
+
+              len++ ;
+            }
+        }
+
+      cp++ ;
+    }
+#endif /* __GNUC__ */
+
+
+  return result ;
+}
