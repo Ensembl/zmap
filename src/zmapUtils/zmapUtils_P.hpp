@@ -40,7 +40,7 @@
 
 /* Create a copyright string for dialogs etc. */
 #define ZMAP_COPYRIGHT_STRING()                                  \
-"Copyright (c) 2006-2015: Genome Research Ltd."
+"Copyright (c) 2006-2017: Genome Research Ltd."
 
 
 /* Create a website string for dialogs etc. */
