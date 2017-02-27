@@ -844,12 +844,34 @@ gboolean zMapLogQuarkIsExactStr(GQuark quark, char *str)
 }
 
 
-/*! Is str in quark.
+/*! Is sub_str in quark, case insensitive compare
  * @param quark         Quark to be stringified and compared.
  * @param sub_str       Sub-string to be compared.
  * @return              TRUE if compared worked, FALSE otherwise.
  */
 gboolean zMapLogQuarkHasStr(GQuark quark, char *sub_str)
+{
+  gboolean result = FALSE ;
+  char *haystack, *needle ;
+
+  haystack = g_ascii_strdown(g_quark_to_string(quark), -1) ;
+  needle = g_ascii_strdown(sub_str, -1) ;
+
+  if ((strstr(haystack, needle)))
+    result = TRUE ;
+
+  g_free(haystack) ;
+  g_free(needle) ;
+
+  return result ;
+}
+
+/*! Is sub_str in quark, case sensitive compare
+ * @param quark         Quark to be stringified and compared.
+ * @param sub_str       Sub-string to be compared.
+ * @return              TRUE if compared worked, FALSE otherwise.
+ */
+gboolean zMapLogQuarkHasExactStr(GQuark quark, char *sub_str)
 {
   gboolean result = FALSE ;
 
@@ -858,6 +880,8 @@ gboolean zMapLogQuarkHasStr(GQuark quark, char *sub_str)
 
   return result ;
 }
+
+
 
 
 /* Call directly or via zMapDebugPrint() macros. Does a fflush every time to 

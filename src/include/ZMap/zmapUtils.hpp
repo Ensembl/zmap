@@ -270,6 +270,7 @@ void zMapLogQuark(GQuark quark) ;
 gboolean zMapLogQuarkIsStr(GQuark quark, const char *str) ;
 gboolean zMapLogQuarkIsExactStr(GQuark quark, char *str) ;
 gboolean zMapLogQuarkHasStr(GQuark quark, char *sub_str) ;
+gboolean zMapLogQuarkHasExactStr(GQuark quark, char *sub_str) ;
 
 gboolean zMapCoordsClamp(int range_start, int range_end, int *start_inout, int *end_inout) ;
 void zmapCoordsZeroBased(int *start_inout, int *end_inout) ;
