@@ -1336,8 +1336,9 @@ static FooCanvasGroup *find_or_create_column(ZMapCanvasData  canvas_data,
 
       if (!add_featureset_style_to_column(f_col, feature_set))
         {
-          zMapLogWarning("Could not add featureset style to column %d\n",
-                             g_quark_to_string(column_id));
+          zMapLogWarning("Could not add style for featureset %s to column %s",
+                         g_quark_to_string(feature_set->original_id),
+                         g_quark_to_string(f_col->column_id)) ;
         }
     }
 
