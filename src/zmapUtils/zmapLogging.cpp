@@ -424,7 +424,7 @@ void zMapLogMsg(const char *domain, GLogLevelFlags log_level,
 
       file_basename = g_path_get_basename(file) ;
 
-      g_string_append_printf(format_str, "%s[%s:",
+      g_string_append_printf(format_str, "%s[%s",
                              ZMAPLOG_CODE_TUPLE,
                              file_basename) ;
 
@@ -437,14 +437,14 @@ void zMapLogMsg(const char *domain, GLogLevelFlags log_level,
           if (getFuncNamePosition(function, &func_name, &func_name_len))
             format_str = g_string_append_len(format_str, func_name, func_name_len) ;
           else
-            g_string_append_printf(format_str, "%s", function) ;
+            g_string_append_printf(format_str, " %s", function) ;
         }
       else
         {
           format_str = g_string_append(format_str, "NO FUNC NAME") ;
         }
       
-      g_string_append_printf(format_str, ":%d]\t", line) ;
+      g_string_append_printf(format_str, " %d]\t", line) ;
 
 
       g_free(file_basename) ;
