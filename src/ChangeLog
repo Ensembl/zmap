@@ -1,3 +1,60 @@
+2017-02-27  Ed Griffiths  <edgrif@sanger.ac.uk>
+ Fix my own bug, broke the link between featureset and style, restored now. - RT '109833'
+ src/zmapView/zmapViewServers.cpp | 20 +++++++-------------
+ 1 file changed, 7 insertions(+), 13 deletions(-)
+
+2016-11-18  Gemma Guest  <gb10@sanger.ac.uk>
+ Add db prefix to manual - DOC
+ docs/user/manual/ZMap_User_Manual.pdf | Bin 5512042 -> 5511973 bytes
+ docs/user/manual/ZMap_User_Manual.tex |   4 ++++
+ 2 files changed, 4 insertions(+)
+
+2016-11-18  Gemma Guest  <gb10@sanger.ac.uk>
+ Update release notes - DOC
+ docs/user/release_notes.shtml | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+2016-11-18  Gemma Guest  <gb10@sanger.ac.uk>
+ Update revision date in manual - DOC
+ docs/user/manual/ZMap_User_Manual.pdf | Bin 5513049 -> 5512042 bytes
+ docs/user/manual/ZMap_User_Manual.tex |   3 +++
+ 2 files changed, 3 insertions(+)
+
+2016-11-18  Gemma Guest  <gb10@sanger.ac.uk>
+ Improve docs for managing sources - DOC
+ docs/user/manual/ZMap_User_Manual.pdf              | Bin 5402406 -> 5513049 bytes
+ docs/user/manual/ZMap_User_Manual.tex              | 238 +++++++++++----------
+ docs/user/manual/images/create_source_trackhub.png | Bin 46727 -> 56729 bytes
+ .../images/create_source_trackhub_search.png       | Bin 25378 -> 26408 bytes
+ docs/user/manual/images/import.png                 | Bin 0 -> 103306 bytes
+ docs/user/manual/images/main_window.png            | Bin 38276 -> 84770 bytes
+ 6 files changed, 130 insertions(+), 108 deletions(-)
+
+2016-11-17  Gemma Guest  <gb10@sanger.ac.uk>
+ Add trackhub instructions - DOC
+ docs/user/manual/ZMap_User_Manual.pdf              | Bin 5927314 -> 5402406 bytes
+ docs/user/manual/ZMap_User_Manual.tex              | 123 +++++++++++++++++++--
+ docs/user/manual/images/create_source_ensembl.png  | Bin 42691 -> 62494 bytes
+ .../images/create_source_ensembl_search_db.png     | Bin 30848 -> 91235 bytes
+ docs/user/manual/images/create_source_file.png     | Bin 29073 -> 44577 bytes
+ docs/user/manual/images/create_source_trackhub.png | Bin 0 -> 46727 bytes
+ .../images/create_source_trackhub_register.png     | Bin 0 -> 23503 bytes
+ .../images/create_source_trackhub_search.png       | Bin 0 -> 25378 bytes
+ .../manual/images/create_source_trackhub_view.png  | Bin 0 -> 38127 bytes
+ 9 files changed, 111 insertions(+), 12 deletions(-)
+
+2016-11-16  Gemma Guest  <gb10@sanger.ac.uk>
+ Fix a bug loading extended bigbed files - BUG FIX
+ src/zmapServer/datastream/zmapDataStream.cpp | 16 ++++++++++++++--
+ 1 file changed, 14 insertions(+), 2 deletions(-)
+
+2016-11-16  zmap  <zmap@sanger.ac.uk>
+ ZMap version 2.11.6-262-g5de5c0f - Update RT and git commit reports
+ src/ChangeLog                                  | 50 ++++++++++++++++++++++++++
+ src/build/release_docs/GIT_COMMITS.txt         |  3 ++
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt |  4 +--
+ 3 files changed, 55 insertions(+), 2 deletions(-)
+
 2016-11-16  Gemma Guest  <gb10@sanger.ac.uk>
  New style is selected after creating it - TRIVIAL
  src/zmapWindow/zmapWindowStyles.cpp | 8 ++++++++
