@@ -881,9 +881,7 @@ static bool createStepList(ZMapView zmap_view, ZMapNewDataSource view_con, ZMapC
   bool result = false ;
   ZMapServerReqAny req_any;
   StepListActionOnFailureType on_fail = REQUEST_ONFAIL_CANCEL_THREAD;
-  bool true_server ;
 
-  true_server = (urlObj->scheme != SCHEME_FILE && urlObj->scheme != SCHEME_PIPE) ;
 
   connect_data->step_list = zmapViewStepListCreateFull(dispatchContextRequests,
                                                        processDataRequests,
@@ -901,13 +899,11 @@ static bool createStepList(ZMapView zmap_view, ZMapNewDataSource view_con, ZMapC
   req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_GETSERVERINFO) ;
   zmapViewStepListAddServerReq(connect_data->step_list, ZMAP_SERVERREQ_GETSERVERINFO, req_any, on_fail) ;
 
-  if (true_server)
-    {
-      req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_FEATURESETS, req_featuresets, req_biotypes, NULL) ;
-      zmapViewStepListAddServerReq(connect_data->step_list, ZMAP_SERVERREQ_FEATURESETS, req_any, on_fail) ;
-    }
 
-  if (true_server && (req_styles || styles_file))
+  req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_FEATURESETS, req_featuresets, req_biotypes, NULL) ;
+  zmapViewStepListAddServerReq(connect_data->step_list, ZMAP_SERVERREQ_FEATURESETS, req_any, on_fail) ;
+
+  if (req_styles || styles_file)
     {
       req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_STYLES, req_styles, styles_file && *styles_file ? styles_file : NULL) ;
       zmapViewStepListAddServerReq(connect_data->step_list, ZMAP_SERVERREQ_STYLES, req_any, on_fail) ;
@@ -918,11 +914,9 @@ static bool createStepList(ZMapView zmap_view, ZMapNewDataSource view_con, ZMapC
     }
 
 
-  if (true_server)
-    {
-      req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_NEWCONTEXT, context) ;
-      zmapViewStepListAddServerReq(connect_data->step_list, ZMAP_SERVERREQ_NEWCONTEXT, req_any, on_fail) ;
-    }
+  req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_NEWCONTEXT, context) ;
+  zmapViewStepListAddServerReq(connect_data->step_list, ZMAP_SERVERREQ_NEWCONTEXT, req_any, on_fail) ;
+
 
   req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_FEATURES) ;
   zmapViewStepListAddServerReq(connect_data->step_list, ZMAP_SERVERREQ_FEATURES, req_any, on_fail) ;
