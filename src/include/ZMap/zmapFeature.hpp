@@ -685,8 +685,6 @@ typedef struct ZMapTranscriptStructType
    * i.e. it must have a value in the range 1 -> 3. */
   int start_not_found ;
 
-  ZMapPhase phase ;                                         /* Used for features in context of GFFv3 */
-
   GArray *exons ;                                           /* Of ZMapSpanStruct. */
   GArray *introns ;                                         /* Of ZMapSpanStruct. */
 
@@ -1179,7 +1177,7 @@ gboolean zMapFeatureHasMatchingBoundary(ZMapFeature feature,
 gboolean zMapFeatureTranscriptSortExons(ZMapFeature feature) ;
 gboolean zMapFeatureTranscriptInit(ZMapFeature feature) ;
 GArray *zMapFeatureTranscriptCreateSpanArray(void) ;
-gboolean zMapFeatureAddTranscriptCDSDynamic(ZMapFeature feature, Coord start, Coord end, ZMapPhase phase) ;
+gboolean zMapFeatureAddTranscriptCDSDynamic(ZMapFeature feature, Coord start, Coord end) ;
 gboolean zMapFeatureAddTranscriptCDS(ZMapFeature feature, gboolean cds, Coord cds_start, Coord cds_end) ;
 gboolean zMapFeatureMergeTranscriptCDS(ZMapFeature src_feature, ZMapFeature dest_feature);
 gboolean zMapFeatureMergeTranscriptCDSCoords(ZMapFeature dest_feature, const int cds_start, const int cds_end) ;
@@ -1216,7 +1214,9 @@ gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
 gboolean zMapFeatureAlignmentGetAlignmentString(ZMapFeature feature,
                                                 ZMapFeatureAlignFormat align_format,
                                                 char **p_string_out) ;
+
 gboolean zMapFeatureAlignmentIsGapped(ZMapFeature feature) ;
+bool zMapFeatureAlignmentHasGaps(ZMapFeature feature) ;
 gboolean zMapFeatureAlignmentString2Gaps(ZMapFeatureAlignFormat align_format,
 					 ZMapStrand ref_strand, int ref_start, int ref_end,
 					 ZMapStrand match_strand, int match_start, int match_end,
