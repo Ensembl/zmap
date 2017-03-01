@@ -4323,7 +4323,9 @@ gboolean zMapWindowExportFeatures(ZMapWindow window, gboolean all_features, gboo
 }
 
 
-static gboolean exportFeatures(ZMapWindow window, gboolean all_features, ZMapSpan region_span, ZMapFeatureAny feature_in,
+static gboolean exportFeatures(ZMapWindow window,
+                               gboolean all_features,
+                               ZMapSpan region_span, ZMapFeatureAny feature_in,
                                char **filepath_inout, GError **error)
 {
   static const char *error_prefix = "Features export failed:" ;
