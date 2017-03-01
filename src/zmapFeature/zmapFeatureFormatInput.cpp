@@ -121,7 +121,7 @@ gboolean zMapFeatureFormatType(gboolean SO_compliant, gboolean default_to_basic,
     }
   else if (g_ascii_strcasecmp(feature_type, "exon") == 0
            || g_ascii_strcasecmp(feature_type, "intron") == 0
-           ||g_ascii_strcasecmp(feature_type, "pseudogene") == 0
+           || g_ascii_strcasecmp(feature_type, "pseudogene") == 0
            || g_ascii_strcasecmp(feature_type, "transcript") == 0
            || g_ascii_strcasecmp(feature_type, "protein_coding_primary_transcript") == 0
            || g_ascii_strcasecmp(feature_type, "CDS") == 0
