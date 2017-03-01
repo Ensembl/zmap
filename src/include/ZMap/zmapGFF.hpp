@@ -200,8 +200,11 @@ gboolean zMapGFFFormatAppendAttribute(GString *, GString *, gboolean, gboolean) 
 char zMapGFFFormatStrand2Char(ZMapStrand strand) ;
 char zMapGFFFormatPhase2Char(ZMapPhase phase) ;
 gboolean zMapGFFFormatHeader(gboolean, GString *, const char *, int, int) ;
-gboolean zMapGFFFormatMandatory(gboolean, GString *, const char *, const char *, const char *,
-  int, int, float, ZMapStrand, ZMapPhase, gboolean, gboolean ) ;
+gboolean zMapGFFFormatMandatory(gboolean over_write, GString *line,
+                                const char *sequence, const char *source, const char *type,
+                                int start, int end, float score, ZMapStrand strand,
+                                gboolean test_phase, ZMapPhase phase,
+                                gboolean has_score, gboolean append_tab) ;
 gboolean zMapGFFDumpVersionSet(ZMapGFFVersion gff_version ) ;
 ZMapGFFVersion zMapGFFDumpVersionGet() ;
 gboolean zMapGFFDump(ZMapFeatureAny dump_set, ZMapStyleTree &styles, GIOChannel *file, GError **error_out);
