@@ -185,10 +185,9 @@ GArray *zMapFeatureTranscriptCreateSpanArray(void)
 
 /*
  * Adds CDS start and end to a feature but tests values as we go along to make sure
- * that the coordinates are only changed if the range is being expanded. The phase is
- * only stored if the _start_ of the range is expanded.
+ * that the coordinates are only changed if the range is being expanded.
  */
-gboolean zMapFeatureAddTranscriptCDSDynamic(ZMapFeature feature, Coord start, Coord end, ZMapPhase phase)
+gboolean zMapFeatureAddTranscriptCDSDynamic(ZMapFeature feature, Coord start, Coord end)
 {
   gboolean result = FALSE ;
 
@@ -211,7 +210,7 @@ gboolean zMapFeatureAddTranscriptCDSDynamic(ZMapFeature feature, Coord start, Co
     {
       feature->feature.transcript.cds_start = start ;
       feature->feature.transcript.cds_end = end ;
-      feature->feature.transcript.phase = phase ;
+
       result = TRUE ;
     }
   else /* we have non-zero values for cds_start and cds_end */
@@ -219,7 +218,6 @@ gboolean zMapFeatureAddTranscriptCDSDynamic(ZMapFeature feature, Coord start, Co
       if (start < start_s)
         {
           feature->feature.transcript.cds_start = start ;
-          feature->feature.transcript.phase = phase ;
         }
       if (end > end_s)
         {
@@ -1941,7 +1939,6 @@ ZMapFeature zMapFeatureTranscriptShallowCopy(ZMapFeature src, GError **error)
 
       dest->feature.transcript.start_not_found = src->feature.transcript.start_not_found ;
 
-      dest->feature.transcript.phase = src->feature.transcript.phase ;
       dest->feature.transcript.exons = src->feature.transcript.exons ;
       dest->feature.transcript.introns = src->feature.transcript.introns ;
       dest->feature.transcript.variations = src->feature.transcript.variations;
