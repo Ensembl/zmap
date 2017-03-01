@@ -249,6 +249,18 @@ ZMAP_ENUM_TO_SHORT_TEXT_FUNC(zMapFeatureAlignBoundary2ShortText, AlignBlockBound
                              ZMAP_ALIGN_BLOCK_BOUNDARY_LIST) ;
 
 
+// This should be used everywhere but I expect is not...in theory there should only be an align
+// array IF it's len is greater than zero !
+bool zMapFeatureAlignmentHasGaps(ZMapFeature feature)
+{
+  bool result = false ;
+
+  if (feature->feature.homol.align && feature->feature.homol.align->len > 0)
+    result = true ;
+
+  return result ;
+}
+
 
 /* Adds homology data to a feature which may be empty or may already have partial features. */
 gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
@@ -572,7 +584,6 @@ void zMapFeatureAlignmentPrintExonsAligns(GArray *exons, GArray *introns, GArray
 /*
  *            Package routines.
  */
-
 
 void zmapFeatureAlignmentCopyFeature(ZMapFeature orig_feature, ZMapFeature new_feature)
 {
