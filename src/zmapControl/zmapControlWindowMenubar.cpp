@@ -240,16 +240,11 @@ static void toggleDisplayCoordinatesCB (gpointer data, guint callback_action, Gt
 /* Should pop up a dialog box to ask for a file name....e.g. the file chooser. */
 static void exportCB(gpointer cb_data, guint callback_action, GtkWidget *window)
 {
-  ZMap zmap = NULL ;
-  zMapReturnIfFail(cb_data) ;
+  ZMap zmap = (ZMap)cb_data ;
   ZMapWindow curr_window = NULL ;
   ZMapView curr_view = NULL ;
   GError *error = NULL ;
   gboolean result = FALSE ;
-
-  zmap = (ZMap)cb_data ;
-  if (!zmap)
-    return ;
 
   curr_window = zMapViewGetWindow(zmap->focus_viewwindow) ;
   curr_view = zMapViewGetView(zmap->focus_viewwindow) ;
