@@ -1662,7 +1662,7 @@ static void writeBAMLine(ZMapBlixemData blixem_data, const GQuark featureset_id,
                                        blixem_data->features_max,
                                        (float)0.0,
                                        ZMAPSTRAND_NONE, 
-                                       ZMAPPHASE_NONE,
+                                       FALSE, ZMAPPHASE_NONE,
                                        TRUE,
                                        TRUE) ;
 
