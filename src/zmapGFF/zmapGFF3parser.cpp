@@ -3005,7 +3005,7 @@ static ZMapFeature makeFeatureTranscript(ZMapGFF3Parser const pParser,
             }
           else if (bIsCDS)
             {
-              bDataAdded = zMapFeatureAddTranscriptCDSDynamic(pFeature, iStart, iEnd, cPhase) ;
+              bDataAdded = zMapFeatureAddTranscriptCDSDynamic(pFeature, iStart, iEnd) ;
             }
         }
 
