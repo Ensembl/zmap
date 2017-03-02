@@ -1987,7 +1987,7 @@ gboolean zMapWriteAttributePercentID(ZMapFeature feature, GString *attribute)
  */
 gboolean zMapWriteAttributeGap(ZMapFeature feature, GString *attribute)
 {
-  gboolean result = FALSE ;
+  gboolean result = TRUE ;
   GArray *gaps = NULL ;
   ZMapSequenceType match_seq_type = ZMAPSEQUENCE_NONE ;
   ZMapHomolType homol_type = ZMAPHOMOL_NONE ;
@@ -1997,21 +1997,19 @@ gboolean zMapWriteAttributeGap(ZMapFeature feature, GString *attribute)
       || !zMapFeatureAlignmentHasGaps(feature))
     return FALSE ;
 
+  g_string_truncate(attribute, (gsize)0) ;
+
   gaps = feature->feature.homol.align ;
   strand = feature->strand ;
-  if (gaps)
-    {
-      g_string_truncate(attribute, (gsize)0) ;
 
-      homol_type = feature->feature.homol.type ;
+  homol_type = feature->feature.homol.type ;
 
-      if (homol_type == ZMAPHOMOL_N_HOMOL)
-        match_seq_type = ZMAPSEQUENCE_DNA ;
-      else
-        match_seq_type = ZMAPSEQUENCE_PEPTIDE ;
+  if (homol_type == ZMAPHOMOL_N_HOMOL)
+    match_seq_type = ZMAPSEQUENCE_DNA ;
+  else
+    match_seq_type = ZMAPSEQUENCE_PEPTIDE ;
 
-      formatGap2GFF(attribute, gaps, strand, match_seq_type) ;
-    }
+  formatGap2GFF(attribute, gaps, strand, match_seq_type) ;
 
   return result ;
 }
