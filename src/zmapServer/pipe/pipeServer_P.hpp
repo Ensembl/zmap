@@ -35,7 +35,6 @@
 
 
 #define PIPE_PROTOCOL_STR "GFF Pipe"			    /* For error messages. */
-#define FILE_PROTOCOL_STR "GFF File"
 
 
 /* Holds all the state we need to create and access the script output. */
@@ -51,42 +50,29 @@ typedef struct _PipeServerStruct
   gchar *script_path ;					    /* Path to the script OR file. */
   gchar *script_args ;					    /* Args to the script derived from the url string */
 
-  gchar *data_dir ;					    /* default location for data files
-							       (when protocol is file://) */
-
   /* Pipe process. */
-  GPid child_pid ;                                          /* pid of child process at other end
-                                                               of pipe. */
-  guint child_watch_id ;                                    /* callback routine id for child process exit. */
+  GPid child_pid ;                                          /* pid of child process at other end of pipe. */
+  guint child_watch_id ;                                    /* callback routine for child process exit. */
   gboolean child_exited ;                                   /* TRUE if child has exited. */
-  gint exit_code ;                                          /* Can only be EXIT_SUCCESS or
-                                                               EXIT_FAILURE. */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  gint child_exit_status ;                                  /* Exit status of child as per
-                                                               WEXITSTATUS(). */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
+  gint exit_code ;                                          /* Can only be EXIT_SUCCESS or EXIT_FAILURE. */
   GIOChannel *gff_pipe ;				    /* the pipe we read the script's stdout from */
-
 
   /* Results of server requests. */
   ZMapServerResponseType result ;
   gboolean error ;					    /* TRUE if any error occurred. */
   char *last_err_msg ;
 
-
   gboolean sequence_server ;
   gboolean is_otter ;
 
   ZMapGFFParser parser ;				    /* holds header features and sequence data till requested */
   int gff_version ;                                         /* Cached because parser may be freed on error. */
-  GString *gff_line ;
+  GString *gff_line ;                                       // Cached for efficiency.
 
   GQuark req_sequence ;
   gint zmap_start, zmap_end ;				    /* display coordinates of interesting region */
   ZMapFeatureContext req_context ;
+
   ZMapFeatureSequenceMap sequence_map ;
   char *styles_file ;
   GHashTable *source_2_sourcedata ;			    /* mapping data as per config file */
