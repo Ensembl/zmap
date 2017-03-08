@@ -136,11 +136,14 @@ static ZMapThreadReturnCode threadTerminateHandler(void **slave_data, char **err
 
     if (zMapServerGetServerInfo(server, req_info) == ZMAP_SERVERRESPONSE_OK)
       {
-        zMapLogWarning("Terminate function called for: %s, %s, %s, %s",
+        zMapLogWarning("Terminate function called for: %s%s%s%s%s%s%s",
                        (req_info->data_format_out ? req_info->data_format_out : ""),
+                       (req_info->database_name_out ? ", " : ""),
                        (req_info->database_name_out ? req_info->database_name_out : ""),
+                       (req_info->database_title_out ? ", " : ""),
                        (req_info->database_title_out ? req_info->database_title_out : ""),
-                       (req_info->database_path_out  ? req_info->database_path_out  : "")) ;
+                       (req_info->database_path_out  ?  ", " : ""),
+                       (req_info->database_path_out  ? req_info->database_path_out : "")) ;
       }
 
     zMapServerRequestDestroy((ZMapServerReqAny)req_info) ;
@@ -172,11 +175,14 @@ static ZMapThreadReturnCode threadDestroyHandler(void **slave_data)
 
     if (zMapServerGetServerInfo(server, req_info) == ZMAP_SERVERRESPONSE_OK)
       {
-        zMapLogWarning("Terminate function called for: %s, %s, %s, %s",
+        zMapLogWarning("Terminate function called for: %s%s%s%s%s%s%s",
                        (req_info->data_format_out ? req_info->data_format_out : ""),
+                       (req_info->database_name_out ? ", " : ""),
                        (req_info->database_name_out ? req_info->database_name_out : ""),
+                       (req_info->database_title_out ? ", " : ""),
                        (req_info->database_title_out ? req_info->database_title_out : ""),
-                       (req_info->database_path_out ? req_info->database_path_out  : "")) ;
+                       (req_info->database_path_out  ?  ", " : ""),
+                       (req_info->database_path_out  ? req_info->database_path_out : "")) ;
       }
 
     zMapServerRequestDestroy((ZMapServerReqAny)req_info) ;

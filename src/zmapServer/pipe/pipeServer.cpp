@@ -289,7 +289,7 @@ static gboolean createConnection(void **server_out, ZMapConfigSource config_sour
   if (result)
     {
       if (url->query)
-        server->script_args = g_strdup_printf("%s",url->query) ;
+        server->script_args = g_strdup_printf("%s", url->query) ;
       else
         server->script_args = g_strdup("") ;
 
@@ -392,7 +392,8 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
 
                   if (gff_pipe_err)
                     {
-                      server->last_err_msg = g_strdup_printf("Could not read from pipe because: \"%s\".",
+                      server->last_err_msg = g_strdup_printf("Could not read from pipe \"%s\" because: \"%s\".",
+                                                             server->analysis_summary,
                                                              gff_pipe_err->message) ;
                       g_error_free(gff_pipe_err) ;
                       gff_pipe_err = NULL ;
@@ -402,12 +403,16 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
                     {
                       if (pipe_status == G_IO_STATUS_EOF)
                         {
-                          server->last_err_msg = g_strdup("Could not read from pipe because there was no data.") ;
+                          server->last_err_msg = g_strdup_printf("Could not read from pipe \"%s\""
+                                                                 " because there was no data.",
+                                                                 server->analysis_summary) ;
                         }
                       else
                         {
-                          server->last_err_msg = g_strdup_printf("Could not read from pipe because"
-                                                                 " there was a serious GIO error: %d.", pipe_status) ;
+                          server->last_err_msg = g_strdup_printf("Could not read from pipe \"%s\" because"
+                                                                 " there was a serious GIO error: %d.",
+                                                                 server->analysis_summary,
+                                                                 pipe_status) ;
                         }
                     }
                   
@@ -617,9 +622,15 @@ static ZMapServerResponseType getFeatures(void *server_in, ZMapStyleTree &styles
       /* Check that there is any more to parse.... */
       if (server->gff_line->len == 0)                           /* GString len is always >= 0 */
         {
-          setErrMsg(server, "No features found.") ;
+          char *err_msg ;
 
-          ZMAPSERVER_LOG(Warning, server->protocol, server->script_path, "%s", server->last_err_msg) ;
+          err_msg = g_strdup_printf("No features found for %s.", server->analysis_summary) ;
+
+          setErrMsg(server, err_msg) ;
+
+          g_free(err_msg) ;
+
+          ZMAPSERVER_LOG(Message, server->protocol, server->script_path, "%s", server->last_err_msg) ;
 
           result = server->result = ZMAP_SERVERRESPONSE_SOURCEEMPTY ;
         }
@@ -653,7 +664,13 @@ static ZMapServerResponseType getFeatures(void *server_in, ZMapStyleTree &styles
 
           if (!num_features)
             {
-              setErrMsg(server, "No features found.") ;
+              char *err_msg ;
+
+              err_msg = g_strdup_printf("No features found for %s.", server->analysis_summary) ;
+
+              setErrMsg(server, err_msg) ;
+
+              g_free(err_msg) ;
 
               ZMAPSERVER_LOG(Warning, server->protocol, server->script_path, "%s", server->last_err_msg) ;
             }
@@ -882,6 +899,10 @@ static ZMapServerResponseType destroyConnection(void *server_in)
   if (server->script_path)
     g_free(server->script_path) ;
 
+  if (server->analysis_summary)
+    g_free(server->analysis_summary) ;
+
+
   if (server->last_err_msg)
     g_free(server->last_err_msg) ;
 
@@ -1047,18 +1068,27 @@ static gboolean pipeSpawn(PipeServer server, GError **error)
   /* log the actual command line used, very useful for us developers. */
   {
     GString *arg_str = NULL ;
+    GString *analysis = NULL ;
     int j ;
 
     arg_str = g_string_new(NULL) ;
+    analysis = g_string_new(NULL) ;
 
     for(j = 0 ; argv[j] ; j++)
       {
         g_string_append_printf(arg_str, "%s ", argv[j]) ;
+
+        if ((strstr(argv[j], "analysis")))
+          g_string_append(analysis, argv[j]) ;
+        else if ((strstr(argv[j], "dataset")))
+          g_string_append_printf(analysis, " on %s", argv[j]) ;
       }
 
     zMapLogMessage("About to launch child process as: \"%s\"", arg_str->str) ;
 
     g_string_free(arg_str, TRUE) ;
+
+    server->analysis_summary = g_string_free(analysis, FALSE) ;
   }
 
   /* Seems that g_spawn_async_with_pipes() is not thread safe so lock round it. */
@@ -1477,7 +1507,8 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
         }
       else
         {
-          zMapLogWarning("Could not read GFF features from stream \"%s\" with \"%s\".",
+          zMapLogWarning("Could not read GFF features for \"%s\" from stream \"%s\" with \"%s\".",
+                         server->analysis_summary,
                          server->script_path, &gff_pipe_err) ;
 
           setErrorMsgGError(server, &gff_pipe_err) ;

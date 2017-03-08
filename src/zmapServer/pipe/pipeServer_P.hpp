@@ -50,6 +50,8 @@ typedef struct _PipeServerStruct
   gchar *script_path ;					    /* Path to the script OR file. */
   gchar *script_args ;					    /* Args to the script derived from the url string */
 
+  char *analysis_summary ;                                  // e.g. Augustus, phastCons etc., human etc.
+
   /* Pipe process. */
   GPid child_pid ;                                          /* pid of child process at other end of pipe. */
   guint child_watch_id ;                                    /* callback routine for child process exit. */
