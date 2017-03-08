@@ -34,6 +34,9 @@
 #include <glib.h>
 
 
+#include <ZMap/zmapUtilsPrivate.hpp>
+
+
 
 typedef enum {ZMAP_MSG_INFORMATION, ZMAP_MSG_WARNING, ZMAP_MSG_CRITICAL, ZMAP_MSG_EXIT, ZMAP_MSG_CRASH} ZMapMsgType ;
 
@@ -66,12 +69,12 @@ G_STMT_START{                                              \
 
 
 /* Unrecoverable errors not caused by code, e.g. wrong command line args etc. */
-#define zMapExitMsg(FORMAT, ...)                     \
-G_STMT_START{                                     \
-  zMapShowMsg(ZMAP_MSG_EXIT,                      \
-	      ZMAP_MSG_FORMAT_STRING FORMAT,      \
-	      ZMAP_MSG_FUNCTION_MACRO,		  \
-	      __VA_ARGS__) ;                      \
+#define zMapExitMsg(FORMAT, ...)                  \
+  G_STMT_START{                                   \
+    zMapShowMsg(ZMAP_MSG_EXIT,                         \
+                ZMAP_MSG_CODE_FORMAT_STRING FORMAT,       \
+                ZMAP_MSG_CODE_FORMAT_ARGS,		  \
+                __VA_ARGS__) ;                            \
 }G_STMT_END
 
 
@@ -79,8 +82,8 @@ G_STMT_START{                                     \
 #define zMapCrash(FORMAT, ...)                    \
 G_STMT_START{                                     \
   zMapShowMsg(ZMAP_MSG_CRASH,                     \
-	      ZMAP_MSG_FORMAT_STRING FORMAT,      \
-	      ZMAP_MSG_FUNCTION_MACRO,		  \
+              ZMAP_MSG_CODE_FORMAT_STRING FORMAT,      \
+              ZMAP_MSG_CODE_FORMAT_ARGS,		  \
 	      __VA_ARGS__) ;                      \
 }G_STMT_END
 

@@ -113,10 +113,8 @@ void zmapWindowNavigatorShowSameNameList(ZMapWindowNavigator navigate, FooCanvas
 {
   ZMapWindow window = NULL;
   ZMapFeature feature = NULL;
-  GQuark locus_quark = 0, wild_card_id ;
+  GQuark wild_card_id ;
   const char *wild_card = "*" ;
-  FooCanvasItem *set_item ;
-  ZMapWindowContainerFeatureSet container;
 
   wild_card_id = g_quark_from_string(wild_card) ;
 
@@ -127,10 +125,6 @@ void zmapWindowNavigatorShowSameNameList(ZMapWindowNavigator navigate, FooCanvas
   feature = zmapWindowItemGetFeature(item) ;
   if (!feature)
     return ;
-
-  set_item = FOO_CANVAS_ITEM(zmapWindowContainerCanvasItemGetContainer(item));
-  container = (ZMapWindowContainerFeatureSet)set_item;
-
 
   window = navigate->current_window;
 
@@ -156,7 +150,6 @@ void zmapWindowNavigatorShowSameNameList(ZMapWindowNavigator navigate, FooCanvas
        */
 
       callback    = searchLocusSetCB;
-      locus_quark = g_quark_from_string(wild_card);
 
       /* we use the wildcard to get all features... slow?? */
       result = zmapWindowFToIFindItemSetFull(window,window->context_to_item,
@@ -191,14 +184,9 @@ void zmapWindowNavigatorShowSameNameList(ZMapWindowNavigator navigate, FooCanvas
     ZMapWindowFToISetSearchData search_data;
     gboolean zoom_to_item = TRUE ;
     char *wild_name ;
-    GQuark wild_name_id ;
 
     wild_name = g_strdup_printf("%s*", g_quark_to_string(feature->original_id)) ;
-    wild_name_id = g_quark_from_string(wild_name) ;
     g_free(wild_name) ;
-
-    locus_quark = g_quark_from_string(wild_card);
-
 
     search_data = zmapWindowFToISetSearchCreateFull((void *)zmapWindowFToIFindItemSetFull,
                                                     NULL,

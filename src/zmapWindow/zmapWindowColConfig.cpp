@@ -1062,13 +1062,9 @@ static void loaded_page_apply_bumped(LoadedPageData page_data)
 static void loaded_page_reorder(NotebookPage notebook_page)
 {
   LoadedPageData loaded_page_data;
-  ColConfigure configure_data;
   gboolean save_apply_now, save_reposition;
-  ZMapWindow window ;
 
-  configure_data = notebook_page->configure_data;
   loaded_page_data = (LoadedPageData)(notebook_page->page_data);
-  window = loaded_page_data->window ;
 
   /* Reset the flags so that we apply changes now but don't reposition yet. Save the original
    * flag values first */
@@ -1104,13 +1100,9 @@ static void loaded_page_reorder(NotebookPage notebook_page)
 static void loaded_page_apply(NotebookPage notebook_page)
 {
   LoadedPageData loaded_page_data;
-  ColConfigure configure_data;
   gboolean save_apply_now, save_reposition;
-  ZMapWindow window ;
 
-  configure_data = notebook_page->configure_data;
   loaded_page_data = (LoadedPageData)(notebook_page->page_data);
-  window = loaded_page_data->window ;
 
   /* Reset the flags so that we apply changes now but don't reposition yet. Save the original
    * flag values first */
@@ -1342,14 +1334,10 @@ static void loaded_page_update_matching_tree_rows(LoadedPageData loaded_page_dat
  * applicable to a particular column so the relevant column group is passed in the cb_data. */
 static void loaded_page_update(NotebookPage notebook_page, ChangeButtonStateData cb_data)
 {
-  ColConfigure configure_data;
   ZMapStrand strand;
   ZMapWindowColConfigureMode mode ;
   LoadedPageData loaded_page_data;
 
-
-  /* First get the configure_data  */
-  configure_data = notebook_page->configure_data;
 
   mode = cb_data->mode ;
 
@@ -1621,7 +1609,7 @@ static GtkWidget *deferred_cols_panel(NotebookPage notebook_page, GList *columns
 
       do
         {
-          GtkWidget *label, *button_box;
+          GtkWidget *button_box;
           //  FooCanvasGroup *column_group = FOO_CANVAS_GROUP(column->data);
           char *column_name;
           DeferredButton all, mark, none;
@@ -1633,7 +1621,7 @@ static GtkWidget *deferred_cols_panel(NotebookPage notebook_page, GList *columns
 
           if(column_name && !g_list_find_custom(make_unique, column_name, find_name_cb))
             {
-              label = create_label(label_box, column_name);
+              create_label(label_box, column_name);
 
               button_box = gtk_hbox_new(FALSE, 0);
 

@@ -470,7 +470,8 @@ static void checkFeatureSetCB_V3(GQuark key_id, gpointer data, gpointer user_dat
   /*
    * This traversal is to remove transcript features with no exons.
    */
-  iRemoved = g_hash_table_foreach_remove(parser_feature_set->feature_set->features, removeTranscriptFeature, NULL);
+  if ((iRemoved = g_hash_table_foreach_remove(parser_feature_set->feature_set->features, removeTranscriptFeature, NULL)))
+    zMapLogWarning("%d transcripts removed because they have no exons.", iRemoved) ;
 
   /*
    * This traversal is to normalize introns in each transcript feature

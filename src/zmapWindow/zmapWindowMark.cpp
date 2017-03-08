@@ -322,10 +322,9 @@ void zmapWindowToggleMark(ZMapWindow window, gboolean whole_feature)
                   GList *glist = NULL;
                   ZMapStrand set_strand ;
                   ZMapFrame set_frame ;
-                  gboolean result ;
                   double rootx1, rooty1, rootx2, rooty2 ;
 
-                  result = zmapWindowItemGetStrandFrame(focus_item, &set_strand, &set_frame) ;
+                  zmapWindowItemGetStrandFrame(focus_item, &set_strand, &set_frame) ;
                   glist = zmapWindowFToIFindSameNameItems(window,window->context_to_item,
                                                          zMapFeatureStrand2Str(set_strand),
                                                          zMapFeatureFrame2Str(set_frame),

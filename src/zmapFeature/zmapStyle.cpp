@@ -874,11 +874,9 @@ gboolean zMapStyleGetValue(ZMapFeatureTypeStyle style, ZMapStyleParamId param_id
 char* zMapStyleGetValueAsString(ZMapFeatureTypeStyle style, ZMapStyleParamId param_id)
 {
   char *result = NULL ;
-  gboolean ok = FALSE ;
 
   if (style && zMapStyleIsPropertySetId(style, param_id))
     {
-      ok = TRUE ;
       const char *param_name = zmapStyleParam2Name(param_id) ;
       GParamSpec *pspec = g_object_class_find_property(G_OBJECT_CLASS(ZMAP_FEATURE_STYLE_GET_CLASS(style)), param_name) ;
       ZMapStyleParam param = &zmapStyleParams_G [pspec->param_id];

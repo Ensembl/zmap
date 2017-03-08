@@ -81,15 +81,14 @@ typedef struct
 /* State for the logger as a whole. */
 typedef struct  _ZMapLogStruct
 {
-  GMutex*  log_lock ;    /* Ensure only single threading in log
-                            handler routine. */
+  GMutex  *log_lock ;                                       /* Ensure only single threading in log handler routine. */
 
   /* Logging action. */
-  gboolean logging ;    /* logging on or off ? */
-  zmapLogHandlerStruct active_handler ;    /* Used when logging is on. */
-  zmapLogHandlerStruct inactive_handler ;    /* Used when logging is off. */
-  gboolean log_to_file ;    /* log to file or leave glib to log to
-                               stdout/err ? */
+  gboolean logging ;                                        /* logging on or off ? */
+  zmapLogHandlerStruct active_handler ;                     /* Used when logging is on. */
+  zmapLogHandlerStruct inactive_handler ;                   /* Used when logging is off. */
+  gboolean log_to_file ;                                    /* log to file or leave glib to log to
+                                                               stdout/err ? */
   /* Log record content. */
   gchar *userid ;
   gchar *nodeid ;
@@ -145,6 +144,9 @@ static bool getFuncNamePosition(const char *function_prototype, char **start_out
 
 /* We only ever have one log so its kept internally here. */
 static ZMapLog log_G = NULL ;
+
+// glib says that we should not intialise this, it is done for us.
+static GMutex log_lock_G ;
 
 
 
@@ -506,7 +508,6 @@ void zMapLogStack(void)
 {
   ZMapLog log = log_G;
   int log_fd = 0;
-  gboolean logged = FALSE;
 
   /* zMapAssert(log); */
   /* zMapAssert(log->logging);*/
@@ -519,7 +520,7 @@ void zMapLogStack(void)
   if (log->active_handler.logfile &&
       (log_fd = g_io_channel_unix_get_fd(log->active_handler.logfile)))
     {
-      logged = zMapStack2fd(1, log_fd) ;
+      zMapStack2fd(1, log_fd) ;
     }
 
   g_mutex_unlock(log->log_lock);
@@ -594,8 +595,8 @@ static ZMapLog createLog(void)
 
   log = g_new0(ZMapLogStruct, 1) ;
 
-  /* Must lock access to log as may come from serveral different threads. */
-  log->log_lock = g_mutex_new() ;
+  /* Init the lock for ensuring single thread access to logger. */
+  log->log_lock = &log_lock_G ;
 
   /* Default will be logging active. */
   log->logging = TRUE ;
@@ -639,7 +640,7 @@ static void destroyLog(ZMapLog log)
 
   g_free(log->nodeid) ;
 
-  g_mutex_free(log->log_lock) ;
+  g_mutex_clear(log->log_lock) ;
 
   g_free(log) ;
 
@@ -966,7 +967,7 @@ static void logTime(int what, int how)
 
 
 
-// Find out where function name is in the function prototype, note thatk the prototype we are
+// Find out where function name is in the function prototype, note that the prototype we are
 // expecting is a string in g++ format:
 //
 // "gboolean zmapMainMakeAppWindow(int, char**, ZMapAppContext, GList*)"
@@ -978,45 +979,23 @@ static bool getFuncNamePosition(const char *function_prototype, char **start_out
   bool result = false ;
 
 #ifdef __GNUC__
-  const char *cp = function_prototype ;
-  bool return_val_found ;
-  char *start ;
-  unsigned int len ;
+  const char *start ;
+  const char *end ;
 
-  return_val_found = false ;
-  start = NULL ;
-  len = 0 ;
-  while(*cp)
-    {
-      if (!return_val_found)
-        {
-          if (g_ascii_isspace(*cp))
-            return_val_found = true ;
-        }
-      else
-        {
-          if (*cp == '(')
-            {
-              *start_out = start ;
-              *len_out = len ;
+  // Jump to function name
+  start = strchr(function_prototype, ' ') ;
+  start++ ;
 
-              result = true ;
+  // Jump to args opening bracket
+  end = strchr(function_prototype, '(') ;
+  end-- ;
 
-              break ;
-            }
-          else if (!g_ascii_isspace(*cp))
-            {
-              if (!start)
-                start = (char *)cp ;
 
-              len++ ;
-            }
-        }
+  *start_out = (char *)start ;
+  *len_out = (end - start) + 1 ;
 
-      cp++ ;
-    }
+  result = true ;
 #endif /* __GNUC__ */
-
 
   return result ;
 }

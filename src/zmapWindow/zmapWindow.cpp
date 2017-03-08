@@ -1729,11 +1729,9 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
   static const size_t max_variation_str_len = 20 ;
   char *p = NULL ;
   GString *temp_string ;
-  ZMapWindowCanvasItem top_canvas_item;
   ZMapFeature feature = NULL;
   ZMapFeatureTypeStyle style ;
   ZMapWindowSelectStruct select = {(ZMapWindowSelectType)0} ;
-  FooCanvasGroup *feature_group;
   ZMapStrand query_strand = ZMAPSTRAND_NONE;
   char *feature_term ;
   int feature_total_length, feature_start, feature_end, feature_length ;
@@ -1869,9 +1867,6 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
         feature = feature_arg;
       else
 #endif
-        top_canvas_item = zMapWindowCanvasItemIntervalGetObject(item);
-
-      feature_group   = zmapWindowItemGetParentContainer(FOO_CANVAS_ITEM(top_canvas_item)) ;
 
       style = feature && feature->style ? *feature->style : NULL ;
       select.feature_desc.struct_type = feature->struct_type ;
@@ -2344,14 +2339,11 @@ void foo_bug_set(void *key, const char *id)
 static void panedResizeCB(gpointer data, gpointer userdata)
 {
   ZMapWindow window = (ZMapWindow)userdata;
-  int *new_position = (int *)data, current_position;
+  int *new_position = (int *)data ;
 
   zMapReturnIfFail(window) ;
 
-  current_position = gtk_paned_get_position(GTK_PANED( window->pane ));
-
-  gtk_paned_set_position(GTK_PANED( window->pane ),
-                         *new_position);
+  gtk_paned_set_position(GTK_PANED( window->pane ), *new_position) ;
 
   return ;
 }
@@ -2983,11 +2975,10 @@ static void scrollWindow(ZMapWindow window, GdkEventKey *key_event)
   enum {OVERLAP_FACTOR = 10} ;
   int x_pos, y_pos ;
   int incr ;
-  guint state, keyval ;
+  guint keyval ;
 
   zMapReturnIfFail(window && key_event) ;
 
-  state = key_event->state ;
   keyval = key_event->keyval ;
 
   /* Retrieve current scroll position. */
@@ -3359,8 +3350,6 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
       ZMapFeature highlight_feature ;
       GSignalMatchType signal_match_mask;
       GQuark signal_detail;
-      gulong signal_id;
-
 
       /* Retrieve the data pointer from the event struct */
       memmove(&window_data, &(event->data.b[0]), sizeof(void *)) ;
@@ -3439,10 +3428,10 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
           /* On later versions of the mac I had to add this in to get motion events reported,
            * hopefully this won't mess up other platforms....need to check. */
           gtk_widget_add_events(GTK_WIDGET(window->toplevel), GDK_POINTER_MOTION_MASK) ;
-                  gtk_widget_add_events(GTK_WIDGET(window->canvas), GDK_POINTER_MOTION_MASK) ;
+          gtk_widget_add_events(GTK_WIDGET(window->canvas), GDK_POINTER_MOTION_MASK) ;
 
-          signal_id = g_signal_connect(GTK_OBJECT(window->canvas), g_quark_to_string(signal_detail),
-               GTK_SIGNAL_FUNC(canvasWindowEventCB), (gpointer)window) ;
+          g_signal_connect(GTK_OBJECT(window->canvas), g_quark_to_string(signal_detail),
+                           GTK_SIGNAL_FUNC(canvasWindowEventCB), (gpointer)window) ;
         }
       else
         {
@@ -4131,13 +4120,12 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
              * cursor selecting with mouse seems to go to GDK_SELECTION_PRIMARY
              *  */
             double but_wx, but_wy ;
-            gboolean result ;
 
             foo_canvas_window_to_world(window->canvas,
                                        but_event->x, but_event->y,
                                        &but_wx, &but_wy) ;
 
-            result = zmapWindowZoomFromClipboard(window, but_wx, but_wy) ;
+            zmapWindowZoomFromClipboard(window, but_wx, but_wy) ;
 
             event_handled = TRUE ;
           }
@@ -5179,7 +5167,6 @@ static void unlockWindow(ZMapWindow window, gboolean no_destroy_if_empty)
           /* we only need to allocate a new adjuster if the hash table is not empty...otherwise we can
            * keep our existing adjuster. */
           GtkAdjustment *adjuster ;
-          GtkAdjustment *v_adjuster ;
 
           /* Make a copy any shared adjusters according to orientation of locking */
           if (window->curr_locking == ZMAP_WINLOCK_HORIZONTAL)
@@ -5197,10 +5184,6 @@ static void unlockWindow(ZMapWindow window, gboolean no_destroy_if_empty)
             {
               gtk_scrolled_window_set_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window), adjuster) ;
             }
-
-
-          /* And reset vertical ajuster in scale to ensure it is valid. */
-          v_adjuster = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
 
           zmapWindowScaleCanvasSetVAdjustment(window->ruler, adjuster);
         }
@@ -5768,15 +5751,12 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
         /* If there is a focus item use that.  */
         if ((focus_item = zmapWindowFocusGetHotItem(window->focus)))
           {
-            ZMapFeatureAny context ;
             ZMapFeature feature ;
             gboolean is_transcript ;
             char *dna ;
             gboolean spliced = TRUE, cds = FALSE ;
 
             feature = zmapWindowItemGetFeature(focus_item);
-            context = zMapFeatureGetParentGroup((ZMapFeatureAny)feature,
-                                                ZMAPFEATURE_STRUCT_CONTEXT);
 
             is_transcript = ZMAPFEATURE_IS_TRANSCRIPT(feature) ;
 
@@ -6407,9 +6387,8 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
                         GList *glist = NULL;
                         ZMapStrand set_strand ;
                         ZMapFrame set_frame ;
-                        gboolean result ;
 
-                        result = zmapWindowItemGetStrandFrame(focus_item, &set_strand, &set_frame) ;
+                        zmapWindowItemGetStrandFrame(focus_item, &set_strand, &set_frame) ;
 
                         glist = zmapWindowFToIFindSameNameItems(window,window->context_to_item,
                                                                zMapFeatureStrand2Str(set_strand),
@@ -6746,13 +6725,9 @@ static void jumpColumn(ZMapWindow window, guint keyval)
   if (move_focus)
     {
       ZMapStrand orig_strand ;
-      ZMapWindowContainerGroup container_strand;
       ZMapContainerItemDirection direction ;
 
       orig_strand = zmapWindowContainerFeatureSetGetStrand(ZMAP_CONTAINER_FEATURESET(focus_column)) ;      
-
-      container_strand = zmapWindowContainerUtilsItemGetParentLevel((FooCanvasItem *)focus_column,
-                                                                    ZMAPCONTAINER_LEVEL_BLOCK) ;
 
       if (keyval == GDK_Left)
         direction = ZMAPCONTAINER_ITEM_PREV ;
@@ -6814,8 +6789,6 @@ static void jumpColumn(ZMapWindow window, guint keyval)
     {
       ZMapWindowSelectStruct select = {ZMAPWINDOW_SELECT_SINGLE} ;
       ZMapWindowContainerFeatureSet container_set = (ZMapWindowContainerFeatureSet) focus_column;
-      ZMapFeatureColumn column;
-      GQuark set_id;
       GQuark column_id ;
       char *column_name ;
 
@@ -6835,9 +6808,6 @@ static void jumpColumn(ZMapWindow window, guint keyval)
       column_id = zmapWindowContainerFeaturesetGetColumnId(container_set) ;
       column_name = (char *)g_quark_to_string(column_id) ;
       select.feature_desc.feature_set = g_strdup(column_name) ;
-
-      set_id = zmapWindowContainerFeaturesetGetColumnUniqueId(container_set);
-      column = window->context_map->getSetColumn(set_id) ;
 
       select.type = ZMAPWINDOW_SELECT_SINGLE;
 
@@ -6929,7 +6899,6 @@ static void popUpMenu(GdkEventKey *key_event, ZMapWindow window, FooCanvasItem *
   double worldx, worldy, winx, winy ;
   Window root_window, item_window, child = 0 ;
   Display *display ;
-  Bool result ;
   int dest_x = 0, dest_y= 0 ;
 
   zMapReturnIfFail(window && focus_item) ;
@@ -6977,7 +6946,7 @@ static void popUpMenu(GdkEventKey *key_event, ZMapWindow window, FooCanvasItem *
 
       item_window = GDK_WINDOW_XID(focus_item->canvas->layout.bin_window) ;
 
-      result = XTranslateCoordinates(display, item_window, root_window, winx, winy, &dest_x, &dest_y, &child) ;
+      XTranslateCoordinates(display, item_window, root_window, winx, winy, &dest_x, &dest_y, &child) ;
 
 
       /* Fake a button event....because that's what the menu code uses, we only have to fill in

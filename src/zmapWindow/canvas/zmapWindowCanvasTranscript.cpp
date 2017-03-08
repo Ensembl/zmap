@@ -315,9 +315,6 @@ static void transcriptPaintFeature(ZMapWindowFeaturesetItem featureset,
           if (!(tr->gapped))
             {
               gboolean is_forward = TRUE ;
-              ZMapSpan exon ;
-
-              exon = &g_array_index(transcript->exons, ZMapSpanStruct, exon_index) ;
 
               tr->gapped = zMapWindowCanvasAlignmentMakeGapped(featureset, feature,
                                                                y1, y2,

@@ -232,11 +232,7 @@ static void zmap_window_container_context_set_property(GObject      *gobject,
                                                        const GValue *value,
                                                        GParamSpec   *pspec)
 {
-  ZMapWindowContainerGroup container = NULL ;
-
   zMapReturnIfFail(ZMAP_IS_CONTAINER_GROUP(gobject));
-
-  container = ZMAP_CONTAINER_GROUP(gobject);
 
   switch(param_id)
     {
@@ -253,11 +249,7 @@ static void zmap_window_container_context_get_property(GObject    *gobject,
                                                        GValue     *value,
                                                        GParamSpec *pspec)
 {
-  ZMapWindowContainerContext container_context = NULL ;
-
   zMapReturnIfFail(gobject) ;
-
-  container_context = ZMAP_CONTAINER_CONTEXT(gobject);
 
   switch(param_id)
     {
@@ -382,10 +374,6 @@ static void zmap_window_container_alignment_get_property(GObject    *gobject,
                                                          GValue     *value,
                                                          GParamSpec *pspec)
 {
-  ZMapWindowContainerAlignment container_align;
-
-  container_align = ZMAP_CONTAINER_ALIGNMENT(gobject);
-
   switch(param_id)
     {
     default:
@@ -533,10 +521,6 @@ static void zmap_window_container_block_get_property(GObject    *gobject,
                                                      GValue     *value,
                                                      GParamSpec *pspec)
 {
-  ZMapWindowContainerBlock block_data;
-
-  block_data = ZMAP_CONTAINER_BLOCK(gobject);
-
   switch(param_id)
     {
     default:

@@ -36,6 +36,8 @@
 #include <glib.h>
 
 #include <ZMap/zmapUtils.hpp>
+#include <ZMap/zmapUtilsPrivate.hpp>
+
 
 
 /* Define ZMAP_ASSERT_DISABLE before compiling to disable all asserts. */
@@ -126,11 +128,11 @@ G_STMT_START{                                                            \
     }                                                                    \
   else                                                                   \
     {                                                                    \
-      g_printerr(ZMAP_MSG_FORMAT_STRING " Assertion '%s' failed\n",      \
-                      ZMAP_MSG_FUNCTION_MACRO,                           \
+      g_printerr(ZMAP_MSG_CODE_FORMAT_STRING " Assertion '%s' failed\n",      \
+                      ZMAP_MSG_CODE_FORMAT_ARGS,                           \
                       #EXPR) ;                                           \
-      zMapLogCritical(ZMAP_MSG_FORMAT_STRING " Assertion '%s' failed\n", \
-                      ZMAP_MSG_FUNCTION_MACRO,                           \
+      zMapLogCritical(ZMAP_MSG_CODE_FORMAT_STRING " Assertion '%s' failed\n", \
+                      ZMAP_MSG_CODE_FORMAT_ARGS,                           \
                       #EXPR) ;                                           \
       zMapLogStack();                                                    \
       return;                                                            \
@@ -159,11 +161,11 @@ G_STMT_START{                                                            \
     }                                                                    \
   else                                                                   \
     {                                                                    \
-      g_printerr(ZMAP_MSG_FORMAT_STRING " Assertion '%s' failed\n",      \
-                      ZMAP_MSG_FUNCTION_MACRO,                           \
+      g_printerr(ZMAP_MSG_CODE_FORMAT_STRING " Assertion '%s' failed\n",      \
+                      ZMAP_MSG_CODE_FORMAT_ARGS,                           \
                       #EXPR) ;                                           \
-      zMapLogCritical(ZMAP_MSG_FORMAT_STRING " Assertion '%s' failed\n", \
-                      ZMAP_MSG_FUNCTION_MACRO,                           \
+      zMapLogCritical(ZMAP_MSG_CODE_FORMAT_STRING " Assertion '%s' failed\n", \
+                      ZMAP_MSG_CODE_FORMAT_ARGS,                           \
                       #EXPR) ;                                           \
       zMapLogStack();                                                    \
       return VALUE;                                                      \
@@ -191,11 +193,11 @@ G_STMT_START{                                                                  \
     }                                                                          \
   else                                                                         \
     {                                                                          \
-      g_printerr(ZMAP_MSG_FORMAT_STRING " Runtime check failed (%s)\n",        \
-                      ZMAP_MSG_FUNCTION_MACRO,                                 \
+      g_printerr(ZMAP_MSG_CODE_FORMAT_STRING " Runtime check failed (%s)\n",        \
+                      ZMAP_MSG_CODE_FORMAT_ARGS,                                 \
                       #EXPR) ;                                                 \
-      zMapLogCritical(ZMAP_MSG_FORMAT_STRING " Runtime check failed (%s)\n",   \
-                      ZMAP_MSG_FUNCTION_MACRO,                                 \
+      zMapLogCritical(ZMAP_MSG_CODE_FORMAT_STRING " Runtime check failed (%s)\n",   \
+                      ZMAP_MSG_CODE_FORMAT_ARGS,                                 \
                       #EXPR) ;                                                 \
       zMapLogStack();                                                          \
     }                                                                          \
@@ -204,10 +206,10 @@ G_STMT_START{                                                                  \
 /* Issue a warning if this code is reached */
 #define zMapWarnIfReached()                                               \
 G_STMT_START{                                                             \
-  g_printerr(ZMAP_MSG_FORMAT_STRING " Code should not be reached\n",      \
-                  ZMAP_MSG_FUNCTION_MACRO) ;                              \
-  zMapLogCritical(ZMAP_MSG_FORMAT_STRING " Code should not be reached\n", \
-                  ZMAP_MSG_FUNCTION_MACRO) ;                              \
+  g_printerr(ZMAP_MSG_CODE_FORMAT_STRING " Code should not be reached\n",      \
+                  ZMAP_MSG_CODE_FORMAT_ARGS) ;                              \
+  zMapLogCritical(ZMAP_MSG_CODE_FORMAT_STRING " Code should not be reached\n", \
+                  ZMAP_MSG_CODE_FORMAT_ARGS) ;                              \
   zMapLogStack();                                                         \
 }G_STMT_END
 
@@ -224,8 +226,8 @@ extern gboolean zmap_development_G ;      // patch in/out half working code
 #define zMapDebug(FORMAT, ...)                            \
 G_STMT_START{                                             \
   if (zmap_debug_G)                                       \
-       g_printerr(ZMAP_MSG_FORMAT_STRING FORMAT,          \
-                  ZMAP_MSG_FUNCTION_MACRO,		  \
+       g_printerr(ZMAP_MSG_CODE_FORMAT_STRING FORMAT,          \
+                  ZMAP_MSG_CODE_FORMAT_ARGS,		  \
 		  __VA_ARGS__) ;                          \
 }G_STMT_END
 

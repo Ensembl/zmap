@@ -1290,7 +1290,6 @@ static void zmap_window_featureset_item_item_draw(FooCanvasItem *item, GdkDrawab
   ZMapSkipList sl;
   ZMapWindowCanvasFeature feat = NULL;
   double y1,y2;
-  double width;
   GList *highlight = NULL;        /* must paint selected on top ie last */
   gboolean is_line = FALSE, is_graphic = FALSE ;
   ZMapWindowFeaturesetItem fi = (ZMapWindowFeaturesetItem)item;
@@ -1347,8 +1346,6 @@ static void zmap_window_featureset_item_item_draw(FooCanvasItem *item, GdkDrawab
 
   /* paint all the data in the exposed area */
 
-  //  width = zMapStyleGetWidth(fi->style) - 1;                /* off by 1 error! width = #pixels not end-start */
-  width = fi->width;
 
   /*
    *        get the exposed area
@@ -3195,13 +3192,10 @@ static void zmap_window_featureset_item_set_colour(ZMapWindowCanvasItem   item,
 }
 
 
-
+// what is the point of this function...?????
 /* Called for each new featureset (== column ??), gosh what happens here.... */
 static void zmap_window_featureset_item_item_init(ZMapWindowFeaturesetItem featureset)
 {
-  char *featureset_id ;
-
-  featureset_id = (char *)g_quark_to_string(featureset->id) ;
 
   return ;
 }
@@ -3753,13 +3747,6 @@ int zMapWindowCanvasFeaturesetFilter(gpointer gfilter, double value, gboolean hi
 
       if(fi->bumped)
         {
-          ZMapWindowCompressMode compress_mode;
-
-          if (zMapWindowMarkIsSet(filter->window))
-            compress_mode = ZMAPWINDOW_COMPRESS_MARK ;
-          else
-            compress_mode = ZMAPWINDOW_COMPRESS_ALL ;
-
           zmapWindowColumnBumpRange((FooCanvasItem *)(filter->column), ZMAPBUMP_INVALID, ZMAPWINDOW_COMPRESS_INVALID);
 
           /* dissapointing: we only need to reposition columns to the right of this one */
@@ -4442,12 +4429,9 @@ static void itemLinkSideways(ZMapWindowFeaturesetItem fi)
   ZMapWindowCanvasFeature left, right ;                /* feat -ures */
   GQuark name ;
   ZMapFeatureTypeStyle style = fi->style ;
-  zmapWindowCanvasFeatureType type ;
   gboolean sort_by_featureset = FALSE ;
 
   zMapReturnIfFail(fi) ;
-
-  type = feature_types[zMapStyleGetMode(style)] ;
 
   /* we use the featureset features list which sits there in parallel with the skip list (display index) */
   /* sort by name and start coord */
@@ -4513,21 +4497,6 @@ static void itemLinkSideways(ZMapWindowFeaturesetItem fi)
           left->right = right;
         }
 
-
-      if (sort_by_featureset)
-        {
-          char *name_str, *feat_name_str ;
-
-          name_str = (char *)g_quark_to_string(name) ;
-          feat_name_str = (char *)g_quark_to_string(feat_name) ;
-
-          /* SORTING SEEMS TO BE OK...... */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-          if (name != feat_name)
-            zMapDebugPrintf("featuresets: \"%s\"\t\"%s\"\n", name_str, feat_name_str) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-        }
 
       left = right ;
 

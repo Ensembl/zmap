@@ -657,12 +657,15 @@ gboolean zMapAttParseNameV2(ZMapGFFAttribute pAttribute, GQuark *const SO_acc_ou
  */
 gboolean zMapAttParseName(ZMapGFFAttribute pAttribute, char** const psOut)
 {
-  gboolean bReplaced = FALSE, bResult = FALSE ;
+  gboolean bResult = FALSE ;
   static const char *sMyName = "zMapAttParseName()" ;
   char *sTemp = NULL ;
+
   if (!pAttribute)
     return bResult ;
+
   const char * const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
+
   if (strcmp(sAttributeName_Name, zMapGFFAttributeGetNamestring(pAttribute)))
     {
       zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
@@ -671,8 +674,10 @@ gboolean zMapAttParseName(ZMapGFFAttribute pAttribute, char** const psOut)
 
   if (strlen(sValue))
     {
-      bReplaced = zMapGFFStringUtilsSubstringReplace(sValue, sEscapedEquals, sEquals, &sTemp) ;
-      bReplaced = zMapGFFStringUtilsSubstringReplace(sTemp, sEscapedComma, sComma, psOut) ;
+      zMapGFFStringUtilsSubstringReplace(sValue, sEscapedEquals, sEquals, &sTemp) ;
+
+      zMapGFFStringUtilsSubstringReplace(sTemp, sEscapedComma, sComma, psOut) ;
+
       bResult = TRUE ;
     }
   else
@@ -1772,15 +1777,20 @@ gboolean zMapAttParseReadPairID(ZMapGFFAttribute pAttribute, GQuark * const pgqO
  */
 char* zMapGFFEscape(const char * const sInput )
 {
-  char *sResult = NULL, *sOut1 = NULL, *sOut2 = NULL, *sOut3 = NULL ;
-  gboolean bReplaced = FALSE ;
+  char *sResult = NULL ;
+  char *sOut1 = NULL, *sOut2 = NULL, *sOut3 = NULL ;
 
-  bReplaced = zMapGFFStringUtilsSubstringReplace(sInput, sEquals,    sEscapedEquals,    &sOut1) ;
-  bReplaced = zMapGFFStringUtilsSubstringReplace(sOut1,  sComma,     sEscapedComma,     &sOut2) ;
-  g_free(sOut1) ;                                                                       
-  bReplaced = zMapGFFStringUtilsSubstringReplace(sOut2,  sSemicolon, sEscapedSemicolon, &sOut3) ;
-  g_free(sOut2) ;                                                                       
-  bReplaced = zMapGFFStringUtilsSubstringReplace(sOut3,  sSpace,     sEscapedSpace,     &sResult) ;
+  // Ignore return from zMapGFFStringUtilsSubstringReplace(), don't care if it works or not.
+
+  zMapGFFStringUtilsSubstringReplace(sInput, sEquals,    sEscapedEquals,    &sOut1) ;
+
+  zMapGFFStringUtilsSubstringReplace(sOut1,  sComma,     sEscapedComma,     &sOut2) ;
+  g_free(sOut1) ;
+
+  zMapGFFStringUtilsSubstringReplace(sOut2,  sSemicolon, sEscapedSemicolon, &sOut3) ;
+  g_free(sOut2) ;
+
+  zMapGFFStringUtilsSubstringReplace(sOut3,  sSpace,     sEscapedSpace,     &sResult) ;
   g_free(sOut3) ;
 
   return sResult ;
@@ -1794,15 +1804,20 @@ char* zMapGFFEscape(const char * const sInput )
  */
 char* zMapGFFUnescape(const char * const sInput )
 {
-  char *sResult = NULL, *sOut1 = NULL, *sOut2 = NULL, *sOut3 = NULL ;
-  gboolean bReplaced = FALSE ;
+  char *sResult = NULL ;
+  char *sOut1 = NULL, *sOut2 = NULL, *sOut3 = NULL ;
 
-  bReplaced = zMapGFFStringUtilsSubstringReplace(sInput, sEscapedEquals,    sEquals, &sOut1) ;
-  bReplaced = zMapGFFStringUtilsSubstringReplace(sOut1,  sEscapedComma,     sComma, &sOut2) ;
+  // Ignore return from zMapGFFStringUtilsSubstringReplace(), don't care if it works or not.
+
+  zMapGFFStringUtilsSubstringReplace(sInput, sEscapedEquals,    sEquals, &sOut1) ;
+
+  zMapGFFStringUtilsSubstringReplace(sOut1,  sEscapedComma,     sComma, &sOut2) ;
   g_free(sOut1) ;
-  bReplaced = zMapGFFStringUtilsSubstringReplace(sOut2,  sEscapedSemicolon, sSemicolon, &sOut3) ;
+
+  zMapGFFStringUtilsSubstringReplace(sOut2,  sEscapedSemicolon, sSemicolon, &sOut3) ;
   g_free(sOut2) ;
-  bReplaced = zMapGFFStringUtilsSubstringReplace(sOut3,  sEscapedSpace,     sSpace, &sResult) ;
+
+  zMapGFFStringUtilsSubstringReplace(sOut3,  sEscapedSpace,     sSpace, &sResult) ;
   g_free(sOut3) ;
 
   return sResult ;

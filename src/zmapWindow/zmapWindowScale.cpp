@@ -404,10 +404,8 @@ double zmapWindowDrawScaleBar(GtkWidget *canvas_scrolled_window,
   double scale_width = 70.0;
   PangoFontDescription *font_desc;
   double font_width,font_height;
-  int text_height;
   GdkColor black,grey;
   double tick_width;
-  int scroll_len;
   int seq_len;         /* biggest slice coord to display */
 
   ZMapWindowFeaturesetItem featureset;
@@ -453,19 +451,15 @@ double zmapWindowDrawScaleBar(GtkWidget *canvas_scrolled_window,
   if(seq_len < 10)        /* we get called on start up w/ no sequence */
     return 0;
 
-  scroll_len = scroll_end - scroll_start + 1;
-
   gdk_color_parse("black", &black) ;
   gdk_color_parse("grey", &grey) ;
 
   zMapFoocanvasGetTextDimensions(((FooCanvasItem *) group)->canvas, &font_desc, &font_width, &font_height);
-  text_height = (int) (font_height);
 
   if(!font_height)
     {
       font_height = 14.0;        /* don't just give up ! */
       font_width = 8.0;
-      text_height = 14;
     }
 
 
@@ -483,8 +477,7 @@ double zmapWindowDrawScaleBar(GtkWidget *canvas_scrolled_window,
     tick_width_default = 3,
     tick_width_number = 7,
     tick_width_special = 5 ;
-  int interval_length = 0,
-    interval_start = 0,
+  int interval_start = 0,
     interval_end = 0,
     pixels_per_interval = 0,
     coord_draw = 0,
@@ -499,14 +492,12 @@ double zmapWindowDrawScaleBar(GtkWidget *canvas_scrolled_window,
     str_length_max = 0,
     tick_width_use = 0 ;
   char *tick_label = NULL ;
-  double coord_draw_at = 0.0,
-    coord_draw_at_last = 0.0 ;
+  double coord_draw_at = 0.0 ;
   Tick tick_object = NULL ;
   GList *tick_list = NULL,
     *list = NULL ;
   interval_start = (scroll_start > seq_start ? scroll_start : seq_start) ;  /* max at start of interval */
   interval_end = (scroll_end < seq_end ? scroll_end : seq_end) ;            /* min at end of interval   */
-  interval_length = interval_end - interval_start + 1 ;
 
   /*
    * Find the spacing in base pairs of the tick_interval, and
@@ -642,7 +633,6 @@ double zmapWindowDrawScaleBar(GtkWidget *canvas_scrolled_window,
               //                            NULL, &black, NULL ) ;
           //  }
 
-          coord_draw_at_last = coord_draw_at ;
           destroyTick(tick_object) ;
         }
     }

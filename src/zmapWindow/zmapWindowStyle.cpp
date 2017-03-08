@@ -603,11 +603,6 @@ gboolean zmapWindowFeaturesetSetStyle(GQuark style_id,
 /* Utility function to create the top level dialog */
 static void createToplevel(StyleChange my_data)
 {
-  const char *title = "Edit Style" ;
-
-  if (my_data->create_child)
-    title = "Create Style" ;
-
   my_data->toplevel = zMapGUIDialogNew(NULL, "Edit Style", G_CALLBACK(responseCB), my_data) ;
 
   gtk_dialog_add_buttons(GTK_DIALOG(my_data->toplevel), 

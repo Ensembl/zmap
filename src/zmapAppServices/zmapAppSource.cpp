@@ -2815,14 +2815,14 @@ static void deleteButtonClickedCB(GtkWidget *button, gpointer data)
     {
       zMapCritical("%s", "Please select a track hub to delete") ;
     }
+
+  return ;
 }
 
 
 /* Show a dialog where the user can browse trackhubs that they have previously registered */
 static void trackhubBrowse(MainFrame main_data)
 {
-  bool ok = false ;
-
   zMapReturnIfFail(main_data && main_data->sequence_map && main_data->browse_widg) ;
 
   // Log in first, if not already logged in
@@ -2866,10 +2866,8 @@ static void trackhubBrowse(MainFrame main_data)
 
           if (response == GTK_RESPONSE_OK)
             {
-              if (setEntryFromSelection(list_widget, GTK_ENTRY(main_data->trackdb_id_widg), TrackListColumn::ID))
-                {
-                  ok = true ;
-                }
+              // Ignore return from func, user has not selected anything so nothing to be done.
+              setEntryFromSelection(list_widget, GTK_ENTRY(main_data->trackdb_id_widg), TrackListColumn::ID) ;
             }
 
           gtk_widget_destroy(dialog) ;
@@ -2879,6 +2877,8 @@ static void trackhubBrowse(MainFrame main_data)
           zMapCritical("%s", err_msg.c_str()) ;
         }
     }
+
+  return ;
 }
 
 
@@ -2887,6 +2887,8 @@ static void trackhubBrowseCB(GtkWidget *widget, gpointer cb_data)
   MainFrame main_data = (MainFrame)cb_data ;
 
   trackhubBrowse(main_data) ;
+
+  return ;
 }
 
 

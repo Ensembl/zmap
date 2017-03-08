@@ -563,10 +563,7 @@ void zmapWindowFocusAddItemsType(ZMapWindowFocus focus, GList *glist,
                                  FooCanvasItem *hot, ZMapFeature hot_feature,
                                  ZMapWindowFocusType type)
 {
-  gboolean first;
   FooCanvasItem *foo;
-
-  first = glist && glist->data;        /* ie is there one? */
 
   for (; glist ; glist = glist->next)
     {
@@ -1171,12 +1168,7 @@ static void highlightCB(gpointer list_data, gpointer user_data)
   ZMapWindowFocusItem data = (ZMapWindowFocusItem)list_data;
   ZMapWindow window = (ZMapWindow)user_data ;
 
-  GdkColor *highlight = NULL;
-
   highlightItem(window, data, NULL) ;
-
-  if(window->highlights_set.item)
-    highlight = &(window->colour_item_highlight);
 
   return ;
 }

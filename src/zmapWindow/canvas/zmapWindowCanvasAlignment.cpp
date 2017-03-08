@@ -165,7 +165,6 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
   gulong ufill,outline;
   int cx1, cy1, cx2, cy2,
     colours_set, fill_set, outline_set ;
-  gulong edge;
   gboolean truncated_start = FALSE,
     truncated_end = FALSE,
     ignore_truncation_glyphs = FALSE ;
@@ -248,10 +247,6 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
                                             zMapWindowCanvasFeatureGetHeatColour(0xffffffff,ufill,feature->score));
         }
 
-      if (zMapStyleIsSquash(style))/* diff colours for first and last box */
-        {
-          edge = 0x808080ff;
-        }
     }
 
   /*
@@ -1076,7 +1071,6 @@ static AlignGap makeGapped(ZMapFeature feature, double offset, FooCanvasItem *fo
   int i ;
   ZMapAlignBlock last_ab ;
   AlignGap last_box, last_ag ;
-  int prev_q2, next_q1 ;
 
   zMapReturnValIfFail(foo && feature, NULL) ;
 
@@ -1085,7 +1079,7 @@ static AlignGap makeGapped(ZMapFeature feature, double offset, FooCanvasItem *fo
   gaps = align_gaps ;
   n = align_gaps->len ;
 
-  for (i = 0, prev_q2 = 0, next_q1 = 0, last_ab = NULL, last_box = NULL, last_ag = NULL ; i < n ; i++)
+  for (i = 0, last_ab = NULL, last_box = NULL, last_ag = NULL ; i < n ; i++)
     {
       AlignGap ag = NULL ;
       ZMapAlignBlock ab ;
@@ -1182,8 +1176,6 @@ static AlignGap makeGapped(ZMapFeature feature, double offset, FooCanvasItem *fo
           if (!display_ag)
             display_ag = ag;
         }
-
-      prev_q2 = ab->q2 ;
 
       last_ab = ab ;
     }

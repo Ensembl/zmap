@@ -68,7 +68,12 @@ ZMapConfigIni zMapConfigIniNew(void)
 
   // From 2.36 type init is automatic.
   if (glib_major_version == 2 && glib_minor_version < 36)
-    g_type_init() ; 
+    {
+#if ( GLIB_MAJOR_VERSION > 2 && GLIB_MINOR_VERSION < 36)
+      g_type_init() ; 
+#endif
+
+    }
 
   return config;
 }

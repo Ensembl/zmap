@@ -1620,9 +1620,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
 #endif
   static int ind_mask = -1;
   ZMapGUIMenuItem menu_item = NULL ;
-  static gboolean compress = FALSE ;
   ZMapWindowContainerGroup column_container, block_container;
-  FooCanvasGroup *column_group =  NULL;
 
   zMapReturnValIfFail(menu_data, menu) ;
 
@@ -1678,16 +1676,13 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
   /* Set "Compress" toggle item. */
   menu_item = &(menu[MENU_INDEX_COMPRESS]) ;
   column_container = zmapWindowContainerCanvasItemGetContainer(menu_data->item) ;
-  column_group = (FooCanvasGroup *)column_container;
   block_container = zmapWindowContainerUtilsGetParentLevel(column_container, ZMAPCONTAINER_LEVEL_BLOCK) ;
   if (zmapWindowContainerBlockIsCompressedColumn((ZMapWindowContainerBlock)block_container))
     {
-      compress = TRUE ;
       menu_item->type = ZMAPGUI_MENU_TOGGLEACTIVE ;
     }
   else
     {
-      compress = FALSE ;
       menu_item->type = ZMAPGUI_MENU_TOGGLE ;
     }
 
@@ -2405,7 +2400,6 @@ gboolean zMapWindowExportFASTA(ZMapWindow window, ZMapFeatureAny feature_in, GEr
  */
 static void exportMenuCB(int menu_item_id, gpointer callback_data)
 {
-  gboolean result = FALSE ;
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
   ZMapFeatureAny feature = NULL ;
   GError *error = NULL ;
@@ -2431,23 +2425,23 @@ static void exportMenuCB(int menu_item_id, gpointer callback_data)
     {
     case EXPORT_DNA: /* export dna */
       {
-        result = zMapWindowExportFASTA(menu_data->window, feature, &error) ;
+        zMapWindowExportFASTA(menu_data->window, feature, &error) ;
         break ;
       }
     case EXPORT_FEATURES_ALL: /* export all features */
       {
-        result = zMapWindowExportFeatureSets(menu_data->window, container->featuresets, FALSE, NULL, &error) ;
+        zMapWindowExportFeatureSets(menu_data->window, container->featuresets, FALSE, NULL, &error) ;
         break ;
       }
     case EXPORT_FEATURES_MARKED: /* features in marked region */
       {
-        result = zMapWindowExportFeatureSets(menu_data->window, container->featuresets, TRUE, NULL, &error) ;
+        zMapWindowExportFeatureSets(menu_data->window, container->featuresets, TRUE, NULL, &error) ;
         break;
       }
     case EXPORT_FEATURES_CLICKED: /* clicked feature */
       {
         if (feature)
-          result = zMapWindowExportFeatures(menu_data->window, FALSE, FALSE, feature, NULL, &error) ;
+          zMapWindowExportFeatures(menu_data->window, FALSE, FALSE, feature, NULL, &error) ;
         break;
       }
     default:
@@ -2616,9 +2610,7 @@ static void copyPasteMenuCB(int menu_item_id, gpointer callback_data)
 
   if (mode == ZMAPWINDOW_PASTE)
     {
-      gboolean result ;
-
-      result = zmapWindowZoomFromClipboard(menu_data->window, menu_data->x, menu_data->y) ;
+      zmapWindowZoomFromClipboard(menu_data->window, menu_data->x, menu_data->y) ;
     }
   else
     {

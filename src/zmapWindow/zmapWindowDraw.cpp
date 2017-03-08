@@ -641,16 +641,11 @@ void zmapWindowColumnShow(FooCanvasGroup *column_group)
 void zmapWindowColumnsCompress(FooCanvasItem *column_item, ZMapWindow window, ZMapWindowCompressMode compress_mode)
 {
   ZMapWindowContainerGroup column_container, block_container;
-  FooCanvasGroup *column_group =  NULL;
   GList *compressed, *bumped;
   VisCoordsStruct coords ;
   double wx1, wy1, wx2, wy2 ;
 
   column_container = zmapWindowContainerCanvasItemGetContainer(column_item);
-  if(column_container)
-    column_group = (FooCanvasGroup *)column_container;
-  else
-    zMapWarnIfReached() ;
 
   block_container = zmapWindowContainerUtilsGetParentLevel(column_container, ZMAPCONTAINER_LEVEL_BLOCK) ;
 
@@ -917,8 +912,6 @@ static void positionColumnCB(ZMapWindowContainerGroup container, FooCanvasPoints
   GList *l ;
   FooCanvasItem *foo ;
   ZMapWindowFeaturesetItem cfs = NULL;
-  ZMapWindowContainerBlock block;
-  ZMapWindowContainerFeatureSet featureset;
   double col_width, width;
   gboolean debug = FALSE ;
 
@@ -935,7 +928,6 @@ static void positionColumnCB(ZMapWindowContainerGroup container, FooCanvasPoints
       break ;
 
     case ZMAPCONTAINER_LEVEL_BLOCK:
-      block = (ZMapWindowContainerBlock) container ;
       pc->block_spacing_x = container->child_spacing ;
       pc->x1 -= container->child_spacing ;
       pc->last_left = pc->last_right = 0.0 ;
@@ -951,7 +943,6 @@ static void positionColumnCB(ZMapWindowContainerGroup container, FooCanvasPoints
       if (!(foo->object.flags & FOO_CANVAS_ITEM_VISIBLE))
         break;
 
-      featureset = (ZMapWindowContainerFeatureSet) container;
       col_width = 0.0;
       cfs = NULL;
 

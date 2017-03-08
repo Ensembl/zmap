@@ -665,13 +665,8 @@ static void processFilterColumns(ZMapWindowContainerGroup container, FooCanvasPo
         ZMapWindowContainerFeatureSet selected_container_set = filter_data->selected_container_set ;
         ZMapWindowFeaturesetItem featureset_item ;
 
-        const char *col_name ;
-
-
         container_set = ZMAP_CONTAINER_FEATURESET(zmapWindowContainerChildGetParent(FOO_CANVAS_ITEM(container))) ;
         filter_data->curr_target_column = container_set ;
-
-        col_name = zmapWindowContainerFeaturesetGetColumnName(container_set) ;
 
         /* For filter-sensitive column(s) on same strand as the selected feature(s):
          * if there's no target column (== do all cols) or this is the target column
@@ -689,11 +684,9 @@ static void processFilterColumns(ZMapWindowContainerGroup container, FooCanvasPo
              * currently don't handle any error here, just go ahead and apply next filter. */
             if (filter_data->curr_target_column->curr_filter_type != ZMAP_CANVAS_FILTER_NONE)
               {
-                ZMapWindowContainerFilterRC result ;
-
-                result = unfilterFeatures(filter_data->filter_action,
-                                          selected_container_set,
-                                          filter_data->curr_target_column) ;
+                unfilterFeatures(filter_data->filter_action,
+                                 selected_container_set,
+                                 filter_data->curr_target_column) ;
               }
 
             if (filter_data->filter_action != ZMAP_CANVAS_ACTION_HIGHLIGHT_SPLICE)
@@ -733,7 +726,6 @@ static void filterColumn(FeatureFilter filter_data, ZMapWindowFeaturesetItem fea
   GList *grouped_features ;
   GList *match_list ;
   /* debug..... */
-  const char *col_name ;
   zmapWindowCanvasFeatureType feature_type ;
 
 
@@ -745,9 +737,6 @@ static void filterColumn(FeatureFilter filter_data, ZMapWindowFeaturesetItem fea
 
   selected_set = filter_data->selected_container_set ;
   target_set = filter_data->curr_target_column ;
-
-
-  col_name = zmapWindowContainerFeaturesetGetColumnName(target_set) ;
 
 
   filter_data->curr_splices = filter_data->splices ;
@@ -884,11 +873,8 @@ static void filterFeatureCB(gpointer data, gpointer user_data)
   int slop ;
   gboolean cds_match = FALSE ;
 
-  char *feature_name ;
 
   feature = match_data->feature ;
-
-  feature_name = zMapFeatureName((ZMapFeatureAny)feature) ; /* debug.... */
 
   filter_data->tmp_splice_matches = filter_data->tmp_non_matches = NULL ;
 
@@ -1085,12 +1071,7 @@ static void highlightFeature(gpointer data, gpointer user_data)
   gboolean cds_match = FALSE ;
   int slop ;
 
-  char *feature_name ;
-
   feature = zMapWindowCanvasFeatureGetFeature(feature_item) ;
-
-  feature_name = zMapFeatureName((ZMapFeatureAny)feature) ;
-  
 
   /* Keep the head of the splices to be compared moving down through the coords list
    * as we move through the features, note we can do this because splices and features are
@@ -1239,12 +1220,7 @@ static void feature2Match(gpointer data, gpointer user_data)
   ZMapFeature feature ;
   MatchData match_data ;
 
-  char *feature_name ;
-
   feature = zMapWindowCanvasFeatureGetFeature(feature_item) ;
-
-
-  feature_name = zMapFeatureUniqueName((ZMapFeatureAny)feature) ;
 
   if (!(match_data = (MatchData)g_hash_table_lookup(filter_data->match_features, GUINT_TO_POINTER(feature->unique_id))))
     {
@@ -1327,13 +1303,12 @@ static void group2Feature(gpointer data, gpointer user_data)
     {
       ZMapWindowCanvasFeature tmp_item ;
       ZMapFeature tmp_feature ;
-      gboolean result ;
 
       tmp_item = (ZMapWindowCanvasFeature)(curr->data) ;
       tmp_feature = zMapWindowCanvasFeatureGetFeature(tmp_item) ;
 
       /* Build up the "exons" array using the matches as exons. */
-      result = zMapFeatureTranscriptMergeExon(match_data->feature, tmp_feature->x1, tmp_feature->x2) ;
+      zMapFeatureTranscriptMergeExon(match_data->feature, tmp_feature->x1, tmp_feature->x2) ;
 
       match_data->feature_items = g_list_append(match_data->feature_items, tmp_item) ;
 

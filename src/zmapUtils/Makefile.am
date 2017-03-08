@@ -46,6 +46,7 @@ zmapString.cpp \
 zmapUrl.cpp \
 zmapUrlUtils.cpp \
 zmapUtils.cpp \
+zmapUtilsPrivate.cpp \
 zmapUtilsSpawn.cpp \
 zmapUtilsSystem.cpp \
 zmapUtilsUsers.cpp \

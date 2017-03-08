@@ -796,8 +796,6 @@ FooCanvasItem *zmapWindowFeatureFactoryRunSingle(GHashTable *ftoi_hash,
 
       if(ftoi_hash)
         {
-          gboolean status ;
-
           if(!feature_stack->col_hash[strand])
             {
               feature_stack->col_hash[strand] = zmapWindowFToIGetSetHash(ftoi_hash,
@@ -806,8 +804,8 @@ FooCanvasItem *zmapWindowFeatureFactoryRunSingle(GHashTable *ftoi_hash,
                                                                          feature_stack->feature_set->unique_id, strand, frame);
             }
 
-          status = zmapWindowFToIAddSetFeature(feature_stack->col_hash[strand],
-                                               feature->unique_id, feature_item, feature);
+          zmapWindowFToIAddSetFeature(feature_stack->col_hash[strand],
+                                      feature->unique_id, feature_item, feature);
 
         }
     }
@@ -1336,7 +1334,6 @@ void zmapWindowFeatureCallXRemote(ZMapWindow window, ZMapFeatureAny feature_any,
   ZMapXMLUtilsEventStack xml_elements ;
   ZMapWindowSelectStruct select = {(ZMapWindowSelectType)0} ;
   ZMapFeatureSetStruct feature_set = {0} ;
-  ZMapFeatureSet multi_set ;
   ZMapFeature feature_copy ;
   int chr_bp ;
   RemoteData remote_data ;
@@ -1403,8 +1400,6 @@ void zmapWindowFeatureCallXRemote(ZMapWindow window, ZMapFeatureAny feature_any,
 
   feature_set.features = g_hash_table_new(NULL, NULL) ;
   g_hash_table_insert(feature_set.features, GINT_TO_POINTER(feature_copy->unique_id), feature_copy) ;
-
-  multi_set = &feature_set ;
 
 
   /* I don't get this at all... */

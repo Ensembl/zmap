@@ -483,11 +483,9 @@ static GtkWidget *makeFiltersPanel(SearchData search_data)
 {
   GtkWidget *frame ;
   GtkWidget *topbox, *hbox, *entrybox, *labelbox, *entry, *label;
-  ZMapFeatureContext context ;
 
-  context = (ZMapFeatureContext)zMapFeatureGetParentGroup(search_data->feature_any,
-                                                          ZMAPFEATURE_STRUCT_CONTEXT) ;
-
+  zMapFeatureGetParentGroup(search_data->feature_any,
+                            ZMAPFEATURE_STRUCT_CONTEXT) ;
 
   setFilterDefaults(search_data) ;
 
@@ -688,7 +686,7 @@ static GQuark manage_quark_from_entry(GQuark user_set, GQuark original,
 static void searchCB(GtkWidget *widget, gpointer cb_data)
 {
   SearchData search_data = (SearchData)cb_data ;
-  char *align_txt, *block_txt, *strand_txt, *frame_txt, *column_txt, *set_text, *feature_txt  ;
+  char *strand_txt, *frame_txt, *feature_txt  ;
   char *start_txt, *end_text ;
   gboolean locus ;
   GQuark align_id, block_id, column_id, set_id, feature_id ;
@@ -701,7 +699,6 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 
   wild_card_id = g_quark_from_string(wild_card_str) ;
 
-  align_txt = block_txt = strand_txt = frame_txt = column_txt = set_text = feature_txt = NULL ;
   align_id = block_id = column_id = set_id = feature_id = 0 ;
 
 
@@ -980,9 +977,6 @@ static void setFilterDefaults(SearchData search_data)
 {
   ZMapFeatureAny feature_any = search_data->feature_any ;
   const char *wild_card_str = "*" ;
-  GQuark wild_card_id ;
-
-  wild_card_id = g_quark_from_string(wild_card_str) ;
 
   search_data->strand_txt = search_data->frame_txt = wild_card_str ;
 
@@ -1121,24 +1115,18 @@ static ZMapFeatureContextExecuteStatus fillAllComboList(GQuark key, gpointer dat
   ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
   AllComboLists all_data = (AllComboLists)user_data;
   ZMapFeatureLevelType feature_type = ZMAPFEATURE_STRUCT_INVALID;
-  ZMapFeatureAlignment align = NULL;
-  ZMapFeatureBlock     block = NULL;
-  ZMapFeatureSet feature_set = NULL;
 
   feature_type = feature_any->struct_type;
 
   switch(feature_type)
     {
     case ZMAPFEATURE_STRUCT_ALIGN:
-      align = (ZMapFeatureAlignment)feature_any;
       all_data->align_list = g_list_prepend(all_data->align_list, GUINT_TO_POINTER(key));
       break;
     case ZMAPFEATURE_STRUCT_BLOCK:
-      block = (ZMapFeatureBlock)feature_any;
       all_data->block_list = g_list_prepend(all_data->block_list, GUINT_TO_POINTER(key));
       break;
     case ZMAPFEATURE_STRUCT_FEATURESET:
-      feature_set   = (ZMapFeatureSet)feature_any;
       all_data->column_list   = g_list_prepend(all_data->column_list,   GUINT_TO_POINTER(key));
       break;
       /* feature_set list initialised to all in current column */

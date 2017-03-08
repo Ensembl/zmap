@@ -427,12 +427,9 @@ gboolean zMapWindowContainerFeatureSetIsVisible(FooCanvasItem *feature_item)
 {
   gboolean result = FALSE ;
   ZMapWindowContainerGroup feature_set_container;
-  ZMapWindowContainerFeatureSet container;
 
   if ((feature_set_container = zmapWindowContainerCanvasItemGetContainer(feature_item)))
     {
-      container = (ZMapWindowContainerFeatureSet)feature_set_container;
-
       result = (feature_item->object.flags & FOO_CANVAS_ITEM_VISIBLE) ;
     }
 

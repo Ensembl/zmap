@@ -991,7 +991,7 @@ static gboolean setGlyph(FooCanvasItem *foo, ZMapWindowCanvasGlyph glyph,
   double min_val = 0.0, max_val = 0.0,range;
   ZMapStyleGlyphStrand strand = ZMAPSTYLE_GLYPH_STRAND_INVALID;
   ZMapStyleGlyphAlign align;
-  double offset = 0.0, origin = 0.0;
+  double origin = 0.0;
   GdkColor *draw_col = NULL, *fill_col = NULL, *border_col = NULL;
 
 
@@ -1111,11 +1111,11 @@ static gboolean setGlyph(FooCanvasItem *foo, ZMapWindowCanvasGlyph glyph,
           // if config is poor they'll look silly so no need for an error message
 
           align = zMapStyleGetAlign(style);
-          offset = col_width / 2;
+
           if(align == ZMAPSTYLE_GLYPH_ALIGN_LEFT)
-            origin = 0.0;                // -= offset;
+            origin = 0.0;
           else if(align == ZMAPSTYLE_GLYPH_ALIGN_RIGHT)
-            origin = col_width;         // += offset;
+            origin = col_width;
         }
     }
 
@@ -1454,12 +1454,10 @@ static void glyphDraw(ZMapWindowFeaturesetItem featureset,
       GdkColor c;
       gulong fill_pixel = 0, outline_pixel = 0 ;
       int i, min_x, max_x, min_y, max_y, curr_x, curr_y ;
-      int status ;
 
-
-      status = zMapWindowCanvasFeaturesetGetColours(featureset,
-                                                    (ZMapWindowCanvasFeature)glyph,
-                                                    &fill_pixel, &outline_pixel) ;
+      zMapWindowCanvasFeaturesetGetColours(featureset,
+                                           (ZMapWindowCanvasFeature)glyph,
+                                           &fill_pixel, &outline_pixel) ;
       if (fill_flag)
         {
           /* For GF splices only do this when focussed */

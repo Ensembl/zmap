@@ -679,7 +679,7 @@ gboolean zMapCanvasDrawBoxGapped(GdkDrawable *drawable,
   /* Draw full gapped alignment boxes, colinear lines etc etc. */
   AlignGap ag;
   GdkColor c;
-  int cx1, cy1, cx2, cy2 ;
+  int cx1, cy1, cx2 ;
   int gx, gy1, gy2 ;
 
 
@@ -699,7 +699,6 @@ gboolean zMapCanvasDrawBoxGapped(GdkDrawable *drawable,
   /* get item canvas coords.  gaps data is relative to feature y1 in pixel coordinates */
   foo_canvas_w2c(foo->canvas, x1, feature->feature->x1 - featureset->start + featureset->dy, &cx1, &cy1) ;
   foo_canvas_w2c(foo->canvas, x2, 0, &cx2, NULL) ;
-  cy2 = cy1 ;
 
   for (ag = gapped ; ag ; ag = ag->next)
     {

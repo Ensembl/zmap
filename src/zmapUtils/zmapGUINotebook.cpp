@@ -1091,7 +1091,6 @@ static void makeChapterCB(gpointer data, gpointer user_data)
   ZMapGuiNotebookChapter chapter = (ZMapGuiNotebookChapter)data ;
   MakeNotebook make_notebook = (MakeNotebook)user_data ;
   GtkWidget *notebook_widget, *button ;
-  gint notebook_pos ;
 
 
   /* Add notebooks, each notebook's widget is supplied to its corresponding button
@@ -1111,11 +1110,11 @@ static void makeChapterCB(gpointer data, gpointer user_data)
   gtk_container_add(GTK_CONTAINER(make_notebook->notebook_chooser), button) ;
   g_signal_connect(G_OBJECT(button), "pressed", G_CALLBACK(changeNotebookCB), make_notebook) ;
 
-  notebook_pos = gtk_notebook_append_page(GTK_NOTEBOOK(make_notebook->notebook_stack), notebook_widget, NULL) ;
+  gtk_notebook_append_page(GTK_NOTEBOOK(make_notebook->notebook_stack), notebook_widget, NULL) ;
 
   g_list_foreach(chapter->pages, makePageCB, make_notebook) ;
 
-  if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)))
+  if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)))
     make_notebook->current_focus_chapter = chapter;
 
   return ;
@@ -1129,7 +1128,6 @@ static void makePageCB(gpointer data, gpointer user_data)
   ZMapGuiNotebookPage page = (ZMapGuiNotebookPage)data ;
   MakeNotebook make_notebook = (MakeNotebook)user_data ;
   GtkWidget *notebook_label ;
-  int notebook_index ;
 
   /* Put code here for a page... */
   notebook_label = gtk_label_new(g_quark_to_string(page->name)) ;
@@ -1138,8 +1136,8 @@ static void makePageCB(gpointer data, gpointer user_data)
 
   g_list_foreach(page->subsections, makeSubsectionCB, make_notebook) ;
 
-  notebook_index = gtk_notebook_append_page(GTK_NOTEBOOK(make_notebook->curr_notebook),
-    make_notebook->curr_page_vbox, notebook_label) ;
+  gtk_notebook_append_page(GTK_NOTEBOOK(make_notebook->curr_notebook),
+                           make_notebook->curr_page_vbox, notebook_label) ;
 
   return ;
 }
@@ -1347,7 +1345,6 @@ static void makeTagValueCB(gpointer data, gpointer user_data)
   ZMapGuiNotebookTagValue tag_value = (ZMapGuiNotebookTagValue)data ;
   MakeNotebook make_notebook = (MakeNotebook)user_data ;
   ZMapGuiNotebook notebook = make_notebook->notebook_spec ;
-  GtkWidget *container = NULL ;
 
   switch(tag_value->display_type)
     {
@@ -1406,7 +1403,7 @@ static void makeTagValueCB(gpointer data, gpointer user_data)
           {
           GtkWidget *hbox ;
 
-          container = hbox = gtk_hbox_new(FALSE, GUI_NOTEBOOK_BOX_SPACING) ;
+          hbox = gtk_hbox_new(FALSE, GUI_NOTEBOOK_BOX_SPACING) ;
           gtk_box_pack_start(GTK_BOX(make_notebook->curr_paragraph_vbox), hbox, FALSE, TRUE, GUI_NOTEBOOK_BOX_PADDING);
 
           gtk_box_pack_start(GTK_BOX(hbox), tag,   TRUE, TRUE, GUI_NOTEBOOK_BOX_PADDING);

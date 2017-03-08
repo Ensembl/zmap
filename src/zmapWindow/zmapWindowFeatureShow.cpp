@@ -727,7 +727,6 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
   ZMapGuiNotebookPage page = NULL ;
   ZMapGuiNotebookSubsection subsection = NULL ;
   ZMapGuiNotebookParagraph paragraph = NULL ;
-  ZMapGuiNotebookTagValue tag_value = NULL ;
   ZMapFeatureTypeStyle style = NULL ;
   const char *chapter_title = NULL, *page_title = NULL, *description = NULL ;
   char *tmp = NULL ;
@@ -820,10 +819,10 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
       else
         feature_name = g_strdup(g_quark_to_string(feature->original_id)) ;
 
-      tag_value = zMapGUINotebookCreateTagValue(paragraph, "Feature Name", NULL,
-                                                ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-                                                "string", feature_name,
-                                                NULL) ;
+      zMapGUINotebookCreateTagValue(paragraph, "Feature Name", NULL,
+                                    ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                    "string", feature_name,
+                                    NULL) ;
 
       if (show->editable)
         {
@@ -835,9 +834,9 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
           if (show->zmapWindow->int_values[ZMAPINT_SCRATCH_ATTRIBUTE_FEATURESET])
             featureset_name = g_quark_to_string(show->zmapWindow->int_values[ZMAPINT_SCRATCH_ATTRIBUTE_FEATURESET]) ;
 
-          tag_value = zMapGUINotebookCreateTagValue(paragraph, "Feature Set", "Please specify the Feature Set that you would like to save the feature to",
-                                                    ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-                                                    "string", featureset_name, NULL) ;
+          zMapGUINotebookCreateTagValue(paragraph, "Feature Set", "Please specify the Feature Set that you would like to save the feature to",
+                                        ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                        "string", featureset_name, NULL) ;
         }
       else
         {
@@ -846,29 +845,29 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
            * update when the user sets the featureset */
           style = *feature->style; /* zMapFindStyle(show->zmapWindow->display_styles, feature->style_id); */
 
-          tag_value = zMapGUINotebookCreateTagValue(paragraph, "Feature Group [style_id]", NULL,
-                                                    ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-                                                    "string", g_strdup(zMapStyleGetName(style)), NULL) ;
+          zMapGUINotebookCreateTagValue(paragraph, "Feature Group [style_id]", NULL,
+                                        ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                        "string", g_strdup(zMapStyleGetName(style)), NULL) ;
 
           if (feature && feature->parent )
             {
-              tag_value = zMapGUINotebookCreateTagValue(paragraph, "Feature Source", NULL,
-                                                        ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-                                                        "string", g_strdup(g_quark_to_string(feature->parent->original_id)), NULL) ;
+              zMapGUINotebookCreateTagValue(paragraph, "Feature Source", NULL,
+                                            ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                            "string", g_strdup(g_quark_to_string(feature->parent->original_id)), NULL) ;
             }
           if ((description = zMapStyleGetDescription(style)))
             {
-              tag_value = zMapGUINotebookCreateTagValue(paragraph, "Style Description", NULL,
-                                                        ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,   /* SCROLLED_TEXT,*/
-                                                        "string", g_strdup(description), NULL) ;
+              zMapGUINotebookCreateTagValue(paragraph, "Style Description", NULL,
+                                            ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,   /* SCROLLED_TEXT,*/
+                                            "string", g_strdup(description), NULL) ;
             }
         }
 
       if ((notes = zmapWindowFeatureDescription(feature)))
         {
-          tag_value = zMapGUINotebookCreateTagValue(paragraph, "Notes", NULL,
-                                                    ZMAPGUI_NOTEBOOK_TAGVALUE_SCROLLED_TEXT,
-                                                    "string", g_strdup(notes), NULL) ;
+          zMapGUINotebookCreateTagValue(paragraph, "Notes", NULL,
+                                        ZMAPGUI_NOTEBOOK_TAGVALUE_SCROLLED_TEXT,
+                                        "string", g_strdup(notes), NULL) ;
         }
 
 
@@ -883,19 +882,19 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
           paragraph = zMapGUINotebookCreateParagraph(subsection, NULL,
                                                      ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE, NULL, NULL) ;
 
-          tag_value = zMapGUINotebookCreateTagValue(paragraph, "Align Type", NULL,
-                                                    ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-                                                    "string", g_strdup(zMapFeatureHomol2Str(feature->feature.homol.type)),
-                                                    NULL) ;
+          zMapGUINotebookCreateTagValue(paragraph, "Align Type", NULL,
+                                        ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                        "string", g_strdup(zMapFeatureHomol2Str(feature->feature.homol.type)),
+                                        NULL) ;
 
           if (feature->feature.homol.length)
             query_length = g_strdup_printf("%d", feature->feature.homol.length) ;
           else
             query_length = g_strdup("<NOT SET>") ;
-          tag_value = zMapGUINotebookCreateTagValue(paragraph, "Query length", NULL,
-                                                    ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-                                                    "string", query_length,
-                                                    NULL) ;
+          zMapGUINotebookCreateTagValue(paragraph, "Query length", NULL,
+                                        ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                        "string", query_length,
+                                        NULL) ;
 
           /* Get a list of all the matches for this sequence.... */
           getAllMatches(show->zmapWindow, feature, item, subsection) ;
@@ -918,11 +917,11 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
           else
             tmp = g_strdup_printf("%s", NOT_SET_TEXT) ;
 
-          tag_value = zMapGUINotebookCreateTagValue(paragraph, "CDS", NULL,
-                                                    ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-                                                    "string",
-                                                    tmp,
-                                                    NULL) ;
+          zMapGUINotebookCreateTagValue(paragraph, "CDS", NULL,
+                                        ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                        "string",
+                                        tmp,
+                                        NULL) ;
 
           /* NOTE
            * in Otterlace start not found is displayed as <not set> or 1 or 2 or 3
@@ -937,22 +936,22 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
           else
             tmp = g_strdup_printf("%s", NOT_SET_TEXT) ;
 
-          tag_value = zMapGUINotebookCreateTagValue(paragraph, "Start Not Found", NULL,
-                                                    ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-                                                    "string",
-                                                    tmp,
-                                                    NULL) ;
+          zMapGUINotebookCreateTagValue(paragraph, "Start Not Found", NULL,
+                                        ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                        "string",
+                                        tmp,
+                                        NULL) ;
 
           if (feature->feature.transcript.flags.end_not_found)
             tmp = g_strdup_printf("%s", SET_TEXT) ;
           else
             tmp = g_strdup_printf("%s", NOT_SET_TEXT) ;
 
-          tag_value = zMapGUINotebookCreateTagValue(paragraph, "End Not Found", NULL,
-                                                    ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-                                                    "string",
-                                                    tmp,
-                                                    NULL) ;
+          zMapGUINotebookCreateTagValue(paragraph, "End Not Found", NULL,
+                                        ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                        "string",
+                                        tmp,
+                                        NULL) ;
         }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
@@ -995,11 +994,11 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
                   tmp = g_strdup_printf("%s", NOT_SET_TEXT) ;
                 }
 
-              tag_value = zMapGUINotebookCreateTagValue(paragraph, "CDS (start, end)", NULL,
-                                                        ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-                                                        "string",
-                                                        tmp,
-                                                        NULL) ;
+              zMapGUINotebookCreateTagValue(paragraph, "CDS (start, end)", NULL,
+                                            ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                            "string",
+                                            tmp,
+                                            NULL) ;
 
               /* NOTE
                * in Otterlace start not found is displayed as <not set> or 1 or 2 or 3
@@ -1014,22 +1013,22 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
               else
                 tmp = g_strdup_printf("%s", NOT_SET_TEXT) ;
 
-              tag_value = zMapGUINotebookCreateTagValue(paragraph, "Start Not Found", NULL,
-                                                        ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-                                                        "string",
-                                                        tmp,
-                                                        NULL) ;
+              zMapGUINotebookCreateTagValue(paragraph, "Start Not Found", NULL,
+                                            ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                            "string",
+                                            tmp,
+                                            NULL) ;
 
               if (feature->feature.transcript.flags.end_not_found)
                 tmp = g_strdup_printf("%s", SET_TEXT) ;
               else
                 tmp = g_strdup_printf("%s", NOT_SET_TEXT) ;
 
-              tag_value = zMapGUINotebookCreateTagValue(paragraph, "End Not Found", NULL,
-                                                        ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-                                                        "string",
-                                                        tmp,
-                                                        NULL) ;
+              zMapGUINotebookCreateTagValue(paragraph, "End Not Found", NULL,
+                                            ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                            "string",
+                                            tmp,
+                                            NULL) ;
             }
         }
     }
@@ -1042,7 +1041,7 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
 void featureShowDialogResponseCB(GtkDialog *dialog, gint response_id, gpointer data)
 {
   switch (response_id)
-  {
+    {
     case GTK_RESPONSE_APPLY:
       /* Apply is the response to the Create button. We save the temp feature and then create a
        * real feature from it. */
@@ -1062,7 +1061,7 @@ void featureShowDialogResponseCB(GtkDialog *dialog, gint response_id, gpointer d
 
     default:
       break;
-  };
+    };
 }
 
 
@@ -1326,11 +1325,6 @@ static void requestDestroyCB(gpointer data, guint cb_action, GtkWidget *widget)
 
 static void helpMenuCB(gpointer data, guint cb_action, GtkWidget *widget)
 {
-  ZMapWindowFeatureShow feature_show = (ZMapWindowFeatureShow)data ;
-  GtkWidget *window ;
-
-  window = feature_show->window ;
-
   switch(cb_action)
     {
     case 1:
@@ -2129,7 +2123,6 @@ static void addTagValue(gpointer data, gpointer user_data)
   ZMapGuiNotebookParagraph paragraph = para_data->paragraph ;
   ZMapFeature feature ;
   GList *column_data = NULL ;
-  ZMapGuiNotebookTagValue tagvalue ;
   int tmp = 0 ;
   //  char *clone_id,
   char *strand ;
@@ -2170,10 +2163,10 @@ static void addTagValue(gpointer data, gpointer user_data)
   column_data = g_list_append(column_data, GINT_TO_POINTER(tmp)) ;
 
 
-  tagvalue = zMapGUINotebookCreateTagValue(paragraph,
-                                           NULL, NULL, ZMAPGUI_NOTEBOOK_TAGVALUE_COMPOUND,
-                                           "compound", column_data,
-                                           NULL) ;
+  zMapGUINotebookCreateTagValue(paragraph,
+                                NULL, NULL, ZMAPGUI_NOTEBOOK_TAGVALUE_COMPOUND,
+                                "compound", column_data,
+                                NULL) ;
   return ;
 }
 
@@ -2215,7 +2208,6 @@ static ZMapGuiNotebook makeTranscriptExtras(ZMapWindow window, ZMapFeature featu
         {
           ZMapSpan exon_span ;
           GList *column_data = NULL ;
-          ZMapGuiNotebookTagValue tag_value ;
           int display_start, display_end, index ;
 
           if (zMapWindowGetFlag(window, ZMAPFLAG_REVCOMPED_FEATURES))
@@ -2233,10 +2225,10 @@ static ZMapGuiNotebook makeTranscriptExtras(ZMapWindow window, ZMapFeature featu
 
           char *tag_name = g_strdup_printf("Exon%d", i) ;
 
-          tag_value = zMapGUINotebookCreateTagValue(paragraph,
-                                                    tag_name, NULL, ZMAPGUI_NOTEBOOK_TAGVALUE_COMPOUND,
-                                                    "compound", column_data,
-                                                    NULL) ;
+          zMapGUINotebookCreateTagValue(paragraph,
+                                        tag_name, NULL, ZMAPGUI_NOTEBOOK_TAGVALUE_COMPOUND,
+                                        "compound", column_data,
+                                        NULL) ;
 
           g_free(tag_name) ;
 
@@ -2266,7 +2258,6 @@ static void callXRemote(ZMapWindow window, ZMapFeatureAny feature_any,
   ZMapXMLUtilsEventStack xml_elements ;
   ZMapWindowSelectStruct select = {ZMAPWINDOW_SELECT_SINGLE} ;
   ZMapFeatureSetStruct feature_set = {0} ;
-  ZMapFeatureSet multi_set ;
   ZMapFeature feature_copy ;
   int chr_bp ;
 
@@ -2330,9 +2321,6 @@ static void callXRemote(ZMapWindow window, ZMapFeatureAny feature_any,
 
   feature_set.features = g_hash_table_new(NULL, NULL) ;
   g_hash_table_insert(feature_set.features, GINT_TO_POINTER(feature_copy->unique_id), feature_copy) ;
-
-  multi_set = &feature_set ;
-
 
   /* I don't get this at all... */
   select.type = ZMAPWINDOW_SELECT_DOUBLE;

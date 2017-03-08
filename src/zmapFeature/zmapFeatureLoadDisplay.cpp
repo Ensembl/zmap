@@ -124,15 +124,12 @@ ZMapFeatureColumn ZMapFeatureContextMapStructType::getSetColumn(GQuark set_id)
       }
     else
       {
-        ZMapFeatureSource gff_source;
-
         column = g_new0(ZMapFeatureColumnStruct,1);
 
         column->unique_id = column->column_id = set_id;
 
         column->order = zMapFeatureColumnOrderNext(FALSE);
 
-        gff_source = getSource(set_id) ;
         column->column_desc = name;
 
         column->featuresets_unique_ids = g_list_append(column->featuresets_unique_ids,GUINT_TO_POINTER(set_id));

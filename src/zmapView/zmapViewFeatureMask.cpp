@@ -252,10 +252,9 @@ static ZMapFeatureContextExecuteStatus maskNewFeaturesetByAll(GQuark key,
     {
     case ZMAPFEATURE_STRUCT_ALIGN:
       {
-        ZMapFeatureAlignment feature_align = NULL;
-        feature_align = (ZMapFeatureAlignment)feature_any;
+        break;
       }
-      break;
+
     case ZMAPFEATURE_STRUCT_BLOCK:
       {
         ZMapFeatureSet feature_set = NULL;
@@ -298,8 +297,9 @@ static ZMapFeatureContextExecuteStatus maskNewFeaturesetByAll(GQuark key,
             if(masker_set)
               mask_set_with_set(feature_set, masker_set,cb_data->perfect);
           }
+
+        break;
       }
-      break;
 
     default:
       {
@@ -723,17 +723,18 @@ static ZMapFeatureContextExecuteStatus maskOldFeaturesetByNew(GQuark key,
     {
     case ZMAPFEATURE_STRUCT_ALIGN:
       {
-        ZMapFeatureAlignment feature_align = NULL;
-        feature_align = (ZMapFeatureAlignment)feature_any;
+        break;
       }
-      break;
+
     case ZMAPFEATURE_STRUCT_BLOCK:
       {
         ZMapFeatureBlock feature_block = NULL;
         feature_block  = (ZMapFeatureBlock)feature_any;
         cb_data->block = feature_block;
+
+        break;
       }
-      break;
+
     case ZMAPFEATURE_STRUCT_FEATURESET:
       {
         ZMapFeatureSet feature_set = NULL;
@@ -805,8 +806,10 @@ static ZMapFeatureContextExecuteStatus maskOldFeaturesetByNew(GQuark key,
                   }
               }
           }
+
+        break;
       }
-      break;
+
     case ZMAPFEATURE_STRUCT_FEATURE:
     case ZMAPFEATURE_STRUCT_INVALID:
     default:

@@ -211,11 +211,9 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleBumpMode bump_mod
 void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_mode,
                                ZMapWindowCompressMode compress_mode)
 {
-  BumpColStruct bump_col_data = {NULL} ;
   ZMapWindowContainerFeatureSet container = NULL;
   ZMapStyleBumpMode historic_bump_mode;
   ZMapWindow window = NULL;
-  gboolean column = FALSE ;
   gboolean ok = TRUE;
   gboolean mark_set;
   int start, end ;
@@ -225,12 +223,10 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
   /* Decide if the column_item is a column group or a feature within that group. */
   if (ZMAP_IS_CANVAS_ITEM(bump_item))
     {
-      column = FALSE;
       container = (ZMapWindowContainerFeatureSet)zmapWindowContainerCanvasItemGetContainer(bump_item);
     }
   else if (ZMAP_IS_CONTAINER_FEATURESET(bump_item))
     {
-      column = TRUE;
       container = (ZMapWindowContainerFeatureSet)(bump_item);
     }
   else
@@ -299,9 +295,6 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
               end   = window->max_coord ;
             }
         }
-
-      bump_col_data.start = start ;
-      bump_col_data.end = end ;
 
 
 //time = zMapElapsedSeconds;
@@ -412,17 +405,18 @@ static void invoke_bump_to_initial(ZMapWindowContainerGroup container, FooCanvas
     case ZMAPCONTAINER_LEVEL_FEATURESET:
       {
         ZMapWindowContainerFeatureSet container_set;
-        ZMapStyleBumpMode default_mode, current_mode, initial_mode;
+        ZMapStyleBumpMode default_mode, initial_mode;
 
         container_set = (ZMapWindowContainerFeatureSet)container;
-        current_mode  = zmapWindowContainerFeatureSetGetBumpMode(container_set);
         default_mode  = zmapWindowContainerFeatureSetGetDefaultBumpMode(container_set);
 
         initial_mode  = default_mode;
 
         zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(container), initial_mode, ZMAPWINDOW_COMPRESS_ALL);
+
+        break;
       }
-      break;
+
     default:
       {
         break;

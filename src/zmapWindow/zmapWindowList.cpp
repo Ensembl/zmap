@@ -233,7 +233,6 @@ void zmapWindowListWindowCreate(ZMapWindow                   window,
                                 GDestroyNotify               search_hash_free,
                                 gboolean                     zoom_to_item)
 {
-  ZMapWindowList window_list = NULL ;
   GList *items = NULL ;
 
   if (!get_hash_func)
@@ -256,11 +255,11 @@ void zmapWindowListWindowCreate(ZMapWindow                   window,
     }
   else
     {
-      window_list = window_list_window_create(NULL, current_item, title, window,
-                                              items,
-                                              get_hash_func, get_hash_data, context_map,
-                                              search_hash_func, search_hash_data, search_hash_free,
-                                              zoom_to_item) ;
+      window_list_window_create(NULL, current_item, title, window,
+                                items,
+                                get_hash_func, get_hash_data, context_map,
+                                search_hash_func, search_hash_data, search_hash_free,
+                                zoom_to_item) ;
     }
 
   return ;
@@ -1142,9 +1141,6 @@ static void exportCB(gpointer data, guint cb_action, GtkWidget *widget)
  */
 static void helpMenuCB(gpointer data, guint cb_action, GtkWidget *widget)
 {
-  ZMapWindowList wList = (ZMapWindowList)data;
-  GtkWidget *window    = NULL;
-  window = wList->toplevel;
   switch(cb_action)
     {
     case WINLISTHELP:

@@ -1345,12 +1345,16 @@ bool ZMapDataStreamBCFStruct::readLine()
           if (name && *name == '.')
             name = NULL ;
 
-          /* Construct the ensembl_vartiation string for the attributes */
+          /* Construct the ensembl_variation string for the attributes */
           string var_str ;
           bool first = true ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
           bool deletion = false ;
           bool insertion = false ;
           bool snv = true ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
           for (int i = 0; i < hts_rec->d.m_allele; ++i)
             {
@@ -1365,21 +1369,33 @@ bool ZMapDataStreamBCFStruct::readLine()
                 {
                   val = "-" ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
                   if (first)
                     insertion = true ;
                   else 
                     deletion = true ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
                 }
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
               else if (strlen(val) > 1)
                 {
                   snv = false ;
                 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
               var_str += val ;
               
               first = false ;
             }
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+          // Unused, not sure what intention was.
           const char *so_term = "SNV" ;
           if (insertion)
             so_term = "insertion" ;
@@ -1387,9 +1403,10 @@ bool ZMapDataStreamBCFStruct::readLine()
             so_term = "deletion" ;
           else if (!snv)
             so_term = "substitution" ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-          cur_feature_data_ = ZMapDataStreamFeatureData(iStart, iEnd, 0.0, '.', '.', 
-                                                        name, 0, 0) ;
+
+          cur_feature_data_ = ZMapDataStreamFeatureData(iStart, iEnd, 0.0, '.', '.', name, 0, 0) ;
 
           result = true ;
         }
@@ -2074,7 +2091,6 @@ gboolean ZMapDataStreamHTSStruct::init(const char *region_name, int start, int e
 bool ZMapDataStreamHTSStruct::processRead()
 {
   gboolean result = FALSE ;
-  gboolean bHasCigarAttribute = FALSE ;
   char cStrand = '\0',
     cPhase = '.',
     cTargetStrand = '.' ;
@@ -2112,7 +2128,6 @@ bool ZMapDataStreamHTSStruct::processRead()
   nCigar = hts_rec->core.n_cigar ;
   if (nCigar)
     {
-      bHasCigarAttribute = TRUE ;
       pCigar = bam_get_cigar(hts_rec) ;
 
       for (iCigar=0; iCigar<nCigar; ++iCigar)

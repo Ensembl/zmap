@@ -307,11 +307,7 @@ static void zmap_window_container_group_get_property(GObject               *obje
                                                      GValue                *value,
                                                      GParamSpec            *pspec)
 {
-  ZMapWindowContainerGroup container;
-
   zMapReturnIfFail(ZMAP_IS_CONTAINER_GROUP(object));
-
-  container = ZMAP_CONTAINER_GROUP(object);
 
   switch(param_id)
     {
@@ -573,7 +569,6 @@ ZMapWindowContainerGroup zmapWindowContainerGroupCreateFromFoo(FooCanvasGroup   
   ZMapWindowContainerGroup container  = NULL;
   ZMapWindowContainerGroup parent_container  = NULL;
   FooCanvasItem *item;
-  FooCanvasGroup *group;
   GType container_type;
   double this_spacing = 200.0;
 
@@ -615,7 +610,6 @@ ZMapWindowContainerGroup zmapWindowContainerGroupCreateFromFoo(FooCanvasGroup   
 
   if(item && ZMAP_IS_CONTAINER_GROUP(item))
     {
-      group     = FOO_CANVAS_GROUP(item);
       container = ZMAP_CONTAINER_GROUP(item);
       container->level = level;                             /* level */
       container->child_spacing = child_spacing;
@@ -821,7 +815,7 @@ gboolean zmapWindowContainerHasFeatures(ZMapWindowContainerGroup container)
 
 void zmapWindowContainerUtilsRemoveAllItems(FooCanvasGroup *group)
 {
-  GList *glist = NULL,*l = NULL ;
+  GList *glist = NULL ;
 
   zMapReturnIfFail(group) ;
 
@@ -833,7 +827,6 @@ void zmapWindowContainerUtilsRemoveAllItems(FooCanvasGroup *group)
 
           gtk_item_object = GTK_OBJECT(glist->data);
 
-          l = glist;
           glist = glist->next;
           //        g_free(l);      /* mh17: oddly this was not done */
 
@@ -1298,14 +1291,10 @@ void zmapWindowContainerUtilsExecuteFull(ZMapWindowContainerGroup   container_gr
                                          gpointer                   container_leave_data)
 {
   ContainerRecursionDataStruct data  = {(ZMapContainerLevelType)0, NULL} ;
-  //  ZMapWindowCanvas zmap_canvas;
-  FooCanvasItem *parent;
 
   if (!(stop_at_type >= ZMAPCONTAINER_LEVEL_ROOT &&
              stop_at_type <= ZMAPCONTAINER_LEVEL_FEATURESET))
     return  ;
-
-  parent = (FooCanvasItem *)container_group;
 
   data.stop                    = stop_at_type;
 
@@ -1416,7 +1405,7 @@ static void eachContainer(gpointer data, gpointer user_data)
   FooCanvasGroup *children ;
   FooCanvasPoints this_points_data = {NULL}, parent_points_data = {NULL};
   FooCanvasPoints *this_points = NULL, *parent_points = NULL;
-  double *bound = NULL, spacing = 0.0, bound_data = 0.0, coords[4] = {0.0, 0.0, 0.0, 0.0};
+  double coords[4] = {0.0, 0.0, 0.0, 0.0};
 
   zMapReturnIfFail(container) ;
 
@@ -1427,7 +1416,6 @@ static void eachContainer(gpointer data, gpointer user_data)
 
   /* We need to get what we need in case someone destroys it under us. */
   level   = container->level;
-  spacing = container->this_spacing;
 
   if (!(level >  ZMAPCONTAINER_LEVEL_INVALID &&
              level <= ZMAPCONTAINER_LEVEL_FEATURESET) )
@@ -1435,7 +1423,6 @@ static void eachContainer(gpointer data, gpointer user_data)
 
   this_points   = &this_points_data;
   parent_points = &parent_points_data;
-  bound         = &bound_data;
 
   this_points->coords   = &coords[0];
   parent_points->coords = &coords[0];

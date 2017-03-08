@@ -551,7 +551,6 @@ static void setUpFeatureTranscript(gboolean revcomped, ZMapWindowDisplayStyle di
 static void setUpFeatureOther(ZMapWindowDisplayStyle display_style, ZMapFeature feature, GArray *feature_coords)
 {
   int selected_start, selected_end, selected_length ;
-  ZMapFeatureSubPartType item_type_int ;
   FeatureCoordStruct feature_coord ;
 
   /* this is not a get sub part issue, we want the whole canvas feature which is a
@@ -559,7 +558,6 @@ static void setUpFeatureOther(ZMapWindowDisplayStyle display_style, ZMapFeature 
   selected_start = feature->x1 ;
   selected_end = feature->x2 ;
   selected_length = feature->x2 - feature->x1 + 1 ;
-  item_type_int = ZMAPFEATURE_SUBPART_MATCH ;
 
   feature_coord.name = (char *)g_quark_to_string(feature->original_id) ;
   feature_coord.start = selected_start ;

@@ -754,16 +754,10 @@ ZMapFeatureContextExecuteStatus zMapFeatureContextTranscriptSortExons(GQuark key
     {
     case ZMAPFEATURE_STRUCT_ALIGN:
       {
-        ZMapFeatureAlignment feature_align = NULL;
-        feature_align = (ZMapFeatureAlignment)feature_any;
-
         break;
       }
     case ZMAPFEATURE_STRUCT_BLOCK:
       {
-        ZMapFeatureBlock feature_block = NULL;
-        feature_block = (ZMapFeatureBlock)feature_any;
-
         break;
       }
     case ZMAPFEATURE_STRUCT_FEATURESET:

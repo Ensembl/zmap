@@ -947,8 +947,6 @@ void zmapWindowScrollToFeature(ZMapWindow window,
   gboolean do_x = FALSE, do_y = FALSE ;
   double x_position, y_position ;
   int curr_x, curr_y ;
-  gboolean result ;
-
 
   
   feature = zMapWindowCanvasFeatureGetFeature(canvas_feature) ;
@@ -962,8 +960,8 @@ void zmapWindowScrollToFeature(ZMapWindow window,
   newGetWorldBounds(feature_column_item, &itemx1_out, &itemy1_out, &itemx2_out, &itemy2_out) ;
 
   // Get the features start/end in world coords
-  result = zmapWindowSeqToWorldCoords(window,
-                                      feature->x1, feature->x2, &feature_start_w, &feature_end_w) ;
+  zmapWindowSeqToWorldCoords(window,
+                             feature->x1, feature->x2, &feature_start_w, &feature_end_w) ;
 
   // Set y to features coords.
   itemy1_out = feature_start_w ;
@@ -1076,11 +1074,6 @@ gboolean zmapWindowWorld2SeqCoords(ZMapWindow window, FooCanvasItem *foo,
 {
   gboolean result = FALSE ;
   FooCanvasItem *item ;
-  double mid_x, mid_y ;
-
-  /* Try to get an item at the mid point... we have to start somewhere... */
-  mid_x = (wx1 + wx2) / 2 ;
-  mid_y = (wy1 + wy2) / 2 ;
 
   item = foo;
   if (!item)
@@ -1532,13 +1525,6 @@ static void getVisibleCanvas(ZMapWindow window,
   gtk_layout_get_size (layout,
                        &width,
                        &height) ;
-
-  GtkAdjustment *new_hadjust, *new_vadjust ;
-
-  new_hadjust = gtk_layout_get_hadjustment(layout) ;
-
-  new_vadjust = gtk_layout_get_vadjustment(layout) ;
-
 
   return ;
 }

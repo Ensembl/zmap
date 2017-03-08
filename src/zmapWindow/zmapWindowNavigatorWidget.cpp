@@ -240,13 +240,11 @@ void zmapWindowNavigatorWidthChanged(GtkWidget *widget, double left, double righ
 void zMapWindowNavigatorPackDimensions(GtkWidget *widget, double *width, double *height)
 {
   FooCanvas *canvas = NULL;
-  FooCanvasGroup *root = NULL;
   double a, b, x, y;
 
   if(FOO_IS_CANVAS(widget))
     {
       canvas = FOO_CANVAS(widget);
-      root   = FOO_CANVAS_GROUP(foo_canvas_root(canvas));
 
       foo_canvas_get_scroll_region(canvas, &a, &b, &x, &y);
 
@@ -453,15 +451,13 @@ static void fetchScrollCoords(ZMapNavigatorClassData class_data,
 {
   double border_x = 2.0;
   double border_y = border;
-  double max_x, max_y, container_width, container_height;
+  double max_x, container_width ;
 
   zMapReturnIfFail((x1 && x2 && y1 && y2)) ;
 
   max_x = 32000.0;             /* only canvas limit */
-  max_y = class_data->span;        //(double)(NAVIGATOR_SIZE);
 
   container_width  = class_data->container_width;
-  container_height = class_data->container_height;
 
   *x1 = *y1 = *x2 = *y2 = 0.0;
 

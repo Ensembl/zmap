@@ -907,7 +907,6 @@ ZMapFeatureAny zMapFeatureContextFindFeatureFromFeature(ZMapFeatureContext conte
   ZMapFeatureAny
     feature_any   = NULL,
     feature_ptr   = NULL,
-    query_context = NULL,
     query_align   = NULL,
     query_block   = NULL,
     query_set     = NULL;
@@ -920,7 +919,6 @@ ZMapFeatureAny zMapFeatureContextFindFeatureFromFeature(ZMapFeatureContext conte
       switch(feature_ptr->struct_type)
         {
         case ZMAPFEATURE_STRUCT_CONTEXT:
-          query_context = feature_ptr;
           break;
         case ZMAPFEATURE_STRUCT_ALIGN:
           query_align   = feature_ptr;

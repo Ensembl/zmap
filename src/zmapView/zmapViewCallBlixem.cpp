@@ -2763,7 +2763,6 @@ static ZMapGuiNotebookChapter makeChapter(ZMapGuiNotebook note_book_parent, ZMap
   ZMapGuiNotebookPage page = NULL ;
   ZMapGuiNotebookSubsection subsection = NULL ;
   ZMapGuiNotebookParagraph paragraph = NULL ;
-  ZMapGuiNotebookTagValue tagvalue = NULL ;
 
   chapter = zMapGUINotebookCreateChapter(note_book_parent, "Blixem", &user_CBs) ;
 
@@ -2776,24 +2775,24 @@ static ZMapGuiNotebookChapter makeChapter(ZMapGuiNotebook note_book_parent, ZMap
                                              ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE,
                                              NULL, NULL) ;
 
-  tagvalue = zMapGUINotebookCreateTagValue(paragraph, "Scope",
-                                           "The maximum length of sequence to send to Blixem",
-                                           ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-                                           "int", blixem_config_curr_G.scope) ;
+  zMapGUINotebookCreateTagValue(paragraph, "Scope",
+                                "The maximum length of sequence to send to Blixem",
+                                ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                "int", blixem_config_curr_G.scope) ;
 
-  tagvalue = zMapGUINotebookCreateTagValue(paragraph, "Restrict scope to Mark",
-                                           "Restricts the scope to the current marked region",
-                                           ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,
-                                           "bool", blixem_config_curr_G.scope_from_mark) ;
+  zMapGUINotebookCreateTagValue(paragraph, "Restrict scope to Mark",
+                                "Restricts the scope to the current marked region",
+                                ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,
+                                "bool", blixem_config_curr_G.scope_from_mark) ;
 
-  tagvalue = zMapGUINotebookCreateTagValue(paragraph, "Restrict features to Mark",
-                                           "Still uses the default scope but only sends features that are within the marked region to Blixem",
-                                           ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,
-                                           "bool", blixem_config_curr_G.features_from_mark) ;
+  zMapGUINotebookCreateTagValue(paragraph, "Restrict features to Mark",
+                                "Still uses the default scope but only sends features that are within the marked region to Blixem",
+                                ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,
+                                "bool", blixem_config_curr_G.features_from_mark) ;
 
-  tagvalue = zMapGUINotebookCreateTagValue(paragraph, "Maximum Homols Shown", NULL,
-                                           ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-                                           "int", blixem_config_curr_G.homol_max) ;
+  zMapGUINotebookCreateTagValue(paragraph, "Maximum Homols Shown", NULL,
+                                ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                "int", blixem_config_curr_G.homol_max) ;
 
 
   page = zMapGUINotebookCreatePage(chapter, BLIX_NB_PAGE_PFETCH) ;
@@ -2804,13 +2803,13 @@ static ZMapGuiNotebookChapter makeChapter(ZMapGuiNotebook note_book_parent, ZMap
                                              ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE,
                                              NULL, NULL) ;
 
-  tagvalue = zMapGUINotebookCreateTagValue(paragraph, "Host network id", NULL,
-                                           ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-                                           "string", blixem_config_curr_G.netid) ;
+  zMapGUINotebookCreateTagValue(paragraph, "Host network id", NULL,
+                                ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                "string", blixem_config_curr_G.netid) ;
 
-  tagvalue = zMapGUINotebookCreateTagValue(paragraph, "Port", NULL,
-                                           ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-                                           "int", blixem_config_curr_G.port) ;
+  zMapGUINotebookCreateTagValue(paragraph, "Port", NULL,
+                                ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                "int", blixem_config_curr_G.port) ;
 
 
   page = zMapGUINotebookCreatePage(chapter, BLIX_NB_PAGE_ADVANCED) ;
@@ -2821,30 +2820,30 @@ static ZMapGuiNotebookChapter makeChapter(ZMapGuiNotebook note_book_parent, ZMap
                                              ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE,
                                              NULL, NULL) ;
 
-  tagvalue = zMapGUINotebookCreateTagValue(paragraph, "Config File",
-                                           "The path to the configuration file to use for Blixem",
-                                           ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-                                           "string", blixem_config_curr_G.config_file) ;
+  zMapGUINotebookCreateTagValue(paragraph, "Config File",
+                                "The path to the configuration file to use for Blixem",
+                                ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                "string", blixem_config_curr_G.config_file) ;
 
-  tagvalue = zMapGUINotebookCreateTagValue(paragraph, "Launch script",
-                                           "The path to the Blixem executable",
-                                           ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-                                           "string", blixem_config_curr_G.script) ;
+  zMapGUINotebookCreateTagValue(paragraph, "Launch script",
+                                "The path to the Blixem executable",
+                                ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                "string", blixem_config_curr_G.script) ;
 
-  tagvalue = zMapGUINotebookCreateTagValue(paragraph, "Keep temporary Files",
-                                           "Tell Blixem not to destroy the temporary input files that ZMap sends to it.",
-                                           ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,
-                                           "bool", blixem_config_curr_G.keep_tmpfiles) ;
+  zMapGUINotebookCreateTagValue(paragraph, "Keep temporary Files",
+                                "Tell Blixem not to destroy the temporary input files that ZMap sends to it.",
+                                ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,
+                                "bool", blixem_config_curr_G.keep_tmpfiles) ;
 
-  tagvalue = zMapGUINotebookCreateTagValue(paragraph, "Sleep on Startup",
-                                           "Tell Blixem to sleep on startup (for debugging)",
-                                           ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,
-                                           "bool", blixem_config_curr_G.sleep_on_startup) ;
+  zMapGUINotebookCreateTagValue(paragraph, "Sleep on Startup",
+                                "Tell Blixem to sleep on startup (for debugging)",
+                                ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,
+                                "bool", blixem_config_curr_G.sleep_on_startup) ;
 
-  tagvalue = zMapGUINotebookCreateTagValue(paragraph, "Kill Blixem on Exit",
-                                           "Close all Blixems that were started from this ZMap when ZMap exits",
-                                           ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,
-                                           "bool", blixem_config_curr_G.kill_on_exit) ;
+  zMapGUINotebookCreateTagValue(paragraph, "Kill Blixem on Exit",
+                                "Close all Blixems that were started from this ZMap when ZMap exits",
+                                ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,
+                                "bool", blixem_config_curr_G.kill_on_exit) ;
 
   return chapter ;
 }

@@ -217,11 +217,10 @@ static gboolean window_draw_context_debug_G = FALSE;
 void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
                             ZMapFeatureContext diff_context,GList *masked)
 {
-  GtkAdjustment *h_adj ;
   ZMapCanvasDataStruct canvas_data = {NULL} ;                    /* Rest of struct gets set to zero. */
   ZMapWindowContainerGroup root_group ;
   FooCanvasItem *tmp_item = NULL ;
-  gboolean debug_containers = FALSE, root_created = FALSE ;
+  gboolean debug_containers = FALSE ;
   double x, y ;
   int seq_start,seq_end ;
 
@@ -286,8 +285,6 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
   window->canvas);
 #endif
 
-  h_adj = gtk_scrolled_window_get_hadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
-
   if(!window->scroll_initialised)
     {
       /* MH17: draw features does not change the zoom factor, so we only set if first time round
@@ -314,7 +311,6 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
                                             0, 0, 0, ZMAPSTRAND_NONE, ZMAPFRAME_NONE, 0)))
     {
       root_group   = (ZMapWindowContainerGroup)tmp_item;
-      root_created = FALSE;
     }
   else
     {
@@ -353,8 +349,6 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
                                                   NULL);
 
       g_signal_connect(G_OBJECT(root_group), "destroy", G_CALLBACK(containerDestroyCB), window) ;
-
-      root_created = TRUE;
 
       g_object_set_data(G_OBJECT(root_group), ITEM_FEATURE_STATS,
                         zmapWindowStatsCreate((ZMapFeatureAny)full_context)) ;
@@ -1535,12 +1529,10 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
         ZMapWindowContainerGroup block_group = NULL;
         //    ZMapWindowContainerGroup forward_group, reverse_group ;
         //        ZMapWindowContainerGroup strand_separator;
-        ZMapWindowContainerBlock container_block = NULL;
         FooCanvasItem *block_hash_item = NULL;
         //    GdkColor *for_bg_colour, *rev_bg_colour ;
         double x, y;
-        gboolean block_created = FALSE;
-        double start, end, height ;
+        double start, end ;
 
         zMapStartTimer("DrawBlock","");
 
@@ -1554,8 +1546,6 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
         start = (double) feature_block->block_to_sequence.block.x1 ;
         end = (double) feature_block->block_to_sequence.block.x2 ;
         zmapWindowSeq2CanExt(&start, &end) ;
-        height = zmapWindowExt(start, end) ;
-
 
         /* record the full_context current block, not the diff block which will get destroyed! */
         canvas_data->curr_block = zMapFeatureAlignmentGetBlockByID(canvas_data->curr_alignment,
@@ -1589,7 +1579,7 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
                              "destroy",
                              G_CALLBACK(containerDestroyCB),
                              window) ;
-            block_created = TRUE;
+
 #if MH17_REVCOMP_DEBUG
             zMapLogWarning(" new","");
 #endif
@@ -1631,8 +1621,6 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 
         if (block_group)
           {
-            container_block = (ZMapWindowContainerBlock)block_group;
-
             if (status == ZMAP_CONTEXT_EXEC_STATUS_OK)
               {
                 canvas_data->curr_block_group = zmapWindowContainerGetFeatures(block_group) ;
@@ -1648,12 +1636,6 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
         FooCanvasGroup *tmp_forward = NULL, *tmp_reverse = NULL ;
         int frame_start, frame_end;
         ZMapFeatureTypeStyle style;
-
-        const char *name, *unique_name ;
-
-        name = g_quark_to_string(feature_any->original_id) ;
-        unique_name = g_quark_to_string(feature_any->unique_id) ;
-
 
         /* record the full_context current block, not the diff block which will get destroyed! */
         canvas_data->curr_set = zMapFeatureBlockGetSetByID(canvas_data->curr_block, feature_any->unique_id);
@@ -1964,7 +1946,7 @@ FooCanvasItem *zmapWindowDrawSetGroupBackground(ZMapWindow window, ZMapWindowCon
   ZMapWindowFeaturesetItem cfs = NULL;
   FooCanvasItem *foo = (FooCanvasItem *) container;
   FooCanvasGroup *group = (FooCanvasGroup *) container;
-  GdkColor *parent_fill = NULL, *parent_border = NULL;
+  GdkColor *parent_fill = NULL ;
   ZMapWindowContainerGroup parent = (ZMapWindowContainerGroup) (container->__parent__.item.parent);
   gboolean show = FALSE;
 
@@ -1983,7 +1965,6 @@ FooCanvasItem *zmapWindowDrawSetGroupBackground(ZMapWindow window, ZMapWindowCon
   if(parent && ZMAP_IS_CONTAINER_GROUP(parent))
     {
       parent_fill = parent->background_fill;
-      parent_border = parent->background_border;
     }
 
   /*
@@ -3023,7 +3004,6 @@ static gboolean containerDestroyCB(FooCanvasItem *item, gpointer user_data)
   ZMapWindowContainerGroup container;
   GHashTable *context_to_item ;
   ZMapFeatureAny feature_any;
-  gboolean status = FALSE ;
   gboolean result = FALSE ;                                    /* Always return FALSE ?? check this.... */
   gboolean log_all = FALSE ;
 
@@ -3043,21 +3023,19 @@ static gboolean containerDestroyCB(FooCanvasItem *item, gpointer user_data)
         {
         case ZMAPCONTAINER_LEVEL_ROOT:
           {
-            status = zmapWindowFToIRemoveRoot(context_to_item) ;
+            zmapWindowFToIRemoveRoot(context_to_item) ;
 
             break ;
           }
         case ZMAPCONTAINER_LEVEL_ALIGN:
           {
-            status = zmapWindowFToIRemoveAlign(context_to_item, feature_any->unique_id) ;
+            zmapWindowFToIRemoveAlign(context_to_item, feature_any->unique_id) ;
 
             break ;
           }
         case ZMAPCONTAINER_LEVEL_BLOCK:
           {
-            status = zmapWindowFToIRemoveBlock(context_to_item,
-                                               feature_any->parent->unique_id,
-                                               feature_any->unique_id) ;
+            zmapWindowFToIRemoveBlock(context_to_item, feature_any->parent->unique_id, feature_any->unique_id) ;
 
           }
           break ;
@@ -3071,12 +3049,12 @@ static gboolean containerDestroyCB(FooCanvasItem *item, gpointer user_data)
              */
             for(l = container_set->featuresets;l;l = l->next)
               {
-                status = zmapWindowFToIRemoveSet(context_to_item,
-                                                 container_set->align_id,
-                                                 container_set->block_id,
-                                                 GPOINTER_TO_UINT(l->data),     /*container_set->unique_id, */
-                                                 container_set->strand,
-                                                 container_set->frame,FALSE) ;
+                zmapWindowFToIRemoveSet(context_to_item,
+                                        container_set->align_id,
+                                        container_set->block_id,
+                                        GPOINTER_TO_UINT(l->data),     /*container_set->unique_id, */
+                                        container_set->strand,
+                                        container_set->frame,FALSE) ;
                 /* not sure where the features got deleted from but this used to work */
               }
             g_list_free(container_set->featuresets);

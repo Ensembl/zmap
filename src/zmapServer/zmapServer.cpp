@@ -453,7 +453,6 @@ ZMapServerResponseType zMapServerGetContextSequences(ZMapServer server, ZMapStyl
         }
       else
         {
-          ZMapFeature feature = NULL;
           ZMapFeatureSet feature_set = NULL;
           ZMapFeatureTypeStyle dna_style = NULL;
 
@@ -474,8 +473,11 @@ ZMapServerResponseType zMapServerGetContextSequences(ZMapServer server, ZMapStyl
             {
               if (zMapFeatureDNACreateFeatureSet(feature_block, &feature_set))
                 {
+                  // IS THIS EVER REACHED...RUN DEBUGGER....
+
+
                   if ((dna_style = styles.find_style(dna_quark)))
-                    feature = zMapFeatureDNACreateFeature(feature_block, dna_style, dna_sequence, dna_length);
+                    zMapFeatureDNACreateFeature(feature_block, dna_style, dna_sequence, dna_length);
                 }
             }
 

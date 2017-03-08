@@ -743,18 +743,14 @@ static gboolean xml_align_start_cb(gpointer user_data, ZMapXMLElement set_elemen
 
   if (align_name)
     {
-      gboolean master_align ;
-
       request_data->orig_align = NULL ;
 
-      if ((request_data->orig_align
-           = zMapFeatureContextGetAlignmentByID(request_data->orig_context,
-                zMapFeatureAlignmentCreateID(align_name, TRUE))))
-        master_align = TRUE ;
-      else if ((request_data->orig_align
-        = zMapFeatureContextGetAlignmentByID(request_data->orig_context,
-             zMapFeatureAlignmentCreateID(align_name, FALSE))))
-        master_align = FALSE ;
+      if (!(request_data->orig_align
+            = zMapFeatureContextGetAlignmentByID(request_data->orig_context,
+                                                 zMapFeatureAlignmentCreateID(align_name, TRUE))))
+        request_data->orig_align
+          = zMapFeatureContextGetAlignmentByID(request_data->orig_context,
+                                               zMapFeatureAlignmentCreateID(align_name, FALSE)) ;
 
       if ((request_data->orig_align))
         {
@@ -864,7 +860,6 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
   GQuark featureset_id ;
   char *featureset_name ;
   GQuark unique_set_id ;
-  char *unique_set_name ;
 
   /* no futher processing needed for zoom_to_pos */
   zMapReturnValIfFailSafe((!(request_data->zoom_to_pos)), result) ;
@@ -876,7 +871,6 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
       featureset_name = (char *)g_quark_to_string(featureset_id) ;
 
       request_data->source_id = unique_set_id = zMapFeatureSetCreateID(featureset_name) ;
-      unique_set_name = (char *)g_quark_to_string(unique_set_id);
 
       /* Look for the feature set in the current context, it's an error if it's supposed to exist. */
       request_data->orig_feature_set = zMapFeatureBlockGetSetByID(request_data->orig_block, unique_set_id) ;

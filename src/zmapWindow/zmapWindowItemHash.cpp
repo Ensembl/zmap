@@ -778,7 +778,7 @@ GList *zmapWindowFToIFindItemSetFull(ZMapWindow window,GHashTable *feature_conte
 {
   GList *result = NULL ;
   GQuark strand_id, strand_none, strand_forward, strand_reverse, strand_both ;
-  GQuark frame_id, frame_none, frame_0, frame_1, frame_2, frame_all ;
+  GQuark frame_id ;
   GQuark forward_set_id = 0, reverse_set_id = 0 ;
   GList *search = NULL;
   ItemSearchStruct align_search = {0}, block_search = {0}, forward_set_search = {0}, reverse_set_search = {0},
@@ -821,12 +821,6 @@ GList *zmapWindowFToIFindItemSetFull(ZMapWindow window,GHashTable *feature_conte
       frame_id = 0 ;
       if (frame_spec)
         {
-          frame_none = g_quark_from_string(".") ;
-          frame_0 = g_quark_from_string("1") ;
-          frame_1 = g_quark_from_string("2") ;
-          frame_2 = g_quark_from_string("3") ;
-          frame_all = g_quark_from_string("*") ;
-
           frame_id = g_quark_from_string(frame_spec) ;
         }
 
@@ -944,7 +938,6 @@ GList *zmapWindowFToIFindItemSetFull(ZMapWindow window,GHashTable *feature_conte
 
   /* build the search list (terminal stop is needed to halt the search if none of the given
    * parameters is a stop). */
-  int a = g_list_length(result) ;
   if (!column_id
       || (strand_id == strand_none || strand_id == strand_forward || strand_id == strand_both))
     {
@@ -958,7 +951,6 @@ GList *zmapWindowFToIFindItemSetFull(ZMapWindow window,GHashTable *feature_conte
 
       /* Now do the recursive search */
       doHashSet(feature_context_to_item, search, &result) ;
-      a = g_list_length(result) ;
 
       g_list_free(search) ;
       search = NULL ;

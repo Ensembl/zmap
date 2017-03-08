@@ -364,7 +364,6 @@ static void graphPaintPrepare(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
 
   if (zMapStyleGraphMode(featureset->style) == ZMAPSTYLE_GRAPH_LINE)
     {
-      gboolean line_fill ;
       double x_offset, y_offset ;
 
       /* THERE IS ANOTHER PROBLEM HERE TOO....THE COLUMN STYLE NEEDS TO REFLECT THE
@@ -410,8 +409,6 @@ static void graphPaintPrepare(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
                 }
             }
         }
-
-      line_fill = zMapStyleGraphFill(featureset->style) ;
 
       x_offset = featureset->dx + featureset->x_off ;
       y_offset = featureset->start - featureset->dy ;

@@ -606,7 +606,6 @@ GList *zMapPeptideMatchFindAll(char *target, char *query,
               &start, &end, match_ptr))
         {
           ZMapDNAMatch match ;
-          int incr ;
 
           /* Record this match but match needs to record if its dna or peptide so coords are
            * interpreted correctly.... */
@@ -617,13 +616,6 @@ GList *zMapPeptideMatchFindAll(char *target, char *query,
 
           match->start = start - search_start ;
           match->end = end - search_start ;
-
-          /* There are routines to do these calculations...find them.... */
-          /* start/end on reference (dna) sequence. */
-          if (rev_comped)
-            incr = -2 ;
-          else
-            incr = 0 ;
 
           match->ref_start = from_in + ((match->start * 3)  + frame_offset + 1) ;
           match->ref_end = from_in + (((match->end * 3) + 2)  + frame_offset + 1) ;
@@ -896,7 +888,6 @@ static GArray *translateDNASegment(const char *dna_in, int from, int length, ZMa
   char *dna ;
   int dna_len ;
   GArray *dna_array ;
-  char *data ;
 
   /* zMapAssert(dna_in && *dna_in && incomplete_final_codon) ; */
   if (!dna_in || !*dna_in || !incomplete_final_codon) 
@@ -932,12 +923,8 @@ static GArray *translateDNASegment(const char *dna_in, int from, int length, ZMa
 
       peptide = doDNATranslation(translation_table, dna_array, strand, FALSE, include_stop) ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* Tidy up, note how we just leave the dna as it is still the original data. */
-      data = g_array_free(dna_array, FALSE) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
       /* in this version we now free the dna... */
-      data = g_array_free(dna_array, TRUE) ;
+      g_array_free(dna_array, TRUE) ;
     }
 
   return peptide ;

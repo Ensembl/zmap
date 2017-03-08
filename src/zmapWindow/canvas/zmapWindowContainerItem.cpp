@@ -99,7 +99,6 @@ GType zMapWindowCanvasItemGetType (void)
 static void zmap_window_canvas_item_class_init (ZMapWindowCanvasItemClass window_class)
 {
   GtkObjectClass *object_class;
-  FooCanvasItemClass *item_class;
   GType canvas_item_type, parent_type;
   static const int make_clickable_bmp_height  = 4;
   static const int make_clickable_bmp_width   = 16;
@@ -114,7 +113,6 @@ static void zmap_window_canvas_item_class_init (ZMapWindowCanvasItemClass window
   zMapReturnIfFail(window_class) ;
 
   object_class  = (GtkObjectClass *)window_class;
-  item_class    = (FooCanvasItemClass *)window_class;
 
   canvas_item_type = g_type_from_name(ZMAP_WINDOW_CANVAS_ITEM_NAME);
   parent_type      = g_type_parent(canvas_item_type);

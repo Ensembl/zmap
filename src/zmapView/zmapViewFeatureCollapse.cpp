@@ -151,16 +151,13 @@ static ZMapFeatureContextExecuteStatus collapseNewFeatureset(GQuark key,
     {
     case ZMAPFEATURE_STRUCT_ALIGN:
       {
-        ZMapFeatureAlignment feature_align = NULL;
-        feature_align = (ZMapFeatureAlignment)feature_any;
+        break;
       }
-      break;
+
     case ZMAPFEATURE_STRUCT_BLOCK:
       {
-        ZMapFeatureBlock feature_block = NULL;
-        feature_block = (ZMapFeatureBlock)feature_any;
+        break;
       }
-      break;
 
     case ZMAPFEATURE_STRUCT_FEATURESET:
       {
@@ -922,11 +919,12 @@ static int makeConcensusSequence(ZMapFeature composite)
 
 	  for(; i < n_seq && *seq ; i++)
 	    {
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	      int i_val = i * N_ALPHABET ;
 	      int index_val = index[(int)*seq] ;
-	      int orig_calc, my_calc ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+              int orig_calc ;
 
-	      my_calc = i_val + index_val ;
 	      orig_calc = i * N_ALPHABET + index[(int)*seq] ;
 
 	      if (orig_calc < 0)

@@ -75,7 +75,7 @@ static const char *passwd_G = "rubbish" ;
  *  */
 void zMapUtilsUserInit(void)
 {
-  char *real_name, *user_name ;
+  char *user_name ;
   const char *host_name, *domain_name ;
   struct hostent *domain_data ;
   int result ;
@@ -87,7 +87,6 @@ void zMapUtilsUserInit(void)
 
   /* We assume that these cannot fail, not unreasonable. */
   user_name = (char *)g_get_user_name() ;
-  real_name = (char *)g_get_real_name() ;
 
   host_name = (char *)g_get_host_name() ;
   if ((domain_data = gethostbyname(host_name)))

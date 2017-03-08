@@ -976,7 +976,6 @@ static void showColumn(ZMapView view, RequestData request_data)
 /* Load features on request from a client. */
 static void loadFeatures(ZMapView view, RequestData request_data)
 {
-  gboolean use_mark = FALSE ;
   int start = 0, end = 0 ;
 
 
@@ -990,11 +989,7 @@ static void loadFeatures(ZMapView view, RequestData request_data)
 
       window = request_data->view_window->window ;
 
-      if ((zMapWindowMarkGetSequenceSpan(window, &start, &end)))
-        {
-          use_mark = TRUE ;
-        }
-      else
+      if (!(zMapWindowMarkGetSequenceSpan(window, &start, &end)))
         {
           g_string_append(request_data->err_msg, "Load features to marked region failed: no mark set.") ;
           request_data->command_rc = REMOTE_COMMAND_RC_FAILED ;
@@ -1019,12 +1014,7 @@ static void loadFeatures(ZMapView view, RequestData request_data)
 /* Get the names of all features within a given range. */
 static void getFeatureNames(ZMapViewWindow view_window, RequestData request_data)
 {
-  ZMapWindow window ;
-
   request_data->command_rc = REMOTE_COMMAND_RC_OK ;
-
-  window = view_window->window ;
-
 
   /* IS THIS RIGHT ??? AREN'T WE USING PARENT COORDS...??? */
   if (request_data->start < request_data->edit_block->block_to_sequence.block.x2
@@ -1236,18 +1226,14 @@ static gboolean xml_align_start_cb(gpointer user_data, ZMapXMLElement set_elemen
 
   if (align_name)
     {
-      gboolean master_align ;
-
       request_data->orig_align = NULL ;
 
-      if ((request_data->orig_align
-           = zMapFeatureContextGetAlignmentByID(request_data->orig_context,
-                                                zMapFeatureAlignmentCreateID(align_name, TRUE))))
-        master_align = TRUE ;
-      else if ((request_data->orig_align
-                = zMapFeatureContextGetAlignmentByID(request_data->orig_context,
-                                                     zMapFeatureAlignmentCreateID(align_name, FALSE))))
-        master_align = FALSE ;
+      if (!(request_data->orig_align
+            = zMapFeatureContextGetAlignmentByID(request_data->orig_context,
+                                                 zMapFeatureAlignmentCreateID(align_name, TRUE))))
+        request_data->orig_align
+          = zMapFeatureContextGetAlignmentByID(request_data->orig_context,
+                                               zMapFeatureAlignmentCreateID(align_name, FALSE)) ;
 
       if ((request_data->orig_align))
         {
@@ -1382,7 +1368,6 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
   GQuark featureset_id ;
   char *featureset_name ;
   GQuark unique_set_id ;
-  char *unique_set_name ;
   gboolean load_features = FALSE ;
 
 
@@ -1489,7 +1474,6 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
           featureset_name = (char *)g_quark_to_string(featureset_id) ;
 
           request_data->source_id = unique_set_id = zMapFeatureSetCreateID(featureset_name) ;
-          unique_set_name = (char *)g_quark_to_string(unique_set_id);
 
           /* Look for the feature set in the current context, it's an error if it's supposed to exist. */
           request_data->orig_feature_set = zMapFeatureBlockGetSetByID(request_data->orig_block, unique_set_id) ;

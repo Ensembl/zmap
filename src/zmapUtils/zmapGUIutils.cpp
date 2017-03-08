@@ -1364,9 +1364,7 @@ GtkResponseType zMapGUIMsgGetSaveFull(GtkWindow *parent, ZMapMsgType msg_type, c
  *  */
 void zMapGUIShowText(const char *title, const char *text, gboolean edittable)
 {
-  GtkWidget *dialog ;
-
-  dialog = zMapGUIShowTextFull(title, text, edittable, NULL, NULL) ;
+  zMapGUIShowTextFull(title, text, edittable, NULL, NULL) ;
 
   return ;
 }
@@ -2269,7 +2267,6 @@ static GtkResponseType messageFull(GtkWindow *parent, const char *title_in, cons
   GtkWidget *entry = NULL ;
   const char *title = NULL, *full_title ;
   GtkDialogFlags flags = GTK_DIALOG_DESTROY_WITH_PARENT ;
-  guint timeout_func_id ;
   int interval = display_timeout * 1000 ;    /* glib needs time in milliseconds. */
   GtkResponseType first_response = (GtkResponseType)0, second_response = (GtkResponseType)0,
     third_response = (GtkResponseType)0, default_response = (GtkResponseType)0 ;
@@ -2390,9 +2387,9 @@ static GtkResponseType messageFull(GtkWindow *parent, const char *title_in, cons
   if (interval > 0)
     {
       if (modal)
-        timeout_func_id = g_timeout_add(interval, timeoutHandlerModal, (gpointer)dialog) ;
+        g_timeout_add(interval, timeoutHandlerModal, (gpointer)dialog) ;
       else
-        timeout_func_id = g_timeout_add(interval, timeoutHandler, (gpointer)dialog) ;
+        g_timeout_add(interval, timeoutHandler, (gpointer)dialog) ;
     }
 
 

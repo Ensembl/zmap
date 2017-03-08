@@ -18,22 +18,15 @@
  * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
- * originated by
+ * originally written by:
+ *
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
+ *      Gemma Barson (Sanger Institute, UK) gb10@sanger.ac.uk
  *
  * Description: Utility functions for ZMap.
  *-------------------------------------------------------------------
  */
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-#ifdef __cplusplus
-extern "C" {
-#endif
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 #ifndef ZMAP_UTILS_H
 #define ZMAP_UTILS_H
 
@@ -43,7 +36,7 @@ extern "C" {
 
 
 
-
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* The following defines deliberately come before the subsequent include files because
  * those files use these definitions. */
 
@@ -62,6 +55,12 @@ extern "C" {
 #define ZMAP_MSG_FUNCTION_MACRO zMapGetBasename(__FILE__), __LINE__
 
 #endif /* __GNUC__ */
+
+
+#include <ZMap/zmapUtilsPrivate.hpp>
+
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 #include <ZMap/zmapUtilsDebug.hpp>
@@ -206,7 +205,6 @@ char *zMapGetDir(const char *directory_in, gboolean home_relative, gboolean make
 char *zMapGetFile(char *directory, const char *filename, gboolean make_file, const char *permissions, GError **error) ;
 const char *zMapGetTmpDir() ;
 char *zMapGetPath(char *path_in) ;
-char *zMapGetBasename(const char *path_in) ;
 char *zMapExpandFilePath(const char *path_in) ;
 gboolean zMapFileAccess(const char *filepath, const char *mode) ;
 gboolean zMapFileEmpty(char *filepath) ;
@@ -285,12 +283,7 @@ GList * zMapRadixSort(GList *list_arg, ZMapRadixKeyFunc *key_func,int key_size);
 gboolean zMapUtilsBioParseChromLoc(char *location_str, char **chromsome_out, int *start_out, int *end_out) ;
 gboolean zMapUtilsBioParseChromNumber(char *chromosome_str, char **chromosome_out) ;
 
+
+
 #endif /* ZMAP_UTILS_H */
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-#ifdef __cplusplus
-}
-#endif
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 

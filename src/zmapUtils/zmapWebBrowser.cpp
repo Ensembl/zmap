@@ -298,13 +298,9 @@ static char *findBrowser(BrowserConfig browsers_in, BrowserConfig *browser_out, 
 
 static void makeBrowserCmd(GString *cmd, BrowserConfig best_browser, char *url)
 {
-  gboolean found ;
-
   cmd = g_string_append(cmd, best_browser->open_command) ;
 
-  found = zMap_g_string_replace(cmd, BROWSER_PATTERN, url) ;
-
-  /* zMapAssert(found) ;*/    /* Must find at least one pattern. */
+  zMap_g_string_replace(cmd, BROWSER_PATTERN, url) ;
 
   return ;
 }

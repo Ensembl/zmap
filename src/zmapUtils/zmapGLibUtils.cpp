@@ -528,7 +528,6 @@ gchar *zMap_g_list_quark_to_string(GList *l, const char *delimiter)
   if (l)
     {
       GString *quark_str ;
-      const gchar *q ;
 
       if (!delimiter)
         delimiter = " ; " ;
@@ -538,8 +537,6 @@ gchar *zMap_g_list_quark_to_string(GList *l, const char *delimiter)
 
       while(l)
         {
-          q = g_quark_to_string(GPOINTER_TO_UINT(l->data)) ;
-
           g_string_append_printf(quark_str, "%s%s", delimiter,
                                  g_quark_to_string(GPOINTER_TO_UINT(l->data))) ;
           l = l->next ;

@@ -332,13 +332,11 @@ void zmapWindowFeatureShowTranslation(ZMapWindow window, ZMapFeature feature)
       GQuark align_id, block_id, set_id, feature_id ;
       gboolean force = TRUE, force_to = TRUE, do_dna = FALSE, do_aa = FALSE, do_trans = TRUE ;
       char *seq ;
-      int len ;
       GList *exon_list_member;
       ZMapFullExon current_exon ;
       char *dest_ptr = NULL ;
       int dest_start = 0, dest_end = 0 ;
       double seq_start;
-      ZMapWindowFeaturesetItem fset;
       gboolean found_cds = FALSE ;
 
       wild_id = zMapStyleCreateID("*") ;
@@ -381,9 +379,7 @@ void zmapWindowFeatureShowTranslation(ZMapWindow window, ZMapFeature feature)
 
       trans_feature = (ZMapFeature)trans_id2c->feature_any ;
       seq = trans_feature->feature.sequence.sequence ;
-      len = trans_feature->feature.sequence.length ;
 
-      fset = (ZMapWindowFeaturesetItem) trans_item;
       /* as we change viz status, cols to the right get exposed by full repos but this one does not move */
       //        zMapWindowCanvasFeaturesetExpose(fset);                /* so we get a double expose */
 
@@ -739,27 +735,26 @@ gboolean zMapWindowSeqDispSelectByFeature(FooCanvasItem *sequence_feature,
                 GdkColor *split_codon_5_background = NULL, *split_codon_5_foreground = NULL, *split_codon_5_outline = NULL ;
                 GdkColor *split_codon_3_background = NULL, *split_codon_3_foreground = NULL, *split_codon_3_outline = NULL ;
                 GdkColor *in_frame_background = NULL, *in_frame_foreground = NULL, *in_frame_outline = NULL ;
-                gboolean result ;
                 int index = 1;
                 gboolean is_pep = zMapFeatureSequenceIsPeptide(feature);
                 gboolean in_frame = FALSE;
 
                 style = *feature->style ;
 
-                result = zMapStyleGetColours(style, STYLE_PROP_SEQUENCE_NON_CODING_COLOURS, colour_type,
-                                             &non_coding_background, &non_coding_foreground, &non_coding_outline) ;
+                zMapStyleGetColours(style, STYLE_PROP_SEQUENCE_NON_CODING_COLOURS, colour_type,
+                                    &non_coding_background, &non_coding_foreground, &non_coding_outline) ;
 
-                result = zMapStyleGetColours(style, STYLE_PROP_SEQUENCE_CODING_COLOURS, colour_type,
-                                             &coding_background, &coding_foreground, &coding_outline) ;
+                zMapStyleGetColours(style, STYLE_PROP_SEQUENCE_CODING_COLOURS, colour_type,
+                                    &coding_background, &coding_foreground, &coding_outline) ;
 
-                result = zMapStyleGetColours(style, STYLE_PROP_SEQUENCE_SPLIT_CODON_5_COLOURS, colour_type,
-                                             &split_codon_5_background, &split_codon_5_foreground, &split_codon_5_outline) ;
+                zMapStyleGetColours(style, STYLE_PROP_SEQUENCE_SPLIT_CODON_5_COLOURS, colour_type,
+                                    &split_codon_5_background, &split_codon_5_foreground, &split_codon_5_outline) ;
 
-                result = zMapStyleGetColours(style, STYLE_PROP_SEQUENCE_SPLIT_CODON_3_COLOURS, colour_type,
-                                             &split_codon_3_background, &split_codon_3_foreground, &split_codon_3_outline) ;
+                zMapStyleGetColours(style, STYLE_PROP_SEQUENCE_SPLIT_CODON_3_COLOURS, colour_type,
+                                    &split_codon_3_background, &split_codon_3_foreground, &split_codon_3_outline) ;
 
-                result = zMapStyleGetColours(style, STYLE_PROP_SEQUENCE_IN_FRAME_CODING_COLOURS, colour_type,
-                                             &in_frame_background, &in_frame_foreground, &in_frame_outline) ;
+                zMapStyleGetColours(style, STYLE_PROP_SEQUENCE_IN_FRAME_CODING_COLOURS, colour_type,
+                                    &in_frame_background, &in_frame_foreground, &in_frame_outline) ;
 
                 //zMapLogWarning("displaying frame %d",frame);
 

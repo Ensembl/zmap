@@ -899,19 +899,18 @@ static GtkWidget *makeTestWindow(AppData app_data)
 static GtkWidget *makeMainReqResp(AppData app_data)
 {
   GtkWidget *top_hbox = NULL ;
-  GtkWidget *send_vbox, *receive_vbox ;
 
   top_hbox = gtk_hbox_new(FALSE, 10) ;
 
   /* Build Send command boxes. */
-  send_vbox = GTK_WIDGET(makeReqRespBox(app_data,
-					GTK_BOX(top_hbox), "SEND TO ZMAP",
-					&(app_data->our_req), "Our Request", "ZMap's Response")) ;
+  makeReqRespBox(app_data,
+                 GTK_BOX(top_hbox), "SEND TO ZMAP",
+                 &(app_data->our_req), "Our Request", "ZMap's Response") ;
 
   /* Build Receive command boxes. */
-  receive_vbox = GTK_WIDGET(makeReqRespBox(app_data,
-					   GTK_BOX(top_hbox), "RECEIVE FROM ZMAP",
-					   &(app_data->zmap_req), "ZMap's Request", "Our Response")) ;
+  makeReqRespBox(app_data,
+                 GTK_BOX(top_hbox), "RECEIVE FROM ZMAP",
+                 &(app_data->zmap_req), "ZMap's Request", "Our Response") ;
 
   return top_hbox ;
 }

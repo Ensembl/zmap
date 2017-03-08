@@ -75,12 +75,9 @@ static void callWindowCommandCB(gpointer data, gpointer user_data)
   ZMapViewWindow view_window = (ZMapViewWindow)data ;
   ZMapWindowCallbackCommandAny cmd_any = (ZMapWindowCallbackCommandAny)user_data ;
   ZMapWindow window = view_window->window ;
-  gboolean status ;
   char *err_msg = NULL ;
 
-  /* Need to sort out errors....here and return a list of them in all.... */
-  status = zMapWindowExecuteCommand(window, cmd_any, &err_msg) ;
-
+  zMapWindowExecuteCommand(window, cmd_any, &err_msg) ;
 
   return ;
 }

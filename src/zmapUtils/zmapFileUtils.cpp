@@ -166,28 +166,6 @@ const char *zMapGetTmpDir()
 }
 
 
-/* This functions takes a string like:
- *
- * /nfs/team71/acedb/edgrif/ZMap/ZMap_Curr/ZMap/src/build/linux/../../zmapControl/remote/zmapXRemote.c
- *
- * and returns a pointer in the _same_ string to the filename at the end, e.g.
- *
- * zmapXRemote.c
- *
- * Currently we just call g_basename() but this is a glib deprecated function so we may have
- * to do our own version one day....
- *
- *  */
-char *zMapGetBasename(const char *path_in)
-{
-  char *basename ;
-
-  basename = (char *) g_basename(path_in) ;
-
-  return basename ;
-}
-
-
 /* This function will expand the given path according in the same way that
  * the shell does including "~" expansion. The underlying wordexp()
  * function actually does glob style expansion so could return many values

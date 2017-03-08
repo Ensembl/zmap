@@ -123,7 +123,6 @@ char *zmapWindowDNAChoose(ZMapWindow window, FooCanvasItem *feature_item, ZMapWi
   ZMapFeature feature ;
   ZMapFeatureBlock block ;
   double x1, y1, x2, y2 ;
-  ZMapWindowContainerGroup container;
   FooCanvasItem *parent ;
   gint block_start, block_end ;
   const char *button_text ;
@@ -170,7 +169,6 @@ char *zmapWindowDNAChoose(ZMapWindow window, FooCanvasItem *feature_item, ZMapWi
 
 
   /* Draw an overlay box over the feature to show the extent of the dna selected. */
-  container = zmapWindowContainerCanvasItemGetContainer(feature_item) ;
   parent = zmapWindowItemGetTrueItem(feature_item) ;
   foo_canvas_item_get_bounds(parent, &x1, &y1, &x2, &y2) ;
 
@@ -404,7 +402,6 @@ static void getDNA(DNASearchData dna_data)
 {
   char *feature_txt = NULL ;
   char *err_text = NULL ;
-  char *dna ;
   int start, end ;
   int block_start;
 
@@ -421,8 +418,6 @@ static void getDNA(DNASearchData dna_data)
       zMapBlock2FeatureCoords(dna_data->block, &start, &end) ;
       start = start - dna_data->dna_flanking ;
       end   = end + dna_data->dna_flanking ;
-
-      dna   = dna_data->block->sequence.sequence ;
 
       /* Note that gtk_entry returns "" for no text, _not_ NULL. */
       feature_txt = dna_data->entry_text ;
@@ -627,13 +622,12 @@ static gboolean spinEventCB(GtkWidget *widget, GdkEventClient *event, gpointer u
  * any other pathological values. */
 static void updateSpinners(DNASearchData dna_data)
 {
-  int start, end, flanking, start_flank, end_flank, flanking_max ;
+  int start, end, start_flank, end_flank, flanking_max ;
   int max_end, min_start;
 
   /* Get current spin values. */
   start    = gtk_spin_button_get_value_as_int(dna_data->start_spin) ;
   end      = gtk_spin_button_get_value_as_int(dna_data->end_spin) ;
-  flanking = gtk_spin_button_get_value_as_int(dna_data->flanking_spin) ;
 
   min_start =  dna_data->block->block_to_sequence.block.x1;
   max_end   =  dna_data->block->block_to_sequence.block.x2;

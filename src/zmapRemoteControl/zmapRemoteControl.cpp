@@ -2371,8 +2371,8 @@ static gboolean zeroMQSocketClose(void *zmq_socket, char *endpoint, gboolean dis
 
 
 
-/* The send/receive code works asynchronously and if there are errors, state needs to be
- * reset so that the send or receive is aborted. */
+/* The send/receive code works asynchronously and if there are errors, the application needs
+ * to be called so that it can set its state. */
 static void errorHandler(ZMapRemoteControl remote_control,
                          const char *file_name, const char *func_name,
                          ZMapRemoteControlRCType error_rc, const char *format_str, ...)
@@ -2392,7 +2392,9 @@ static void errorHandler(ZMapRemoteControl remote_control,
 
   va_end(args1) ;
 
-  bytes_printed = g_vasprintf(&err_msg, format_str, args2) ; /* should check bytes.... */
+  if (!(bytes_printed = g_vasprintf(&err_msg, format_str, args2)))
+    REMOTELOGMSG(remote_control, "%s",
+                 "No error message parameters supplied so error message could be passed back to the application.") ;
 
   va_end(args2) ;
 
@@ -2784,7 +2786,7 @@ static char *headerCreate(const char *request_type, char *request_id, int retry_
 /* Takes an existing header and in effect overwrites the retry number
  * in that header with the new retry number.
  *
- * Note that curr_header is free'd by this function so you should probably use it like this:
+ * Note that curr_header is free'd by this function so you should use func like this:
  *
  * my_header = headerSetRetry(my_header, 2) ;
  *  */
@@ -2792,14 +2794,19 @@ static char *headerSetRetry(char *curr_header, int new_retry_num)
 {
   char *new_header = NULL ;
   char **split_string, **split_string_orig ;
-  char *header_type, *request_id, *orig_retry_num, *request_time ;
+  char *header_type, *request_id, *request_time ;
 
   split_string_orig = split_string = g_strsplit_set(curr_header, " /", 0) ;
   header_type = *split_string ;
   split_string++ ;
   request_id = *split_string ;
   split_string++ ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  char *orig_retry_num ;
   orig_retry_num = *split_string ;                          /* not used...debugging only. */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
   split_string++ ;
   request_time  = *split_string ;
   split_string++ ;
@@ -2809,14 +2816,7 @@ static char *headerSetRetry(char *curr_header, int new_retry_num)
 
   g_strfreev(split_string_orig) ;
 
-
-
-  /* ok...I've undeffed this...check that code does not crash.... */
-  /* test this .....  should work !! */
-
   g_free(curr_header) ;
-
-
 
   return new_header ;
 }

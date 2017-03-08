@@ -164,7 +164,11 @@ char *zMapFASTAString(ZMapFASTASeqType seq_type,
   char *fasta_string = NULL ;
   char *title ;
   GString *str ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   char buffer[FASTA_CHARS + 2] ;			    /* FastA chars + \n + \0 */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
   int header_length ;
   int lines = 0, chars_left = 0 ;
   const char *cp = NULL ;
@@ -198,8 +202,12 @@ char *zMapFASTAString(ZMapFASTASeqType seq_type,
   cp = sequence ;
   if (lines)
     {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       buffer[FASTA_CHARS] = '\n' ;
       buffer[FASTA_CHARS + 1] = '\0' ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
       for (i = 0 ; i < lines ; i++)
         {
           /* shame not to do this in one go...probably is some way using formatting.... */

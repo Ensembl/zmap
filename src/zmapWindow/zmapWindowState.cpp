@@ -363,7 +363,6 @@ static void get_bumped_columns(ZMapWindowContainerGroup container,
     {
       StyleBumpModeStruct bump_data = {{0}, (ZMapStyleBumpMode)0, FALSE};
       ZMapWindowContainerFeatureSet container_set;
-      ZMapStyleBumpMode default_bump;
       ZMapFeatureAny feature_any;
       ZMapFeatureSet fset;
 
@@ -380,7 +379,6 @@ static void get_bumped_columns(ZMapWindowContainerGroup container,
           bump_data.column.strand     = container_set->strand;
           bump_data.strand_specific   = zmapWindowContainerFeatureSetIsStrandShown(container_set);
           bump_data.bump_mode         = zmapWindowContainerFeatureSetGetBumpMode(container_set);
-          default_bump                = zmapWindowContainerFeatureSetGetDefaultBumpMode(container_set);
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
           printf("bump_save %s/%s = %d\n", g_quark_to_string(bump_data.column.column_id),g_quark_to_string(bump_data.column.fset_id),bump_data.bump_mode);
@@ -521,18 +519,10 @@ static void state_mark_restore(ZMapWindow window, ZMapWindowMark mark, ZMapWindo
 
 static void state_position_restore(ZMapWindow window, ZMapWindowPositionStruct *position)
 {
-  FooCanvas *canvas;
-  GtkAdjustment *v_adjuster, *h_adjuster;
-  GtkScrolledWindow *scrolled_window;
   ZMapWindowPositionStruct new_position = {};
 
   if (window->canvas && FOO_IS_CANVAS(window->canvas))
     {
-      canvas = window->canvas;
-
-      scrolled_window = GTK_SCROLLED_WINDOW(window->scrolled_window);
-      v_adjuster      = gtk_scrolled_window_get_vadjustment(scrolled_window);
-      h_adjuster      = gtk_scrolled_window_get_hadjustment(scrolled_window);
       /* I'm copying this, so as not to alter the state->position version. */
       /* Accidentally or otherwise doing a state restore more than once should be ok. */
       new_position = *position;        /* n.b. struct copy! */

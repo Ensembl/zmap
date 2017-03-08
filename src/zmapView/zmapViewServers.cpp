@@ -1188,16 +1188,12 @@ static gboolean processDataRequests(void *user_data, ZMapServerReqAny req_any)
 
             if (!(src = (ZMapFeatureSource)g_hash_table_lookup(feature_sets->source_2_sourcedata_inout,GUINT_TO_POINTER(fid))))
               {
-                GQuark src_unique_id ;
-
                 // if entry is missing
                 // allocate a new struct and add to the table
                 src = g_new0(ZMapFeatureSourceStruct,1);
 
                 src->source_id = GPOINTER_TO_UINT(fset->data);        /* may have upper case */
                 src->source_text = src->source_id;
-                src_unique_id = fid;
-                //                src->style_id = fid;
 
                 g_hash_table_insert(feature_sets->source_2_sourcedata_inout, GUINT_TO_POINTER(fid), src) ;
               }

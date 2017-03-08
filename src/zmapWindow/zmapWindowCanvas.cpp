@@ -82,13 +82,17 @@ gboolean zmapWindowGetCanvasLayoutSize(FooCanvas *canvas,
     {
       GtkWidget *widget = GTK_WIDGET(canvas) ;
       GtkLayout *layout = &(canvas->layout) ;
-      int layout_alloc_width, layout_alloc_height ;
       unsigned int get_layout_width, get_layout_height ;
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       /* Check sizes for debug.... */
+      int layout_alloc_width, layout_alloc_height ;
       layout_alloc_width = widget->allocation.width ;
       layout_alloc_height = widget->allocation.height ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
       gtk_layout_get_size(layout, &get_layout_width, &get_layout_height) ;
 
 

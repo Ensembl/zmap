@@ -583,8 +583,6 @@ static ZMapGuiNotebookChapter makeChapter(ZMapGuiNotebook note_book_parent, ZMap
   ZMapGuiNotebookPage page ;
   ZMapGuiNotebookSubsection subsection ;
   ZMapGuiNotebookParagraph paragraph ;
-  ZMapGuiNotebookTagValue tagvalue ;
-
 
   chapter = zMapGUINotebookCreateChapter(note_book_parent, VIEW_CHAPTER, &user_CBs) ;
 
@@ -597,10 +595,10 @@ static ZMapGuiNotebookChapter makeChapter(ZMapGuiNotebook note_book_parent, ZMap
 					     ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE,
 					     NULL, NULL) ;
 
-  tagvalue = zMapGUINotebookCreateTagValue(paragraph, VIEW_FILTERED,
-                                           NULL,
-					   ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,
-					   "bool", zMapViewGetFlag(view, ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS)) ;
+  zMapGUINotebookCreateTagValue(paragraph, VIEW_FILTERED,
+                                NULL,
+                                ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,
+                                "bool", zMapViewGetFlag(view, ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS)) ;
 
   return chapter ;
 }

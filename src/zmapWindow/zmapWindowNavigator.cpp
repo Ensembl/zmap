@@ -647,7 +647,7 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
   ZMapFeatureLevelType feature_type = ZMAPFEATURE_STRUCT_INVALID;
   ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
   ZMapWindowNavigator navigate = NULL;
-  gboolean hash_status = FALSE;
+
 
   feature_type = feature_any->struct_type;
 
@@ -698,7 +698,7 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
 
             //                zmapWindowDrawSetGroupBackground(navigate->container_align, 0, 1, 1.0, ZMAP_CANVAS_LAYER_ALIGN_BACKGROUND, NULL, NULL);
 
-            hash_status = zmapWindowFToIAddAlign(navigate->ftoi_hash, key_id, (FooCanvasGroup *)(navigate->container_align));
+            zmapWindowFToIAddAlign(navigate->ftoi_hash, key_id, (FooCanvasGroup *)(navigate->container_align));
 
           }
       }
@@ -734,8 +734,8 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
 
         //        zmapWindowDrawSetGroupBackground(draw_data->container_block, 0, 1, 1.0, ZMAP_CANVAS_LAYER_BLOCK_BACKGROUND, NULL, NULL);
 
-        hash_status = zmapWindowFToIAddBlock(navigate->ftoi_hash, draw_data->current_align->unique_id,
-                                             key_id, (FooCanvasGroup *)(draw_data->container_block));
+        zmapWindowFToIAddBlock(navigate->ftoi_hash, draw_data->current_align->unique_id,
+                               key_id, (FooCanvasGroup *)(draw_data->container_block));
 
         navigate->locator = zmapWindowDrawSetGroupBackground(navigate->current_window, navigate->container_block,
                                                              block_start, block_end, 1.0,

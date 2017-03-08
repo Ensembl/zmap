@@ -19,7 +19,7 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originated by
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
  *
  * Description: Contains macros, functions etc. for checking in production
@@ -33,20 +33,23 @@
 #include <stdlib.h>
 #include <glib.h>
 
+#include <ZMap/zmapUtilsPrivate.hpp>
+
+
 
 /* Use to test functions, e.g.
  *         zmapCheck(myfunc("x y z"), "%s", "disaster, my func should never fail") ;
  *  */
-#define zMapCheck(EXPR, FORMAT, ...)                            \
-G_STMT_START{			                                \
-  if ((EXPR))                					\
-    {								\
-      g_printerr(ZMAP_MSG_FORMAT_STRING " '%s' " FORMAT,        \
-		 ZMAP_MSG_FUNCTION_MACRO,    		        \
-		 #EXPR,                                         \
-		 __VA_ARGS__);					\
-      exit(EXIT_FAILURE) ;                                      \
-    };                                                          \
+#define zMapCheck(EXPR, FORMAT, ...)                                 \
+  G_STMT_START{                                                      \
+  if ((EXPR))                                                        \
+    {                                                                \
+      g_printerr(ZMAP_MSG_CODE_FORMAT_STRING " '%s' " FORMAT,        \
+                 ZMAP_MSG_CODE_FORMAT_ARGS,                          \
+                 #EXPR,                                              \
+                 __VA_ARGS__);                                       \
+      exit(EXIT_FAILURE) ;                                           \
+    };                                                               \
 }G_STMT_END
 
 
