@@ -814,22 +814,31 @@ static void end_handler(void *userData,
   if(parser->useXMLBase)
     xmlBaseHandler = getObjHandler(current_ele, parser->xmlBaseHandlers);
 
-  if(((handler = parser->endMOHandler) != NULL) ||
-     ((handler = getObjHandler(current_ele, parser->endTagHandlers)) != NULL))
+  if(((handler = parser->endMOHandler) != NULL)
+     || ((handler = getObjHandler(current_ele, parser->endTagHandlers)) != NULL))
     {
       if(((*handler)((void *)parser->user_data, current_ele, parser)) == TRUE)
         {
-          /* We can free the current_ele and all its children */
-          /* First we need to tell the parent that its child is being freed. */
-          if(!(zmapXMLElementSignalParentChildFree(current_ele)))
-    printf("[zmapXMLParser] XML Document free? Memory leak ?\n");
+          // free the current_ele and all its children
 
+          /* First remove current element from it's parent, no need to do this if current element is
+             the root because it won't have a parent. */
+          if (zMapXMLParserGetRoot(parser) != current_ele)
+            {
+              if (!(zmapXMLElementSignalParentChildFree(current_ele)))
+                {
+                  zMapLogWarning("%s", "Detected non-root element in parser that has no parent, probable code error.") ;
+                }
+            }
+
+          // Now mark current element for free'ing 
           zmapXMLElementMarkDirty(current_ele);
         }
       else if(parser->array_point_e == parser->max_size_e - 1)
         {
           /* If we get here, we're running out of allocated elements */
-          printf("[zmapXMLParser] Possible information loss...\n");
+          zMapLogCritical("%s", "XML parser is running out of space....") ;
+
           zmapXMLElementMarkDirty(current_ele);
         }
     }
@@ -838,7 +847,8 @@ static void end_handler(void *userData,
       /* If we get here, we're running out of allocated elements */
       /* To fix this requires an increase in the number of end_handlers
        * which return TRUE */
-      printf("[zmapXMLParser] Possible information loss...\n");
+      zMapLogCritical("%s", "XML parser is running out of space....") ;
+
       zmapXMLElementMarkDirty(current_ele);
     }
 

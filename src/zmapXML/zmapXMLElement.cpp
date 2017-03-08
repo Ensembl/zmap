@@ -77,19 +77,24 @@ void zmapXMLElementAddChild(ZMapXMLElement parent, ZMapXMLElement child)
   child->parent    = parent;
   return ;
 }
+
+
+
+/* Remove child from its parent. Note parent can legitimately be NULL if child
+ * is the root e.g. if no tree ended up being built. */
 gboolean zmapXMLElementSignalParentChildFree(ZMapXMLElement child)
 {
-  /* In case we get passed the root element as the the child, its
-     parent is NULL! */
-  ZMapXMLElement parent = NULL;
-  parent = child->parent;
+  gboolean result = FALSE ;
+  ZMapXMLElement parent = child->parent ;
 
-  if(parent == NULL)
-    return FALSE;
+  if (parent != NULL)
+    {
+      parent->children = g_list_remove(parent->children, child) ;
 
-  parent->children = g_list_remove(parent->children, child);
+      result = TRUE ;
+    }
 
-  return TRUE;
+  return result ;
 }
 
 void zmapXMLElementAddContent(ZMapXMLElement ele,
