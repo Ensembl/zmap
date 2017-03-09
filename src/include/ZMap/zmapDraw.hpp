@@ -1,5 +1,5 @@
 /*  File: zmapDraw.h
- *  Author: Rob Clack (rnc@sanger.ac.uk)
+ *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2017: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
