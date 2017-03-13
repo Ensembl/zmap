@@ -19,10 +19,13 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originally written by:
- *
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
- *
+ * 
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *       Gemma Guest (Sanger Institute, UK) gb10@sanger.ac.uk
+ *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
+ *  
  * Description: In the end I want to have a general set of sequence
  *              functions that will apply equally to dna and peptide.
  *              These functions will call functions in zmapDNA.c or

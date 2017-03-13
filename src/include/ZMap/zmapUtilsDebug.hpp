@@ -18,11 +18,14 @@
  * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
- * originated by
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ * originally written by:
+ * 
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
- *
+ *       Gemma Guest (Sanger Institute, UK) gb10@sanger.ac.uk
+ *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
+ *  
  * Description: Contains macros, functions etc. useful for testing/debugging.
  *
  *-------------------------------------------------------------------
