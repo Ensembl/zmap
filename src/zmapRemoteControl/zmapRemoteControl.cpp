@@ -490,7 +490,8 @@ gboolean zMapRemoteControlSendRequest(ZMapRemoteControl remote_control, char *re
           queueAddInRequestPriority(remote_control->outgoing_requests, outgoing_request, NULL) ;
 
           DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE,
-                      "Received request from zmap, added to outgoing request queue: %s", outgoing_request) ;
+                      "Received request from zmap, added to outgoing request queue: %s",
+                      outgoing_request->body) ;
 
           result = TRUE ;
         }
@@ -795,7 +796,8 @@ static gboolean waitForRequestCB(gpointer user_data)
       queueAdd(remote_control->incoming_requests, incoming_request) ;
 
       DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE,
-                  "Received request from peer, adding to incoming request queue: %s", incoming_request) ;
+                  "Received request from peer, adding to incoming request queue: %s",
+                  incoming_request->body) ;
     }
 
   return call_again ;
@@ -840,7 +842,8 @@ static gboolean waitForReplyCB(gpointer user_data)
       queueAdd(remote_control->incoming_replies, incoming_reply) ;
 
       DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE,
-                  "Received reply from peer, adding to incoming reply queue: %s", incoming_reply) ;
+                  "Received reply from peer, adding to incoming reply queue: %s",
+                  incoming_reply->body) ;
     }
 
   return call_again ;
@@ -887,7 +890,8 @@ static void receiveReplyFromAppCB(void *remote_data, gboolean abort, char *reply
           outgoing_reply = zeroMQMessageCreate(header, reply) ;
 
           DEBUGLOGMSG(remote_control,  ZMAP_REMOTECONTROL_DEBUG_VERBOSE,
-                      "Received zmaps reply, adding to outgoing reply queue: %s",outgoing_reply) ;
+                      "Received zmaps reply, adding to outgoing reply queue: %s",
+                      outgoing_reply->body) ;
 
           queueAdd(remote_control->outgoing_replies, outgoing_reply) ;
         }
@@ -1095,7 +1099,7 @@ static gboolean queueMonitorCB(gpointer user_data)
 
 
                 DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE,
-                            "Sent ZMap's request: %s", curr_req_raw) ;
+                            "Sent ZMap's request: %s", curr_req_raw->body) ;
               }
             else
               {
@@ -1130,12 +1134,12 @@ static gboolean queueMonitorCB(gpointer user_data)
                 reply = queueRemove(remote_control->incoming_replies) ;
 
                 DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE,
-                            "Received peer's reply", reply) ;
+                            "Received peer's reply", reply->body) ;
 
                 if (reqReplyMatch(remote_control, remote_control->curr_req, reply->body, &err_msg))
                   {
                     DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE,
-                                "Matched peer's reply, removing from input queue: %s", reply) ;
+                                "Matched peer's reply, removing from input queue: %s", reply->body) ;
 
 
                     /* Pass the reply back to the application. */
@@ -1149,7 +1153,7 @@ static gboolean queueMonitorCB(gpointer user_data)
                 else
                   {
                     DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE,
-                                "Could not match peer's reply, not removed from input queue: %s", reply) ;
+                                "Could not match peer's reply, not removed from input queue: %s", reply->body) ;
 
 
                     LOG_AND_CALL_ERR_HANDLER(remote_control, ZMAP_REMOTECONTROL_RC_BAD_SOCKET,
@@ -1310,7 +1314,7 @@ static gboolean queueMonitorCB(gpointer user_data)
             request = queueRemove(remote_control->incoming_requests) ;
 
             DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE,
-                        "Received peer's request: %s", request) ;
+                        "Received peer's request: %s", request->body) ;
 
 
             if (remote_control->prev_incoming_req
@@ -1403,7 +1407,7 @@ static gboolean queueMonitorCB(gpointer user_data)
                     reqReplyAddReply(remote_control->curr_req, reply) ;
 
                     DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE,
-                                "Sent ZMap's reply: %s", reply) ;
+                                "Sent ZMap's reply: %s", reply->body) ;
 
                     remote_control->prev_incoming_req = remote_control->curr_req ;
                     remote_control->curr_req = NULL ;
@@ -1461,7 +1465,7 @@ static gboolean sendRequest(ZMapRemoteControl remote_control, RemoteZeroMQMessag
   if ((result = zeroMQSocketSendMessage(send->zmq_socket, request->header, request->body, &err_msg)))
     {
       DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE,
-                  "Request sent: %s", request) ;
+                  "Request sent: %s", request->body) ;
 
       /* Optionally call app to signal that peer that request has been sent. */
       if (send->req_sent_func)
@@ -2498,6 +2502,11 @@ static void logMsg(ZMapRemoteControl remote_control,
     g_free(time_str) ;
 
   (remote_control->err_report_func)(remote_control->err_report_data, msg->str) ;
+
+
+  // Temp while debugging.....
+  zMapLogCritical("%s", msg->str) ;
+
 
   g_string_free(msg, TRUE) ;
 
