@@ -943,7 +943,9 @@ FooCanvasItem *zMapWindowCanvasItemGetInterval(ZMapWindowCanvasItem canvas_item,
     }
 
   if(matching_interval == NULL)
-    g_warning("No matching interval!");
+    {
+      zMapLogWarning("%s", "No matching interval!");
+    }
   else if(sub_feature_out)
     {
       if(ZMAP_IS_WINDOW_FEATURESET_ITEM(matching_interval) && zMapWindowCanvasItemGetFeature(item))

@@ -489,7 +489,7 @@ static void filter_checkbox_toggled_cb(GtkWidget *checkbox, gpointer user_data)
     }
   else if(!button_pressed)
     {
-      g_warning("Turning filter '%s' off, but it's not in the list.", filter);
+      zMapLogWarning("Turning filter '%s' off, but it's not in the list.", filter);
     }
 
   return ;

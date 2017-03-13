@@ -765,7 +765,7 @@ ZMapFeatureSet zmapWindowContainerFeatureSetRecoverFeatureSet(ZMapWindowContaine
 
       if(!feature_set)
         {
-          g_warning("%s", "No Feature Set!");
+          zMapLogWarning("%s", "No Feature Set!");
           container_set->has_feature_set = FALSE;
         }
     }

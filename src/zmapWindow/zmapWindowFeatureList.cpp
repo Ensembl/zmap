@@ -1663,7 +1663,9 @@ static void feature_item_data_strand_to_value(GValue *value, gpointer feature_it
       g_value_set_uint(value, zmapWindowContainerFeatureSetGetStrand(container)) ;
     }
   else
-    g_warning("%s", "Failed to get Parent Contianer.");
+    {
+      zMapLogWarning("%s", "Failed to get Parent Contianer.");
+    }
 
   return ;
 }
@@ -1682,7 +1684,9 @@ static void feature_item_data_frame_to_value(GValue *value, gpointer feature_ite
       g_value_set_uint(value, zmapWindowContainerFeatureSetGetFrame(container)) ;
     }
   else
-    g_warning("%s", "Failed to get Parent Contianer.");
+    {
+      zMapLogWarning("%s", "Failed to get Parent Contianer.");
+    }
 
   return ;
 }

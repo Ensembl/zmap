@@ -4196,7 +4196,7 @@ static gboolean zmap_widget_map(GtkWidget      *widget,
 
 #ifdef DEBUGGING_ONLY
   if(sizing_data->debug)
-    g_warning("map: %d x %d", sizing_data->widget_requisition.width, sizing_data->widget_requisition.height);
+    zMapLogWarning("map: %d x %d", sizing_data->widget_requisition.width, sizing_data->widget_requisition.height);
 #endif /* DEBUGGING_ONLY */
 
   gtk_widget_set_size_request(widget,
@@ -4217,7 +4217,7 @@ static gboolean zmap_widget_unmap(GtkWidget *widget,
 
 #ifdef DEBUGGING_ONLY
   if(sizing_data->debug)
-    g_warning("unmap: %d x %d", widget->requisition.width, widget->requisition.height);
+    zMapLogWarning("unmap: %d x %d", widget->requisition.width, widget->requisition.height);
 #endif /* DEBUGGING_ONLY */
 
   return FALSE;
@@ -4235,7 +4235,7 @@ static void zmap_widget_size_allocation(GtkWidget     *widget,
 
 #ifdef DEBUGGING_ONLY
   if(sizing_data->debug)
-    g_warning("alloc: %d x %d", allocation->width, allocation->height);
+    zMapLogWarning("alloc: %d x %d", allocation->width, allocation->height);
 #endif /* DEBUGGING_ONLY */
 
   return ;

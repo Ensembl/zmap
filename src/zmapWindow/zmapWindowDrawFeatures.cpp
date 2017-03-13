@@ -2510,9 +2510,9 @@ static void ProcessListFeature(gpointer data, gpointer user_data)
   if(style)
     style = zmapWindowContainerFeatureSetStyleFromStyle((ZMapWindowContainerFeatureSet)column_group, style) ;
   else
-    g_warning("need a style '%s' for feature '%s'",
-              g_quark_to_string(feature->style_id),
-              g_quark_to_string(feature->original_id));
+    zMapLogWarning("need a style '%s' for feature '%s'",
+                   g_quark_to_string(feature->style_id),
+                   g_quark_to_string(feature->original_id));
 
 #endif
 
@@ -2535,8 +2535,8 @@ static void ProcessListFeature(gpointer data, gpointer user_data)
 #endif
     }
   else
-    g_warning("definitely need a style for feature '%s'",
-              g_quark_to_string(feature->original_id));
+    zMapLogWarning("definitely need a style for feature '%s'",
+                   g_quark_to_string(feature->original_id));
 
   if(feature_item)
     featureset_data->feature_count++;

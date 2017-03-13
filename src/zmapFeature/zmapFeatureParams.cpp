@@ -399,7 +399,8 @@ static void zmap_feature_data_class_init (ZMapFeatureDataClass data_class)
 
 static void zmap_feature_data_init (ZMapFeatureData data)
 {
-  g_warning("not for instantiating");
+  zMapLogWarning("%s", "not for instantiating !");
+
   return ;
 }
 
@@ -474,20 +475,20 @@ static gboolean invoke_get_func_valist(gpointer        user_data,
 
       if (fail_on_bad_requests_G && !pspec)
         {
-          g_warning ("%s: type `%s' has no property named `%s'",
-             G_STRFUNC,
-             gtype_to_message_string(pool_member_type),
-             name);
+          zMapLogWarning("%s: type `%s' has no property named `%s'",
+                         G_STRFUNC,
+                         gtype_to_message_string(pool_member_type),
+                         name);
           break;
         }
       else if(pspec)
         {
           if (fail_on_bad_requests_G && !(pspec->flags & G_PARAM_READABLE))
             {
-              g_warning ("%s: property `%s' of object class `%s' is not readable",
-                         G_STRFUNC,
-                         pspec->name,
-                         gtype_to_message_string(pool_member_type));
+              zMapLogWarning("%s: property `%s' of object class `%s' is not readable",
+                             G_STRFUNC,
+                             pspec->name,
+                             gtype_to_message_string(pool_member_type));
               break;
             }
 
@@ -500,7 +501,7 @@ static gboolean invoke_get_func_valist(gpointer        user_data,
 
           if (error)
             {
-              g_warning ("%s: %s", G_STRFUNC, error);
+              zMapLogWarning("%s: %s", G_STRFUNC, error);
               g_free (error);
               g_value_unset (&value);
               break;
@@ -1087,10 +1088,10 @@ static gpointer invoke_create_func_valist(gpointer        user_data,
                                                         TRUE);
           if (!pspec)
             {
-              g_warning ("%s: type `%s' has no property named `%s'",
-                 G_STRFUNC,
-                 g_type_name (pool_member_type),
-                 name);
+              zMapLogWarning("%s: type `%s' has no property named `%s'",
+                             G_STRFUNC,
+                             g_type_name (pool_member_type),
+                             name);
               break;
             }
 
@@ -1106,7 +1107,7 @@ static gpointer invoke_create_func_valist(gpointer        user_data,
           G_VALUE_COLLECT (&params[n_params].value, var_args, 0, &error);
           if (error)
             {
-              g_warning ("%s: %s", G_STRFUNC, error);
+              zMapLogWarning("%s: %s", G_STRFUNC, error);
               g_free (error);
               g_value_unset (&params[n_params].value);
               break;
