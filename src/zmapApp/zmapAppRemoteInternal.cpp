@@ -485,6 +485,7 @@ static void zmapRequestSentCB(void *user_data)
   return ;
 }
 
+
 /* 
  * Called by ZMapRemoteControl: Receives all replies sent to zmap by a peer.
  */
@@ -499,22 +500,13 @@ static void receivedPeerReplyCB(ZMapRemoteControl remote_control, char *reply, v
   setModal(app_context, FALSE) ;
 
 
-  /* Again.....is this a good idea....the app callback needs to be called whatever happens
-   * to reset state...fine to log a bad message but we still need to call the app func. */
-  if (!(result = zMapRemoteCommandValidateReply(remote->remote_controller,
-                                                remote->curr_zmap_request, reply, &error_out)))
-    {
-      /* error message etc...... */
-      zMapLogWarning("Bad remote message from peer: %s", error_out) ;
+  zMapLogWarning("Just received reply from peer: \"%s\"", reply) ;
 
-      g_free(error_out) ;
-    }
-  else
-    {
-      /* Call the command processing code, there's no return code here because only the function
-       * ultimately handling the problem knows how to handle the error. */
-      zmapAppProcessAnyReply(app_context, reply) ;
-    }
+
+  /* Call the command processing code, there's no return code here because only the function
+   * ultimately handling the problem knows how to handle the error. */
+  zmapAppProcessAnyReply(app_context, reply) ;
+
 
   return ;
 }
