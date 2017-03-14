@@ -1,0 +1,16 @@
+==========================================================================
+ZMap Foocanvas
+
+
+Acknowledgements
+----------------
+
+We hereby acknowledge that the zmap foocanvas version was derived directly
+from the gnome foo canvas. Please see the information in the AUTHORS,
+COPYING.LIB AND README files in this directory for information.
+
+These files are now part of the build process for ZMap and are compiled into
+an archive of .o files which is used to directly build the zmap executable. We
+no longer require the configure and other steps to build a separately
+installed foocanvas library.
+

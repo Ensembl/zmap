@@ -272,14 +272,6 @@ xml_writer_LDADD        = $(zmap_LDADD)
 xml_writer_DEPENDENCIES = $(noinst_LTLIBRARIES)
 xml_writer_CPPFLAGS     = $(AM_CPPFLAGS) -I$(top_srcdir)/zmapApp
 
-# program that knows about the xremote protocol.
-#xremote_gui_SOURCES      = $(top_srcdir)/zmapControl/remote/xremote_gui_test.c
-#xremote_gui_LDFLAGS      = 
-#xremote_gui_LDADD        = $(zmap_LDADD)
-#xremote_gui_DEPENDENCIES = $(noinst_LTLIBRARIES)
-#xremote_gui_CPPFLAGS     = $(AM_CPPFLAGS) -I$(top_srcdir)/zmapApp
-
-
 # The new program that knows about the xremote protocol.
 #remotecontrol_SOURCES      = $(top_srcdir)/zmapRemoteControl/remotetest/remotecontroltest.c
 remotecontrol_SOURCES      = $(top_srcdir)/zmapRemoteControl/remotetest/remotecontroltest.cpp
@@ -288,52 +280,6 @@ remotecontrol_LDADD        = $(zmap_LDADD)
 remotecontrol_DEPENDENCIES = $(noinst_LTLIBRARIES)
 remotecontrol_CPPFLAGS     = $(AM_CPPFLAGS) -I$(top_srcdir)/zmapApp
 remotecontrol_LINK         = $(CXX)  $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-
-#
-# OH GOSH ALL THIS TEST STUFF IS CURRENTLY UNUSED AND THEREFORE USELESS.....
-#
-################################################################################
-################################################################################
-# Testing
-################################################################################
-################################################################################
-
-check_LTLIBRARIES = libcheckZMap.la
-
-libcheckZMap_la_DEPENDENCIES = $(noinst_LTLIBRARIES) $(libcheckZMap_la_LIBADD)
-
-libcheckZMap_la_SOURCES =
-#libcheckZMap_la_LDFLAGS = -all-static
-
-libcheckZMap_la_LIBADD  = \
-zmapFeature/tests/libcheckZMapFeature.la   \
-zmapFeature/tests/libcheckZMapFeature_P.la \
-zmapFeature/tests/libcheckZMapStyle.la     \
-zmapFeature/tests/libcheckZMapStyle_P.la   \
-zmapUtils/tests/libcheckZMapUtilsConfig.la \
-$(NULL)
-
-
-TESTS = check_zmap
-
-check_PROGRAMS = check_zmap
-
-# so that a script can do
-# make check check_zmap_LOG_FILE=log_to_check.log
-check_zmap_LOG_FILE     = "default.log"
-check_zmap_SOURCES      = $(top_srcdir)/tests/check_zmapmain.cpp
-check_zmap_DEPENDENCIES = $(check_LTLIBRARIES)
-check_zmap_LINK         = $(zmap_LINK)
-check_zmap_LDADD        = @CHECK_LIBS@ -lcheckZMap $(zmap_LDADD)
-check_zmap_CFLAGS       = @CHECK_CFLAGS@ $(INCLUDE_COMMON) \
--I$(top_srcdir)/zmapFeature \
--I$(top_srcdir)/zmapUtils   \
--DCHECK_ZMAP_LOG_TO_FILE    \
--DCHECK_ZMAP_LOG=\"$(check_zmap_LOG_FILE)\"  \
-$(NULL)
-
-
-# DISTCHECK_CONFIGURE_FLAGS = --enable-gtk-doc
 
 
 
