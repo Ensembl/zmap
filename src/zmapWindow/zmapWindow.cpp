@@ -657,6 +657,30 @@ void zMapWindowDisplayData(ZMapWindow window, ZMapWindowState state,
   /* We either turn the busy cursor on here if there is already a window or we do it in the expose
    * handler exposeHandlerCB() which is called when the window is first realised, its turned off
    * again in zmapWindowDrawFeatures(). */
+  /*
+   * Investigating https://helpdesk.ebi.ac.uk/Ticket/Display.html?id=171126 led me to this point.
+   * There are three clauses here, the last of which should never be hit; however, it's the one
+   * associated with the drawing bug. The problem is caused by contexts being merged before the
+   * canvas has been properly created (or at least given a height); the first clause below prevents
+   * the signal being sent if this is the case. However, it means that a merge (from which some data
+   * that we want to see) gets missed out by this series of signals, so some of the data won't be
+   * seen - at least until the whole thing is redrawn by, for example, a call to revcomp.
+   *
+   * So if you omit the test in the first clause below for allocation.height>1, then the datasets are
+   * all drawn. However (and there had to be at least one) I think that there is another problem arising
+   * that seems to cause a freeze of the GUI main thread; it is hard to reproduce, but seems to happen
+   * sometimes when this change is made - which is why I've left it in here for the moment. I have not
+   * noticed anything like this happening under other circumstances.
+   *
+   * The second "however" is that this is only half of the problem. It would be better to try to make
+   * sure that the canvas is created and sized properly _before_ anything else happens. The data
+   * threads are independent (and with small datasets very quick to execute as well) so this, with
+   * the current model, is not possible. You would have to block the return of the data threads until
+   * the GUI creation has got past a certain point, which seems awkward and crude to say the least.
+   *
+   * Finally; the message shouldn't have been send to stdout, so I modified that bit if nothing else.
+   *
+   */
   if (GTK_WIDGET(window->canvas)->allocation.height > 1 && GTK_WIDGET(window->canvas)->window)
     {
       sendClientEvent(window, feature_sets, loaded_cb_user_data) ;
@@ -683,8 +707,11 @@ void zMapWindowDisplayData(ZMapWindow window, ZMapWindowState state,
        * first handler gets run, removes the second handler (window->exposeHandlerCB id)
        * meanwhile when the first handler finishes it destroys its data.
        * first one gets run on next expose. BANG.
+       *
+       * This message probably shouldn't be sent to stdout...
        */
-      printf("If we've merged some contexts before being exposed\n");
+      /*printf("If we've merged some contexts before being exposed\n"); */
+      zMapLogWarning("Window (%p) has merged some contexts before being exposed\n", window);
     }
 
   return ;
