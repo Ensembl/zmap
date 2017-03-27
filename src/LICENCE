@@ -1,14 +1,5 @@
 ================================================================================
 
-ZMap is free software distributed under the following copyright and Licence
-notices:
-
-================================================================================
-
-    Copyright (c) 2006-2017: Genome Research Ltd.
-
-================================================================================
-
                               Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
@@ -187,19 +178,3 @@ notices:
    END OF TERMS AND CONDITIONS
 
 ================================================================================
-
-ZMap Subcomponents
-
-zmap includes the following subcomponents that are covered by the indicated
-licences:
-
-ens-core - Apache v2
-
-htslib - MIT/Expat License
-
-libfoocanvas - LGPL
-
-zeromq - modified GPL allowing LGLP usage
-
-================================================================================
-
