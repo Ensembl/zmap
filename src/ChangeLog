@@ -1,3 +1,10 @@
+2017-02-27  zmap  <zmap@sanger.ac.uk>
+ ZMap version 2.11.6-270-gaf89d82 - Update RT and git commit reports
+ src/ChangeLog                                  | 57 ++++++++++++++++++++++++++
+ src/build/release_docs/GIT_COMMITS.txt         |  6 +++
+ src/build/release_docs/RT_TICKETS_RESOLVED.txt | 34 ++++++++++++++-
+ 3 files changed, 95 insertions(+), 2 deletions(-)
+
 2017-02-27  Ed Griffiths  <edgrif@sanger.ac.uk>
  Fix my own bug, broke the link between featureset and style, restored now. - RT '109833'
  src/zmapView/zmapViewServers.cpp | 20 +++++++-------------
