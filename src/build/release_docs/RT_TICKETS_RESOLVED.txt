@@ -1,7 +1,7 @@
 
 Request Tracker Tickets Resolved from 12/09/2016 to 28/03/2017
 
-[lucid-dev64 get_rt_tickets.sh (13:37:35)]  /software/bin/rt is there !!
+[lucid-dev64 get_rt_tickets.sh (14:59:57)]  /software/bin/rt is there !!
 ticket/425064
 id: ticket/425064
 Queue: zmap
