@@ -2,21 +2,34 @@
 <!--#include virtual="/perl/header"-->
 <!--#set var="author" value="edgrif@sanger.ac.uk" -->
 
-<fieldset>
+<h1>ZMap Genome Viewer/Editor</h1>
 
 <legend>Overview</legend>
 
-<p>These web pages are the development site for ZMap.
-ZMap is a project to produce a stand alone version of FMap, the popular
-sequence annotation component of acedb.
-</p>
-</fieldset>
-<br />
+<p>ZMap is a C++ application written to display genomic sequence data in a graphical way.
+It is based on the Acedb FMap display which was one of the first such viewers.</p>
 
-<p>Authors: <a href="mailto:edgrif@sanger.ac.uk">Ed Griffiths &lt;edgrif@sanger.ac.uk&gt;</a>
-&amp; <a href="mailto:rds@sanger.ac.uk">Roy Storey &lt;rds@sanger.ac.uk&gt;</a>
-<p>
+<p>For more information you should look through the following sections:</p>
 
+<ul>
+  <li><a href="design/index.shtml">Developer Notes</a></li>
+  <li><a href="user/index.shtml">User documentation</a></li>
+</ul>
+
+
+<p>Authors:
+
+<ul>
+  <li>Ed Griffiths  (Sanger Institute, UK)</li>
+  <li>Roy Storey (Sanger Institute, UK)</li>
+  <li>Malcolm Hinsley (Sanger Institute, UK)</li>
+  <li>Gemma Guest (Sanger Institute, UK)</li>
+  <li>Steve Miller (Sanger Institute, UK)</li>
+</ul>
+
+<p>To contact the current developers please email <a href="mailto:annosoft@sanger.ac.uk">The Annosoft Team</a>.</p>
+
+          
 
 <!--#include virtual="/perl/footer"-->
 

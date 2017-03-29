@@ -1,0 +1,15 @@
+<!--#set var="banner" value="ZMap"-->
+<!--#include virtual="/perl/header"-->
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<h1>ZMap Feature Context</h1>
+
+<ul>
+  <li><a href="zmapFeature.shtml">General Overview</a></li>
+  <li><a href="f_context.shtml">A More Detailed Overview</a></li>
+  <li><a href="BAM.shtml">Configuring BAM and other Short Read Data</a></li>
+</ul>
+
+
+<!--#include virtual="/perl/footer"-->
+

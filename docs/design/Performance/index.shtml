@@ -1,0 +1,13 @@
+<!--#set var="banner" value="ZMap"-->
+<!--#include virtual="/perl/header"-->
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<h1>ZMap Performance</h1>
+
+<ul>
+  <li><a href="optimise.shtml">Speeding up ZMap</a></li>
+  <li><a href="performance.shtml">Ideas for Improving Performance</a></li>
+</ul>
+
+<!--#include virtual="/perl/footer"-->
+

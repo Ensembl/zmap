@@ -1,0 +1,29 @@
+<!--#set var="banner" value="ZMap"-->
+<!--#include virtual="/perl/header"-->
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<h1>ZMap Display</h1>
+
+
+<h2>Configuration</h2>
+
+<ul>
+  <li><a href="zmapConfig.shtml">Configuration Overview</a></li>
+  <li><a href="zmap_config.shtml">Configuration - plans</a></li>
+  <li><a href="Column_Data_Configuration.shtml">Configuring Columns</a></li>
+  <li><a href="column_config.shtml">Column configuration example</a></li>
+  <li><a href="data_config.shtml">Configuring Complex and Related Feature Sets</a></li>
+</ul>
+
+
+<h2>Using</h2>
+
+<ul>
+  <li><a href="feature_search.shtml">Feature Searching</a></li>
+  <li><a href="zmapApp.shtml">ZMap Start-up</a></li>
+  <li><a href="GFF_zmap.shtml">Running ZMap from GFF files</a></li>
+</ul>
+
+
+<!--#include virtual="/perl/footer"-->
+

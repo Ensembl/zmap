@@ -1,0 +1,15 @@
+<!--#set var="banner" value="ZMap"-->
+<!--#include virtual="/perl/header"-->
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<h1>ZMap Servers</h1>
+
+<ul>
+  <li><a href="zmapServer.shtml">Server layers - partial documentation</a></li>
+  <li><a href="server_layers.shtml">Server layers - a critique</a></li>      
+  <li><a href="pipeServer.shtml">Pipe Server - out of date</a></li>
+  <li><a href="pipe_server.shtml">Pipe Server - new doc</a></li>
+</ul>
+
+<!--#include virtual="/perl/footer"-->
+

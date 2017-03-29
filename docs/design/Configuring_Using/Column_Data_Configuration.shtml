@@ -1,0 +1,333 @@
+<!--#set var="banner" value="Configuring Data as ZMap Columns"-->
+<!--#include virtual="/perl/header"-->
+
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<!-- some colours for our boxes etc. -->
+
+<!-- lightpink = #FFB8C1 -->
+
+<style>
+
+pre{ background-color: #DDDDDD; border-style: solid; border-width: 1px; padding: 10px }
+
+.code{ background-color: lightsteelblue }
+.request{ border-color: red;  border-width: medium }
+.reply{ border-color: green; border-width: medium }
+.message{ border-color: blue; border-width: medium }
+
+table.zmap_actions{ background-color: #EFEFEF; border-width: 1px; border-style: solid; border-collapse: collapse }
+table.zmap_actions td{ border-width: 0px 1px 1px 0px; border-style: solid; padding: 2px }
+table.zmap_actions tr{ vertical-align: top; }
+table.zmap_actions th{ border-width: 0px 0px 1px 0px; border-style: solid; }
+
+fieldset
+{
+background-color: lightblue;
+border-style: solid; border-width: 3px; border-color: black;
+padding: 10px
+}
+
+legend{ font-weight: bold }
+
+</style>
+
+
+<h1 align="center">ZMap Remote Control Interface</h1>
+
+
+<h2>Main Contents</h2>
+
+<ul>
+  <li><a href="#introduction"><b>Introduction</b></a></li>
+        <li><a href="#stanzas"><b>Configuration File Stanzas</b></a></li>
+</ul>
+
+
+
+<a name="introduction"></a>
+<h2>Introduction</h2>
+
+Some old blurb.
+
+
+<a name="stanzas"></a>
+<h2>Configuration File Stanzas</h2>
+
+
+<pre>
+[ZMap]
+
+columns = &lt; list of columns in left to right order &gt;
+
+seq-data = A list of featuresets containing SR data...what is SR data ?? duh....
+
+sources = PURPOSE UNKNOWN
+
+</pre>
+
+
+<pre>
+[column-groups]
+
+DNA-alignments = &lt; semi-colon separated list of nucleotide columns clustered for common processing &gt;
+
+Protein-alignments = &lt; semi-colon separated list of peptide columns clustered for common processing &gt;
+</pre>
+
+
+<pre>
+[columns]
+
+&lt; column name &gt; = &lt; semi-colon separated list of names of feature sets to be displayed in the column &gt;
+
+</pre>
+
+
+<pre>
+[featureset-description]
+
+&lt; feature set name &gt; = &lt; text description of the feature set &gt;
+</pre>
+
+
+<pre>
+[featureset-related]
+
+PURPOSE UNKNOWN
+
+bodymap_adipose_GRCh38_coverage_plus = ens_bodymap_adipose_GRCh38_reads
+
+</pre>
+
+
+<pre>
+[featureset-style]
+
+&lt; feature set name &gt; = &lt; style name &gt;
+
+</pre>
+
+
+<pre>
+[featuresets]
+
+PURPOSE UNKNOWN
+
+ENCODE_Tier1_GM12878_cell_longPolyA = Tier1_GM12878_cell_longPolyA_rep1_coverage_plus ; Tier1_GM12878_cell_longPolyA_rep1_coverage_minus ; Tier1_GM12878_cell_longPolyA_rep2_coverage_plus ; Tier1_GM12878_cell_longPolyA_rep2_coverage_minus
+
+</pre>
+
+<pre>
+
+</pre>
+
+
+
+<a name="structs"></a>
+<h2>ZMap Structs</h2>
+
+
+<h3>ZMapFeatureSource</h3>
+
+<p>Struct holding information about sets of features. Can be used to look up
+the style for a feature plus other stuff.</p>
+
+<pre>
+typedef struct ZMapFeatureSourceStructType
+{
+  GQuark source_id ;    /* The source name. From ACE this is the key used to ref this struct */
+                        /* but we can config an alternate name (requested by graham) */
+
+  GQuark source_text ;  /* Description. */
+
+  GQuark style_id ;     /* The style for processing the source. */
+
+  GQuark related_column;        /* eg real data from coverage */
+
+  GQuark maps_to;                       /* composite featureset many->one
+                                         * composite does not exist but all are displayed as one
+                                         * requires ZMapWindowGraphDensityItem
+                                         * only relevant to coverage data
+                                         */
+
+  gboolean is_seq;              /* true for coverage and real seq-data */
+
+} ZMapFeatureSourceStruct, *ZMapFeatureSource ;
+
+</pre>
+
+<p>Duplication here...why use this for looking up a style...it's already in the
+context ??</p>
+
+
+<h3>ZMapFeatureSetDesc</h3>
+
+<p>Struct for "feature set" information. Used to look up "meta" information for
+each feature set.</p>
+
+<pre>
+typedef struct ZMapFeatureSetDescStructType
+{
+  GQuark column_id ;           /* The set name. (the display column) as a key value*/
+  GQuark column_ID ;           /* The set name. (the display column) as display text*/
+
+  GQuark feature_src_ID;            // the name of the source featureset (with upper case)
+                                    // struct is keyed with normalised name
+  const char *feature_set_text;           // renamed so we can search for this
+
+} ZMapFeatureSetDescStruct, *ZMapFeatureSetDesc ;
+
+</pre>
+
+
+<h3>ZMapFeatureColumn</h3>
+
+<p>All the info about a display column, note these are "logical" columns, real
+display columns get munged with strand and frame.</p>
+
+<pre>
+typedef struct ZMapFeatureColumnStructType
+{
+  /* Column name, description, ordering. */
+  GQuark unique_id ;                                        /* For searching. */
+  GQuark column_id ;                                        /* For display. */
+  char *column_desc ;
+  int order ;
+
+  /* column specific style data may be config'd explicitly or derived from contained featuresets */
+  ZMapFeatureTypeStyle style ;
+  GQuark style_id;                                          /* can be set before we get the style itself */
+
+  /* all the styles needed by the column */
+  GList *style_table ;
+
+  /* list of those configured these get filled in when servers request featureset-names
+   * for pipe servers we could do this during server config but for ACE
+   * (and possibly DAS) we have to wait till they provide data. */
+  GList *featuresets_names ;
+
+  /* we need both user style and unique id's both are filled in by lazy evaluation
+   * if not configured explicitly (featuresets is set by the [columns] config)
+   * NOTE we now have virtual featuresets for BAM coverage that do not exist
+   * servers that provide a mapping must delete these lists */
+  GList *featuresets_unique_ids ;
+
+} ZMapFeatureColumnStruct, *ZMapFeatureColumn ;
+
+</pre>
+
+
+
+<h3>ZMapFeatureColumn</h3>
+
+<p>All the featureset/featureset data/column/style data - used by view and
+window.</p>
+
+<pre>
+typedef struct ZMapFeatureContextMapStructType
+{
+  /* All the styles known to the view or window.
+   * Maps the style's unique_id (GQuark) to ZMapFeatureTypeStyle. */
+  ZMapStyleTree styles ;
+
+  /* All the columns that ZMap will display.
+   * These may contain several featuresets each, They are in display order left to right.
+   * Maps the column's unique_id (GQuark) to ZMapFeatureColumn */
+  std::map<GQuark, ZMapFeatureColumn> *columns ;
+
+
+  /* Mapping of a feature source to a column using ZMapFeatureSetDesc
+   * NB: this contains data from ZMap config sections [columns] [featureset_description] _and_
+   * ACEDB */
+  /* gb10: Note that this relationship is cached in reverse in the ZMapFeatureColumn, but the data
+   * originates from this hash table. It's something to do with acedb servers returning this
+   * relationship after the column has been created so we don't know it up front. Perhaps that's
+   * something we could revisit and maybe get rid of this hash table? */
+  GHashTable *featureset_2_column ;
+
+  /* Mapping of each column to all the styles it requires. 
+   * NB: this stores data from ZMap config sections [featureset_styles] _and_ [column_styles] 
+   * _and_ ACEDB collisions are merged Columns treated as fake featuresets so as to have a style.
+   * Maps the column's unique_id (GQuark) to GList of style unique_ids (GQuark). */
+  /* gb10: It looks like this is duplicate information because each ZMapFeatureColumn has a
+   * style_table listing all of the styles that column requires. Also, the column has a list of
+   * featuresets and each featureset has a pointer to the style. Perhaps we can get rid of this
+   * hash table and use the column's style_table instead? Or get rid of both of those and just
+   * access the styles directly from the featuresets. */
+  GHashTable *column_2_styles ;
+
+  /* The source data for a featureset. 
+   * This consists of style id and description and source id
+   * NB: the GFFSource.source  (quark) is the GFF_source name the hash table
+   * Maps the featureset unique_id (GQuark) to ZMapFeatureSource. */
+  /* gb10: Could we just get the ZMapFeatureSet to point directly to this data and get rid 
+   * of this hash table? */
+  GHashTable *source_2_sourcedata ;
+
+  
+  /* This maps virtual featuresets to their lists of real featuresets. The reverse mapping is
+   * provided by the maps_to field in the ZMapFeatureSource. 
+   * Maps the virtual featureset unique_id (GQuark) to a GList of real featureset unique_ids
+   * (GQuarks) */
+  /* gb10: This is currently only used in one place (zmapWindowFetchData) to get the list of
+   * real featureset IDs from the virtual featureset ID. Perhaps we can use the info from maps_to
+   * to do that instead (if that's not too slow)? */
+  GHashTable *virtual_featuresets ;
+
+  
+  /* This allows columns to be grouped together on a user-defined/configured basis, e.g. for
+   * running blixem on a related set of columns. A column can be in multiple groups. 
+   * Maps the group unique_id (GQuark) to a GList of column unique ids (GQuark) */
+  GHashTable *column_groups ;
+
+
+  gboolean isCoverageColumn(GQuark column_id) ;
+  gboolean isSeqColumn(GQuark column_id) ;
+  gboolean isSeqFeatureSet(GQuark fset_id) ;
+
+  ZMapFeatureColumn getSetColumn(GQuark set_id) ;
+  GList *getColumnFeatureSets(GQuark column_id, gboolean unique_id) ;
+  std::list<GQuark> getOrderedColumnsListIDs(const bool unique = true) ;
+  std::list<ZMapFeatureColumn> getOrderedColumnsList() ;
+  GList* getOrderedColumnsGListIDs() ;
+  GQuark getRelatedColumnID(const GQuark fset_id) ;
+
+  bool updateContextColumns(_ZMapConfigIniContextStruct *context, ZMapConfigIniFileType file_type) ;
+  bool updateContextColumnGroups(_ZMapConfigIniContextStruct *context, ZMapConfigIniFileType file_type) ;
+
+  ZMapFeatureSource getSource(GQuark fset_id) ;
+  ZMapFeatureSource createSource(const GQuark fset_id, 
+                                 const GQuark source_id, const GQuark source_text, const GQuark style_id,
+                                 const GQuark related_column, const GQuark maps_to, const bool is_seq) ;
+
+private:
+  void setSource(GQuark fset_id, ZMapFeatureSource src) ;
+
+} ZMapFeatureContextMapStruct, *ZMapFeatureContextMap ;
+
+</pre>
+
+
+
+<pre>
+
+</pre>
+
+
+<pre>
+
+</pre>
+
+
+<pre>
+
+</pre>
+
+
+<pre>
+
+</pre>
+
+
+<!--#include virtual="/perl/footer"-->

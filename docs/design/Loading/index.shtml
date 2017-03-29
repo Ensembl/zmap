@@ -1,0 +1,15 @@
+<!--#set var="banner" value="ZMap"-->
+<!--#include virtual="/perl/header"-->
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<h1>Feature Loading</h1>
+
+
+<ul>
+  <li><a href="zmapView.shtml">Overview of Feature Loading - the Process</a></li>
+  <li><a href="featureset_col.shtml">Overview of Feature Loading - Modules etc.</a></li>
+  <li><a href="RNAseq.shtml">"On The Fly" Loading of RNA Sequence Data</a></li>
+</ul>
+
+<!--#include virtual="/perl/footer"-->
+

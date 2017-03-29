@@ -1,0 +1,51 @@
+<!--#set var="banner" value="ZMap"-->
+<!--#include virtual="/perl/header"-->
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<h1>ZMap Display</h1>
+
+<h2>Display Mechanisms</h2>
+
+<ul>
+  <li><a href="Coordinates.shtml">The Coordinate System</a></li>
+  <li><a href="coord_config.shtml">More on The Coordinate System</a></li>
+  <li><a href="zmapNavigator.shtml">The Navigator</a></li>
+  <li><a href="LocusFeature.shtml">The Navigator and Locus Display</a></li>
+  <li><a href="foo_coords.shtml">The foocanvas Coordinate System</a></li>
+  <li><a href="foo_perf.shtml">foocanvas Performance Issues</a></li>
+  <li><a href="new_model_canvas.shtml">Remodelling foocanvas Feature Representation</a></li>
+  <li><a href="new_window.shtml">Speeding up View Loading</a></li>
+  <li><a href="canvasContainer.shtml">The Feature Container Code</a></li>
+  <li><a href="zmapWindow_items.shtml">Extensions to foocanvas to Display Features</a></li>
+  <li><a href="canvas_tweaks.shtml">Improving Container Usage for Feature Representation</a></li>
+  <li><a href="containers.shtml">Rationalising ZMap Containers</a></li>
+  <li><a href="focus_list.shtml">Displaying User-Selected Features</a></li>
+  <li><a href="zmapSkipList.shtml">Efficiency of Large Numbers of Features with Skip Lists</a></li>
+  <li><a href="zmapWindowColBump.shtml">Column Bumping</a></li>
+</ul>
+
+
+<h2>Featuresets and Columns</h2>
+
+<ul>
+  <li><a href="ContainerFeatureset.shtml">An Overview of Feature Sets and Display Columns</a></li>
+  <li><a href="col_order.shtml">Column Ordering</a></li>
+  <li><a href="column_group.shtml">Column Grouping</a></li>
+  <li><a href="zmapWindowColConfig.shtml">The Column Loading Window</a></li>
+</ul>
+
+
+<h2>Feature Display</h2>
+
+<ul>
+  <li><a href="FToIHash.shtml">Linking Features to Screen Items</a></li>
+  <li><a href="sequenceFeature.shtml">Displaying Nuclotide and Peptide Sequences</a></li>
+  <li><a href="wiggle.shtml">Displaying Wiggle Plots</a></li>
+  <li><a href="EST_mRNA.shtml">Clustering of EST's and mRNA's</a></li>
+  <li><a href="Splice_highlighting.shtml">Highlighting of Matching Splices Across Features in Different Columns</a></li>
+  <li><a href="density.shtml">Displaying Dense Features</a></li>
+</ul>
+
+
+<!--#include virtual="/perl/footer"-->
+

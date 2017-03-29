@@ -1,0 +1,13 @@
+<!--#set var="banner" value="ZMap"-->
+<!--#include virtual="/perl/header"-->
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<h1>ZMap Remote Control</h1>
+
+<ul>
+  <li><a href="zmap_remote.shtml">The Remote Control Doc.</a></li>
+  <li><a href="zmap_lace_xml.shtml">Allowing ZMap to display local and otter-derived information</a></li>
+</ul>
+
+<!--#include virtual="/perl/footer"-->
+
