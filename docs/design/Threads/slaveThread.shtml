@@ -1,5 +1,5 @@
 <h2>Thread Startup and Shutdown</h2>
-<fieldset><legend>Overview</legend>
+<h2>Overview</h2>
 <p>
 ZMap runs with a main thread that drives the display and user interaction and this work mainly off callbacks from GLib/GTK and also the X-remote interface (that uses X-atoms).  Interfaces to external systems (eg ACEDB, pipeServers) are handled by separate threads and these all implement a very similar interface consisting of a series of up to 8 (9? 10?) requests.
 </p>
@@ -8,9 +8,9 @@ ZMap runs with a main thread that drives the display and user interaction and th
 </p>
 <p>The server protocol defines a terminate request which has not been implemented to date (May 2010).  There is the possibility of making this over complicated: requests are expected to return success fo failure (or not implemented); the main thread has to detect and cope with spontaneous evaporation of threads and infinite loops, and call kill threads if they do not respond.
 resources have to be freed tidily.</p>
-</fieldset>
 
-<fieldset><legend>Thread termination</legend>
+
+<h2>Thread termination</h2>
 <p>Each thread has its own data structure to hold its state. The main thread also has data per thread.  The thread model assumes there is some external server (eg ACEDB) whose state can be reported; for pipeServers this is not spectacularly relevant and may just cause confusion.</p>
 <p>
 The slave thread's data includes a pointer to the main thread's corresponding data structure, which allows data to be passed to the main thread.
@@ -67,9 +67,9 @@ The pthread interface only includes one function that allows a signal to be sent
 </p>
 
 
-</fieldset>
 
-<fieldset><legend>Layers of software</legend>
+
+<h2>Layers of software</h2>
 <p>Each server module implements a CloseConnection() and a FreeConnection() function.  CloseConnection() releases external interfaces and data after which the thread is in a zombie state but still has its own internal data structures allocated. FreeConnection releases the last of these memory items.
 </p>
 <p>Both of these functions are called from cleanUpThread() via the thread data structure allocated by zMapThreadCreate() and are known as thread-&gt;terminate_func() and thread-&gt;destroy_func().  The actual functions are defined in <b>zmapServerProtocolHandler.c</b> as <b>zMapServerTerminateHandler()</b> and <b>zMapServerDestroyHandler()</b> which call further internal (to zmapServerProtocolHandler.c) functions called terminateServer() and destroyServer().</p>
@@ -106,5 +106,5 @@ zmapView.c/checkStateConnections()
 
 </pre>
 
-</fieldset>
+
 

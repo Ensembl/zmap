@@ -1,6 +1,6 @@
 <h2> pipeServer - Pipe Server Configuration and Use </h2>
 <p> Author: mh17, 27 Nov 2009; Converted to HTML 02 Mar 2010</p>
-<fieldset> <legend>Summary</legend>
+ <h2>Summary</h2>
 <p>The pipeServer module is based on the existing fileServer and is configured using a [source] stanza in the ZMap config file for each pipe.  The module takes as input a GFF format stream and it is intended that ony one or very few featuresets will be included in each pipe - the idea is to upload data in parallel in order to reduce startup time.
 </p>
 <p>
@@ -10,12 +10,12 @@ Scripts are to be installed locally with ZMap and the directory itself will be i
 </p>
 <p>The pipeServer module replaces the old fileServer module and supports both kinds of input.
 </p>
-</fieldset>
 
 
 
-<fieldset>
-<legend>Configuration</legend>
+
+
+<h2>Configuration</h2>
 (complete config documentation <a href="user_doc/configuration.shtml">here</a>).
 In ZMap's main configuration file (~/.ZMap/ZMap, or as otherwise optioned) we specify each pipeServer and also set up a few other options as needed.  This is driven from the ZMap stanza, and each source is specified in a stanza of its own:
 </p>
@@ -51,9 +51,9 @@ When configured, ZMap will request data from each source in parallel, hopefully 
 delayed = true
 </pre>
 </p>
-</fieldset>
-<fieldset>
-<legend>URL interpretation</legend>
+
+
+<h2>URL interpretation</h2>
 <p>
 In each source stanza (one must exist for each data source) the syntax is the same as for existing file:// and acedb:// sources, but specifically for pipe:// sources we interpret the configuration as follows:
 </p>
@@ -104,9 +104,9 @@ url=pipe:///software/anacode/bin/get_genes.pl?dataset=human&name=1&
 </pre>
 (url broken up for readability).
 </p>
-</fieldset>
-<fieldset>
-<legend>Script operation: some rules</legend>
+
+
+<h2>Script operation: some rules</h2>
 <p>
 A script must start with #!&lt;program&gt; or else it will not be exec'd.  (Assuming Linux)
 </p>
@@ -134,11 +134,11 @@ wait=9                        # delay some seconds before sending data
                               # (can be given in the query string, main use is for testing)
 </pre>
 </p>
-</fieldset>
+
 
 
 <a name=servergroup></a>
-<fieldset><legend>Speed of data retrieval and overloading servers</legend>
+<h2>Speed of data retrieval and overloading servers</h2>
 
 <h3>A problem</h3>
 <p>Running 40 requests in parallel does reduce the amount of time needed to retrieve data but has the drawback that many requests to a single server can be detrimental and it is necessary tp provide the ability to group some pipe servers together and request data in series.
@@ -171,6 +171,6 @@ Which defines servers that should not be active at the same time.  The group nam
 </ul>
 </p>
 
-</fieldset>
+
 
 

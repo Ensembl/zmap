@@ -10,8 +10,8 @@ pre{ width: 95%; background-color: #DDDDDD; border-style: solid; border-width: 1
 
 
 <br/>
-<fieldset>
-<legend id="Cluster_tags">Clustering Features In Acedb</legend>
+
+<legend id="Cluster_tags">Clustering Features In Acedb</h2>
 
 
 <h3>Introduction</h3>
@@ -168,7 +168,7 @@ to allow arbitrary addition of different kinds of object to the tag set.
 </ul>
 
 
-</fieldset>
+
 
 
 <!--#include virtual="/perl/footer"-->

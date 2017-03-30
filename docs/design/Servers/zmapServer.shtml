@@ -1,5 +1,5 @@
 <h2> zmapServer - thread based external interfaces </h2>
-<fieldset> <legend>Summary</legend>
+ <h2>Summary</h2>
 <h3>Modules</h3>
 <p>The zmapServer module exist to provide concurrent thread base interfaces to external databases.  It uses the zmapThread module.
 </p>
@@ -13,12 +13,12 @@ acedb/, DAS, and pipe/ are the servers that run in these threads.
 <h3>Related pages</h3>
 <p><a href="modules/zmapView.shtml#reqdata">zmapView</a> contains some notes about requesting data from pipeServer modules and other issues.</p>
 <p><a href="pipeServer.shtml">pipeServer</a> details usage of that module.</p>
-<p><a href="../notes/slaveThread.shtml">Threads</a> some notes about thread startup and shutdown.</p>
-<p><a href="../notes/server_layers.shtml">Server layering</a>
+<p><a href="../Threads/slaveThread.shtml">Threads</a> some notes about thread startup and shutdown.</p>
+<p><a href="./server_layers.shtml">Server layering</a>
 </p>
-</fieldset>
 
-<fieldset><legend>Servers and Threads</legend>
+
+<h2>Servers and Threads</h2>
 <p>Traditionally with a single ACEDB server this will have been kept active with ZMap and ZMap would not run without it. With the advent of pipeServers being used to request data on demand it becomes necessary to have threads startup, run and then be cleared up,  a function that has been planned but not implemented.  There is code to kill off threads on shutdown, but the threads code does not include a clean exit!</p>
 <p>Tasks that need doing include:
 <ul>
@@ -29,9 +29,9 @@ acedb/, DAS, and pipe/ are the servers that run in these threads.
 </ul>
 </p>
 
-</fieldset>
 
-<fieldset><legend>Specifying coordinates</legend>
+
+<h2>Specifying coordinates</h2>
 <p>The server protocol as implemented and used with ACEDB specifies coordinates base from 1 for the region of chromosome stored in an ACEDB and there is currently no way to specify chromosome coordinates (or chromosome, or species) in ZMap.  This leaves some implementation difficulties for pipes in that each pipe is specifies as a URL with GET parameters giving this information (ie defined statically and externally).  To requests a subset of the the whole alignment it is necessary to request this in ZMap coordinates ie based from 1 and covering the implies sequence range.
 </p>
 <p>Data is normally requested using coordinates 1,0 and this specifies 'the whole sequence'. Subsets of the whole sequence may be requested by coordinats relaitve to the local sequence based from 1.
@@ -59,6 +59,6 @@ This is because the ZMap server data structure contains a pointer to a server sp
 <p>It should be possible to specify species chromososme and seqeuence coordinates to pipe server scripts and still present ZMap style (based from 1) coordinates to the user (which is useful as chromsome coordinates are too big and Zmap coordinates give some sense of scale.  This would imply specifying pipe server script arguments for this data, and thse can quite easily be designed by referring to the exosting pipe server script URL currently in use, and this is a necessary step to provide true standalone operation for ZMap.  For a given session these could be specified in a stanza in the Zmap configuration, or given in the main window.
 </p>
 
-</fieldset>
+
 
 

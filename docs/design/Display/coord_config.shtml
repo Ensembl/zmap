@@ -382,4 +382,4 @@ It is called from <b>zmapWindowFToIFactoryRunSingle()</b> via this function call
 <p>One implication of this is that glyphs attached to features which are displayed as foo_canvas_items directly must be displayed as block relative.  For historical reasons despite ZMapWindowCanvasItems being complex objects these are displayed directly in the containing column (ZMapWindowContainerFeatureSet).
 </p>
 
-</fieldset>
+

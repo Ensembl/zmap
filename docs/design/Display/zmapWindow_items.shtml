@@ -3,8 +3,8 @@
 
 <br />
 
-<fieldset>
-<legend>Canvas Groups, Items and Utils</legend>
+
+<h2>Canvas Groups, Items and Utils</h2>
 
 <p>This directory contains functions and headers to support our own custom
 foocanvas items derived from FooCanvasItem and FooCanvasGroup.
@@ -87,4 +87,4 @@ it is trivial to perform such operations as taking the size of all items in a
 group.
 </p>
 
-</fieldset>
+

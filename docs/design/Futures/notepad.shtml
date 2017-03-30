@@ -1,6 +1,6 @@
 <h2>Notepad window to help organise multiple features</h2>
 <p><b>NOTE</b>this is a very short place holder for notes TBD</p>
-<fieldset><legend>Motivation</legend>
+<h2>Motivation</h2>
 <p>
 There are a number of circumstances when annotators wsih to do things with groups of features eg:
 <ul>
@@ -9,4 +9,4 @@ There are a number of circumstances when annotators wsih to do things with group
 </ul>
 and it is proposed to provied a notepad window where lists of features may be assembled in multiple tabs and actions performed on them via a drop down menu.  For example the current stack of hidden items that is driven by focus/select and keystroke could be replaced by a dialog with visible lists of feature names, and these could be selected for show or hide in any order, providing enhanced function with a more explicit user interface.
 </p>
-</fieldset>
+

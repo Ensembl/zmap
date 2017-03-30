@@ -2,7 +2,7 @@
 
 <p> MH17: I'm still working on this ! </p>
 
-<fieldset><legend>Introduction</legend>
+<h2>Introduction</h2>
 <h3>Objectives</h3>
 <ul>
 <li> implement a display style that shows a line (wiggle) plot of data density over a sequence
@@ -54,9 +54,9 @@ As zoom level changes slightly then a variable bin size may suddenly show peaks 
 
 <p>Canvas items will have a list of bins.  A linked list is chosen to allow rapid implementation - a b-tree would be preferable but GLib does not have a good implementation of a btree structure (does not support sequential processing). Given that the data is static a simple (indexed) skip-list overlay can be added to this to allow efficient lookup of data without fear of degeneracy.
 </p>
-</fieldset>
 
-<fieldset><legend>Effort needed</legend>
+
+<h2>Effort needed</h2>
 what needs to happen:
 - styles to define display parameters     1/2 day
 - wiggle canvas item type implemented (interface to canvas) cut and paste     2 days
@@ -80,11 +80,11 @@ This needs to re-create the wiggle featureset and canvas items(s)     1 day
 <li> blank template for new canvas item
 </ul>
 </p>
-</fieldset>
 
-<fieldset><legend>What's not covered?</legend>
+
+<h2>What's not covered?</h2>
 <p>Partly this is intended as an experiment to see how the foocanvas can be used more efficiently but summary plots like these do not apply directly to drawing real features.  If we take the example of ungapped alignments what we need is a btree/ skip list of features to draw on a canvas at a given zoom and instructions on how to draw them, and then we can just display the ones that are visible.  Wiggle plots differ from this in that the data may change at different zoom levels rather than just the visibility.
 </p>
-</fieldset>
+
 
 

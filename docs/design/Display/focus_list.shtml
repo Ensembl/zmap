@@ -1,6 +1,6 @@
 <h2>Highlighing Selected Features</h2>
 
-<fieldset><legend>History and new developments</legend>
+<h2>History and new developments</h2>
 
 <h3>Highlighing selected features</h3>
 
@@ -34,9 +34,9 @@ Another option would be to overlay the features with a stipple (similar to the m
 <b>NB</b> As we wish to simplify basic features it may be a better idea to add this feature to the block, as for the mark range overlays.
 </p>
 
-</fieldset>
 
-<fieldset><legend>Handling multiple feature lists</legend>
+
+<h2>Handling multiple feature lists</h2>
 <p>Multiple highlit features will interact - removing a focus highlight will require us to redisplay a feature in normal or 'evidence' mode and having multiple data structres will require us either to have these interact internally or to have the application code operate all of them together, neither of which is a clean solution.
 <p>
 
@@ -77,9 +77,9 @@ would take a further argument such as WINDOW_FOCUS_GROUP_FOCUS.
 </ul>
 </p>
 
-</fieldset>
 
-<fieldset><legend>Further notes: use of this code</legend>
+
+<h2>Further notes: use of this code</h2>
 <h3>Multiple windows</h3>
 <p>As implemented the focus functions and data are window specific ie are part of the window, which makes sense in that the user inteaction is via a window.  The user may have multiple windows open for the same data and there are callbacks used to update these other windows when focus items change. eg <b>zmapView.c/viewSelectCB()</b>.
 </p>
@@ -95,9 +95,9 @@ would take a further argument such as WINDOW_FOCUS_GROUP_FOCUS.
 </p>
 <p>If we are to highlight evidence features for a transcript then we need to do this for all windows and the interface to this must be via the view.  During development and testing this can be done on the current window but when driven by XML/ otterlace then we need to call a view function directly with a list of features.
 </p>
-</fieldset>
 
-<fieldset><legend>Hide/show selected features</legend>
+
+<h2>Hide/show selected features</h2>
 <p>An option is provided to hide the focus items and redisplay them via DEL and shift-DEL.  The features involved are stored in a list external to the focus code when hidden (using the foo canvas) (and removed from the focus data) and unhidden by the window code. It may make sense to re-implement this as by creating a new focus group such as WINDOW_FOCUS_GROUP_HIDDEN but as the current code is not complicated that has not been done.
 </p>
 <p>
@@ -134,4 +134,4 @@ Note that the last two of these imply that highlit features will be displayed tw
 <p>So to keep things simple we will adopt the 'insert in place' strategy.  This still generates an unstable display when items are hidden and redisplayed and the column is rebumped but it not too disturbing.  The sorted insert ficntion is also not stable relating to items that sort in the same place.
 </p>
 
-</fieldset>
+

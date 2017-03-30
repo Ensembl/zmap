@@ -92,7 +92,7 @@ The dialog is created by clicking on the columns button in the toolbar, and is c
 <h2>Some old notes</h2>
 <p>I think this was partly abandoned due to the intricacies of GTK.  SeqBitmap was removed but display options are as before.</p>
 
-<fieldset><legend>Background</legend>
+<h2>Background</h2>
 <h3>Deferred loading of columns</h3>
 <p>Historically ACEDB could define some columns for deferred loading (via a style) and these would not be requested in the initial data load.  The columns dialog could be used to request these, and also to specify an address range via the mark.  This implies the possibility of patchwork coverage of any column but it is not clear how much information would have been stored regarding the ranges requested.
 </p>
@@ -105,11 +105,11 @@ The dialog is created by clicking on the columns button in the toolbar, and is c
 <p>Note also that display is traditionally done by column yet data is requested nominally by featureset
 </p>
 
-<p>To provide RNAseq data it is also necessary to implement a more complicated request interface as defined <a href="../notes/RNAseq.shtml">here</a>.
+<p>To provide RNAseq data it is also necessary to implement a more complicated request interface as defined <a href="../Loading/RNAseq.shtml">here</a>.
 </p>
-</fieldset>
 
-<fieldset><legend>User Interface</legend>
+
+<h2>User Interface</h2>
 <p>
 The display options for each column are show hide and auto - note that auto is not a default setting but instead 'show according to zoom level' and three radio buttons are needed for these options for each strand.
 </p>
@@ -143,7 +143,7 @@ Buttons will be provided to:
 <p>
 On requesting a column to be loaded ZMap will initiate requests for all the featuresets that map to that column.
 </p>
-<p>It would of course be possible to supply controls for each featureset but this will not be implemented initially as a) it would require much more coding of user interface with very little benefit to the user and b) it would make the user interface very complicated - there are hundreds of featuresets defined and it is unlikely that users will want this level of control.  RNAseq data is perhaps different and a <a href="../notes/RNAseq.shtml">custom control interface</a> for that has been suggested.</p>
+<p>It would of course be possible to supply controls for each featureset but this will not be implemented initially as a) it would require much more coding of user interface with very little benefit to the user and b) it would make the user interface very complicated - there are hundreds of featuresets defined and it is unlikely that users will want this level of control.  RNAseq data is perhaps different and a <a href="../Loading/RNAseq.shtml">custom control interface</a> for that has been suggested.</p>
 <h3>A sample layout</h3>
 <p>
 Here's the existing layout:<br />
@@ -159,12 +159,12 @@ Das_Phast_117      Load [x]
       [ Select None] [Load from Mark]
 </pre>
 </p>
-</fieldset>
 
 
 
 
-<fieldset><legend>Loading data</legend>
+
+<h2>Loading data</h2>
 
 <h3>How to tell if a column is loaded fully or in the mark</h3>
 
@@ -233,7 +233,7 @@ RC on column gives a choice of 'configure this column' or 'configure all columns
 <p>We hope that impmenting a request module will result in code that can be used by new dialogs without modification.  RNAseq data is not yet fully defined in Zmap terms, but we assume that we must be able to request individual featuresets for specific regions, which is covered by the above.  There may be a requirement to hide or show an individual featureset within a column, which is not relevant here.
 </p>
 
-<fieldset><legend>Tasks Summarised</legend>
+<h2>Tasks Summarised</h2>
 <p>To implement the above:
 <ul>
 <li> Remove the zmapSeqBitmap module and replace with a GList of sequence coordinate pairs held in the FeatureContext featureset structures. This is to be updated by the View mergeContext functions. zmapGFF2Parser.c must also be modified to provide similar lists for the data it receives - this will cover the initial feature context, which is not merged and also provide raw data for the merged context's lists. (not used, iffing out give link errors till next 2 items done).
@@ -256,5 +256,5 @@ RC on column gives a choice of 'configure this column' or 'configure all columns
 </ul>
 </p>
 <p>
-</fieldset>
+
 

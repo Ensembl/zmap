@@ -4,6 +4,7 @@
 
 <h1>ZMap Design Documentation</h1>
 
+<font color="red">
 <h2>An Apology</h2>
 
 <p>Much of the documentation linked from this page is now out of date, pages
@@ -13,7 +14,7 @@ are mostly out of date now.</p>
 <p>In an ideal world the documentation would have been updated but as resources
 have fluctuated wildly over the course of the project it has not been able
 possible to devote as much time to documentation as would have been wished.</p>
-
+</font>
 
 
 <h2>Current Code</h2>

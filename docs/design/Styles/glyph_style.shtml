@@ -1,6 +1,6 @@
 <!-- $Id: glyph_style.html,v 1.1 2011-01-10 13:47:48 edgrif Exp $ -->
 <h2>Style definitions for Glyphs</h2>
-<fieldset><legend>Summarised</legend>
+<h2>Summarised</h2>
 <p>
 Quick links:
 <a href="../../user/styles.shtml">Style configuration options</a>
@@ -138,9 +138,9 @@ glyph-colours = blue
 
 <p>This could be coded as a separate featureset in the transcripts column.</p>
 
-</fieldset>
 
-<fieldset><legend>Defining glyph shapes</legend>
+
+<h2>Defining glyph shapes</h2>
 
 <h3>Attempting Clarity</h3>
 
@@ -234,10 +234,10 @@ pixel coordinates will be adjusted accordingly.</p>
 </ul>
 </p>
 
-</fieldset>
+
 
 <a name="impl"></a>
-<fieldset><legend>Implementation</legend>
+<h2>Implementation</h2>
 <h3>Handling of styles data</h3>
 <h4>Where to store and how to access</h4>
 <p>Currently when a canvas item is drawn much of the information used is derived from a style structure but at some point gets copied into some local structure.  The glyphs code makes use of GObject get() and set() functions which inevitably impose an overhead.  Styles are attached to a view and also the window structures, and the reason for copying style data is presumed to be to allow styles to be changed at run time.  Whenever a new view is created the config files are re-read and exisiting views (ie each ZMap) must continue to function as before.  Arguably there is no need to have features displayed using two versions of the same style in one window (in fact this would be confusing for the user) and therefore the style information could be efficiently stored in the window instead of in the canvas item, once per item or by a reference to the style.  However it is not possibly to address this without a review of the whole view - window - canvas item interface and it's not appropriate to do this now.
@@ -314,8 +314,8 @@ This fulfills the requirements of having copies of all config data per view.
 </p>
 <p>Note that to access the same data structure in zmapStyle.c and also zmapWindowGlyphItem.c we have to make this public and include zmapStyle.h in the glyph code, which makes it the only CanvasItem module including styles data.
 
-</fieldset>
-<fieldset><legend>Legacy issues</legend>
+
+<h2>Legacy issues</h2>
 <h4>Styles files</h4>
 <p>Handling legacy styles data from ACEDB needs some thought (it used to be hard coded) and the following is proposed:
 <ul>
@@ -342,4 +342,4 @@ Note that this option will only be set on ZMap startup and not on creation of a 
 <li>zmap_window_glyph_item_point() needs to be revisited esp re arcs
 <li>zmapWindowDump.c creates PDFs from the window/ view.  Glyph items are not drawn as foo canvas items so we have some special code added to bodge these up, which breaks the modularity as designed.  We need to resolve this!   One way would be to have feature mode glyphs as zmap canvas items which include foo shapes in the same way as normal features...
 </ul></p>
-</fieldset>
+

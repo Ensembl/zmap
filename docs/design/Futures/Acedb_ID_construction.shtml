@@ -13,8 +13,8 @@ pre{ width: 95%; background-color: #DDDDDD; border-style: solid; border-width: 1
 
 
 <br/>
-<fieldset>
-<legend id="Background">Background</legend>
+
+<legend id="Background">Background</h2>
 
 <p>ZMap displays large numbers of features which may potentially come from several different
 sources. All of these features must be uniquely displayed and while most of these features
@@ -25,13 +25,13 @@ how to uniquely identify all the features exported from an acedb database.</p>
 <p>The proposal must take into account efficiency in terms of memory usage and feature
 look up because the number of some features can be very large.</p>
 
-</fieldset>
+
 
 
 
 <br/>
-<fieldset>
-<legend id="Acedb_Uniqueness">Acedb Uniqueness</legend>
+
+<legend id="Acedb_Uniqueness">Acedb Uniqueness</h2>
 
 
 <p>Uniqueness in acedb occurs at various levels:</p>
@@ -86,13 +86,13 @@ XXXXX   My_method       similarity      1000    1500    0.1     +       .       
 The proposal must be able to distinguish these as different features so must include the Class-objectname
 as additional tag/value fields in the exported GFF to distinguish these features.</p>
 
-</fieldset>
+
 
 
 
 <br/>
-<fieldset>
-<legend id="Encoding_uniqueness">Encoding Acedb's Uniqueness</legend>
+
+<legend id="Encoding_uniqueness">Encoding Acedb's Uniqueness</h2>
 
 
 <p>Some features are represented in the database by an object (e.g. a transcript) while
@@ -273,13 +273,13 @@ Under new scheme:
 context -> alignment(s) -> block(s) -> featureset(s) -> <font color=green>Constant</font> -> <font color=red>Variable</font>
 </pre>
 
-</fieldset>
+
 
 
 
 <br/>
-<fieldset>
-<legend id="Tag_sets">Summary of Acedb Tag Sets that need to be Encoded</legend>
+
+<legend id="Tag_sets">Summary of Acedb Tag Sets that need to be Encoded</h2>
 
 <p>Where the feature is an acedb object the encoding will always be the same,
 the Class and object name and it's start and end. Where the feature is a subpart
@@ -327,13 +327,13 @@ Examples:         Homol DNA_homol ?Sequence XREF DNA_homol ?Method Float Int Int
                         Motif_homol ?Motif XREF DNA_homol ?Method Float Int Int Int Int #Homol_info
 </pre>
 
-</fieldset>
+
 
 
 
 <br/>
-<fieldset>
-<legend id="GFF">Augmenting GFF v2 or v3 with Unique ID information</legend>
+
+<legend id="GFF">Augmenting GFF v2 or v3 with Unique ID information</h2>
 
 <p>The GFFv2 exported by Acedb to ZMap does not currently contain enough information
 to support unique IDs for all features.</p>
@@ -400,7 +400,7 @@ from the same object in the database.</p>
 
 <p>Now the records are unique as the Class:object:tag name tuple can be recovered using the "Parent" and "ID" tag link to the "tuple" record.</p>
 
-</fieldset>
+
 
 
 
