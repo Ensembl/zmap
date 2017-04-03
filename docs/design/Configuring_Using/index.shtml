@@ -9,7 +9,6 @@
 
 <ul>
   <li><a href="zmapConfig.shtml">Configuration Overview</a></li>
-  <li><a href="zmap_config.shtml">Configuration - plans</a></li>
   <li><a href="Column_Data_Configuration.shtml">Configuring Columns</a></li>
   <li><a href="column_config.shtml">Column configuration example</a></li>
   <li><a href="data_config.shtml">Configuring Complex and Related Feature Sets</a></li>
