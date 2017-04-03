@@ -83,7 +83,6 @@ dist_doc_DATA = $(USER_DIR)/Splice_highlight_off.png \
 	$(USER_DIR)/Splice_highlight_on.png \
 	$(USER_DIR)/configuration.shtml \
 	$(USER_DIR)/manual/ZMap_User_Manual.pdf \
-	$(USER_DIR)/this_links.ini \
 	$(USER_DIR)/align1.png \
 	$(USER_DIR)/index.shtml \
 	$(USER_DIR)/release_notes.shtml \
