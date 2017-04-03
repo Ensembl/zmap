@@ -1,28 +1,28 @@
 /*  File: zmapWindowUtils.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2015: Genome Research Ltd.
+ *  Copyright (c) 2006-2017: Genome Research Ltd.
  *-------------------------------------------------------------------
- * ZMap is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
- * originated by
- *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ * originally written by:
+ * 
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
- *
+ *       Gemma Guest (Sanger Institute, UK) gb10@sanger.ac.uk
+ *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
+ *  
  * Description: Utility functions for the zMapWindow code.
  *
  * Exported functions: See ZMap/zmapWindow.h
@@ -715,7 +715,6 @@ ZMapGuiNotebookChapter zMapWindowGetConfigChapter(ZMapWindow window, ZMapGuiNote
 {
   ZMapGuiNotebookSubsection subsection = NULL;
   ZMapGuiNotebookParagraph paragraph = NULL;
-  ZMapGuiNotebookTagValue tagvalue = NULL;
   ZMapGuiNotebookChapter chapter = NULL;
   ZMapGuiNotebookPage page = NULL;
   ZMapConfigIniContext context = NULL;
@@ -747,22 +746,22 @@ ZMapGuiNotebookChapter zMapWindowGetConfigChapter(ZMapWindow window, ZMapGuiNote
                                              ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE,
                                              NULL, NULL);
 
-  tagvalue = zMapGUINotebookCreateTagValue(paragraph, "canvas_maxbases", NULL,
-                                           ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-                                           "int", window->canvas_maxwin_bases);
+  zMapGUINotebookCreateTagValue(paragraph, "canvas_maxbases", NULL,
+                                ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                "int", window->canvas_maxwin_bases);
 
-  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "column_spacing", NULL,
-                                             ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-                                             "float", window->config.column_spacing);
+  zMapGUINotebookCreateTagValue(paragraph, "column_spacing", NULL,
+                                ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                "float", window->config.column_spacing);
 #if USE_STRAND
-  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "strand_spacing", NULL,
-                                             ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-                                             "float", window->config.strand_spacing);
+  zMapGUINotebookCreateTagValue(paragraph, "strand_spacing", NULL,
+                                ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                "float", window->config.strand_spacing);
 #endif
 
-  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "keep_empty_columns", NULL,
-                                             ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,
-                                             "bool", window->keep_empty_cols);
+  zMapGUINotebookCreateTagValue(paragraph, "keep_empty_columns", NULL,
+                                ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,
+                                "bool", window->keep_empty_cols);
 
   /* Colours... */
   page       = zMapGUINotebookCreatePage(chapter, "Colours");
@@ -774,89 +773,89 @@ ZMapGuiNotebookChapter zMapWindowGetConfigChapter(ZMapWindow window, ZMapGuiNote
                                               ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE,
                                               NULL, NULL);
 #ifdef I_DONT_THINK_SO
-  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_root", NULL,
-                                             ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-                                             "string", "red");
+  zMapGUINotebookCreateTagValue(paragraph, "colour_root", NULL,
+                                ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                "string", "red");
 
-  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_alignment", NULL,
-                                             ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-                                             "string", "orange");
+  zMapGUINotebookCreateTagValue(paragraph, "colour_alignment", NULL,
+                                ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                "string", "orange");
 
-  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_block", NULL,
-                                             ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-                                             "string", "yellow");
+  zMapGUINotebookCreateTagValue(paragraph, "colour_block", NULL,
+                                ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                "string", "yellow");
 #endif /* I_DONT_THINK_SO */
 
   if(!zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
                                     ZMAPSTANZA_WINDOW_SEPARATOR, &colour))
     colour = (char *)ZMAP_WINDOW_STRAND_DIVIDE_COLOUR;
 
-  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_separator", NULL,
-                                             ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-                                             "string", colour);
+  zMapGUINotebookCreateTagValue(paragraph, "colour_separator", NULL,
+                                ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                "string", colour);
 
 #ifdef I_DONT_THINK_SO
-  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_m_forward", NULL,
-                                             ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-                                             "string", "blue");
+  zMapGUINotebookCreateTagValue(paragraph, "colour_m_forward", NULL,
+                                ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                "string", "blue");
 
-  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_m_reverse", NULL,
-                                             ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-                                             "string", "indigo");
+  zMapGUINotebookCreateTagValue(paragraph, "colour_m_reverse", NULL,
+                                ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                "string", "indigo");
 
-  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_q_forward", NULL,
-                                             ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-                                             "string", "violet");
+  zMapGUINotebookCreateTagValue(paragraph, "colour_q_forward", NULL,
+                                ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                "string", "violet");
 
-  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_q_reverse", NULL,
-                                             ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-                                             "string", "apple");
+  zMapGUINotebookCreateTagValue(paragraph, "colour_q_reverse", NULL,
+                                ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                "string", "apple");
 
-  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_m_forwardcol", NULL,
-                                             ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-                                             "string", "pear");
-  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_m_reversecol", NULL,
-                                             ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-                                             "string", "banana");
-  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_q_forwardcol", NULL,
-                                             ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-                                             "string", "cherry");
-  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_q_reversecol", NULL,
-                                             ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-                                             "string", "kiwi");
+  zMapGUINotebookCreateTagValue(paragraph, "colour_m_forwardcol", NULL,
+                                ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                "string", "pear");
+  zMapGUINotebookCreateTagValue(paragraph, "colour_m_reversecol", NULL,
+                                ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                "string", "banana");
+  zMapGUINotebookCreateTagValue(paragraph, "colour_q_forwardcol", NULL,
+                                ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                "string", "cherry");
+  zMapGUINotebookCreateTagValue(paragraph, "colour_q_reversecol", NULL,
+                                ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                "string", "kiwi");
 #endif /* I_DONT_THINK_SO... */
 
   if(!zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
                                     ZMAPSTANZA_WINDOW_ITEM_HIGH, &colour))
     colour = (char *)ZMAP_WINDOW_COLUMN_HIGHLIGHT;
 
-  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_item_highlight", NULL,
-                                             ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-                                             "string", colour);
+  zMapGUINotebookCreateTagValue(paragraph, "colour_item_highlight", NULL,
+                                ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                "string", colour);
 
   if(!zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
                                     ZMAPSTANZA_WINDOW_COL_HIGH, &colour))
     colour = (char *)ZMAP_WINDOW_COLUMN_HIGHLIGHT;
 
-  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_column_highlight", NULL,
-                                             ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-                                             "string", colour);
+  zMapGUINotebookCreateTagValue(paragraph, "colour_column_highlight", NULL,
+                                ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                "string", colour);
 
   if(!zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
                                     ZMAPSTANZA_WINDOW_RUBBER_BAND, &colour))
     colour = (char *)ZMAP_WINDOW_RUBBER_BAND;
 
-  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_rubber_band", NULL,
-                                             ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-                                             "string", colour);
+  zMapGUINotebookCreateTagValue(paragraph, "colour_rubber_band", NULL,
+                                ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                "string", colour);
 
   if(!zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
                                     ZMAPSTANZA_WINDOW_HORIZON, &colour))
     colour = (char *)ZMAP_WINDOW_HORIZON;
 
-  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_horizon", NULL,
-                                             ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-                                             "string", colour);
+  zMapGUINotebookCreateTagValue(paragraph, "colour_horizon", NULL,
+                                ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                "string", colour);
 
   zMapConfigIniContextDestroy(context);
 

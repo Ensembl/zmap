@@ -1,6 +1,12 @@
 
 Git commits for  from commit "production" until commit "release/2.12.0"
 
+af89d82 2017-02-27 Fix my own bug, broke the link between featureset and style, restored now. - RT '109833'
+e83990f 2016-11-18 Add db prefix to manual - DOC
+a6b56d0 2016-11-18 Update revision date in manual - DOC
+9496862 2016-11-18 Improve docs for managing sources - DOC
+68becfc 2016-11-17 Add trackhub instructions - DOC
+771b699 2016-11-16 Fix a bug loading extended bigbed files - BUG FIX
 03780e4 2016-11-16 Fix potential access of free'd variable - BUG FIX
 7821422 2016-11-15 Fix bug editing non-default styles with auto score range - BUG FIX
 4a734e6 2016-11-14 Fix bug looking up incorrect name in bam files - REGRESSION FIX

@@ -1,30 +1,28 @@
 /*  File: zmapWindowCanvasAlignment.c
  *  Author: Malcolm Hinsley (mh17@sanger.ac.uk)
- *  Copyright (c) 2006-2015: Genome Research Ltd.
+ *  Copyright (c) 2006-2017: Genome Research Ltd.
  *-------------------------------------------------------------------
- * ZMap is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originally written by:
- *
- *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ * 
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *       Gemma Guest (Sanger Institute, UK) gb10@sanger.ac.uk
  *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
- *
+ *  
  * Description:
  *
  * implements callback functions for FeaturesetItem alignemnt features
@@ -165,7 +163,6 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
   gulong ufill,outline;
   int cx1, cy1, cx2, cy2,
     colours_set, fill_set, outline_set ;
-  gulong edge;
   gboolean truncated_start = FALSE,
     truncated_end = FALSE,
     ignore_truncation_glyphs = FALSE ;
@@ -248,10 +245,6 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
                                             zMapWindowCanvasFeatureGetHeatColour(0xffffffff,ufill,feature->score));
         }
 
-      if (zMapStyleIsSquash(style))/* diff colours for first and last box */
-        {
-          edge = 0x808080ff;
-        }
     }
 
   /*
@@ -1076,7 +1069,6 @@ static AlignGap makeGapped(ZMapFeature feature, double offset, FooCanvasItem *fo
   int i ;
   ZMapAlignBlock last_ab ;
   AlignGap last_box, last_ag ;
-  int prev_q2, next_q1 ;
 
   zMapReturnValIfFail(foo && feature, NULL) ;
 
@@ -1085,7 +1077,7 @@ static AlignGap makeGapped(ZMapFeature feature, double offset, FooCanvasItem *fo
   gaps = align_gaps ;
   n = align_gaps->len ;
 
-  for (i = 0, prev_q2 = 0, next_q1 = 0, last_ab = NULL, last_box = NULL, last_ag = NULL ; i < n ; i++)
+  for (i = 0, last_ab = NULL, last_box = NULL, last_ag = NULL ; i < n ; i++)
     {
       AlignGap ag = NULL ;
       ZMapAlignBlock ab ;
@@ -1182,8 +1174,6 @@ static AlignGap makeGapped(ZMapFeature feature, double offset, FooCanvasItem *fo
           if (!display_ag)
             display_ag = ag;
         }
-
-      prev_q2 = ab->q2 ;
 
       last_ab = ab ;
     }

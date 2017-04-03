@@ -1,28 +1,28 @@
 /*  File: zmapWindowMenus.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2015: Genome Research Ltd.
+ *  Copyright (c) 2006-2017: Genome Research Ltd.
  *-------------------------------------------------------------------
- * ZMap is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
- * originated by
- *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ * originally written by:
+ * 
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
- *
+ *       Gemma Guest (Sanger Institute, UK) gb10@sanger.ac.uk
+ *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
+ *  
  * Description: Code implementing the menus for sequence display.
  *
  * Exported functions: ZMap/zmapWindows.h
@@ -1620,9 +1620,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
 #endif
   static int ind_mask = -1;
   ZMapGUIMenuItem menu_item = NULL ;
-  static gboolean compress = FALSE ;
   ZMapWindowContainerGroup column_container, block_container;
-  FooCanvasGroup *column_group =  NULL;
 
   zMapReturnValIfFail(menu_data, menu) ;
 
@@ -1678,16 +1676,13 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
   /* Set "Compress" toggle item. */
   menu_item = &(menu[MENU_INDEX_COMPRESS]) ;
   column_container = zmapWindowContainerCanvasItemGetContainer(menu_data->item) ;
-  column_group = (FooCanvasGroup *)column_container;
   block_container = zmapWindowContainerUtilsGetParentLevel(column_container, ZMAPCONTAINER_LEVEL_BLOCK) ;
   if (zmapWindowContainerBlockIsCompressedColumn((ZMapWindowContainerBlock)block_container))
     {
-      compress = TRUE ;
       menu_item->type = ZMAPGUI_MENU_TOGGLEACTIVE ;
     }
   else
     {
-      compress = FALSE ;
       menu_item->type = ZMAPGUI_MENU_TOGGLE ;
     }
 
@@ -2405,7 +2400,6 @@ gboolean zMapWindowExportFASTA(ZMapWindow window, ZMapFeatureAny feature_in, GEr
  */
 static void exportMenuCB(int menu_item_id, gpointer callback_data)
 {
-  gboolean result = FALSE ;
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
   ZMapFeatureAny feature = NULL ;
   GError *error = NULL ;
@@ -2431,23 +2425,23 @@ static void exportMenuCB(int menu_item_id, gpointer callback_data)
     {
     case EXPORT_DNA: /* export dna */
       {
-        result = zMapWindowExportFASTA(menu_data->window, feature, &error) ;
+        zMapWindowExportFASTA(menu_data->window, feature, &error) ;
         break ;
       }
     case EXPORT_FEATURES_ALL: /* export all features */
       {
-        result = zMapWindowExportFeatureSets(menu_data->window, container->featuresets, FALSE, NULL, &error) ;
+        zMapWindowExportFeatureSets(menu_data->window, container->featuresets, FALSE, NULL, &error) ;
         break ;
       }
     case EXPORT_FEATURES_MARKED: /* features in marked region */
       {
-        result = zMapWindowExportFeatureSets(menu_data->window, container->featuresets, TRUE, NULL, &error) ;
+        zMapWindowExportFeatureSets(menu_data->window, container->featuresets, TRUE, NULL, &error) ;
         break;
       }
     case EXPORT_FEATURES_CLICKED: /* clicked feature */
       {
         if (feature)
-          result = zMapWindowExportFeatures(menu_data->window, FALSE, FALSE, feature, NULL, &error) ;
+          zMapWindowExportFeatures(menu_data->window, FALSE, FALSE, feature, NULL, &error) ;
         break;
       }
     default:
@@ -2616,9 +2610,7 @@ static void copyPasteMenuCB(int menu_item_id, gpointer callback_data)
 
   if (mode == ZMAPWINDOW_PASTE)
     {
-      gboolean result ;
-
-      result = zmapWindowZoomFromClipboard(menu_data->window, menu_data->x, menu_data->y) ;
+      zmapWindowZoomFromClipboard(menu_data->window, menu_data->x, menu_data->y) ;
     }
   else
     {
@@ -3713,9 +3705,8 @@ static std::string getBAMMenuNameFromSelection(ItemMenuCBData menu_data,
                                                const bool all_fsets)
 {
   std::string item_text("") ;
-  zMapReturnValIfFail(menu_data && 
-                      (all_fsets && menu_data->feature_set ||
-                       !all_fsets && menu_data->container_set),
+  zMapReturnValIfFail((menu_data
+                       && ((all_fsets && menu_data->feature_set) || (!all_fsets && menu_data->container_set))),
                       item_text) ;
 
   const int max_chars = 20 ; // limit the length of the menu text
@@ -4324,7 +4315,9 @@ gboolean zMapWindowExportFeatures(ZMapWindow window, gboolean all_features, gboo
 }
 
 
-static gboolean exportFeatures(ZMapWindow window, gboolean all_features, ZMapSpan region_span, ZMapFeatureAny feature_in,
+static gboolean exportFeatures(ZMapWindow window,
+                               gboolean all_features,
+                               ZMapSpan region_span, ZMapFeatureAny feature_in,
                                char **filepath_inout, GError **error)
 {
   static const char *error_prefix = "Features export failed:" ;

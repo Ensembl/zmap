@@ -574,7 +574,6 @@ zmapControl/Makefile
 zmapDataSource/Makefile
 zmapDraw/Makefile
 zmapFeature/Makefile
-zmapFeature/tests/Makefile
 zmapGFF/Makefile
 zmapRemoteControl/Makefile
 zmapRemoteControl/remotetest/Makefile
@@ -587,7 +586,6 @@ zmapServer/pipe/Makefile
 zmapThreadSource/Makefile
 zmapThreadsLib/Makefile
 zmapUtils/Makefile
-zmapUtils/tests/Makefile
 zmapView/Makefile
 zmapWindow/Makefile
 zmapXML/Makefile

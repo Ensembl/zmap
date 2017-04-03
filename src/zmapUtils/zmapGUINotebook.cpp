@@ -1,29 +1,28 @@
 /*  File: zmapGUINotebook.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2015: Genome Research Ltd.
+ *  Copyright (c) 2006-2017: Genome Research Ltd.
  *-------------------------------------------------------------------
- * ZMap is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originally written by:
- *
- *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ * 
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
- *
+ *       Gemma Guest (Sanger Institute, UK) gb10@sanger.ac.uk
+ *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
+ *  
  * Description: Implements general convenience routines for creating
  *              a GTK Notebook widget and the pages/fields within
  *              the Notebook.
@@ -1091,7 +1090,6 @@ static void makeChapterCB(gpointer data, gpointer user_data)
   ZMapGuiNotebookChapter chapter = (ZMapGuiNotebookChapter)data ;
   MakeNotebook make_notebook = (MakeNotebook)user_data ;
   GtkWidget *notebook_widget, *button ;
-  gint notebook_pos ;
 
 
   /* Add notebooks, each notebook's widget is supplied to its corresponding button
@@ -1111,11 +1109,11 @@ static void makeChapterCB(gpointer data, gpointer user_data)
   gtk_container_add(GTK_CONTAINER(make_notebook->notebook_chooser), button) ;
   g_signal_connect(G_OBJECT(button), "pressed", G_CALLBACK(changeNotebookCB), make_notebook) ;
 
-  notebook_pos = gtk_notebook_append_page(GTK_NOTEBOOK(make_notebook->notebook_stack), notebook_widget, NULL) ;
+  gtk_notebook_append_page(GTK_NOTEBOOK(make_notebook->notebook_stack), notebook_widget, NULL) ;
 
   g_list_foreach(chapter->pages, makePageCB, make_notebook) ;
 
-  if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)))
+  if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)))
     make_notebook->current_focus_chapter = chapter;
 
   return ;
@@ -1129,7 +1127,6 @@ static void makePageCB(gpointer data, gpointer user_data)
   ZMapGuiNotebookPage page = (ZMapGuiNotebookPage)data ;
   MakeNotebook make_notebook = (MakeNotebook)user_data ;
   GtkWidget *notebook_label ;
-  int notebook_index ;
 
   /* Put code here for a page... */
   notebook_label = gtk_label_new(g_quark_to_string(page->name)) ;
@@ -1138,8 +1135,8 @@ static void makePageCB(gpointer data, gpointer user_data)
 
   g_list_foreach(page->subsections, makeSubsectionCB, make_notebook) ;
 
-  notebook_index = gtk_notebook_append_page(GTK_NOTEBOOK(make_notebook->curr_notebook),
-    make_notebook->curr_page_vbox, notebook_label) ;
+  gtk_notebook_append_page(GTK_NOTEBOOK(make_notebook->curr_notebook),
+                           make_notebook->curr_page_vbox, notebook_label) ;
 
   return ;
 }
@@ -1347,7 +1344,6 @@ static void makeTagValueCB(gpointer data, gpointer user_data)
   ZMapGuiNotebookTagValue tag_value = (ZMapGuiNotebookTagValue)data ;
   MakeNotebook make_notebook = (MakeNotebook)user_data ;
   ZMapGuiNotebook notebook = make_notebook->notebook_spec ;
-  GtkWidget *container = NULL ;
 
   switch(tag_value->display_type)
     {
@@ -1406,7 +1402,7 @@ static void makeTagValueCB(gpointer data, gpointer user_data)
           {
           GtkWidget *hbox ;
 
-          container = hbox = gtk_hbox_new(FALSE, GUI_NOTEBOOK_BOX_SPACING) ;
+          hbox = gtk_hbox_new(FALSE, GUI_NOTEBOOK_BOX_SPACING) ;
           gtk_box_pack_start(GTK_BOX(make_notebook->curr_paragraph_vbox), hbox, FALSE, TRUE, GUI_NOTEBOOK_BOX_PADDING);
 
           gtk_box_pack_start(GTK_BOX(hbox), tag,   TRUE, TRUE, GUI_NOTEBOOK_BOX_PADDING);

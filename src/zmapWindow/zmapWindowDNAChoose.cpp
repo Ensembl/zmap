@@ -1,29 +1,28 @@
 /*  File: zmapWindowDNAChoose.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2015: Genome Research Ltd.
+ *  Copyright (c) 2006-2017: Genome Research Ltd.
  *-------------------------------------------------------------------
- * ZMap is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originally written by:
- *
- *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ * 
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
- *
+ *       Gemma Guest (Sanger Institute, UK) gb10@sanger.ac.uk
+ *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
+ *  
  * Description: Shows a dialog window allowing user to choose a section
  *              of DNA to export. Initially the DNA section is that
  *              of the feature the user selected and they can add
@@ -123,7 +122,6 @@ char *zmapWindowDNAChoose(ZMapWindow window, FooCanvasItem *feature_item, ZMapWi
   ZMapFeature feature ;
   ZMapFeatureBlock block ;
   double x1, y1, x2, y2 ;
-  ZMapWindowContainerGroup container;
   FooCanvasItem *parent ;
   gint block_start, block_end ;
   const char *button_text ;
@@ -170,7 +168,6 @@ char *zmapWindowDNAChoose(ZMapWindow window, FooCanvasItem *feature_item, ZMapWi
 
 
   /* Draw an overlay box over the feature to show the extent of the dna selected. */
-  container = zmapWindowContainerCanvasItemGetContainer(feature_item) ;
   parent = zmapWindowItemGetTrueItem(feature_item) ;
   foo_canvas_item_get_bounds(parent, &x1, &y1, &x2, &y2) ;
 
@@ -404,7 +401,6 @@ static void getDNA(DNASearchData dna_data)
 {
   char *feature_txt = NULL ;
   char *err_text = NULL ;
-  char *dna ;
   int start, end ;
   int block_start;
 
@@ -421,8 +417,6 @@ static void getDNA(DNASearchData dna_data)
       zMapBlock2FeatureCoords(dna_data->block, &start, &end) ;
       start = start - dna_data->dna_flanking ;
       end   = end + dna_data->dna_flanking ;
-
-      dna   = dna_data->block->sequence.sequence ;
 
       /* Note that gtk_entry returns "" for no text, _not_ NULL. */
       feature_txt = dna_data->entry_text ;
@@ -627,13 +621,12 @@ static gboolean spinEventCB(GtkWidget *widget, GdkEventClient *event, gpointer u
  * any other pathological values. */
 static void updateSpinners(DNASearchData dna_data)
 {
-  int start, end, flanking, start_flank, end_flank, flanking_max ;
+  int start, end, start_flank, end_flank, flanking_max ;
   int max_end, min_start;
 
   /* Get current spin values. */
   start    = gtk_spin_button_get_value_as_int(dna_data->start_spin) ;
   end      = gtk_spin_button_get_value_as_int(dna_data->end_spin) ;
-  flanking = gtk_spin_button_get_value_as_int(dna_data->flanking_spin) ;
 
   min_start =  dna_data->block->block_to_sequence.block.x1;
   max_end   =  dna_data->block->block_to_sequence.block.x2;

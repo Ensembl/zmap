@@ -1,28 +1,28 @@
 /*  File: zmapView.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2015: Genome Research Ltd.
+ *  Copyright (c) 2006-2017: Genome Research Ltd.
  *-------------------------------------------------------------------
- * ZMap is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
- * originated by
- *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ * originally written by:
+ * 
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
- *
+ *       Gemma Guest (Sanger Institute, UK) gb10@sanger.ac.uk
+ *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
+ *  
  * Description: Handles the getting of the feature context from sources
  *              and their subsequent processing and viewing.
  *              zMapView routines receive requests to load, display
@@ -69,7 +69,7 @@ using namespace std ;
 using namespace ZMapThreadSource ;
 
 
-#define SOURCE_FAILURE_WARNING_FORMAT "Error loading source(s). Further source failures WILL NOT BE REPORTED. See the log file for details of any other failures.\n\nThe first error was:\n\n%s"
+#define SOURCE_FAILURE_WARNING_FORMAT "Error loading source(s). Further source failures WILL NOT BE REPORTED. See the log file for details of any other failures. The first error was:\n\n%s\n\n"
 
 /* Define thread debug messages, used in checkStateConnections() mostly. */
 #define THREAD_DEBUG_MSG_PREFIX " Reply from slave thread %s, "
@@ -4236,74 +4236,74 @@ static ZMapFeatureContextExecuteStatus add_default_styles(GQuark key,
     {
     case ZMAPFEATURE_STRUCT_ALIGN:
       {
-        ZMapFeatureAlignment feature_align ;
-        feature_align = (ZMapFeatureAlignment)feature_any;
+        break;
       }
-      break;
+
     case ZMAPFEATURE_STRUCT_BLOCK:
       {
+        break;
       }
-      break;
 
     case ZMAPFEATURE_STRUCT_FEATURESET:
       {
-                ZMapFeatureSet feature_set = NULL;
-                feature_set = (ZMapFeatureSet)feature_any;
+        ZMapFeatureSet feature_set = NULL;
+        feature_set = (ZMapFeatureSet)feature_any;
 
-                        /* for autoconfigured columns we have to patch up a few data structs
-                        * that are needed by various bits of code scattered all over the place
-                        * that are assumed to have been set up before requesting the data
-                        * and they are assumed to have been copied to some other place at some time
-                        * in between startup, requesting data, getting data and displaying it
-                        *
-                        * what's below is in repsonse to whatever errors and assertions happened
-                        * it's called 'design by experiment'
-                        */
-                style = feature_set->style;        /* eg for an auto configured featureset with a default style */
-                        /* also set up column2styles */
-                if(style)
-                {
-                        if(!g_hash_table_lookup(view->context_map.column_2_styles,GUINT_TO_POINTER(feature_set->unique_id)))
-                        {
-                                /* createColumnFull() needs a style table, although the error is buried in zmapWindowUtils.c */
-                                zMap_g_hashlist_insert(view->context_map.column_2_styles,
-                                        feature_set->unique_id,     // the column
-                                        GUINT_TO_POINTER(style->unique_id)) ;  // the style
-                        }
+        /* for autoconfigured columns we have to patch up a few data structs
+         * that are needed by various bits of code scattered all over the place
+         * that are assumed to have been set up before requesting the data
+         * and they are assumed to have been copied to some other place at some time
+         * in between startup, requesting data, getting data and displaying it
+         *
+         * what's below is in repsonse to whatever errors and assertions happened
+         * it's called 'design by experiment'
+         */
+        style = feature_set->style;        /* eg for an auto configured featureset with a default style */
+        /* also set up column2styles */
+        if(style)
+          {
+            if(!g_hash_table_lookup(view->context_map.column_2_styles,GUINT_TO_POINTER(feature_set->unique_id)))
+              {
+                /* createColumnFull() needs a style table, although the error is buried in zmapWindowUtils.c */
+                zMap_g_hashlist_insert(view->context_map.column_2_styles,
+                                       feature_set->unique_id,     // the column
+                                       GUINT_TO_POINTER(style->unique_id)) ;  // the style
+              }
 
 #if 0
-/* cretaed by zMapFeatureGetSetColumn() below */
-                        if (!(set_data = g_hash_table_lookup(view->context_map->featureset_2_column,GUINT_TO_POINTER(feature_set_id))))
-                        {
-                                // to handle autoconfigured servers we have to make this up
-                                set_data = g_new0(ZMapFeatureSetDescStruct,1);
-                                set_data->column_id = feature_set_id;
-                                set_data->column_ID = feature_set_id;
-                                g_hash_table_insert(view->context_map->featureset_2_column,GUINT_TO_POINTER(feature_set_id), (gpointer) set_data);
-                        }
+            /* cretaed by zMapFeatureGetSetColumn() below */
+            if (!(set_data = g_hash_table_lookup(view->context_map->featureset_2_column,GUINT_TO_POINTER(feature_set_id))))
+              {
+                // to handle autoconfigured servers we have to make this up
+                set_data = g_new0(ZMapFeatureSetDescStruct,1);
+                set_data->column_id = feature_set_id;
+                set_data->column_ID = feature_set_id;
+                g_hash_table_insert(view->context_map->featureset_2_column,GUINT_TO_POINTER(feature_set_id), (gpointer) set_data);
+              }
 
 #endif
-                        /* find_or_create_column() needs f_col->style */
-                        f_col = view->context_map.getSetColumn(feature_set->unique_id);
-                        if(f_col)
-                        {
-                                if(!f_col->style)
-                                        f_col->style = style;
-                                if(!f_col->style_table)
-                                        f_col->style_table = g_list_append(f_col->style_table, (gpointer) style);
-                        }
+            /* find_or_create_column() needs f_col->style */
+            f_col = view->context_map.getSetColumn(feature_set->unique_id);
+            if(f_col)
+              {
+                if(!f_col->style)
+                  f_col->style = style;
+                if(!f_col->style_table)
+                  f_col->style_table = g_list_append(f_col->style_table, (gpointer) style);
+              }
 
-                        /* source_2_sourcedata has been set up by GFF parser, which needed it. */
-                }
-        }
+            /* source_2_sourcedata has been set up by GFF parser, which needed it. */
+          }
+
         break;
+      }
 
     case ZMAPFEATURE_STRUCT_FEATURE:
     case ZMAPFEATURE_STRUCT_INVALID:
     default:
       {
         zMapWarnIfReached() ;
-      break;
+        break;
       }
     }
 
@@ -4318,149 +4318,142 @@ static void commandCB(ZMapWindow window, void *caller_data, void *window_data)
   ZMapView view = view_window->parent_view ;
   ZMapWindowCallbackCommandAny cmd_any = (ZMapWindowCallbackCommandAny)window_data ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  char *err_msg = NULL ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 
   /* Rewrite to use a better interface.... */
-
 
 
   /* TEMP CODE...... */
   if (cmd_any->cmd == ZMAPWINDOW_CMD_COLFILTER)
     {
-      gboolean status ;
-
-      status = zmapViewPassCommandToAllWindows(view, window_data) ;
+      zmapViewPassCommandToAllWindows(view, window_data) ;
     }
   else
-  switch (cmd_any->cmd)
     {
-    case ZMAPWINDOW_CMD_SHOWALIGN:
-      {
-        ZMapWindowCallbackCommandAlign align_cmd = (ZMapWindowCallbackCommandAlign)cmd_any ;
-
-        doBlixemCmd(view, align_cmd) ;
-
-        break ;
-      }
-    case ZMAPWINDOW_CMD_GETFEATURES:
-      {
-        ZMapWindowCallbackGetFeatures get_data = (ZMapWindowCallbackGetFeatures)cmd_any ;
-        int req_start = get_data->start;
-        int req_end = get_data->end;
-
-        if (zMapViewGetRevCompStatus(view))
+      switch (cmd_any->cmd)
+        {
+        case ZMAPWINDOW_CMD_SHOWALIGN:
           {
-            int tmp;
+            ZMapWindowCallbackCommandAlign align_cmd = (ZMapWindowCallbackCommandAlign)cmd_any ;
 
-            /* rev comp the request to get the right features, we request as fwd strand */
+            doBlixemCmd(view, align_cmd) ;
 
-            zmapFeatureRevCompCoord(&req_start, view->features->parent_span.x1,view->features->parent_span.x2);
-            zmapFeatureRevCompCoord(&req_end, view->features->parent_span.x1,view->features->parent_span.x2);
+            break ;
+          }
+        case ZMAPWINDOW_CMD_GETFEATURES:
+          {
+            ZMapWindowCallbackGetFeatures get_data = (ZMapWindowCallbackGetFeatures)cmd_any ;
+            int req_start = get_data->start;
+            int req_end = get_data->end;
 
-            tmp = req_start;
-            req_start = req_end;
-            req_end = tmp;
+            if (zMapViewGetRevCompStatus(view))
+              {
+                int tmp;
+
+                /* rev comp the request to get the right features, we request as fwd strand */
+
+                zmapFeatureRevCompCoord(&req_start, view->features->parent_span.x1,view->features->parent_span.x2);
+                zmapFeatureRevCompCoord(&req_end, view->features->parent_span.x1,view->features->parent_span.x2);
+
+                tmp = req_start;
+                req_start = req_end;
+                req_end = tmp;
+              }
+
+            zmapViewLoadFeatures(view, get_data->block, get_data->feature_set_ids, NULL, NULL,
+                                 NULL, req_start, req_end, view->thread_fail_silent,
+                                 SOURCE_GROUP_DELAYED, TRUE, FALSE) ;        /* don't terminate, need to keep alive for blixem */
+
+            break ;
           }
 
-        zmapViewLoadFeatures(view, get_data->block, get_data->feature_set_ids, NULL, NULL,
-                             NULL, req_start, req_end, view->thread_fail_silent,
-                             SOURCE_GROUP_DELAYED, TRUE, FALSE) ;        /* don't terminate, need to keep alive for blixem */
 
-        break ;
-      }
-
-
-    case ZMAPWINDOW_CMD_REVERSECOMPLEMENT:
-      {
-        gboolean status ;
-
-        /* NOTE, there is no need to signal the layer above that things are changing,
-         * the layer above does the complement and handles all that. */
-        if (!(status = zMapViewReverseComplement(view)))
+        case ZMAPWINDOW_CMD_REVERSECOMPLEMENT:
           {
-            zMapLogCritical("%s", "View Reverse Complement failed.") ;
+            gboolean status ;
 
-            zMapWarning("%s", "View Reverse Complement failed.") ;
+            /* NOTE, there is no need to signal the layer above that things are changing,
+             * the layer above does the complement and handles all that. */
+            if (!(status = zMapViewReverseComplement(view)))
+              {
+                zMapLogCritical("%s", "View Reverse Complement failed.") ;
+
+                zMapWarning("%s", "View Reverse Complement failed.") ;
+              }
+
+            break ;
           }
 
-        break ;
-      }
+        case ZMAPWINDOW_CMD_COPYTOSCRATCH:
+          {
+            ZMapWindowCallbackCommandScratch scratch_cmd = (ZMapWindowCallbackCommandScratch)cmd_any ;
+            zmapViewScratchCopyFeatures(view, scratch_cmd->features, scratch_cmd->seq_start, scratch_cmd->seq_end, scratch_cmd->subpart, scratch_cmd->use_subfeature);
+            break;
+          }
 
-    case ZMAPWINDOW_CMD_COPYTOSCRATCH:
-      {
-        ZMapWindowCallbackCommandScratch scratch_cmd = (ZMapWindowCallbackCommandScratch)cmd_any ;
-        zmapViewScratchCopyFeatures(view, scratch_cmd->features, scratch_cmd->seq_start, scratch_cmd->seq_end, scratch_cmd->subpart, scratch_cmd->use_subfeature);
-        break;
-      }
+        case ZMAPWINDOW_CMD_SETCDSSTART:
+          {
+            ZMapWindowCallbackCommandScratch scratch_cmd = (ZMapWindowCallbackCommandScratch)cmd_any ;
+            zmapViewScratchSetCDS(view, scratch_cmd->features, scratch_cmd->seq_start, scratch_cmd->seq_end,
+                                  scratch_cmd->subpart, scratch_cmd->use_subfeature,
+                                  TRUE, FALSE);
+            break;
+          }
+        case ZMAPWINDOW_CMD_SETCDSEND:
+          {
+            ZMapWindowCallbackCommandScratch scratch_cmd = (ZMapWindowCallbackCommandScratch)cmd_any ;
+            zmapViewScratchSetCDS(view, scratch_cmd->features, scratch_cmd->seq_start, scratch_cmd->seq_end, 
+                                  scratch_cmd->subpart, scratch_cmd->use_subfeature,
+                                  FALSE, TRUE);
+            break;
+          }
+        case ZMAPWINDOW_CMD_SETCDSRANGE:
+          {
+            ZMapWindowCallbackCommandScratch scratch_cmd = (ZMapWindowCallbackCommandScratch)cmd_any ;
+            zmapViewScratchSetCDS(view, scratch_cmd->features, scratch_cmd->seq_start, scratch_cmd->seq_end,
+                                  scratch_cmd->subpart, scratch_cmd->use_subfeature,
+                                  TRUE, TRUE);
+            break;
+          }
 
-    case ZMAPWINDOW_CMD_SETCDSSTART:
-      {
-        ZMapWindowCallbackCommandScratch scratch_cmd = (ZMapWindowCallbackCommandScratch)cmd_any ;
-        zmapViewScratchSetCDS(view, scratch_cmd->features, scratch_cmd->seq_start, scratch_cmd->seq_end,
-                              scratch_cmd->subpart, scratch_cmd->use_subfeature,
-                              TRUE, FALSE);
-        break;
-      }
-    case ZMAPWINDOW_CMD_SETCDSEND:
-      {
-        ZMapWindowCallbackCommandScratch scratch_cmd = (ZMapWindowCallbackCommandScratch)cmd_any ;
-        zmapViewScratchSetCDS(view, scratch_cmd->features, scratch_cmd->seq_start, scratch_cmd->seq_end, 
-                              scratch_cmd->subpart, scratch_cmd->use_subfeature,
-                              FALSE, TRUE);
-        break;
-      }
-    case ZMAPWINDOW_CMD_SETCDSRANGE:
-      {
-        ZMapWindowCallbackCommandScratch scratch_cmd = (ZMapWindowCallbackCommandScratch)cmd_any ;
-        zmapViewScratchSetCDS(view, scratch_cmd->features, scratch_cmd->seq_start, scratch_cmd->seq_end,
-                              scratch_cmd->subpart, scratch_cmd->use_subfeature,
-                              TRUE, TRUE);
-        break;
-      }
+        case ZMAPWINDOW_CMD_DELETEFROMSCRATCH:
+          {
+            ZMapWindowCallbackCommandScratch scratch_cmd = (ZMapWindowCallbackCommandScratch)cmd_any ;
+            zmapViewScratchDeleteFeatures(view, scratch_cmd->features, scratch_cmd->seq_start, scratch_cmd->seq_end, scratch_cmd->subpart, scratch_cmd->use_subfeature);
+            break;
+          }
 
-    case ZMAPWINDOW_CMD_DELETEFROMSCRATCH:
-      {
-        ZMapWindowCallbackCommandScratch scratch_cmd = (ZMapWindowCallbackCommandScratch)cmd_any ;
-        zmapViewScratchDeleteFeatures(view, scratch_cmd->features, scratch_cmd->seq_start, scratch_cmd->seq_end, scratch_cmd->subpart, scratch_cmd->use_subfeature);
-        break;
-      }
+        case ZMAPWINDOW_CMD_CLEARSCRATCH:
+          {
+            zmapViewScratchClear(view);
+            break;
+          }
 
-    case ZMAPWINDOW_CMD_CLEARSCRATCH:
-      {
-        zmapViewScratchClear(view);
-        break;
-      }
+        case ZMAPWINDOW_CMD_UNDOSCRATCH:
+          {
+            zmapViewScratchUndo(view);
+            break;
+          }
 
-    case ZMAPWINDOW_CMD_UNDOSCRATCH:
-      {
-        zmapViewScratchUndo(view);
-        break;
-      }
+        case ZMAPWINDOW_CMD_REDOSCRATCH:
+          {
+            zmapViewScratchRedo(view);
+            break;
+          }
 
-    case ZMAPWINDOW_CMD_REDOSCRATCH:
-      {
-        zmapViewScratchRedo(view);
-        break;
-      }
+        case ZMAPWINDOW_CMD_GETEVIDENCE:
+          {
+            ZMapWindowCallbackCommandScratch scratch_cmd = (ZMapWindowCallbackCommandScratch)cmd_any ;
+            zmapViewScratchFeatureGetEvidence(view, scratch_cmd->evidence_cb, scratch_cmd->evidence_cb_data);
+            break;
+          }
 
-    case ZMAPWINDOW_CMD_GETEVIDENCE:
-      {
-        ZMapWindowCallbackCommandScratch scratch_cmd = (ZMapWindowCallbackCommandScratch)cmd_any ;
-        zmapViewScratchFeatureGetEvidence(view, scratch_cmd->evidence_cb, scratch_cmd->evidence_cb_data);
-        break;
-      }
-
-    default:
-      {
-        zMapWarnIfReached() ;
-        break ;
-      }
+        default:
+          {
+            zMapWarnIfReached() ;
+            break ;
+          }
+        }
     }
-
 
   return ;
 }
@@ -4502,7 +4495,6 @@ static void doBlixemCmd(ZMapView view, ZMapWindowCallbackCommandAlign align_cmd)
       else
         {
           ZMapNewDataSource view_con ;
-          ZMapViewConnectionRequest request ;
           ZMapServerReqAny req_any ;
           ZMapConnectionData connect_data ;
 
@@ -4533,8 +4525,8 @@ static void doBlixemCmd(ZMapView view, ZMapWindowCallbackCommandAlign align_cmd)
                   req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_GETSEQUENCE,
                                                     local_sequences, align_cmd) ;
 
-                  request = zmapViewStepListAddServerReq(connect_data->step_list,
-                                                         ZMAP_SERVERREQ_GETSEQUENCE, req_any, REQUEST_ONFAIL_CANCEL_STEPLIST) ;
+                  zmapViewStepListAddServerReq(connect_data->step_list,
+                                               ZMAP_SERVERREQ_GETSEQUENCE, req_any, REQUEST_ONFAIL_CANCEL_STEPLIST) ;
 
 
                   /* Start the step list. */

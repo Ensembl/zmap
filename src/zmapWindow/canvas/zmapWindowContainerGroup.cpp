@@ -1,29 +1,28 @@
 /*  File: zmapWindowContainerGroup.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2013-2015: Genome Research Ltd.
+ *  Copyright (c) 2006-2017: Genome Research Ltd.
  *-------------------------------------------------------------------
- * ZMap is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originally written by:
- *
- *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ * 
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
- *
+ *       Gemma Guest (Sanger Institute, UK) gb10@sanger.ac.uk
+ *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
+ *  
  * Description: Contains functions from Roy Storey's rewrite of the
  *              original drawing code. Roy's code was all in
  *              zmapWindow/items and has now been subsumed/replaced
@@ -307,11 +306,7 @@ static void zmap_window_container_group_get_property(GObject               *obje
                                                      GValue                *value,
                                                      GParamSpec            *pspec)
 {
-  ZMapWindowContainerGroup container;
-
   zMapReturnIfFail(ZMAP_IS_CONTAINER_GROUP(object));
-
-  container = ZMAP_CONTAINER_GROUP(object);
 
   switch(param_id)
     {
@@ -573,7 +568,6 @@ ZMapWindowContainerGroup zmapWindowContainerGroupCreateFromFoo(FooCanvasGroup   
   ZMapWindowContainerGroup container  = NULL;
   ZMapWindowContainerGroup parent_container  = NULL;
   FooCanvasItem *item;
-  FooCanvasGroup *group;
   GType container_type;
   double this_spacing = 200.0;
 
@@ -615,7 +609,6 @@ ZMapWindowContainerGroup zmapWindowContainerGroupCreateFromFoo(FooCanvasGroup   
 
   if(item && ZMAP_IS_CONTAINER_GROUP(item))
     {
-      group     = FOO_CANVAS_GROUP(item);
       container = ZMAP_CONTAINER_GROUP(item);
       container->level = level;                             /* level */
       container->child_spacing = child_spacing;
@@ -821,7 +814,7 @@ gboolean zmapWindowContainerHasFeatures(ZMapWindowContainerGroup container)
 
 void zmapWindowContainerUtilsRemoveAllItems(FooCanvasGroup *group)
 {
-  GList *glist = NULL,*l = NULL ;
+  GList *glist = NULL ;
 
   zMapReturnIfFail(group) ;
 
@@ -833,7 +826,6 @@ void zmapWindowContainerUtilsRemoveAllItems(FooCanvasGroup *group)
 
           gtk_item_object = GTK_OBJECT(glist->data);
 
-          l = glist;
           glist = glist->next;
           //        g_free(l);      /* mh17: oddly this was not done */
 
@@ -948,7 +940,9 @@ FooCanvasItem *zMapWindowCanvasItemGetInterval(ZMapWindowCanvasItem canvas_item,
     }
 
   if(matching_interval == NULL)
-    g_warning("No matching interval!");
+    {
+      zMapLogWarning("%s", "No matching interval!");
+    }
   else if(sub_feature_out)
     {
       if(ZMAP_IS_WINDOW_FEATURESET_ITEM(matching_interval) && zMapWindowCanvasItemGetFeature(item))
@@ -1298,14 +1292,10 @@ void zmapWindowContainerUtilsExecuteFull(ZMapWindowContainerGroup   container_gr
                                          gpointer                   container_leave_data)
 {
   ContainerRecursionDataStruct data  = {(ZMapContainerLevelType)0, NULL} ;
-  //  ZMapWindowCanvas zmap_canvas;
-  FooCanvasItem *parent;
 
   if (!(stop_at_type >= ZMAPCONTAINER_LEVEL_ROOT &&
              stop_at_type <= ZMAPCONTAINER_LEVEL_FEATURESET))
     return  ;
-
-  parent = (FooCanvasItem *)container_group;
 
   data.stop                    = stop_at_type;
 
@@ -1416,7 +1406,7 @@ static void eachContainer(gpointer data, gpointer user_data)
   FooCanvasGroup *children ;
   FooCanvasPoints this_points_data = {NULL}, parent_points_data = {NULL};
   FooCanvasPoints *this_points = NULL, *parent_points = NULL;
-  double *bound = NULL, spacing = 0.0, bound_data = 0.0, coords[4] = {0.0, 0.0, 0.0, 0.0};
+  double coords[4] = {0.0, 0.0, 0.0, 0.0};
 
   zMapReturnIfFail(container) ;
 
@@ -1427,7 +1417,6 @@ static void eachContainer(gpointer data, gpointer user_data)
 
   /* We need to get what we need in case someone destroys it under us. */
   level   = container->level;
-  spacing = container->this_spacing;
 
   if (!(level >  ZMAPCONTAINER_LEVEL_INVALID &&
              level <= ZMAPCONTAINER_LEVEL_FEATURESET) )
@@ -1435,7 +1424,6 @@ static void eachContainer(gpointer data, gpointer user_data)
 
   this_points   = &this_points_data;
   parent_points = &parent_points_data;
-  bound         = &bound_data;
 
   this_points->coords   = &coords[0];
   parent_points->coords = &coords[0];

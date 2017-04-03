@@ -67,6 +67,7 @@ ZMap/zmapUtilsHandle.hpp \
 ZMap/zmapUtilsLog.hpp \
 ZMap/zmapUtilsLogical.hpp \
 ZMap/zmapUtilsMesg.hpp \
+ZMap/zmapUtilsPrivate.hpp \
 ZMap/zmapView.hpp \
 ZMap/zmapWebPages.hpp \
 ZMap/zmapWindow.hpp \

@@ -1,28 +1,28 @@
 /*  File: zmapWindowItemHash.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2015: Genome Research Ltd.
+ *  Copyright (c) 2006-2017: Genome Research Ltd.
  *-------------------------------------------------------------------
- * ZMap is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
- * originated by
- *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ * originally written by:
+ * 
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
- *
+ *       Gemma Guest (Sanger Institute, UK) gb10@sanger.ac.uk
+ *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
+ *  
  * Description: Functions to go from an alignment, block, column or feature
  *              in a feature context to the corresponding foocanvas group or item.
  *              This is fundamental in linking our feature context hierachy
@@ -778,7 +778,7 @@ GList *zmapWindowFToIFindItemSetFull(ZMapWindow window,GHashTable *feature_conte
 {
   GList *result = NULL ;
   GQuark strand_id, strand_none, strand_forward, strand_reverse, strand_both ;
-  GQuark frame_id, frame_none, frame_0, frame_1, frame_2, frame_all ;
+  GQuark frame_id ;
   GQuark forward_set_id = 0, reverse_set_id = 0 ;
   GList *search = NULL;
   ItemSearchStruct align_search = {0}, block_search = {0}, forward_set_search = {0}, reverse_set_search = {0},
@@ -821,12 +821,6 @@ GList *zmapWindowFToIFindItemSetFull(ZMapWindow window,GHashTable *feature_conte
       frame_id = 0 ;
       if (frame_spec)
         {
-          frame_none = g_quark_from_string(".") ;
-          frame_0 = g_quark_from_string("1") ;
-          frame_1 = g_quark_from_string("2") ;
-          frame_2 = g_quark_from_string("3") ;
-          frame_all = g_quark_from_string("*") ;
-
           frame_id = g_quark_from_string(frame_spec) ;
         }
 
@@ -944,7 +938,6 @@ GList *zmapWindowFToIFindItemSetFull(ZMapWindow window,GHashTable *feature_conte
 
   /* build the search list (terminal stop is needed to halt the search if none of the given
    * parameters is a stop). */
-  int a = g_list_length(result) ;
   if (!column_id
       || (strand_id == strand_none || strand_id == strand_forward || strand_id == strand_both))
     {
@@ -958,7 +951,6 @@ GList *zmapWindowFToIFindItemSetFull(ZMapWindow window,GHashTable *feature_conte
 
       /* Now do the recursive search */
       doHashSet(feature_context_to_item, search, &result) ;
-      a = g_list_length(result) ;
 
       g_list_free(search) ;
       search = NULL ;

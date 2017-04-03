@@ -1,29 +1,28 @@
 /*  File: remotecontroltest.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2010-2015: Genome Research Ltd.
+ *  Copyright (c) 2006-2017: Genome Research Ltd.
  *-------------------------------------------------------------------
- * ZMap is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originally written by:
- *
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ * 
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
- *
+ *       Gemma Guest (Sanger Institute, UK) gb10@sanger.ac.uk
+ *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
+ *  
  * Description: Program to test remote control interface in ZMap.
  *
  * Exported functions: none
@@ -899,19 +898,18 @@ static GtkWidget *makeTestWindow(AppData app_data)
 static GtkWidget *makeMainReqResp(AppData app_data)
 {
   GtkWidget *top_hbox = NULL ;
-  GtkWidget *send_vbox, *receive_vbox ;
 
   top_hbox = gtk_hbox_new(FALSE, 10) ;
 
   /* Build Send command boxes. */
-  send_vbox = GTK_WIDGET(makeReqRespBox(app_data,
-					GTK_BOX(top_hbox), "SEND TO ZMAP",
-					&(app_data->our_req), "Our Request", "ZMap's Response")) ;
+  makeReqRespBox(app_data,
+                 GTK_BOX(top_hbox), "SEND TO ZMAP",
+                 &(app_data->our_req), "Our Request", "ZMap's Response") ;
 
   /* Build Receive command boxes. */
-  receive_vbox = GTK_WIDGET(makeReqRespBox(app_data,
-					   GTK_BOX(top_hbox), "RECEIVE FROM ZMAP",
-					   &(app_data->zmap_req), "ZMap's Request", "Our Response")) ;
+  makeReqRespBox(app_data,
+                 GTK_BOX(top_hbox), "RECEIVE FROM ZMAP",
+                 &(app_data->zmap_req), "ZMap's Request", "Our Response") ;
 
   return top_hbox ;
 }

@@ -1,0 +1,20 @@
+<!--#set var="banner" value="ZMap"-->
+<!--#include virtual="/perl/header"-->
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<h1>Future Work in ZMap</h1>
+
+<ul>
+  <li><a href="Acedb_ID_construction.shtml">Constructing Unique ID's for Acedb-derived features
+      (but relevant to all ID construction)</a></li>
+  <li><a href="Cluster_tags.shtml">Clustering Features within Columns</a></li>
+  <li><a href="SQLite.shtml">Replacing ZMap Configuration files with a local SQLite DB</a></li>
+  <li><a href="notepad.shtml">A Notepad Window</a></li>
+  <li><a href="zmap_plugins.shtml">Plugins for ZMap</a></li>
+  <li><a href="zmap_standalone.shtml">Ideas for Improving Standalone Use of ZMap</a></li>
+  <li><a href="print.shtml">Improving Printing from ZMap</a></li>
+</ul>
+
+
+<!--#include virtual="/perl/footer"-->
+

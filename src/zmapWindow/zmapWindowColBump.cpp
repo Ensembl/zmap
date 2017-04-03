@@ -1,29 +1,28 @@
 /*  File: zmapWindowColBump.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2015: Genome Research Ltd.
+ *  Copyright (c) 2006-2017: Genome Research Ltd.
  *-------------------------------------------------------------------
- * ZMap is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originally written by:
- *
- *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ * 
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
- *
+ *       Gemma Guest (Sanger Institute, UK) gb10@sanger.ac.uk
+ *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
+ *  
  * Description: Column bumping functions.
  *
  * Exported functions: See zmapWindow_P.h
@@ -211,11 +210,9 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleBumpMode bump_mod
 void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_mode,
                                ZMapWindowCompressMode compress_mode)
 {
-  BumpColStruct bump_col_data = {NULL} ;
   ZMapWindowContainerFeatureSet container = NULL;
   ZMapStyleBumpMode historic_bump_mode;
   ZMapWindow window = NULL;
-  gboolean column = FALSE ;
   gboolean ok = TRUE;
   gboolean mark_set;
   int start, end ;
@@ -225,12 +222,10 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
   /* Decide if the column_item is a column group or a feature within that group. */
   if (ZMAP_IS_CANVAS_ITEM(bump_item))
     {
-      column = FALSE;
       container = (ZMapWindowContainerFeatureSet)zmapWindowContainerCanvasItemGetContainer(bump_item);
     }
   else if (ZMAP_IS_CONTAINER_FEATURESET(bump_item))
     {
-      column = TRUE;
       container = (ZMapWindowContainerFeatureSet)(bump_item);
     }
   else
@@ -299,9 +294,6 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
               end   = window->max_coord ;
             }
         }
-
-      bump_col_data.start = start ;
-      bump_col_data.end = end ;
 
 
 //time = zMapElapsedSeconds;
@@ -412,17 +404,18 @@ static void invoke_bump_to_initial(ZMapWindowContainerGroup container, FooCanvas
     case ZMAPCONTAINER_LEVEL_FEATURESET:
       {
         ZMapWindowContainerFeatureSet container_set;
-        ZMapStyleBumpMode default_mode, current_mode, initial_mode;
+        ZMapStyleBumpMode default_mode, initial_mode;
 
         container_set = (ZMapWindowContainerFeatureSet)container;
-        current_mode  = zmapWindowContainerFeatureSetGetBumpMode(container_set);
         default_mode  = zmapWindowContainerFeatureSetGetDefaultBumpMode(container_set);
 
         initial_mode  = default_mode;
 
         zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(container), initial_mode, ZMAPWINDOW_COMPRESS_ALL);
+
+        break;
       }
-      break;
+
     default:
       {
         break;

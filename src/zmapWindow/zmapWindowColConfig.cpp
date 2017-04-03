@@ -1,28 +1,28 @@
 /*  File: zmapWindowColConfig.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2015: Genome Research Ltd.
+ *  Copyright (c) 2006-2017: Genome Research Ltd.
  *-------------------------------------------------------------------
- * ZMap is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
- * originated by
- *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ * originally written by:
+ * 
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
- *
+ *       Gemma Guest (Sanger Institute, UK) gb10@sanger.ac.uk
+ *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
+ *  
  * Description: Functions to implement column configuration.
  *
  * Exported functions: See ZMap/zmapWindow.h
@@ -1062,13 +1062,9 @@ static void loaded_page_apply_bumped(LoadedPageData page_data)
 static void loaded_page_reorder(NotebookPage notebook_page)
 {
   LoadedPageData loaded_page_data;
-  ColConfigure configure_data;
   gboolean save_apply_now, save_reposition;
-  ZMapWindow window ;
 
-  configure_data = notebook_page->configure_data;
   loaded_page_data = (LoadedPageData)(notebook_page->page_data);
-  window = loaded_page_data->window ;
 
   /* Reset the flags so that we apply changes now but don't reposition yet. Save the original
    * flag values first */
@@ -1104,13 +1100,9 @@ static void loaded_page_reorder(NotebookPage notebook_page)
 static void loaded_page_apply(NotebookPage notebook_page)
 {
   LoadedPageData loaded_page_data;
-  ColConfigure configure_data;
   gboolean save_apply_now, save_reposition;
-  ZMapWindow window ;
 
-  configure_data = notebook_page->configure_data;
   loaded_page_data = (LoadedPageData)(notebook_page->page_data);
-  window = loaded_page_data->window ;
 
   /* Reset the flags so that we apply changes now but don't reposition yet. Save the original
    * flag values first */
@@ -1342,14 +1334,10 @@ static void loaded_page_update_matching_tree_rows(LoadedPageData loaded_page_dat
  * applicable to a particular column so the relevant column group is passed in the cb_data. */
 static void loaded_page_update(NotebookPage notebook_page, ChangeButtonStateData cb_data)
 {
-  ColConfigure configure_data;
   ZMapStrand strand;
   ZMapWindowColConfigureMode mode ;
   LoadedPageData loaded_page_data;
 
-
-  /* First get the configure_data  */
-  configure_data = notebook_page->configure_data;
 
   mode = cb_data->mode ;
 
@@ -1621,7 +1609,7 @@ static GtkWidget *deferred_cols_panel(NotebookPage notebook_page, GList *columns
 
       do
         {
-          GtkWidget *label, *button_box;
+          GtkWidget *button_box;
           //  FooCanvasGroup *column_group = FOO_CANVAS_GROUP(column->data);
           char *column_name;
           DeferredButton all, mark, none;
@@ -1633,7 +1621,7 @@ static GtkWidget *deferred_cols_panel(NotebookPage notebook_page, GList *columns
 
           if(column_name && !g_list_find_custom(make_unique, column_name, find_name_cb))
             {
-              label = create_label(label_box, column_name);
+              create_label(label_box, column_name);
 
               button_box = gtk_hbox_new(FALSE, 0);
 
@@ -4205,7 +4193,7 @@ static gboolean zmap_widget_map(GtkWidget      *widget,
 
 #ifdef DEBUGGING_ONLY
   if(sizing_data->debug)
-    g_warning("map: %d x %d", sizing_data->widget_requisition.width, sizing_data->widget_requisition.height);
+    zMapLogWarning("map: %d x %d", sizing_data->widget_requisition.width, sizing_data->widget_requisition.height);
 #endif /* DEBUGGING_ONLY */
 
   gtk_widget_set_size_request(widget,
@@ -4226,7 +4214,7 @@ static gboolean zmap_widget_unmap(GtkWidget *widget,
 
 #ifdef DEBUGGING_ONLY
   if(sizing_data->debug)
-    g_warning("unmap: %d x %d", widget->requisition.width, widget->requisition.height);
+    zMapLogWarning("unmap: %d x %d", widget->requisition.width, widget->requisition.height);
 #endif /* DEBUGGING_ONLY */
 
   return FALSE;
@@ -4244,7 +4232,7 @@ static void zmap_widget_size_allocation(GtkWidget     *widget,
 
 #ifdef DEBUGGING_ONLY
   if(sizing_data->debug)
-    g_warning("alloc: %d x %d", allocation->width, allocation->height);
+    zMapLogWarning("alloc: %d x %d", allocation->width, allocation->height);
 #endif /* DEBUGGING_ONLY */
 
   return ;

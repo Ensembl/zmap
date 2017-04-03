@@ -1,30 +1,28 @@
 /*  File: zmapFeatureAlignment.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2015: Genome Research Ltd.
+ *  Copyright (c) 2006-2017: Genome Research Ltd.
  *-------------------------------------------------------------------
- * ZMap is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originally written by:
- *
+ * 
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *       Gemma Guest (Sanger Institute, UK) gb10@sanger.ac.uk
  *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
- *
+ *  
  * Description: Functions to manipulate alignment features.
  *
  *              (EG: Note that the cigar/align code is taken from the acedb
@@ -248,6 +246,18 @@ ZMAP_ENUM_TO_SHORT_TEXT_FUNC(zMapFeatureAlignFormat2ShortText, ZMapFeatureAlignF
 ZMAP_ENUM_TO_SHORT_TEXT_FUNC(zMapFeatureAlignBoundary2ShortText, AlignBlockBoundaryType,
                              ZMAP_ALIGN_BLOCK_BOUNDARY_LIST) ;
 
+
+// This should be used everywhere but I expect is not...in theory there should only be an align
+// array IF it's len is greater than zero !
+bool zMapFeatureAlignmentHasGaps(ZMapFeature feature)
+{
+  bool result = false ;
+
+  if (feature->feature.homol.align && feature->feature.homol.align->len > 0)
+    result = true ;
+
+  return result ;
+}
 
 
 /* Adds homology data to a feature which may be empty or may already have partial features. */
@@ -572,7 +582,6 @@ void zMapFeatureAlignmentPrintExonsAligns(GArray *exons, GArray *introns, GArray
 /*
  *            Package routines.
  */
-
 
 void zmapFeatureAlignmentCopyFeature(ZMapFeature orig_feature, ZMapFeature new_feature)
 {
@@ -2157,7 +2166,6 @@ static gboolean alignStrVulgarCanon2Exons(AlignStrCanonical canon,
   AlignStrOpStruct *op = NULL ;
   VulgarParseState state ;
   char curr_op, prev_op ;
-  int exon_index, intron_index ;
   ZMapSpan curr_exon, curr_intron ;
   int cds_start = 0, cds_end = 0 ;
   bool prev_spliced_exon ;
@@ -2182,7 +2190,6 @@ static gboolean alignStrVulgarCanon2Exons(AlignStrCanonical canon,
   //   
   for (i = 0, state = VulgarParseState::START, prev_op = VULGAR_NO_OP, curr_op = VULGAR_NO_OP,
          prev_start_boundary = ALIGN_BLOCK_BOUNDARY_EDGE, prev_end_boundary = ALIGN_BLOCK_BOUNDARY_EDGE,
-         exon_index = 0, intron_index = 0,
          prev_spliced_exon = FALSE ;
        (result && i < (int)(canon_align->len)) ;
        ++i)
@@ -2995,23 +3002,29 @@ static gboolean alignStrCanonical2string(char ** p_string,
  */
 static gboolean gffv3Gap2Canon(const char *match_str, AlignStrCanonical canon)
 {
-  gboolean result = FALSE, canon_edited = FALSE ;
-  int num_removed = 0 ;
+  gboolean result = FALSE ;
   GError *error = NULL ;
   AlignStrCanonicalPropertiesStruct properties ;
 
   zMapReturnValIfFail(canon &&
                       canon->align &&
                       (canon->format==ZMAPALIGN_FORMAT_GAP_GFF3) &&
-                      (canon->num_operators==0),                           result ) ;
+                      (canon->num_operators==0), FALSE) ;
 
   result = TRUE ;
 
   alignFormat2Properties(canon->format, &properties) ;
   if ((result = parseCigarGeneral(match_str, canon, &properties, &error)))
     {
-      canon_edited = alignStrCanonicalSubstituteGFFv3Gap(canon) ;
-      canon_edited = parse_remove_invalid_operators(canon, operators_gffv3_gap, &num_removed) ;
+      int num_removed = 0 ;
+
+      if (alignStrCanonicalSubstituteGFFv3Gap(canon))
+        zMapLogWarning("Align string substitution %s made in string \"%s\"",
+                       zMapFeatureAlignFormat2ShortText(canon->format), match_str) ;
+      if (parse_remove_invalid_operators(canon, operators_gffv3_gap, &num_removed))
+        zMapLogWarning("%d invalid operators removed from string \"%s\"",
+                       num_removed, match_str) ;
+        
     }
   if (error)
     {
@@ -3026,8 +3039,7 @@ static gboolean gffv3Gap2Canon(const char *match_str, AlignStrCanonical canon)
  */
 static gboolean exonerateCigar2Canon(const char *match_str, AlignStrCanonical canon)
 {
-  gboolean result = FALSE, canon_edited = FALSE ;
-  int num_removed = 0 ;
+  gboolean result = FALSE ;
   GError *error = NULL ;
   AlignStrCanonicalPropertiesStruct properties ;
 
@@ -3042,8 +3054,14 @@ static gboolean exonerateCigar2Canon(const char *match_str, AlignStrCanonical ca
 
   if ((result = parseCigarGeneral(match_str, canon, &properties, &error)))
     {
-      canon_edited = alignStrCanonicalSubstituteExonerateCigar(canon) ;
-      canon_edited = parse_remove_invalid_operators(canon, operators_cigar_exonerate, &num_removed) ;
+      int num_removed = 0 ;
+
+      if (alignStrCanonicalSubstituteExonerateCigar(canon))
+        zMapLogWarning("Align string substitution %s made in string \"%s\"",
+                       zMapFeatureAlignFormat2ShortText(canon->format), match_str) ;
+      if (parse_remove_invalid_operators(canon, operators_cigar_exonerate, &num_removed))
+        zMapLogWarning("%d invalid operators removed from string \"%s\"",
+                       num_removed, match_str) ;
     }
   else if (error)
     {
@@ -3089,23 +3107,27 @@ static gboolean exonerateVulgar2Canon(const char *match_str, AlignStrCanonical c
  */
 static gboolean ensemblCigar2Canon(const char *match_str, AlignStrCanonical canon)
 {
-  gboolean result = FALSE, canon_edited = FALSE ;
-  int num_removed = 0 ;
+  gboolean result = FALSE ;
   GError *error = NULL ;
   AlignStrCanonicalPropertiesStruct properties ;
 
   zMapReturnValIfFail(canon &&
                       canon->align &&
                       (canon->format==ZMAPALIGN_FORMAT_CIGAR_ENSEMBL) &&
-                      (canon->num_operators == 0),                       result) ;
+                      (canon->num_operators == 0), FALSE) ;
 
   result = TRUE ;
 
   alignFormat2Properties(canon->format, &properties) ;
   if ((result = parseCigarGeneral(match_str, canon, &properties, &error)))
     {
-      canon_edited = alignStrCanonicalSubstituteEnsemblCigar(canon) ;
-      canon_edited = parse_remove_invalid_operators(canon, operators_cigar_ensembl, &num_removed) ;
+      int num_removed = 0 ;
+
+      alignStrCanonicalSubstituteEnsemblCigar(canon) ;
+
+      if (parse_remove_invalid_operators(canon, operators_cigar_ensembl, &num_removed))
+        zMapLogWarning("%d invalid operators removed from string \"%s\"",
+                       num_removed, match_str) ;
     }
   if (error)
     {
@@ -3127,8 +3149,7 @@ static gboolean ensemblCigar2Canon(const char *match_str, AlignStrCanonical cano
  */
 static gboolean bamCigar2Canon(const char *match_str, AlignStrCanonical canon)
 {
-  gboolean result = FALSE, canon_edited = FALSE ;
-  int num_removed = 0 ;
+  gboolean result = FALSE ;
   GError *error = NULL ;
   AlignStrCanonicalPropertiesStruct properties ;
 
@@ -3142,8 +3163,13 @@ static gboolean bamCigar2Canon(const char *match_str, AlignStrCanonical canon)
   alignFormat2Properties(canon->format, &properties) ;
   if ((result = parseCigarGeneral(match_str, canon, &properties, &error)))
     {
-      canon_edited = alignStrCanonicalSubstituteBamCigar(canon) ;
-      canon_edited = parse_remove_invalid_operators(canon, operators_cigar_bam, &num_removed) ;
+      int num_removed = 0 ;
+
+      alignStrCanonicalSubstituteBamCigar(canon) ;
+
+      if (parse_remove_invalid_operators(canon, operators_cigar_bam, &num_removed))
+        zMapLogWarning("%d invalid operators removed from string \"%s\"",
+                       num_removed, match_str) ;
    }
   if (error)
     {
@@ -3162,15 +3188,16 @@ static gboolean bamCigar2Canon(const char *match_str, AlignStrCanonical canon)
  * For example
  *
  * (a) In cigar_bam we replace X with M
- * (b) In cigar_ensembl replace D with I and I with D
+ * (b) In cigar_ensembl we reverse the insertions/deletions by replacing D with I and I with D
  *
  * Return TRUE if one or more substitution is made, FALSE otherwise.
  */
 static gboolean alignStrCanonicalSubstituteBamCigar(AlignStrCanonical canon)
 {
+  gboolean result = FALSE ;
   int i = 0 ;
   AlignStrOp align_op = NULL ;
-  gboolean result = FALSE ;
+
   zMapReturnValIfFail(canon && canon->format == ZMAPALIGN_FORMAT_CIGAR_BAM, result ) ;
 
   for (i=0; i<canon->num_operators; ++i)
@@ -3187,9 +3214,10 @@ static gboolean alignStrCanonicalSubstituteBamCigar(AlignStrCanonical canon)
 
 static gboolean alignStrCanonicalSubstituteEnsemblCigar(AlignStrCanonical canon)
 {
+  gboolean result = FALSE ;
   int i = 0 ;
   AlignStrOp align_op = NULL ;
-  gboolean result = FALSE ;
+
   zMapReturnValIfFail(canon && canon->format == ZMAPALIGN_FORMAT_CIGAR_ENSEMBL, result) ;
 
   for (i=0; i<canon->num_operators; ++i)

@@ -1,28 +1,28 @@
 /*  File: zmapWindowItem.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2015: Genome Research Ltd.
+ *  Copyright (c) 2006-2017: Genome Research Ltd.
  *-------------------------------------------------------------------
- * ZMap is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
- * originated by
- *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ * originally written by:
+ * 
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
- *
+ *       Gemma Guest (Sanger Institute, UK) gb10@sanger.ac.uk
+ *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
+ *  
  * Description: Functions to manipulate canvas items.
  *
  * Exported functions: See zmapWindow_P.h
@@ -947,8 +947,6 @@ void zmapWindowScrollToFeature(ZMapWindow window,
   gboolean do_x = FALSE, do_y = FALSE ;
   double x_position, y_position ;
   int curr_x, curr_y ;
-  gboolean result ;
-
 
   
   feature = zMapWindowCanvasFeatureGetFeature(canvas_feature) ;
@@ -962,8 +960,8 @@ void zmapWindowScrollToFeature(ZMapWindow window,
   newGetWorldBounds(feature_column_item, &itemx1_out, &itemy1_out, &itemx2_out, &itemy2_out) ;
 
   // Get the features start/end in world coords
-  result = zmapWindowSeqToWorldCoords(window,
-                                      feature->x1, feature->x2, &feature_start_w, &feature_end_w) ;
+  zmapWindowSeqToWorldCoords(window,
+                             feature->x1, feature->x2, &feature_start_w, &feature_end_w) ;
 
   // Set y to features coords.
   itemy1_out = feature_start_w ;
@@ -1076,11 +1074,6 @@ gboolean zmapWindowWorld2SeqCoords(ZMapWindow window, FooCanvasItem *foo,
 {
   gboolean result = FALSE ;
   FooCanvasItem *item ;
-  double mid_x, mid_y ;
-
-  /* Try to get an item at the mid point... we have to start somewhere... */
-  mid_x = (wx1 + wx2) / 2 ;
-  mid_y = (wy1 + wy2) / 2 ;
 
   item = foo;
   if (!item)
@@ -1532,13 +1525,6 @@ static void getVisibleCanvas(ZMapWindow window,
   gtk_layout_get_size (layout,
                        &width,
                        &height) ;
-
-  GtkAdjustment *new_hadjust, *new_vadjust ;
-
-  new_hadjust = gtk_layout_get_hadjustment(layout) ;
-
-  new_vadjust = gtk_layout_get_vadjustment(layout) ;
-
 
   return ;
 }

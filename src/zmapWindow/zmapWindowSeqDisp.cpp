@@ -1,28 +1,28 @@
 /*  File: zmapWindowSeqDisp.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2015: Genome Research Ltd.
+ *  Copyright (c) 2006-2017: Genome Research Ltd.
  *-------------------------------------------------------------------
- * ZMap is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
- * originated by
- *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ * originally written by:
+ * 
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
- *
+ *       Gemma Guest (Sanger Institute, UK) gb10@sanger.ac.uk
+ *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
+ *  
  * Description: Functions to manipulate canvas items.
  *
  * Exported functions: See zmapWindow_P.h
@@ -332,13 +332,11 @@ void zmapWindowFeatureShowTranslation(ZMapWindow window, ZMapFeature feature)
       GQuark align_id, block_id, set_id, feature_id ;
       gboolean force = TRUE, force_to = TRUE, do_dna = FALSE, do_aa = FALSE, do_trans = TRUE ;
       char *seq ;
-      int len ;
       GList *exon_list_member;
       ZMapFullExon current_exon ;
       char *dest_ptr = NULL ;
       int dest_start = 0, dest_end = 0 ;
       double seq_start;
-      ZMapWindowFeaturesetItem fset;
       gboolean found_cds = FALSE ;
 
       wild_id = zMapStyleCreateID("*") ;
@@ -381,9 +379,7 @@ void zmapWindowFeatureShowTranslation(ZMapWindow window, ZMapFeature feature)
 
       trans_feature = (ZMapFeature)trans_id2c->feature_any ;
       seq = trans_feature->feature.sequence.sequence ;
-      len = trans_feature->feature.sequence.length ;
 
-      fset = (ZMapWindowFeaturesetItem) trans_item;
       /* as we change viz status, cols to the right get exposed by full repos but this one does not move */
       //        zMapWindowCanvasFeaturesetExpose(fset);                /* so we get a double expose */
 
@@ -739,27 +735,26 @@ gboolean zMapWindowSeqDispSelectByFeature(FooCanvasItem *sequence_feature,
                 GdkColor *split_codon_5_background = NULL, *split_codon_5_foreground = NULL, *split_codon_5_outline = NULL ;
                 GdkColor *split_codon_3_background = NULL, *split_codon_3_foreground = NULL, *split_codon_3_outline = NULL ;
                 GdkColor *in_frame_background = NULL, *in_frame_foreground = NULL, *in_frame_outline = NULL ;
-                gboolean result ;
                 int index = 1;
                 gboolean is_pep = zMapFeatureSequenceIsPeptide(feature);
                 gboolean in_frame = FALSE;
 
                 style = *feature->style ;
 
-                result = zMapStyleGetColours(style, STYLE_PROP_SEQUENCE_NON_CODING_COLOURS, colour_type,
-                                             &non_coding_background, &non_coding_foreground, &non_coding_outline) ;
+                zMapStyleGetColours(style, STYLE_PROP_SEQUENCE_NON_CODING_COLOURS, colour_type,
+                                    &non_coding_background, &non_coding_foreground, &non_coding_outline) ;
 
-                result = zMapStyleGetColours(style, STYLE_PROP_SEQUENCE_CODING_COLOURS, colour_type,
-                                             &coding_background, &coding_foreground, &coding_outline) ;
+                zMapStyleGetColours(style, STYLE_PROP_SEQUENCE_CODING_COLOURS, colour_type,
+                                    &coding_background, &coding_foreground, &coding_outline) ;
 
-                result = zMapStyleGetColours(style, STYLE_PROP_SEQUENCE_SPLIT_CODON_5_COLOURS, colour_type,
-                                             &split_codon_5_background, &split_codon_5_foreground, &split_codon_5_outline) ;
+                zMapStyleGetColours(style, STYLE_PROP_SEQUENCE_SPLIT_CODON_5_COLOURS, colour_type,
+                                    &split_codon_5_background, &split_codon_5_foreground, &split_codon_5_outline) ;
 
-                result = zMapStyleGetColours(style, STYLE_PROP_SEQUENCE_SPLIT_CODON_3_COLOURS, colour_type,
-                                             &split_codon_3_background, &split_codon_3_foreground, &split_codon_3_outline) ;
+                zMapStyleGetColours(style, STYLE_PROP_SEQUENCE_SPLIT_CODON_3_COLOURS, colour_type,
+                                    &split_codon_3_background, &split_codon_3_foreground, &split_codon_3_outline) ;
 
-                result = zMapStyleGetColours(style, STYLE_PROP_SEQUENCE_IN_FRAME_CODING_COLOURS, colour_type,
-                                             &in_frame_background, &in_frame_foreground, &in_frame_outline) ;
+                zMapStyleGetColours(style, STYLE_PROP_SEQUENCE_IN_FRAME_CODING_COLOURS, colour_type,
+                                    &in_frame_background, &in_frame_foreground, &in_frame_outline) ;
 
                 //zMapLogWarning("displaying frame %d",frame);
 

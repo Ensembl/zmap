@@ -1,29 +1,28 @@
 /*  File: zmapWindowContainerFeatureSetFeatureFuncs.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2014: Genome Research Ltd.
+ *  Copyright (c) 2006-2017: Genome Research Ltd.
  *-------------------------------------------------------------------
- * ZMap is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originally written by:
- *
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ * 
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *       Gemma Guest (Sanger Institute, UK) gb10@sanger.ac.uk
  *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
- *      Gemma Barson (Sanger Institute, UK) gb10@sanger.ac.uk
- *
+ *  
  * Description: Functions that do things like highlight splices,
  *              hide features and so on, i.e. that do things to
  *              feature display in a column.
@@ -665,13 +664,8 @@ static void processFilterColumns(ZMapWindowContainerGroup container, FooCanvasPo
         ZMapWindowContainerFeatureSet selected_container_set = filter_data->selected_container_set ;
         ZMapWindowFeaturesetItem featureset_item ;
 
-        const char *col_name ;
-
-
         container_set = ZMAP_CONTAINER_FEATURESET(zmapWindowContainerChildGetParent(FOO_CANVAS_ITEM(container))) ;
         filter_data->curr_target_column = container_set ;
-
-        col_name = zmapWindowContainerFeaturesetGetColumnName(container_set) ;
 
         /* For filter-sensitive column(s) on same strand as the selected feature(s):
          * if there's no target column (== do all cols) or this is the target column
@@ -689,11 +683,9 @@ static void processFilterColumns(ZMapWindowContainerGroup container, FooCanvasPo
              * currently don't handle any error here, just go ahead and apply next filter. */
             if (filter_data->curr_target_column->curr_filter_type != ZMAP_CANVAS_FILTER_NONE)
               {
-                ZMapWindowContainerFilterRC result ;
-
-                result = unfilterFeatures(filter_data->filter_action,
-                                          selected_container_set,
-                                          filter_data->curr_target_column) ;
+                unfilterFeatures(filter_data->filter_action,
+                                 selected_container_set,
+                                 filter_data->curr_target_column) ;
               }
 
             if (filter_data->filter_action != ZMAP_CANVAS_ACTION_HIGHLIGHT_SPLICE)
@@ -733,7 +725,6 @@ static void filterColumn(FeatureFilter filter_data, ZMapWindowFeaturesetItem fea
   GList *grouped_features ;
   GList *match_list ;
   /* debug..... */
-  const char *col_name ;
   zmapWindowCanvasFeatureType feature_type ;
 
 
@@ -745,9 +736,6 @@ static void filterColumn(FeatureFilter filter_data, ZMapWindowFeaturesetItem fea
 
   selected_set = filter_data->selected_container_set ;
   target_set = filter_data->curr_target_column ;
-
-
-  col_name = zmapWindowContainerFeaturesetGetColumnName(target_set) ;
 
 
   filter_data->curr_splices = filter_data->splices ;
@@ -884,11 +872,8 @@ static void filterFeatureCB(gpointer data, gpointer user_data)
   int slop ;
   gboolean cds_match = FALSE ;
 
-  char *feature_name ;
 
   feature = match_data->feature ;
-
-  feature_name = zMapFeatureName((ZMapFeatureAny)feature) ; /* debug.... */
 
   filter_data->tmp_splice_matches = filter_data->tmp_non_matches = NULL ;
 
@@ -1085,12 +1070,7 @@ static void highlightFeature(gpointer data, gpointer user_data)
   gboolean cds_match = FALSE ;
   int slop ;
 
-  char *feature_name ;
-
   feature = zMapWindowCanvasFeatureGetFeature(feature_item) ;
-
-  feature_name = zMapFeatureName((ZMapFeatureAny)feature) ;
-  
 
   /* Keep the head of the splices to be compared moving down through the coords list
    * as we move through the features, note we can do this because splices and features are
@@ -1239,12 +1219,7 @@ static void feature2Match(gpointer data, gpointer user_data)
   ZMapFeature feature ;
   MatchData match_data ;
 
-  char *feature_name ;
-
   feature = zMapWindowCanvasFeatureGetFeature(feature_item) ;
-
-
-  feature_name = zMapFeatureUniqueName((ZMapFeatureAny)feature) ;
 
   if (!(match_data = (MatchData)g_hash_table_lookup(filter_data->match_features, GUINT_TO_POINTER(feature->unique_id))))
     {
@@ -1327,13 +1302,12 @@ static void group2Feature(gpointer data, gpointer user_data)
     {
       ZMapWindowCanvasFeature tmp_item ;
       ZMapFeature tmp_feature ;
-      gboolean result ;
 
       tmp_item = (ZMapWindowCanvasFeature)(curr->data) ;
       tmp_feature = zMapWindowCanvasFeatureGetFeature(tmp_item) ;
 
       /* Build up the "exons" array using the matches as exons. */
-      result = zMapFeatureTranscriptMergeExon(match_data->feature, tmp_feature->x1, tmp_feature->x2) ;
+      zMapFeatureTranscriptMergeExon(match_data->feature, tmp_feature->x1, tmp_feature->x2) ;
 
       match_data->feature_items = g_list_append(match_data->feature_items, tmp_item) ;
 

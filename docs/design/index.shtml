@@ -1,0 +1,75 @@
+<!--#set var="banner" value="ZMap"-->
+<!--#include virtual="/perl/header"-->
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<h1>ZMap Design Documentation</h1>
+
+<font color="red">
+<h2>An Apology</h2>
+
+<p>Much of the documentation linked from this page is now out of date, pages
+that were irrelevant have been removed. You should be aware that the code
+may have moved on some way from the description.</p>
+
+<p>In an ideal world the documentation would have been constantly updated but
+as resources have fluctuated wildly over the course of the project it has not
+been possible to devote as much time to documentation as would have been
+wished.</p> </font>
+
+
+<h2>Current Code</h2>
+
+<h3>Configuring and Data Loading</h3>
+
+<ul>
+  <li><a href="Configuring_Using/index.shtml">Configuring and Using ZMap</a></li>
+  <li><a href="Loading/index.shtml">Controlling and Configuring Data Loading in ZMap</a></li>
+</ul>
+
+
+<h3>Features and Styles</h3>
+
+<ul>
+  <li><a href="Features/index.shtml">The Feature Context and Feature representation</a></li>
+  <li><a href="Styles/index.shtml">ZMap Styles and Feature Display</a></li>
+</ul>
+
+<h3>Display</h3>
+
+<ul>
+  <li><a href="Display/index.shtml">All Aspects of Display in ZMap</a></li>
+</ul>
+
+
+<h3>Threads and Servers</h3>
+
+<ul>
+  <li><a href="Threads/index.shtml">The Threading model in ZMap</a></li>
+  <li><a href="Servers/index.shtml">The Server model in ZMap</a></li>
+</ul>
+
+
+<h3>Remote Control (including otter)</h3>
+
+<ul>
+  <li><a href="Remote_control/index.shtml">The ZMap Remote Control Interface</a></li>
+  <li><a href="Otter/index.shtml">How ZMap and otter use the Remote Control Interface</a></li>
+</ul>
+
+<h3>Performance</h3>
+
+<ul>
+  <li><a href="Performance/index.shtml">Performance in ZMap</a></li>
+</ul>
+
+
+<h3>Futures</h3>
+
+<ul>
+  <li><a href="Futures/index.shtml">Future Design and Requests</a></li>
+</ul>
+
+          
+
+<!--#include virtual="/perl/footer"-->
+

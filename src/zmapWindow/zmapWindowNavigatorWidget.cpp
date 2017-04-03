@@ -1,29 +1,28 @@
 /*  File: zmapWindowNavigatorWidget.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2015: Genome Research Ltd.
+ *  Copyright (c) 2006-2017: Genome Research Ltd.
  *-------------------------------------------------------------------
- * ZMap is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originally written by:
- *
- *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
- *
+ * 
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *       Gemma Guest (Sanger Institute, UK) gb10@sanger.ac.uk
+ *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
+ *  
  * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
@@ -240,13 +239,11 @@ void zmapWindowNavigatorWidthChanged(GtkWidget *widget, double left, double righ
 void zMapWindowNavigatorPackDimensions(GtkWidget *widget, double *width, double *height)
 {
   FooCanvas *canvas = NULL;
-  FooCanvasGroup *root = NULL;
   double a, b, x, y;
 
   if(FOO_IS_CANVAS(widget))
     {
       canvas = FOO_CANVAS(widget);
-      root   = FOO_CANVAS_GROUP(foo_canvas_root(canvas));
 
       foo_canvas_get_scroll_region(canvas, &a, &b, &x, &y);
 
@@ -453,15 +450,13 @@ static void fetchScrollCoords(ZMapNavigatorClassData class_data,
 {
   double border_x = 2.0;
   double border_y = border;
-  double max_x, max_y, container_width, container_height;
+  double max_x, container_width ;
 
   zMapReturnIfFail((x1 && x2 && y1 && y2)) ;
 
   max_x = 32000.0;             /* only canvas limit */
-  max_y = class_data->span;        //(double)(NAVIGATOR_SIZE);
 
   container_width  = class_data->container_width;
-  container_height = class_data->container_height;
 
   *x1 = *y1 = *x2 = *y2 = 0.0;
 

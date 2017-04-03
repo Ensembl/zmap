@@ -1,29 +1,28 @@
 /*  File: zmapViewServers.cpp
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2016: Genome Research Ltd.
+ *  Copyright (c) 2006-2017: Genome Research Ltd.
  *-------------------------------------------------------------------
- * ZMap is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originally written by:
- *
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ * 
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *       Gemma Guest (Sanger Institute, UK) gb10@sanger.ac.uk
  *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
- *      Gemma Barson (Sanger Institute, UK) gb10@sanger.ac.uk
- *
+ *  
  * Description: Implements setting up connections to server threads.
  *
  * Exported functions: See ZMap/zmapView.hpp
@@ -881,9 +880,7 @@ static bool createStepList(ZMapView zmap_view, ZMapNewDataSource view_con, ZMapC
   bool result = false ;
   ZMapServerReqAny req_any;
   StepListActionOnFailureType on_fail = REQUEST_ONFAIL_CANCEL_THREAD;
-  bool true_server ;
 
-  true_server = (urlObj->scheme != SCHEME_FILE && urlObj->scheme != SCHEME_PIPE) ;
 
   connect_data->step_list = zmapViewStepListCreateFull(dispatchContextRequests,
                                                        processDataRequests,
@@ -901,13 +898,11 @@ static bool createStepList(ZMapView zmap_view, ZMapNewDataSource view_con, ZMapC
   req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_GETSERVERINFO) ;
   zmapViewStepListAddServerReq(connect_data->step_list, ZMAP_SERVERREQ_GETSERVERINFO, req_any, on_fail) ;
 
-  if (true_server)
-    {
-      req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_FEATURESETS, req_featuresets, req_biotypes, NULL) ;
-      zmapViewStepListAddServerReq(connect_data->step_list, ZMAP_SERVERREQ_FEATURESETS, req_any, on_fail) ;
-    }
 
-  if (true_server && (req_styles || styles_file))
+  req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_FEATURESETS, req_featuresets, req_biotypes, NULL) ;
+  zmapViewStepListAddServerReq(connect_data->step_list, ZMAP_SERVERREQ_FEATURESETS, req_any, on_fail) ;
+
+  if (req_styles || styles_file)
     {
       req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_STYLES, req_styles, styles_file && *styles_file ? styles_file : NULL) ;
       zmapViewStepListAddServerReq(connect_data->step_list, ZMAP_SERVERREQ_STYLES, req_any, on_fail) ;
@@ -918,11 +913,9 @@ static bool createStepList(ZMapView zmap_view, ZMapNewDataSource view_con, ZMapC
     }
 
 
-  if (true_server)
-    {
-      req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_NEWCONTEXT, context) ;
-      zmapViewStepListAddServerReq(connect_data->step_list, ZMAP_SERVERREQ_NEWCONTEXT, req_any, on_fail) ;
-    }
+  req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_NEWCONTEXT, context) ;
+  zmapViewStepListAddServerReq(connect_data->step_list, ZMAP_SERVERREQ_NEWCONTEXT, req_any, on_fail) ;
+
 
   req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_FEATURES) ;
   zmapViewStepListAddServerReq(connect_data->step_list, ZMAP_SERVERREQ_FEATURES, req_any, on_fail) ;
@@ -1194,16 +1187,12 @@ static gboolean processDataRequests(void *user_data, ZMapServerReqAny req_any)
 
             if (!(src = (ZMapFeatureSource)g_hash_table_lookup(feature_sets->source_2_sourcedata_inout,GUINT_TO_POINTER(fid))))
               {
-                GQuark src_unique_id ;
-
                 // if entry is missing
                 // allocate a new struct and add to the table
                 src = g_new0(ZMapFeatureSourceStruct,1);
 
                 src->source_id = GPOINTER_TO_UINT(fset->data);        /* may have upper case */
                 src->source_text = src->source_id;
-                src_unique_id = fid;
-                //                src->style_id = fid;
 
                 g_hash_table_insert(feature_sets->source_2_sourcedata_inout, GUINT_TO_POINTER(fid), src) ;
               }

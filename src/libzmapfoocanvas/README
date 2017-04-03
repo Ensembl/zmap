@@ -1,42 +1,27 @@
-==========================================================================
-ZMap Foocanvas
+Welcome to the FooCanvas.
 
+FooCanvas is a version of the Gnome Canvas that has removed several
+features in order to create a small, useful, working, maintainable
+canvas. The redraw mechanisms have also been changed so that it now
+works like any other Gtk+ 2 widget, using double buffering, idle
+redraw and 32bit window coordinates. I've also added some new
+functions and features.
 
-Acknowledgements
-----------------
+Missing features are: antialiased mode, affines, microtiles and
+GnomeCanvasShape. In order to remove GnomeCanvasShape, several items
+have been backed down to the version before they were shape:ized.
 
-We hereby acknowledge that the zmap foocanvas version was derived directly
-from the gnome foo canvas. Please see the copyright notice and other
-information in the ZMap/foocanvas directory which gives full credit to and
-details the authors of the original foocanvas.
+The name FooCanvas is temporary, while i ponder what is a good final
+place and name for this library.
 
+The idea is to have a nice canvas for simple users that are not using
+the advanced (and somewhat broken) features of the full gnome canvas.
 
-This directory contains the source code for the zmap version of the foocanvas.
-The code is copied directly from ZMap/foocanvas/tmp_merged_foocanvas which is
-a merged version of the latest foocanvas and our modifications to the
-foocanvas contained in ZMap/foocanvas/zmap_source. The code in this directory
-is NOT in CVS, the cvs copy is in ZMap/foocanvas/zmap_source, please follow
-the instructions in ZMap/foocanvas/foocanvas_build.html which shows how to
-make these source files.
+Intended target audience is e.g. the bar-charts in memprof, the icon
+view in nautilus, gnumeric, the canvas usage in the RH installer,
+gantt charts in MrProject, calendar in Evolution, icon-selectors,
+fileselectors etc.
 
-
-These files are now part of the build process for ZMap and are compiled into
-an archive of .o files which is used to directly build the zmap executable. We
-no longer require the configure and other steps to build a separately
-installed foocanvas library.
-
-
-
-CHANGING THESE FILES
---------------------
-
-These files are in CVS but...........please read this before you go making
-changes to them:
-
-- For debugging and temporary changes you can obviously just change these files
-  and then _not_ put the changes back in cvs.
-
-- If you want to make permanent changes however you MUST read how to do this
-  in ZMap/foocanvas/foocanvas_build.html !!
-
-
+This is NOT meant to be used by heavy-duty graphics intensive apps
+like gill and sodipodi. They are better off using the regular gnome
+canvas or some app-specific solution.

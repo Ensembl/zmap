@@ -1,29 +1,28 @@
 /*  File: zmapFeatureParams.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2015: Genome Research Ltd.
+ *  Copyright (c) 2006-2017: Genome Research Ltd.
  *-------------------------------------------------------------------
- * ZMap is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originally written by:
- *
- *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ * 
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
- *
+ *       Gemma Guest (Sanger Institute, UK) gb10@sanger.ac.uk
+ *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
+ *  
  * Description: This is an attempt to use the gobject variable parameter
  *              string based resources setting/getting mechanism on
  *              our basic features. It's an experiment but on the whole
@@ -397,7 +396,8 @@ static void zmap_feature_data_class_init (ZMapFeatureDataClass data_class)
 
 static void zmap_feature_data_init (ZMapFeatureData data)
 {
-  g_warning("not for instantiating");
+  zMapLogWarning("%s", "not for instantiating !");
+
   return ;
 }
 
@@ -472,20 +472,20 @@ static gboolean invoke_get_func_valist(gpointer        user_data,
 
       if (fail_on_bad_requests_G && !pspec)
         {
-          g_warning ("%s: type `%s' has no property named `%s'",
-             G_STRFUNC,
-             gtype_to_message_string(pool_member_type),
-             name);
+          zMapLogWarning("%s: type `%s' has no property named `%s'",
+                         G_STRFUNC,
+                         gtype_to_message_string(pool_member_type),
+                         name);
           break;
         }
       else if(pspec)
         {
           if (fail_on_bad_requests_G && !(pspec->flags & G_PARAM_READABLE))
             {
-              g_warning ("%s: property `%s' of object class `%s' is not readable",
-                         G_STRFUNC,
-                         pspec->name,
-                         gtype_to_message_string(pool_member_type));
+              zMapLogWarning("%s: property `%s' of object class `%s' is not readable",
+                             G_STRFUNC,
+                             pspec->name,
+                             gtype_to_message_string(pool_member_type));
               break;
             }
 
@@ -498,7 +498,7 @@ static gboolean invoke_get_func_valist(gpointer        user_data,
 
           if (error)
             {
-              g_warning ("%s: %s", G_STRFUNC, error);
+              zMapLogWarning("%s: %s", G_STRFUNC, error);
               g_free (error);
               g_value_unset (&value);
               break;
@@ -1085,10 +1085,10 @@ static gpointer invoke_create_func_valist(gpointer        user_data,
                                                         TRUE);
           if (!pspec)
             {
-              g_warning ("%s: type `%s' has no property named `%s'",
-                 G_STRFUNC,
-                 g_type_name (pool_member_type),
-                 name);
+              zMapLogWarning("%s: type `%s' has no property named `%s'",
+                             G_STRFUNC,
+                             g_type_name (pool_member_type),
+                             name);
               break;
             }
 
@@ -1104,7 +1104,7 @@ static gpointer invoke_create_func_valist(gpointer        user_data,
           G_VALUE_COLLECT (&params[n_params].value, var_args, 0, &error);
           if (error)
             {
-              g_warning ("%s: %s", G_STRFUNC, error);
+              zMapLogWarning("%s: %s", G_STRFUNC, error);
               g_free (error);
               g_value_unset (&params[n_params].value);
               break;

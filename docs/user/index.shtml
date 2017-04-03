@@ -2,28 +2,44 @@
 <!--#include virtual="/perl/header"-->
 <!--#set var="author" value="edgrif@sanger.ac.uk" -->
 
-<fieldset>
+<h1>User Documentation for zmap</h1>
 
-<legend>Documentation for zmap</legend>
-
-<p>Getting the most out of zmap...</p>
+<p>Getting started:</p>
 
 <ul>
-  <li><a href="zmap_quick_start.shtml">Quick start guide</a>
-    <li><a href="configuration.shtml">Running and configuring ZMap</a>
-  <li><a href="user_interface.shtml">User interface</a>
-  <li><a href="keyboard_mouse.shtml">Keyboard and mouse operation</a>
-  <li><a href="styles.shtml">Styles</a>
-  <li><a href="ZMap_User_Manual.pdf">User manual</a>
+  <li><a href="zmap_quick_start.shtml">Quick start guide</a></li>
 </ul>
 
-</fieldset>
-<br />
+<p>More detail:</p>
 
-<p>Authors: <a href="mailto:edgrif@sanger.ac.uk">Ed Griffiths &lt;edgrif@sanger.ac.uk&gt;</a>
-&amp; <a href="mailto:rds@sanger.ac.uk">Roy Storey &lt;rds@sanger.ac.uk&gt;</a>
+<ul>
+  <li><a href="user_interface.shtml">User interface</a></li>
+  <li><a href="keyboard_mouse.shtml">Keyboard and mouse operation</a></li>
+  <li><a href="filter_window.shtml">Filtering what's displayed</a></li>
+</ul>
 
-<p>
+
+<p>The full manual:</p>
+
+<ul>
+  <li><a href="ZMap_User_Manual.pdf">User manual</a></li>
+</ul>
+
+<p>Configuring ZMap:</p>
+
+<ul>
+  <li><a href="configuration.shtml">Running and configuring ZMap</a></li>
+      <li><a href="config_file.shtml">Sample configuration file</a></li>
+  <li><a href="styles.shtml">Styles</a></li>
+</ul>
+
+
+
+<p>Release notes:</p>
+
+<ul>
+  <li><a href="release_notes.shtml">Summary</a></li>
+</ul>
 
 
 <!--#include virtual="/perl/footer"-->

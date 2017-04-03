@@ -1,28 +1,28 @@
 /*  File: zmapWindowDrawFeatures.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2015: Genome Research Ltd.
+ *  Copyright (c) 2006-2017: Genome Research Ltd.
  *-------------------------------------------------------------------
- * ZMap is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
- * and was written by
- *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ * originally written by:
+ * 
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
- *
+ *       Gemma Guest (Sanger Institute, UK) gb10@sanger.ac.uk
+ *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
+ *  
  * Description: Draws genomic features in the data display window.
  *
  * Exported functions:
@@ -217,11 +217,10 @@ static gboolean window_draw_context_debug_G = FALSE;
 void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
                             ZMapFeatureContext diff_context,GList *masked)
 {
-  GtkAdjustment *h_adj ;
   ZMapCanvasDataStruct canvas_data = {NULL} ;                    /* Rest of struct gets set to zero. */
   ZMapWindowContainerGroup root_group ;
   FooCanvasItem *tmp_item = NULL ;
-  gboolean debug_containers = FALSE, root_created = FALSE ;
+  gboolean debug_containers = FALSE ;
   double x, y ;
   int seq_start,seq_end ;
 
@@ -286,8 +285,6 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
   window->canvas);
 #endif
 
-  h_adj = gtk_scrolled_window_get_hadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
-
   if(!window->scroll_initialised)
     {
       /* MH17: draw features does not change the zoom factor, so we only set if first time round
@@ -314,7 +311,6 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
                                             0, 0, 0, ZMAPSTRAND_NONE, ZMAPFRAME_NONE, 0)))
     {
       root_group   = (ZMapWindowContainerGroup)tmp_item;
-      root_created = FALSE;
     }
   else
     {
@@ -353,8 +349,6 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
                                                   NULL);
 
       g_signal_connect(G_OBJECT(root_group), "destroy", G_CALLBACK(containerDestroyCB), window) ;
-
-      root_created = TRUE;
 
       g_object_set_data(G_OBJECT(root_group), ITEM_FEATURE_STATS,
                         zmapWindowStatsCreate((ZMapFeatureAny)full_context)) ;
@@ -1336,8 +1330,9 @@ static FooCanvasGroup *find_or_create_column(ZMapCanvasData  canvas_data,
 
       if (!add_featureset_style_to_column(f_col, feature_set))
         {
-          zMapLogWarning("Could not add featureset style to column %d\n",
-                             g_quark_to_string(column_id));
+          zMapLogWarning("Could not add style for featureset %s to column %s",
+                         g_quark_to_string(feature_set->original_id),
+                         g_quark_to_string(f_col->column_id)) ;
         }
     }
 
@@ -1534,12 +1529,10 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
         ZMapWindowContainerGroup block_group = NULL;
         //    ZMapWindowContainerGroup forward_group, reverse_group ;
         //        ZMapWindowContainerGroup strand_separator;
-        ZMapWindowContainerBlock container_block = NULL;
         FooCanvasItem *block_hash_item = NULL;
         //    GdkColor *for_bg_colour, *rev_bg_colour ;
         double x, y;
-        gboolean block_created = FALSE;
-        double start, end, height ;
+        double start, end ;
 
         zMapStartTimer("DrawBlock","");
 
@@ -1553,8 +1546,6 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
         start = (double) feature_block->block_to_sequence.block.x1 ;
         end = (double) feature_block->block_to_sequence.block.x2 ;
         zmapWindowSeq2CanExt(&start, &end) ;
-        height = zmapWindowExt(start, end) ;
-
 
         /* record the full_context current block, not the diff block which will get destroyed! */
         canvas_data->curr_block = zMapFeatureAlignmentGetBlockByID(canvas_data->curr_alignment,
@@ -1588,7 +1579,7 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
                              "destroy",
                              G_CALLBACK(containerDestroyCB),
                              window) ;
-            block_created = TRUE;
+
 #if MH17_REVCOMP_DEBUG
             zMapLogWarning(" new","");
 #endif
@@ -1630,8 +1621,6 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 
         if (block_group)
           {
-            container_block = (ZMapWindowContainerBlock)block_group;
-
             if (status == ZMAP_CONTEXT_EXEC_STATUS_OK)
               {
                 canvas_data->curr_block_group = zmapWindowContainerGetFeatures(block_group) ;
@@ -1647,12 +1636,6 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
         FooCanvasGroup *tmp_forward = NULL, *tmp_reverse = NULL ;
         int frame_start, frame_end;
         ZMapFeatureTypeStyle style;
-
-        const char *name, *unique_name ;
-
-        name = g_quark_to_string(feature_any->original_id) ;
-        unique_name = g_quark_to_string(feature_any->unique_id) ;
-
 
         /* record the full_context current block, not the diff block which will get destroyed! */
         canvas_data->curr_set = zMapFeatureBlockGetSetByID(canvas_data->curr_block, feature_any->unique_id);
@@ -1963,7 +1946,7 @@ FooCanvasItem *zmapWindowDrawSetGroupBackground(ZMapWindow window, ZMapWindowCon
   ZMapWindowFeaturesetItem cfs = NULL;
   FooCanvasItem *foo = (FooCanvasItem *) container;
   FooCanvasGroup *group = (FooCanvasGroup *) container;
-  GdkColor *parent_fill = NULL, *parent_border = NULL;
+  GdkColor *parent_fill = NULL ;
   ZMapWindowContainerGroup parent = (ZMapWindowContainerGroup) (container->__parent__.item.parent);
   gboolean show = FALSE;
 
@@ -1982,7 +1965,6 @@ FooCanvasItem *zmapWindowDrawSetGroupBackground(ZMapWindow window, ZMapWindowCon
   if(parent && ZMAP_IS_CONTAINER_GROUP(parent))
     {
       parent_fill = parent->background_fill;
-      parent_border = parent->background_border;
     }
 
   /*
@@ -2042,10 +2024,10 @@ FooCanvasItem *zmapWindowDrawSetGroupBackground(ZMapWindow window, ZMapWindowCon
     }
 
 #if 0
-  NO.... remove background if it's null, don't auto fill_col w/group colour
-    set group colour explicitly in call to this
-    need for locator dragger
-                                  and no doubt lasoo later on
+  // NO.... remove background if it's null, don't auto fill_col w/group colour
+  //  set group colour explicitly in call to this
+  //  need for locator dragger
+  //                                and no doubt lasoo later on
 
                                   /* clear highlight done by removing colours in which case we restore the default ones if they exist */
                                   if(!fill_col)
@@ -2525,9 +2507,9 @@ static void ProcessListFeature(gpointer data, gpointer user_data)
   if(style)
     style = zmapWindowContainerFeatureSetStyleFromStyle((ZMapWindowContainerFeatureSet)column_group, style) ;
   else
-    g_warning("need a style '%s' for feature '%s'",
-              g_quark_to_string(feature->style_id),
-              g_quark_to_string(feature->original_id));
+    zMapLogWarning("need a style '%s' for feature '%s'",
+                   g_quark_to_string(feature->style_id),
+                   g_quark_to_string(feature->original_id));
 
 #endif
 
@@ -2550,8 +2532,8 @@ static void ProcessListFeature(gpointer data, gpointer user_data)
 #endif
     }
   else
-    g_warning("definitely need a style for feature '%s'",
-              g_quark_to_string(feature->original_id));
+    zMapLogWarning("definitely need a style for feature '%s'",
+                   g_quark_to_string(feature->original_id));
 
   if(feature_item)
     featureset_data->feature_count++;
@@ -3022,7 +3004,6 @@ static gboolean containerDestroyCB(FooCanvasItem *item, gpointer user_data)
   ZMapWindowContainerGroup container;
   GHashTable *context_to_item ;
   ZMapFeatureAny feature_any;
-  gboolean status = FALSE ;
   gboolean result = FALSE ;                                    /* Always return FALSE ?? check this.... */
   gboolean log_all = FALSE ;
 
@@ -3042,21 +3023,19 @@ static gboolean containerDestroyCB(FooCanvasItem *item, gpointer user_data)
         {
         case ZMAPCONTAINER_LEVEL_ROOT:
           {
-            status = zmapWindowFToIRemoveRoot(context_to_item) ;
+            zmapWindowFToIRemoveRoot(context_to_item) ;
 
             break ;
           }
         case ZMAPCONTAINER_LEVEL_ALIGN:
           {
-            status = zmapWindowFToIRemoveAlign(context_to_item, feature_any->unique_id) ;
+            zmapWindowFToIRemoveAlign(context_to_item, feature_any->unique_id) ;
 
             break ;
           }
         case ZMAPCONTAINER_LEVEL_BLOCK:
           {
-            status = zmapWindowFToIRemoveBlock(context_to_item,
-                                               feature_any->parent->unique_id,
-                                               feature_any->unique_id) ;
+            zmapWindowFToIRemoveBlock(context_to_item, feature_any->parent->unique_id, feature_any->unique_id) ;
 
           }
           break ;
@@ -3070,12 +3049,12 @@ static gboolean containerDestroyCB(FooCanvasItem *item, gpointer user_data)
              */
             for(l = container_set->featuresets;l;l = l->next)
               {
-                status = zmapWindowFToIRemoveSet(context_to_item,
-                                                 container_set->align_id,
-                                                 container_set->block_id,
-                                                 GPOINTER_TO_UINT(l->data),     /*container_set->unique_id, */
-                                                 container_set->strand,
-                                                 container_set->frame,FALSE) ;
+                zmapWindowFToIRemoveSet(context_to_item,
+                                        container_set->align_id,
+                                        container_set->block_id,
+                                        GPOINTER_TO_UINT(l->data),     /*container_set->unique_id, */
+                                        container_set->strand,
+                                        container_set->frame,FALSE) ;
                 /* not sure where the features got deleted from but this used to work */
               }
             g_list_free(container_set->featuresets);

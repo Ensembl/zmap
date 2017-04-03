@@ -1,28 +1,28 @@
 /*  File: zmapFeatureTranscript.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2011-2015: Genome Research Ltd.
+ *  Copyright (c) 2006-2017: Genome Research Ltd.
  *-------------------------------------------------------------------
- * ZMap is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
- * originated by
- *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ * originally written by:
+ * 
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
- *
+ *       Gemma Guest (Sanger Institute, UK) gb10@sanger.ac.uk
+ *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
+ *  
  * Description: Functions for processing/handling transcript features.
  *
  * Exported functions: See ZMap/zmapFeature.h
@@ -185,10 +185,9 @@ GArray *zMapFeatureTranscriptCreateSpanArray(void)
 
 /*
  * Adds CDS start and end to a feature but tests values as we go along to make sure
- * that the coordinates are only changed if the range is being expanded. The phase is
- * only stored if the _start_ of the range is expanded.
+ * that the coordinates are only changed if the range is being expanded.
  */
-gboolean zMapFeatureAddTranscriptCDSDynamic(ZMapFeature feature, Coord start, Coord end, ZMapPhase phase)
+gboolean zMapFeatureAddTranscriptCDSDynamic(ZMapFeature feature, Coord start, Coord end)
 {
   gboolean result = FALSE ;
 
@@ -211,7 +210,7 @@ gboolean zMapFeatureAddTranscriptCDSDynamic(ZMapFeature feature, Coord start, Co
     {
       feature->feature.transcript.cds_start = start ;
       feature->feature.transcript.cds_end = end ;
-      feature->feature.transcript.phase = phase ;
+
       result = TRUE ;
     }
   else /* we have non-zero values for cds_start and cds_end */
@@ -219,7 +218,6 @@ gboolean zMapFeatureAddTranscriptCDSDynamic(ZMapFeature feature, Coord start, Co
       if (start < start_s)
         {
           feature->feature.transcript.cds_start = start ;
-          feature->feature.transcript.phase = phase ;
         }
       if (end > end_s)
         {
@@ -756,16 +754,10 @@ ZMapFeatureContextExecuteStatus zMapFeatureContextTranscriptSortExons(GQuark key
     {
     case ZMAPFEATURE_STRUCT_ALIGN:
       {
-        ZMapFeatureAlignment feature_align = NULL;
-        feature_align = (ZMapFeatureAlignment)feature_any;
-
         break;
       }
     case ZMAPFEATURE_STRUCT_BLOCK:
       {
-        ZMapFeatureBlock feature_block = NULL;
-        feature_block = (ZMapFeatureBlock)feature_any;
-
         break;
       }
     case ZMAPFEATURE_STRUCT_FEATURESET:
@@ -1941,7 +1933,6 @@ ZMapFeature zMapFeatureTranscriptShallowCopy(ZMapFeature src, GError **error)
 
       dest->feature.transcript.start_not_found = src->feature.transcript.start_not_found ;
 
-      dest->feature.transcript.phase = src->feature.transcript.phase ;
       dest->feature.transcript.exons = src->feature.transcript.exons ;
       dest->feature.transcript.introns = src->feature.transcript.introns ;
       dest->feature.transcript.variations = src->feature.transcript.variations;

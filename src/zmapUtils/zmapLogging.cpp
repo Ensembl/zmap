@@ -1,29 +1,28 @@
 /*  File: zmapLogging.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2015: Genome Research Ltd.
+ *  Copyright (c) 2006-2017: Genome Research Ltd.
  *-------------------------------------------------------------------
- * ZMap is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originally written by:
- *
- *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ * 
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
- *
+ *       Gemma Guest (Sanger Institute, UK) gb10@sanger.ac.uk
+ *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
+ *  
  * Description: Log functions for zmap app. Allows start/stop, switching
  *              on/off. Currently there is just one global log for the
  *              whole application.
@@ -81,15 +80,14 @@ typedef struct
 /* State for the logger as a whole. */
 typedef struct  _ZMapLogStruct
 {
-  GMutex*  log_lock ;    /* Ensure only single threading in log
-                            handler routine. */
+  GMutex  *log_lock ;                                       /* Ensure only single threading in log handler routine. */
 
   /* Logging action. */
-  gboolean logging ;    /* logging on or off ? */
-  zmapLogHandlerStruct active_handler ;    /* Used when logging is on. */
-  zmapLogHandlerStruct inactive_handler ;    /* Used when logging is off. */
-  gboolean log_to_file ;    /* log to file or leave glib to log to
-                               stdout/err ? */
+  gboolean logging ;                                        /* logging on or off ? */
+  zmapLogHandlerStruct active_handler ;                     /* Used when logging is on. */
+  zmapLogHandlerStruct inactive_handler ;                   /* Used when logging is off. */
+  gboolean log_to_file ;                                    /* log to file or leave glib to log to
+                                                               stdout/err ? */
   /* Log record content. */
   gchar *userid ;
   gchar *nodeid ;
@@ -138,11 +136,16 @@ static void glibLogger(const gchar *log_domain, GLogLevelFlags log_level, const 
 static void logTime(int what, int how) ;
 #endif
 
+static bool getFuncNamePosition(const char *function_prototype, char **start_out, unsigned int *len_out) ;
+
 
 
 
 /* We only ever have one log so its kept internally here. */
 static ZMapLog log_G = NULL ;
+
+// glib says that we should not intialise this, it is done for us.
+static GMutex log_lock_G ;
 
 
 
@@ -422,12 +425,30 @@ void zMapLogMsg(const char *domain, GLogLevelFlags log_level,
 
       file_basename = g_path_get_basename(file) ;
 
-      g_string_append_printf(format_str, "%s[%s:%s%s:%d]\t",
+      g_string_append_printf(format_str, "%s[%s ",
                              ZMAPLOG_CODE_TUPLE,
-                             file_basename,
-                             (function ? function : ""),
-                             (function ? "()" : ""),
-                             line) ;
+                             file_basename) ;
+
+      if (function)
+        {
+          char *func_name = NULL ;
+          unsigned int func_name_len = 0 ;
+
+          // C++ functions are often reported verbosely so cut down to just function name if possible.
+          if (getFuncNamePosition(function, &func_name, &func_name_len))
+            format_str = g_string_append_len(format_str, func_name, func_name_len) ;
+          else
+            g_string_append_printf(format_str, "%s", function) ;
+
+          format_str = g_string_append(format_str, "() ") ;
+        }
+      else
+        {
+          format_str = g_string_append(format_str, "<NO FUNC NAME> ") ;
+        }
+      
+      g_string_append_printf(format_str, "%d]\t", line) ;
+
 
       g_free(file_basename) ;
     }
@@ -486,7 +507,6 @@ void zMapLogStack(void)
 {
   ZMapLog log = log_G;
   int log_fd = 0;
-  gboolean logged = FALSE;
 
   /* zMapAssert(log); */
   /* zMapAssert(log->logging);*/
@@ -499,7 +519,7 @@ void zMapLogStack(void)
   if (log->active_handler.logfile &&
       (log_fd = g_io_channel_unix_get_fd(log->active_handler.logfile)))
     {
-      logged = zMapStack2fd(1, log_fd) ;
+      zMapStack2fd(1, log_fd) ;
     }
 
   g_mutex_unlock(log->log_lock);
@@ -574,8 +594,8 @@ static ZMapLog createLog(void)
 
   log = g_new0(ZMapLogStruct, 1) ;
 
-  /* Must lock access to log as may come from serveral different threads. */
-  log->log_lock = g_mutex_new() ;
+  /* Init the lock for ensuring single thread access to logger. */
+  log->log_lock = &log_lock_G ;
 
   /* Default will be logging active. */
   log->logging = TRUE ;
@@ -619,7 +639,7 @@ static void destroyLog(ZMapLog log)
 
   g_free(log->nodeid) ;
 
-  g_mutex_free(log->log_lock) ;
+  g_mutex_clear(log->log_lock) ;
 
   g_free(log) ;
 
@@ -943,3 +963,38 @@ static void logTime(int what, int how)
 }
 
 #endif
+
+
+
+// Find out where function name is in the function prototype, note that the prototype we are
+// expecting is a string in g++ format:
+//
+// "gboolean zmapMainMakeAppWindow(int, char**, ZMapAppContext, GList*)"
+//
+// Add support for other compilers as needed.
+//
+static bool getFuncNamePosition(const char *function_prototype, char **start_out, unsigned int *len_out)
+{
+  bool result = false ;
+
+#ifdef __GNUC__
+  const char *start ;
+  const char *end ;
+
+  // Jump to function name
+  start = strchr(function_prototype, ' ') ;
+  start++ ;
+
+  // Jump to args opening bracket
+  end = strchr(function_prototype, '(') ;
+  end-- ;
+
+
+  *start_out = (char *)start ;
+  *len_out = (end - start) + 1 ;
+
+  result = true ;
+#endif /* __GNUC__ */
+
+  return result ;
+}

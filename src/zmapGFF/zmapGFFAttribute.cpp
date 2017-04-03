@@ -1,29 +1,28 @@
 /*  File: zmapGFFAttribute.c
  *  Author: Steve Miller (sm23@sanger.ac.uk)
- *  Copyright (c) 2006-2015: Genome Research Ltd.
+ *  Copyright (c) 2006-2017: Genome Research Ltd.
  *-------------------------------------------------------------------
- * ZMap is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
- * originated by
- *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk,
+ * originally written by:
+ * 
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *       Gemma Guest (Sanger Institute, UK) gb10@sanger.ac.uk
  *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
- *
+ *  
  * Description: Attribute storage and data manipulation for GFFv3.
  *
  *-------------------------------------------------------------------
@@ -657,12 +656,15 @@ gboolean zMapAttParseNameV2(ZMapGFFAttribute pAttribute, GQuark *const SO_acc_ou
  */
 gboolean zMapAttParseName(ZMapGFFAttribute pAttribute, char** const psOut)
 {
-  gboolean bReplaced = FALSE, bResult = FALSE ;
+  gboolean bResult = FALSE ;
   static const char *sMyName = "zMapAttParseName()" ;
   char *sTemp = NULL ;
+
   if (!pAttribute)
     return bResult ;
+
   const char * const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
+
   if (strcmp(sAttributeName_Name, zMapGFFAttributeGetNamestring(pAttribute)))
     {
       zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
@@ -671,8 +673,10 @@ gboolean zMapAttParseName(ZMapGFFAttribute pAttribute, char** const psOut)
 
   if (strlen(sValue))
     {
-      bReplaced = zMapGFFStringUtilsSubstringReplace(sValue, sEscapedEquals, sEquals, &sTemp) ;
-      bReplaced = zMapGFFStringUtilsSubstringReplace(sTemp, sEscapedComma, sComma, psOut) ;
+      zMapGFFStringUtilsSubstringReplace(sValue, sEscapedEquals, sEquals, &sTemp) ;
+
+      zMapGFFStringUtilsSubstringReplace(sTemp, sEscapedComma, sComma, psOut) ;
+
       bResult = TRUE ;
     }
   else
@@ -1772,15 +1776,20 @@ gboolean zMapAttParseReadPairID(ZMapGFFAttribute pAttribute, GQuark * const pgqO
  */
 char* zMapGFFEscape(const char * const sInput )
 {
-  char *sResult = NULL, *sOut1 = NULL, *sOut2 = NULL, *sOut3 = NULL ;
-  gboolean bReplaced = FALSE ;
+  char *sResult = NULL ;
+  char *sOut1 = NULL, *sOut2 = NULL, *sOut3 = NULL ;
 
-  bReplaced = zMapGFFStringUtilsSubstringReplace(sInput, sEquals,    sEscapedEquals,    &sOut1) ;
-  bReplaced = zMapGFFStringUtilsSubstringReplace(sOut1,  sComma,     sEscapedComma,     &sOut2) ;
-  g_free(sOut1) ;                                                                       
-  bReplaced = zMapGFFStringUtilsSubstringReplace(sOut2,  sSemicolon, sEscapedSemicolon, &sOut3) ;
-  g_free(sOut2) ;                                                                       
-  bReplaced = zMapGFFStringUtilsSubstringReplace(sOut3,  sSpace,     sEscapedSpace,     &sResult) ;
+  // Ignore return from zMapGFFStringUtilsSubstringReplace(), don't care if it works or not.
+
+  zMapGFFStringUtilsSubstringReplace(sInput, sEquals,    sEscapedEquals,    &sOut1) ;
+
+  zMapGFFStringUtilsSubstringReplace(sOut1,  sComma,     sEscapedComma,     &sOut2) ;
+  g_free(sOut1) ;
+
+  zMapGFFStringUtilsSubstringReplace(sOut2,  sSemicolon, sEscapedSemicolon, &sOut3) ;
+  g_free(sOut2) ;
+
+  zMapGFFStringUtilsSubstringReplace(sOut3,  sSpace,     sEscapedSpace,     &sResult) ;
   g_free(sOut3) ;
 
   return sResult ;
@@ -1794,15 +1803,20 @@ char* zMapGFFEscape(const char * const sInput )
  */
 char* zMapGFFUnescape(const char * const sInput )
 {
-  char *sResult = NULL, *sOut1 = NULL, *sOut2 = NULL, *sOut3 = NULL ;
-  gboolean bReplaced = FALSE ;
+  char *sResult = NULL ;
+  char *sOut1 = NULL, *sOut2 = NULL, *sOut3 = NULL ;
 
-  bReplaced = zMapGFFStringUtilsSubstringReplace(sInput, sEscapedEquals,    sEquals, &sOut1) ;
-  bReplaced = zMapGFFStringUtilsSubstringReplace(sOut1,  sEscapedComma,     sComma, &sOut2) ;
+  // Ignore return from zMapGFFStringUtilsSubstringReplace(), don't care if it works or not.
+
+  zMapGFFStringUtilsSubstringReplace(sInput, sEscapedEquals,    sEquals, &sOut1) ;
+
+  zMapGFFStringUtilsSubstringReplace(sOut1,  sEscapedComma,     sComma, &sOut2) ;
   g_free(sOut1) ;
-  bReplaced = zMapGFFStringUtilsSubstringReplace(sOut2,  sEscapedSemicolon, sSemicolon, &sOut3) ;
+
+  zMapGFFStringUtilsSubstringReplace(sOut2,  sEscapedSemicolon, sSemicolon, &sOut3) ;
   g_free(sOut2) ;
-  bReplaced = zMapGFFStringUtilsSubstringReplace(sOut3,  sEscapedSpace,     sSpace, &sResult) ;
+
+  zMapGFFStringUtilsSubstringReplace(sOut3,  sEscapedSpace,     sSpace, &sResult) ;
   g_free(sOut3) ;
 
   return sResult ;

@@ -1,29 +1,28 @@
 /*  File: zmapRemoteControl.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2010-2015: Genome Research Ltd.
+ *  Copyright (c) 2006-2017: Genome Research Ltd.
  *-------------------------------------------------------------------
- * ZMap is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originally written by:
- *
- *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ * 
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
- *
+ *       Gemma Guest (Sanger Institute, UK) gb10@sanger.ac.uk
+ *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
+ *  
  * Description: Implements the "Session" layer (OSI 7 layer model)
  *              of the Remote Control interface: the code sends
  *              a request and then waits for the reply. The code
@@ -488,7 +487,8 @@ gboolean zMapRemoteControlSendRequest(ZMapRemoteControl remote_control, char *re
           queueAddInRequestPriority(remote_control->outgoing_requests, outgoing_request, NULL) ;
 
           DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE,
-                      "Received request from zmap, added to outgoing request queue: %s", outgoing_request) ;
+                      "Received request from zmap, added to outgoing request queue: %s",
+                      outgoing_request->body) ;
 
           result = TRUE ;
         }
@@ -793,7 +793,8 @@ static gboolean waitForRequestCB(gpointer user_data)
       queueAdd(remote_control->incoming_requests, incoming_request) ;
 
       DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE,
-                  "Received request from peer, adding to incoming request queue: %s", incoming_request) ;
+                  "Received request from peer, adding to incoming request queue: %s",
+                  incoming_request->body) ;
     }
 
   return call_again ;
@@ -838,7 +839,8 @@ static gboolean waitForReplyCB(gpointer user_data)
       queueAdd(remote_control->incoming_replies, incoming_reply) ;
 
       DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE,
-                  "Received reply from peer, adding to incoming reply queue: %s", incoming_reply) ;
+                  "Received reply from peer, adding to incoming reply queue: %s",
+                  incoming_reply->body) ;
     }
 
   return call_again ;
@@ -885,7 +887,8 @@ static void receiveReplyFromAppCB(void *remote_data, gboolean abort, char *reply
           outgoing_reply = zeroMQMessageCreate(header, reply) ;
 
           DEBUGLOGMSG(remote_control,  ZMAP_REMOTECONTROL_DEBUG_VERBOSE,
-                      "Received zmaps reply, adding to outgoing reply queue: %s",outgoing_reply) ;
+                      "Received zmaps reply, adding to outgoing reply queue: %s",
+                      outgoing_reply->body) ;
 
           queueAdd(remote_control->outgoing_replies, outgoing_reply) ;
         }
@@ -1093,7 +1096,7 @@ static gboolean queueMonitorCB(gpointer user_data)
 
 
                 DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE,
-                            "Sent ZMap's request: %s", curr_req_raw) ;
+                            "Sent ZMap's request: %s", curr_req_raw->body) ;
               }
             else
               {
@@ -1128,12 +1131,12 @@ static gboolean queueMonitorCB(gpointer user_data)
                 reply = queueRemove(remote_control->incoming_replies) ;
 
                 DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE,
-                            "Received peer's reply", reply) ;
+                            "Received peer's reply", reply->body) ;
 
                 if (reqReplyMatch(remote_control, remote_control->curr_req, reply->body, &err_msg))
                   {
                     DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE,
-                                "Matched peer's reply, removing from input queue: %s", reply) ;
+                                "Matched peer's reply, removing from input queue: %s", reply->body) ;
 
 
                     /* Pass the reply back to the application. */
@@ -1147,7 +1150,7 @@ static gboolean queueMonitorCB(gpointer user_data)
                 else
                   {
                     DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE,
-                                "Could not match peer's reply, not removed from input queue: %s", reply) ;
+                                "Could not match peer's reply, not removed from input queue: %s", reply->body) ;
 
 
                     LOG_AND_CALL_ERR_HANDLER(remote_control, ZMAP_REMOTECONTROL_RC_BAD_SOCKET,
@@ -1308,7 +1311,7 @@ static gboolean queueMonitorCB(gpointer user_data)
             request = queueRemove(remote_control->incoming_requests) ;
 
             DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE,
-                        "Received peer's request: %s", request) ;
+                        "Received peer's request: %s", request->body) ;
 
 
             if (remote_control->prev_incoming_req
@@ -1401,7 +1404,7 @@ static gboolean queueMonitorCB(gpointer user_data)
                     reqReplyAddReply(remote_control->curr_req, reply) ;
 
                     DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE,
-                                "Sent ZMap's reply: %s", reply) ;
+                                "Sent ZMap's reply: %s", reply->body) ;
 
                     remote_control->prev_incoming_req = remote_control->curr_req ;
                     remote_control->curr_req = NULL ;
@@ -1459,7 +1462,7 @@ static gboolean sendRequest(ZMapRemoteControl remote_control, RemoteZeroMQMessag
   if ((result = zeroMQSocketSendMessage(send->zmq_socket, request->header, request->body, &err_msg)))
     {
       DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE,
-                  "Request sent: %s", request) ;
+                  "Request sent: %s", request->body) ;
 
       /* Optionally call app to signal that peer that request has been sent. */
       if (send->req_sent_func)
@@ -2371,8 +2374,8 @@ static gboolean zeroMQSocketClose(void *zmq_socket, char *endpoint, gboolean dis
 
 
 
-/* The send/receive code works asynchronously and if there are errors, state needs to be
- * reset so that the send or receive is aborted. */
+/* The send/receive code works asynchronously and if there are errors, the application needs
+ * to be called so that it can set its state. */
 static void errorHandler(ZMapRemoteControl remote_control,
                          const char *file_name, const char *func_name,
                          ZMapRemoteControlRCType error_rc, const char *format_str, ...)
@@ -2392,7 +2395,9 @@ static void errorHandler(ZMapRemoteControl remote_control,
 
   va_end(args1) ;
 
-  bytes_printed = g_vasprintf(&err_msg, format_str, args2) ; /* should check bytes.... */
+  if (!(bytes_printed = g_vasprintf(&err_msg, format_str, args2)))
+    REMOTELOGMSG(remote_control, "%s",
+                 "No error message parameters supplied so error message could be passed back to the application.") ;
 
   va_end(args2) ;
 
@@ -2494,6 +2499,11 @@ static void logMsg(ZMapRemoteControl remote_control,
     g_free(time_str) ;
 
   (remote_control->err_report_func)(remote_control->err_report_data, msg->str) ;
+
+
+  // Temp while debugging.....
+  zMapLogCritical("%s", msg->str) ;
+
 
   g_string_free(msg, TRUE) ;
 
@@ -2784,7 +2794,7 @@ static char *headerCreate(const char *request_type, char *request_id, int retry_
 /* Takes an existing header and in effect overwrites the retry number
  * in that header with the new retry number.
  *
- * Note that curr_header is free'd by this function so you should probably use it like this:
+ * Note that curr_header is free'd by this function so you should use func like this:
  *
  * my_header = headerSetRetry(my_header, 2) ;
  *  */
@@ -2792,14 +2802,19 @@ static char *headerSetRetry(char *curr_header, int new_retry_num)
 {
   char *new_header = NULL ;
   char **split_string, **split_string_orig ;
-  char *header_type, *request_id, *orig_retry_num, *request_time ;
+  char *header_type, *request_id, *request_time ;
 
   split_string_orig = split_string = g_strsplit_set(curr_header, " /", 0) ;
   header_type = *split_string ;
   split_string++ ;
   request_id = *split_string ;
   split_string++ ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  char *orig_retry_num ;
   orig_retry_num = *split_string ;                          /* not used...debugging only. */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
   split_string++ ;
   request_time  = *split_string ;
   split_string++ ;
@@ -2809,14 +2824,7 @@ static char *headerSetRetry(char *curr_header, int new_retry_num)
 
   g_strfreev(split_string_orig) ;
 
-
-
-  /* ok...I've undeffed this...check that code does not crash.... */
-  /* test this .....  should work !! */
-
   g_free(curr_header) ;
-
-
 
   return new_header ;
 }

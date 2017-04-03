@@ -1,28 +1,28 @@
 /*  File: zmapXMLParse.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2015: Genome Research Ltd.
+ *  Copyright (c) 2006-2017: Genome Research Ltd.
  *-------------------------------------------------------------------
- * ZMap is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
- * originated by
- *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ * originally written by:
+ * 
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
- *
+ *       Gemma Guest (Sanger Institute, UK) gb10@sanger.ac.uk
+ *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
+ *  
  * Description: Provides xml parsing, under the covers uses the expat
  *              parser.
  *
@@ -339,13 +339,12 @@ static void xml_parse(ZMapXMLParser parser, char *buffer, int size, enum XML_Sta
 
       while(suspended)
         {
-          const char *c;
           gboolean ready_to_resume = TRUE;
 
           if((parser->suspended_cb))
             ready_to_resume = (parser->suspended_cb)(parser->user_data, parser);
 
-          c = XML_GetInputContext(parser->expat, &offset, &c_size);
+          XML_GetInputContext(parser->expat, &offset, &c_size);
 
           if(ready_to_resume)
             suspended = resume_parse_xml(parser->expat,
@@ -361,9 +360,7 @@ static void xml_parse(ZMapXMLParser parser, char *buffer, int size, enum XML_Sta
 gboolean zMapXMLParserParseBuffer(ZMapXMLParser parser, void *data, int size)
 {
   gboolean result = TRUE ;
-  int isFinal;
   enum XML_Status processing_status = XML_STATUS_SUSPENDED;
-  isFinal = (size ? 0 : 1);
 
 #define ZMAP_USING_EXPAT_1_95_8_OR_ABOVE
 #ifdef ZMAP_USING_EXPAT_1_95_8_OR_ABOVE
@@ -817,22 +814,31 @@ static void end_handler(void *userData,
   if(parser->useXMLBase)
     xmlBaseHandler = getObjHandler(current_ele, parser->xmlBaseHandlers);
 
-  if(((handler = parser->endMOHandler) != NULL) ||
-     ((handler = getObjHandler(current_ele, parser->endTagHandlers)) != NULL))
+  if(((handler = parser->endMOHandler) != NULL)
+     || ((handler = getObjHandler(current_ele, parser->endTagHandlers)) != NULL))
     {
       if(((*handler)((void *)parser->user_data, current_ele, parser)) == TRUE)
         {
-          /* We can free the current_ele and all its children */
-          /* First we need to tell the parent that its child is being freed. */
-          if(!(zmapXMLElementSignalParentChildFree(current_ele)))
-    printf("[zmapXMLParser] XML Document free? Memory leak ?\n");
+          // free the current_ele and all its children
 
+          /* First remove current element from it's parent, no need to do this if current element is
+             the root because it won't have a parent. */
+          if (zMapXMLParserGetRoot(parser) != current_ele)
+            {
+              if (!(zmapXMLElementSignalParentChildFree(current_ele)))
+                {
+                  zMapLogWarning("%s", "Detected non-root element in parser that has no parent, probable code error.") ;
+                }
+            }
+
+          // Now mark current element for free'ing 
           zmapXMLElementMarkDirty(current_ele);
         }
       else if(parser->array_point_e == parser->max_size_e - 1)
         {
           /* If we get here, we're running out of allocated elements */
-          printf("[zmapXMLParser] Possible information loss...\n");
+          zMapLogCritical("%s", "XML parser is running out of space....") ;
+
           zmapXMLElementMarkDirty(current_ele);
         }
     }
@@ -841,7 +847,8 @@ static void end_handler(void *userData,
       /* If we get here, we're running out of allocated elements */
       /* To fix this requires an increase in the number of end_handlers
        * which return TRUE */
-      printf("[zmapXMLParser] Possible information loss...\n");
+      zMapLogCritical("%s", "XML parser is running out of space....") ;
+
       zmapXMLElementMarkDirty(current_ele);
     }
 
@@ -1076,7 +1083,6 @@ static char *getOffendingXML(ZMapXMLParser parser, int context)
 
 static void abortParsing(ZMapXMLParser parser, const char *reason, ...)
 {
-  enum XML_Status stop_status;
   va_list args;
   char *error;
 #ifdef ZMAP_USING_EXPAT_1_95_8_OR_ABOVE
@@ -1087,7 +1093,7 @@ static void abortParsing(ZMapXMLParser parser, const char *reason, ...)
   /* We can only Stop if we're parsing! */
   if(status.parsing == XML_PARSING)
 #endif
-    stop_status = XML_StopParser(parser->expat, FALSE);
+   XML_StopParser(parser->expat, FALSE);
 
   if(!(parser->aborted_msg))    /* So we only see the first error, not so we only see the last */
     {

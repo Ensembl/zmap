@@ -1,28 +1,28 @@
 /*  File: acedbServer.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2015: Genome Research Ltd.
+ *  Copyright (c) 2006-2017: Genome Research Ltd.
  *-------------------------------------------------------------------
- * ZMap is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
- * and was written by
- *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ * originally written by:
+ * 
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
- *
+ *       Gemma Guest (Sanger Institute, UK) gb10@sanger.ac.uk
+ *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
+ *  
  * Description: Implements the method functions for a zmap server
  *              by making the appropriate calls to the acedb server.
  *
@@ -141,10 +141,10 @@ typedef struct
 
 
 typedef ZMapFeatureTypeStyle (*ParseMethodFunc)(char *method_str_in,
-						char **end_pos, ZMapColGroupData *col_group_data) ;
+                                                char **end_pos, ZMapColGroupData *col_group_data) ;
 
 typedef gboolean (*ParseMethodNamesFunc)(AcedbServer server, char *method_str_in,
-					 char **end_pos, gpointer user_data) ;
+                                         char **end_pos, gpointer user_data) ;
 
 
 /* These provide the interface functions for an acedb server implementation, i.e. you
@@ -153,7 +153,7 @@ static gboolean globalInit(void) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static gboolean createConnection(void **server_out,
-				 GQuark source_name, char *config_file, ZMapURL url, char *format,
+                                 GQuark source_name, char *config_file, ZMapURL url, char *format,
                                  char *version_str, int timeout,
                                  pthread_mutex_t *mutex) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
@@ -162,13 +162,13 @@ static gboolean createConnection(void **server_out, ZMapConfigSource config_sour
 static ZMapServerResponseType openConnection(void *server, ZMapServerReqOpen req_open) ;
 static ZMapServerResponseType getInfo(void *server, ZMapServerReqGetServerInfo info) ;
 static ZMapServerResponseType getFeatureSetNames(void *server,
-						 GList **feature_sets_out,
-						 GList **biotypes_out,
-						 GList *sources,
-						 GList **required_styles,
-						 GHashTable **featureset_2_stylelist_inout,
-						 GHashTable **featureset_2_column_inout,
-						 GHashTable **source_2_sourcedata_inout) ;
+                                                 GList **feature_sets_out,
+                                                 GList **biotypes_out,
+                                                 GList *sources,
+                                                 GList **required_styles,
+                                                 GHashTable **featureset_2_stylelist_inout,
+                                                 GHashTable **featureset_2_column_inout,
+                                                 GHashTable **source_2_sourcedata_inout) ;
 static ZMapServerResponseType getStyles(void *server, GHashTable **styles_out) ;
 static ZMapServerResponseType haveModes(void *server, gboolean *have_mode) ;
 static ZMapServerResponseType getSequences(void *server_in, GList *sequences_inout) ;
@@ -192,39 +192,39 @@ static ZMapServerResponseType destroyConnection(void *server) ;
 
 /* general internal routines. */
 static ZMapServerResponseType findColStyleTags(AcedbServer server,
-					       GList **feature_set_methods_inout,
-					       GList **feature_methods_out,
-					       GList **required_styles_out,
-					       GHashTable **featureset_2_stylelist_inout) ;
+                                               GList **feature_set_methods_inout,
+                                               GList **feature_methods_out,
+                                               GList **required_styles_out,
+                                               GHashTable **featureset_2_stylelist_inout) ;
 static char *getMethodString(GList *styles_or_style_names,
-			     gboolean style_name_list, gboolean find_string, gboolean find_methods) ;
+                             gboolean style_name_list, gboolean find_string, gboolean find_methods) ;
 static void addTypeName(gpointer data, gpointer user_data) ;
 static gboolean sequenceRequest(DoAllAlignBlocks get_features, ZMapFeatureBlock feature_block) ;
 static gboolean getDNARequest(AcedbServer server, char *sequence_name, int start, int end,
-			      int *dna_length_out, char **dna_sequence_out) ;
+                              int *dna_length_out, char **dna_sequence_out) ;
 static gboolean getSequenceMapping(AcedbServer server, ZMapFeatureContext feature_context) ;
 static gboolean getSMapping(AcedbServer server, char *class_name,
-			    char *sequence, int start, int end,
-			    char **parent_class_out, char **parent_name_out,
-			    ZMapMapBlock child_to_parent_out) ;
+                            char *sequence, int start, int end,
+                            char **parent_class_out, char **parent_name_out,
+                            ZMapMapBlock child_to_parent_out) ;
 static gboolean getSMapLength(AcedbServer server, const char *obj_class, const char *obj_name,
-			      int *obj_length_out) ;
+                              int *obj_length_out) ;
 static gboolean checkServerVersion(AcedbServer server) ;
 static gboolean findSequence(AcedbServer server, char *sequence_name) ;
 static gboolean setQuietMode(AcedbServer server) ;
 
 static gboolean parseTypes(AcedbServer server, GHashTable **styles_out,
-			   ParseMethodNamesFunc parse_func_in, gpointer user_data) ;
+                           ParseMethodNamesFunc parse_func_in, gpointer user_data) ;
 static ZMapServerResponseType findMethods(AcedbServer server, char *search_str, int *num_found) ;
 static ZMapServerResponseType getObjNames(AcedbServer server, GList **style_names_out) ;
 static ZMapFeatureTypeStyle parseMethod(char *method_str_in,
-					char **end_pos, ZMapColGroupData *col_group_data) ;
+                                        char **end_pos, ZMapColGroupData *col_group_data) ;
 static gboolean parseMethodColGroupNames(AcedbServer server, char *method_str_in,
-					 char **end_pos, gpointer user_data) ;
+                                         char **end_pos, gpointer user_data) ;
 static gboolean parseMethodStyleNames(AcedbServer server, char *method_str_in,
-				      char **end_pos, gpointer user_data) ;
+                                      char **end_pos, gpointer user_data) ;
 static ZMapFeatureTypeStyle parseStyle(char *method_str_in,
-				       char **end_pos, ZMapColGroupData *col_group_data) ;
+                                       char **end_pos, ZMapColGroupData *col_group_data) ;
 
 static void addMethodCB(gpointer data, gpointer user_data) ;
 gint resortStyles(gconstpointer a, gconstpointer b, gpointer user_data) ;
@@ -245,7 +245,7 @@ static ZMapServerResponseType doGetSequences(AcedbServer server, GList *sequence
 static gboolean getServerInfo(AcedbServer server, ZMapServerReqGetServerInfo info) ;
 
 static int equaliseLists(AcedbServer server, GList **feature_sets_inout, GList *method_names,
-			 const char *query_name, const char *reference_name) ;
+                         const char *query_name, const char *reference_name) ;
 static gint quarkCaseCmp(gconstpointer a, gconstpointer b) ;
 static void setErrMsg(AcedbServer server, char *new_msg) ;
 static void resetErr(AcedbServer server) ;
@@ -340,15 +340,15 @@ static gboolean createConnection(void **server_out, ZMapConfigSource config_sour
   if (config_source->version)
     {
       if (zMapCompareVersionStings(ACEDB_SERVER_MIN_VERSION, config_source->version, &error))
-	{
+        {
           server->version_str = g_strdup(config_source->version) ;
-	}
+        }
       else
-	{
+        {
           ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, server->host,
                          "Server version error: %s.", (error ? error->message : "(null)")) ;
-	  server->version_str = g_strdup(ACEDB_SERVER_MIN_VERSION) ;
-	}
+          server->version_str = g_strdup(ACEDB_SERVER_MIN_VERSION) ;
+        }
 
       if (error)
         g_error_free(error) ;
@@ -410,13 +410,13 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
   if ((server->last_err_status = AceConnConnect(server->connection)) == ACECONN_OK)
     {
       if (checkServerVersion(server) && setQuietMode(server))
-	result = ZMAP_SERVERRESPONSE_OK ;
+        result = ZMAP_SERVERRESPONSE_OK ;
       else
-	{
-	  result = ZMAP_SERVERRESPONSE_REQFAIL ;
-	  ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, server->host,
+        {
+          result = ZMAP_SERVERRESPONSE_REQFAIL ;
+          ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, server->host,
                          "Could not open connection because: %s", server->last_err_msg) ;
-	}
+        }
     }
 
   return result ;
@@ -439,7 +439,7 @@ static ZMapServerResponseType getInfo(void *server_in, ZMapServerReqGetServerInf
     {
       result = ZMAP_SERVERRESPONSE_REQFAIL ;
       ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, server->host,
-		     "Could not get server info because: %s", server->last_err_msg) ;
+                     "Could not get server info because: %s", server->last_err_msg) ;
     }
 
   return result ;
@@ -463,13 +463,13 @@ static ZMapServerResponseType getInfo(void *server_in, ZMapServerReqGetServerInf
  *
  *  */
 static ZMapServerResponseType getFeatureSetNames(void *server_in,
-						 GList **feature_sets_inout,
-						 GList **biotypes_inout,
-						 GList *sources,
-						 GList **required_styles_out,
-						 GHashTable **featureset_2_stylelist_inout,
-						 GHashTable **featureset_2_column_inout,
-						 GHashTable **source_2_sourcedata_inout)
+                                                 GList **feature_sets_inout,
+                                                 GList **biotypes_inout,
+                                                 GList *sources,
+                                                 GList **required_styles_out,
+                                                 GHashTable **featureset_2_stylelist_inout,
+                                                 GHashTable **featureset_2_column_inout,
+                                                 GHashTable **source_2_sourcedata_inout)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   AcedbServer server = (AcedbServer)server_in ;
@@ -532,21 +532,21 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
     {
       result = ZMAP_SERVERRESPONSE_REQFAIL ;
       ZMAPSERVER_LOG(Critical, ACEDB_PROTOCOL_STR, server->host,
-		     "Could not find feature set methods in server because: %s", server->last_err_msg) ;
+                     "Could not find feature set methods in server because: %s", server->last_err_msg) ;
     }
   else if (num_feature_sets != num_methods)
     {
       if (num_feature_sets > num_methods)
-	{
-	  ZMAPSERVER_LOG(Warning,  ACEDB_PROTOCOL_STR, server->host,
-			 "%s", "Some featuresets could not be found.") ;
-	}
+        {
+          ZMAPSERVER_LOG(Warning,  ACEDB_PROTOCOL_STR, server->host,
+                         "%s", "Some featuresets could not be found.") ;
+        }
       else
-	{
-	  ZMAPSERVER_LOG(Critical, ACEDB_PROTOCOL_STR, server->host,
-			 "%s", "Too many featuresets found ! Ace Server Query probably incorrect !") ;
-	  result = ZMAP_SERVERRESPONSE_REQFAIL ;
-	}
+        {
+          ZMAPSERVER_LOG(Critical, ACEDB_PROTOCOL_STR, server->host,
+                         "%s", "Too many featuresets found ! Ace Server Query probably incorrect !") ;
+          result = ZMAP_SERVERRESPONSE_REQFAIL ;
+        }
     }
 
   g_free(method_string) ;
@@ -558,26 +558,26 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
   if (result != ZMAP_SERVERRESPONSE_REQFAIL)
     {
       if ((result = getObjNames(server, &feature_set_methods)) == ZMAP_SERVERRESPONSE_OK)
-	{
+        {
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  zMap_g_list_quark_print(feature_set_methods, "feature_set_methods", FALSE) ;
+          zMap_g_list_quark_print(feature_set_methods, "feature_set_methods", FALSE) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-	  if (num_feature_sets != num_methods)
-	    {
-	      if (!equaliseLists(server, &(feature_sets), feature_set_methods, "Feature Sets", "Methods"))
-		{
-		  result = ZMAP_SERVERRESPONSE_REQFAIL ;
-		}
-	    }
-	}
+          if (num_feature_sets != num_methods)
+            {
+              if (!equaliseLists(server, &(feature_sets), feature_set_methods, "Feature Sets", "Methods"))
+                {
+                  result = ZMAP_SERVERRESPONSE_REQFAIL ;
+                }
+            }
+        }
       else
-	{
-	  result = ZMAP_SERVERRESPONSE_REQFAIL ;
-	  ZMAPSERVER_LOG(Critical, ACEDB_PROTOCOL_STR, server->host,
-			 "Could not get list of feature set methods from server because: %s",
-			 server->last_err_msg) ;
-	}
+        {
+          result = ZMAP_SERVERRESPONSE_REQFAIL ;
+          ZMAPSERVER_LOG(Critical, ACEDB_PROTOCOL_STR, server->host,
+                         "Could not get list of feature set methods from server because: %s",
+                         server->last_err_msg) ;
+        }
     }
 
 
@@ -589,45 +589,45 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
       featureset_2_stylelist = *featureset_2_stylelist_inout ;
 
       if (server->has_new_tags && !(server->stylename_from_methodname))
-	{
-	  /* Use zmap_style class. */
-	  if ((result = findColStyleTags(server,
-					 &feature_sets, &feature_methods,
-					 &required_styles, &featureset_2_stylelist)) != ZMAP_SERVERRESPONSE_REQFAIL)
-	    {
-	      all_methods = feature_methods ;
+        {
+          /* Use zmap_style class. */
+          if ((result = findColStyleTags(server,
+                                         &feature_sets, &feature_methods,
+                                         &required_styles, &featureset_2_stylelist)) != ZMAP_SERVERRESPONSE_REQFAIL)
+            {
+              all_methods = feature_methods ;
 
-	      /* hack for now...should really check that they are all in feature_methods. */
-	      if (sources)
-		all_methods = sources ;
-	    }
-	}
+              /* hack for now...should really check that they are all in feature_methods. */
+              if (sources)
+                all_methods = sources ;
+            }
+        }
       else
-	{
-	  /* Use method not zmap_style class. */
-	  all_methods = feature_set_methods ;
+        {
+          /* Use method not zmap_style class. */
+          all_methods = feature_set_methods ;
 
-	  /* CHECK THIS....SHOULD WE ALWAYS DO THIS...??? */
-	  if (sources)
-	    all_methods = sources ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  zMap_g_list_quark_print(feature_set_methods, "feature_set_methods", FALSE) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-	  /* should we copy feature sets or methods here..I'm thinking methods.... */
-	  if (server->stylename_from_methodname)
-	    required_styles = g_list_copy(all_methods) ;
-
-
-	  g_list_foreach(feature_sets, createSet2StyleList, featureset_2_stylelist) ;
-
+          /* CHECK THIS....SHOULD WE ALWAYS DO THIS...??? */
+          if (sources)
+            all_methods = sources ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  zMap_g_list_quark_print(feature_sets, "features_sets", FALSE) ;
+          zMap_g_list_quark_print(feature_set_methods, "feature_set_methods", FALSE) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-	}
+          /* should we copy feature sets or methods here..I'm thinking methods.... */
+          if (server->stylename_from_methodname)
+            required_styles = g_list_copy(all_methods) ;
+
+
+          g_list_foreach(feature_sets, createSet2StyleList, featureset_2_stylelist) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+          zMap_g_list_quark_print(feature_sets, "features_sets", FALSE) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+        }
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -641,21 +641,21 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
 
 
       if (result != ZMAP_SERVERRESPONSE_REQFAIL)
-	{
-	  server->all_methods = all_methods ;
+        {
+          server->all_methods = all_methods ;
 
-	  *feature_sets_inout = feature_sets ;
+          *feature_sets_inout = feature_sets ;
 
-	  *required_styles_out = required_styles ;
+          *required_styles_out = required_styles ;
 
-	  *featureset_2_stylelist_inout = featureset_2_stylelist ;
+          *featureset_2_stylelist_inout = featureset_2_stylelist ;
 
-	  overlayFeatureSet2Column(server->method_2_feature_set, *featureset_2_column_inout) ;
-	  *featureset_2_column_inout = server->method_2_feature_set ;
+          overlayFeatureSet2Column(server->method_2_feature_set, *featureset_2_column_inout) ;
+          *featureset_2_column_inout = server->method_2_feature_set ;
 
-	  overlaySource2Data(server->method_2_data, *source_2_sourcedata_inout) ;
-	  *source_2_sourcedata_inout = server->method_2_data ;
-	}
+          overlaySource2Data(server->method_2_data, *source_2_sourcedata_inout) ;
+          *source_2_sourcedata_inout = server->method_2_data ;
+        }
     }
 
 
@@ -676,24 +676,24 @@ static ZMapServerResponseType getStyles(void *server_in, GHashTable **styles_out
     {
       result = ZMAP_SERVERRESPONSE_REQFAIL ;
       ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, server->host,
-		     "Could not find types on server because: %s", server->last_err_msg) ;
+                     "Could not find types on server because: %s", server->last_err_msg) ;
     }
   else
     {
       if (parseTypes(server, styles_out, NULL, NULL))
-	{
-				/* if reading from a file these will be inherited as is */
-		if(!zMapStyleInheritAllStyles(*styles_out))
-			zMapLogWarning("%s", "There were errors in inheriting styles.") ;
+        {
+                                /* if reading from a file these will be inherited as is */
+                if(!zMapStyleInheritAllStyles(*styles_out))
+                        zMapLogWarning("%s", "There were errors in inheriting styles.") ;
 
-		result = ZMAP_SERVERRESPONSE_OK ;
-	}
+                result = ZMAP_SERVERRESPONSE_OK ;
+        }
       else
-	{
-	  result = ZMAP_SERVERRESPONSE_REQFAIL ;
-	  ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, server->host,
-			 "Could not get types from server because: %s", server->last_err_msg) ;
-	}
+        {
+          result = ZMAP_SERVERRESPONSE_REQFAIL ;
+          ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, server->host,
+                         "Could not get types from server because: %s", server->last_err_msg) ;
+        }
     }
 
   return result ;
@@ -715,9 +715,9 @@ static ZMapServerResponseType haveModes(void *server_in, gboolean *have_mode)
   if (server->connection)
     {
       if (server->has_new_tags)
-	*have_mode = TRUE ;
+        *have_mode = TRUE ;
       else
-	*have_mode = FALSE ;
+        *have_mode = FALSE ;
 
       result = ZMAP_SERVERRESPONSE_OK ;
     }
@@ -790,11 +790,11 @@ static ZMapServerResponseType getSequences(void *server_in, GList *sequences_ino
   else
     {
       if ((result = doGetSequences(server, sequences_inout)) != ZMAP_SERVERRESPONSE_OK)
-	{
-	  result = ZMAP_SERVERRESPONSE_REQFAIL ;
-	  ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, server->host,
-			 "Could not get sequences from server because: %s", server->last_err_msg) ;
-	}
+        {
+          result = ZMAP_SERVERRESPONSE_REQFAIL ;
+          ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, server->host,
+                         "Could not get sequences from server because: %s", server->last_err_msg) ;
+        }
     }
 
   return result ;
@@ -825,8 +825,8 @@ static ZMapServerResponseType setContext(void *server_in, ZMapFeatureContext fea
     {
       result = ZMAP_SERVERRESPONSE_REQFAIL ;
       ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, server->host,
-		     "Could not map %s because: %s",
-		     g_quark_to_string(server->req_context->sequence_name), server->last_err_msg) ;
+                     "Could not map %s because: %s",
+                     g_quark_to_string(server->req_context->sequence_name), server->last_err_msg) ;
     }
   else
     {
@@ -840,7 +840,7 @@ static ZMapServerResponseType setContext(void *server_in, ZMapFeatureContext fea
 
 /* Get features sequence. */
 static ZMapServerResponseType getFeatures(void *server_in,
-					  ZMapStyleTree &styles, ZMapFeatureContext feature_context)
+                                          ZMapStyleTree &styles, ZMapFeatureContext feature_context)
 {
   ZMapServerResponseType response = ZMAP_SERVERRESPONSE_OK ;
   AcedbServer server = (AcedbServer)server_in ;
@@ -885,12 +885,12 @@ static ZMapServerResponseType getFeatures(void *server_in,
 
       column = g_hash_table_lookup(server->method_2_feature_set,);
       if(column)
-	{
-	  req_names = g_list_concat(req_names,column->features
-				      }
-	    req_cols = g_list_delete_link(req_names,req_cols);
+        {
+          req_names = g_list_concat(req_names,column->features
+                                      }
+            req_cols = g_list_delete_link(req_names,req_cols);
 
-	}
+        }
     }
 #endif
 
@@ -933,23 +933,23 @@ static ZMapServerResponseType getContextSequence(void *server_in,
                                          dna_length_out, dna_sequence_out)))
     {
       if (server->last_err_status == ACECONN_OK)
-	{
-	  result = ZMAP_SERVERRESPONSE_REQFAIL ;
-	}
+        {
+          result = ZMAP_SERVERRESPONSE_REQFAIL ;
+        }
       else if (server->last_err_status == ACECONN_TIMEDOUT)
-	{
-	  result = ZMAP_SERVERRESPONSE_TIMEDOUT ;
-	}
+        {
+          result = ZMAP_SERVERRESPONSE_TIMEDOUT ;
+        }
       else
-	{
-	  /* Probably we will want to analyse the response more than this ! */
-	  result = ZMAP_SERVERRESPONSE_SERVERDIED ;
-	}
+        {
+          /* Probably we will want to analyse the response more than this ! */
+          result = ZMAP_SERVERRESPONSE_SERVERDIED ;
+        }
       
       ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, server->host,
-		     "Could not get DNA sequence for %s because: %s",
-		     sequence_name,
-		     server->last_err_msg) ;
+                     "Could not get DNA sequence for %s because: %s",
+                     sequence_name,
+                     server->last_err_msg) ;
     }
 
   return result ;
@@ -982,7 +982,7 @@ static ZMapServerResponseType closeConnection(void *server_in)
   if ((server->last_err_status = AceConnConnectionOpen(server->connection)) == ACECONN_OK)
     {
       if ((server->last_err_status = AceConnDisconnect(server->connection)) == ACECONN_OK)
-	result = ZMAP_SERVERRESPONSE_OK ;
+        result = ZMAP_SERVERRESPONSE_OK ;
     }
   else
     {
@@ -1001,8 +1001,8 @@ static ZMapServerResponseType destroyConnection(void *server_in)
 
   resetErr(server) ;
 
-  AceConnDestroy(server->connection) ;			    /* Does not fail. */
-  server->connection = NULL ;				    /* Prevents accidental reuse. */
+  AceConnDestroy(server->connection) ;                      /* Does not fail. */
+  server->connection = NULL ;                               /* Prevents accidental reuse. */
 
   g_free(server->host) ;
 
@@ -1032,10 +1032,10 @@ static ZMapServerResponseType destroyConnection(void *server_in)
  * This all takes a few stages as below.
  *  */
 static ZMapServerResponseType findColStyleTags(AcedbServer server,
-					       GList **feature_sets_inout,
-					       GList **feature_methods_out,
-					       GList **required_styles_out,
-					       GHashTable **featureset_2_stylelist_inout)
+                                               GList **feature_sets_inout,
+                                               GList **feature_methods_out,
+                                               GList **required_styles_out,
+                                               GHashTable **featureset_2_stylelist_inout)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   GList *feature_sets, *feature_set_methods = NULL, *feature_methods = NULL, *required_styles = NULL ;
@@ -1062,38 +1062,38 @@ static ZMapServerResponseType findColStyleTags(AcedbServer server,
       num_orig = g_list_length(feature_sets) ;
 
       if (parseTypes(server, NULL, parseMethodColGroupNames, &(get_sets)))
-	{
-	  result = ZMAP_SERVERRESPONSE_OK ;
+        {
+          result = ZMAP_SERVERRESPONSE_OK ;
 
-	  feature_set_methods = get_sets.feature_set_methods ;
-	  feature_methods = get_sets.feature_methods ;
+          feature_set_methods = get_sets.feature_set_methods ;
+          feature_methods = get_sets.feature_methods ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  printf("\n=======================\n") ;
-	  zMap_g_list_quark_print(feature_set_methods, "Column feature_sets", FALSE) ;
-	  printf("\n=======================\n") ;
-	  zMap_g_list_quark_print(feature_methods, "Child methods", FALSE) ;
-	  printf("\n=======================\n") ;
+          printf("\n=======================\n") ;
+          zMap_g_list_quark_print(feature_set_methods, "Column feature_sets", FALSE) ;
+          printf("\n=======================\n") ;
+          zMap_g_list_quark_print(feature_methods, "Child methods", FALSE) ;
+          printf("\n=======================\n") ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-	  num_curr = g_list_length(feature_set_methods) ;
+          num_curr = g_list_length(feature_set_methods) ;
 
-	  /* Check the list of feature sets against valid methods, remove any feature sets
-	   * without a valid method, we fail if no methods are found. */
-	  if (num_orig != num_curr)
-	    {
-	      if (!equaliseLists(server, &(feature_sets), feature_set_methods, "Feature Sets", "Valid Methods"))
-		{
-		  result = ZMAP_SERVERRESPONSE_REQFAIL ;
-		}
-	    }
-	}
+          /* Check the list of feature sets against valid methods, remove any feature sets
+           * without a valid method, we fail if no methods are found. */
+          if (num_orig != num_curr)
+            {
+              if (!equaliseLists(server, &(feature_sets), feature_set_methods, "Feature Sets", "Valid Methods"))
+                {
+                  result = ZMAP_SERVERRESPONSE_REQFAIL ;
+                }
+            }
+        }
       else
-	{
-	  result = ZMAP_SERVERRESPONSE_REQFAIL ;
-	  ZMAPSERVER_LOG(Critical, ACEDB_PROTOCOL_STR, server->host,
-			 "Could not fetch methods to look for Column_child and Style tags: %s", server->last_err_msg) ;
-	}
+        {
+          result = ZMAP_SERVERRESPONSE_REQFAIL ;
+          ZMAPSERVER_LOG(Critical, ACEDB_PROTOCOL_STR, server->host,
+                         "Could not fetch methods to look for Column_child and Style tags: %s", server->last_err_msg) ;
+        }
     }
 
 
@@ -1113,22 +1113,22 @@ static ZMapServerResponseType findColStyleTags(AcedbServer server,
       method_string = getMethodString(feature_methods, TRUE, TRUE, TRUE) ;
 
       if ((result = findMethods(server, method_string, &num_curr)) != ZMAP_SERVERRESPONSE_OK)
-	{
-	  result = ZMAP_SERVERRESPONSE_REQFAIL ;
-	  ZMAPSERVER_LOG(Critical, ACEDB_PROTOCOL_STR, server->host,
-			 "Could not find feature set methods in server because: %s", server->last_err_msg) ;
-	}
+        {
+          result = ZMAP_SERVERRESPONSE_REQFAIL ;
+          ZMAPSERVER_LOG(Critical, ACEDB_PROTOCOL_STR, server->host,
+                         "Could not find feature set methods in server because: %s", server->last_err_msg) ;
+        }
       else if (num_orig != num_curr)
-	{
-	  result = ZMAP_SERVERRESPONSE_REQFAIL ;
+        {
+          result = ZMAP_SERVERRESPONSE_REQFAIL ;
 
-	  if (num_orig > num_curr)
-	    ZMAPSERVER_LOG(Warning,  ACEDB_PROTOCOL_STR, server->host,
-			   "%s", "Some featuresets could not be found.") ;
-	  else
-	    ZMAPSERVER_LOG(Critical, ACEDB_PROTOCOL_STR, server->host,
-			   "%s", "Too many featuresets found ! Ace Server Query probably incorrect !") ;
-	}
+          if (num_orig > num_curr)
+            ZMAPSERVER_LOG(Warning,  ACEDB_PROTOCOL_STR, server->host,
+                           "%s", "Some featuresets could not be found.") ;
+          else
+            ZMAPSERVER_LOG(Critical, ACEDB_PROTOCOL_STR, server->host,
+                           "%s", "Too many featuresets found ! Ace Server Query probably incorrect !") ;
+        }
 
       g_free(method_string) ;
     }
@@ -1140,22 +1140,22 @@ static ZMapServerResponseType findColStyleTags(AcedbServer server,
       GList *curr_methods = NULL ;
 
       if ((result = getObjNames(server, &curr_methods)) == ZMAP_SERVERRESPONSE_OK)
-	{
-	  if (num_orig != num_curr)
-	    {
-	      if (!equaliseLists(server, &(feature_methods), curr_methods, "Feature Methods", "Methods"))
-		{
-		  result = ZMAP_SERVERRESPONSE_REQFAIL ;
-		}
-	    }
-	}
+        {
+          if (num_orig != num_curr)
+            {
+              if (!equaliseLists(server, &(feature_methods), curr_methods, "Feature Methods", "Methods"))
+                {
+                  result = ZMAP_SERVERRESPONSE_REQFAIL ;
+                }
+            }
+        }
       else
-	{
-	  result = ZMAP_SERVERRESPONSE_REQFAIL ;
-	  ZMAPSERVER_LOG(Critical, ACEDB_PROTOCOL_STR, server->host,
-			 "Could not get list of feature set methods from server because: %s",
-			 server->last_err_msg) ;
-	}
+        {
+          result = ZMAP_SERVERRESPONSE_REQFAIL ;
+          ZMAPSERVER_LOG(Critical, ACEDB_PROTOCOL_STR, server->host,
+                         "Could not get list of feature set methods from server because: %s",
+                         server->last_err_msg) ;
+        }
 
       g_list_free(curr_methods) ;
     }
@@ -1171,35 +1171,35 @@ static ZMapServerResponseType findColStyleTags(AcedbServer server,
       get_sets.set_2_styles = featureset_2_stylelist ;
 
       if (parseTypes(server, NULL, parseMethodStyleNames, &(get_sets)))
-	{
-	  result = ZMAP_SERVERRESPONSE_OK ;
+        {
+          result = ZMAP_SERVERRESPONSE_OK ;
 
-	  required_styles = get_sets.required_styles ;
-	  featureset_2_stylelist = get_sets.set_2_styles ;
+          required_styles = get_sets.required_styles ;
+          featureset_2_stylelist = get_sets.set_2_styles ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  zMap_g_list_quark_print(required_styles, "feature_sets", FALSE) ;
-	  printf("\n=======================\n") ;
-	  zMap_g_hashlist_print(featureset_2_stylelist) ;
-	  printf("\n=======================\n") ;
+          zMap_g_list_quark_print(required_styles, "feature_sets", FALSE) ;
+          printf("\n=======================\n") ;
+          zMap_g_hashlist_print(featureset_2_stylelist) ;
+          printf("\n=======================\n") ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-	  num_curr = g_list_length(get_sets.feature_methods) ;
+          num_curr = g_list_length(get_sets.feature_methods) ;
 
-	  if (num_orig != num_curr)
-	    {
-	      if (!equaliseLists(server, &(feature_methods), get_sets.feature_methods, "Feature Methods", "Methods"))
-		{
-		  result = ZMAP_SERVERRESPONSE_REQFAIL ;
-		}
-	    }
-	}
+          if (num_orig != num_curr)
+            {
+              if (!equaliseLists(server, &(feature_methods), get_sets.feature_methods, "Feature Methods", "Methods"))
+                {
+                  result = ZMAP_SERVERRESPONSE_REQFAIL ;
+                }
+            }
+        }
       else
-	{
-	  result = ZMAP_SERVERRESPONSE_REQFAIL ;
-	  ZMAPSERVER_LOG(Critical, ACEDB_PROTOCOL_STR, server->host,
-			 "Could not fetch " COL_CHILD " methods to look for zmap_styles: %s", server->last_err_msg) ;
-	}
+        {
+          result = ZMAP_SERVERRESPONSE_REQFAIL ;
+          ZMAPSERVER_LOG(Critical, ACEDB_PROTOCOL_STR, server->host,
+                         "Could not fetch " COL_CHILD " methods to look for zmap_styles: %s", server->last_err_msg) ;
+        }
     }
 
   /* Return results if all ok. */
@@ -1222,7 +1222,7 @@ static ZMapServerResponseType findColStyleTags(AcedbServer server,
  * We may be passed either a list of style names in GQuark form (style_name_list == TRUE)
  * or a list of the actual styles. */
 static char *getMethodString(GList *styles_or_style_names,
-			     gboolean style_name_list, gboolean find_string, gboolean find_methods)
+                             gboolean style_name_list, gboolean find_string, gboolean find_methods)
 {
   char *type_names = NULL ;
   ZMapTypesStringStruct types_data ;
@@ -1234,9 +1234,9 @@ static char *getMethodString(GList *styles_or_style_names,
   if (find_string)
     {
       if (find_methods)
-	str = g_string_append(str, "query find method ") ;
+        str = g_string_append(str, "query find method ") ;
       else
-	str = g_string_append(str, "query find zmap_style ") ;
+        str = g_string_append(str, "query find zmap_style ") ;
     }
   else
     str = g_string_append(str, "+method ") ;
@@ -1281,9 +1281,9 @@ static void addTypeName(gpointer data, gpointer user_data)
   if (!types_data->first_method)
     {
       if (types_data->find_string)
-	types_data->str = g_string_append(types_data->str, " OR ") ;
+        types_data->str = g_string_append(types_data->str, " OR ") ;
       else
-	types_data->str = g_string_append(types_data->str, "|") ;
+        types_data->str = g_string_append(types_data->str, "|") ;
     }
   else
     types_data->first_method = FALSE ;
@@ -1316,7 +1316,7 @@ static void addTypeName(gpointer data, gpointer user_data)
  * ##source-version sgifaceserver:ACEDB 4.9.27
  * ##date 2004-09-21
  * ##sequence-region F22D3 1 35712
- * F22D3	Genomic_canonical	region	1	200	.	+	.	Sequence "B0252"
+ * F22D3        Genomic_canonical       region  1       200     .       +       .       Sequence "B0252"
  *
  * These error lines can also occur interleaved with valid gff...not ideal. Currently we shove
  * the errors out to our log file so they get seen.
@@ -1334,7 +1334,7 @@ static gboolean sequenceRequest(DoAllAlignBlocks get_features, ZMapFeatureBlock 
   GList *loadable_methods = NULL ;
   const char *methods = "" ;
   gboolean no_clip = TRUE ;
-  int iGFFVersion = 2 ;					    /* Default to version 2. */
+  int iGFFVersion = 2 ;                                     /* Default to version 2. */
 
 
   /* Exclude any methods that have "deferred loading" set in their styles, if no styles then
@@ -1373,18 +1373,18 @@ static gboolean sequenceRequest(DoAllAlignBlocks get_features, ZMapFeatureBlock 
   zMapPrintTimer(NULL, "In thread, about to ask for features") ;
 
   acedb_request =  g_strdup_printf("gif seqget %s -coords %d %d %s %s ; "
-				   " %s "
+                                   " %s "
                                    "seqfeatures -refseq %s -rawmethods -version %d %s %s",
-				   g_quark_to_string(feature_block->original_id),
-				   server->zmap_start,
-				   server->zmap_end,
-				   no_clip ? "-noclip" : "",
-				   methods,
-				   (server->fetch_gene_finder_features ? gene_finder_cmds : ""),
-				   g_quark_to_string(feature_block->original_id),
+                                   g_quark_to_string(feature_block->original_id),
+                                   server->zmap_start,
+                                   server->zmap_end,
+                                   no_clip ? "-noclip" : "",
+                                   methods,
+                                   (server->fetch_gene_finder_features ? gene_finder_cmds : ""),
+                                   g_quark_to_string(feature_block->original_id),
                                    server->gff_version,
                                    (server->gff_version == 3 ? "" : "-zmap"),
-				   methods) ;
+                                   methods) ;
 
   if ((server->last_err_status = AceConnRequest(server->connection, acedb_request, &reply, &reply_len))
       == ACECONN_OK)
@@ -1403,181 +1403,181 @@ static gboolean sequenceRequest(DoAllAlignBlocks get_features, ZMapFeatureBlock 
        * there may be errors before the GFF output. */
       result = TRUE ;
       do
-	{
-	  if (!(result = zMapReadLineNext(line_reader, &next_line, &line_length)))
-	    {
-	      /* If the readline fails it may be because of an error or because its reached the
-	       * end, if next_line is empty then its reached the end. */
-	      if (*next_line)
-		{
-		  setErrMsg(server, g_strdup_printf("Request from server contained incomplete line: %s",
-						    next_line)) ;
-		  if (!first_error)
-		    first_error = next_line ;		    /* Remember first line for later error
-							       message.*/
-		}
-	      else
-		{
-		  if (first_error)
-		    setErrMsg(server, g_strdup_printf("No GFF found in server reply,"
-						       "but did find: \"%s\"", first_error)) ;
-		  else
-		    setErrMsg(server, g_strdup_printf("%s", "No GFF found in server reply.")) ;
-		}
+        {
+          if (!(result = zMapReadLineNext(line_reader, &next_line, &line_length)))
+            {
+              /* If the readline fails it may be because of an error or because its reached the
+               * end, if next_line is empty then its reached the end. */
+              if (*next_line)
+                {
+                  setErrMsg(server, g_strdup_printf("Request from server contained incomplete line: %s",
+                                                    next_line)) ;
+                  if (!first_error)
+                    first_error = next_line ;               /* Remember first line for later error
+                                                               message.*/
+                }
+              else
+                {
+                  if (first_error)
+                    setErrMsg(server, g_strdup_printf("No GFF found in server reply,"
+                                                       "but did find: \"%s\"", first_error)) ;
+                  else
+                    setErrMsg(server, g_strdup_printf("%s", "No GFF found in server reply.")) ;
+                }
 
-	      ZMAPSERVER_LOG(Critical, ACEDB_PROTOCOL_STR, server->host,
-			     "%s", server->last_err_msg) ;
-	    }
-	  else
-	    {
-	      /* The ace server first gives us any errors from the seqget/seqfeatures as
-	       * comments, the first line of gff is always the version line. */
-	      if (g_str_has_prefix((char *)next_line, "##gff-version"))
-		{
-		  break ;
-		}
-	      else
-		{
-		  ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, server->host,
-				 "%s: %s",
-				 (g_str_has_prefix((char *)next_line, "// ERROR")
-				  ? "Error fetching features"
-				  : (g_str_has_prefix((char *)next_line, "//")
-				     ? "Information from server" : "Bad GFF line")),
-				 next_line) ;
+              ZMAPSERVER_LOG(Critical, ACEDB_PROTOCOL_STR, server->host,
+                             "%s", server->last_err_msg) ;
+            }
+          else
+            {
+              /* The ace server first gives us any errors from the seqget/seqfeatures as
+               * comments, the first line of gff is always the version line. */
+              if (g_str_has_prefix((char *)next_line, "##gff-version"))
+                {
+                  break ;
+                }
+              else
+                {
+                  ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, server->host,
+                                 "%s: %s",
+                                 (g_str_has_prefix((char *)next_line, "// ERROR")
+                                  ? "Error fetching features"
+                                  : (g_str_has_prefix((char *)next_line, "//")
+                                     ? "Information from server" : "Bad GFF line")),
+                                 next_line) ;
 
-		  /* Remember line in case this is the last/only line of file. */
-		  if (!first_error)
-		    first_error = next_line ;
-		}
-	    }
-	}
+                  /* Remember line in case this is the last/only line of file. */
+                  if (!first_error)
+                    first_error = next_line ;
+                }
+            }
+        }
       while (result && *next_line) ;
 
 
       if (result)
-	{
-	  ZMapGFFParser parser ;
-	  gboolean free_on_destroy ;
+        {
+          ZMapGFFParser parser ;
+          gboolean free_on_destroy ;
 
-	  /* Check for version. */
-	  if (!zMapGFFGetVersionFromString(next_line, &iGFFVersion))
-	    {
-	      setErrMsg(server,  g_strdup_printf("Could not determine GFF version from line: %s", next_line)) ;
-	      ZMAPSERVER_LOG(Critical, ACEDB_PROTOCOL_STR, server->host, "%s", server->last_err_msg) ;
-	    }
-
-
-	  /* Set up the parser, if we are doing cols/styles then set hash tables
-	   * in parser to map the gff source name to the Feature Set (== Column) and a Style. */
-	  parser = zMapGFFCreateParser(iGFFVersion, (char *) g_quark_to_string(feature_block->original_id),
-				       server->zmap_start, server->zmap_end, server->source) ;
-	  zMapGFFParserInitForFeatures(parser, styles, FALSE) ;
-
-	  zMapGFFSetDefaultToBasic(parser, TRUE);
+          /* Check for version. */
+          if (!zMapGFFGetVersionFromString(next_line, &iGFFVersion))
+            {
+              setErrMsg(server,  g_strdup_printf("Could not determine GFF version from line: %s", next_line)) ;
+              ZMAPSERVER_LOG(Critical, ACEDB_PROTOCOL_STR, server->host, "%s", server->last_err_msg) ;
+            }
 
 
-	  if (server->has_new_tags)
-	    {
-	      zMapGFFParseSetSourceHash(parser, server->method_2_feature_set, server->method_2_data) ;
-	    }
+          /* Set up the parser, if we are doing cols/styles then set hash tables
+           * in parser to map the gff source name to the Feature Set (== Column) and a Style. */
+          parser = zMapGFFCreateParser(iGFFVersion, (char *) g_quark_to_string(feature_block->original_id),
+                                       server->zmap_start, server->zmap_end, server->source) ;
+          zMapGFFParserInitForFeatures(parser, styles, FALSE) ;
+
+          zMapGFFSetDefaultToBasic(parser, TRUE);
 
 
-	  /* We probably won't have to deal with part lines here acedb should only return whole lines
-	   * ....but should check for sure...bomb out for now....
-	   * Note that we already have the first line from the loop above. */
-	  result = TRUE ;
-	  do
-	    {
-	      /* acedb server can return "error" and "comment" lines interleaved with gff output,
-	       * otherwise we assume it's gff. */
-	      if (g_str_has_prefix((char *)next_line, "//"))
-		{
-		  ZMAPSERVER_LOG(Message, ACEDB_PROTOCOL_STR, server->host,
-				 "%s: %s",
-				 (g_str_has_prefix((char *)next_line, "// ERROR")
-				  ? "Error fetching features" : "Information from server"),
-				 next_line) ;
-		}
-	      else if (!zMapGFFParseLineLength(parser, next_line, line_length))
-		{
-		  GError *error = zMapGFFGetError(parser) ;
+          if (server->has_new_tags)
+            {
+              zMapGFFParseSetSourceHash(parser, server->method_2_feature_set, server->method_2_data) ;
+            }
 
-		  if (!error)
-		    {
-		      setErrMsg(server,
-				g_strdup_printf("zMapGFFParseLine() failed with no GError for line %d: %s",
-						zMapGFFGetLineNumber(parser), next_line)) ;
-		      ZMAPSERVER_LOG(Critical, ACEDB_PROTOCOL_STR, server->host,
-				     "%s", server->last_err_msg) ;
 
-		      result = FALSE ;
-		    }
-		  else
-		    {
-		      /* If the error was serious we stop processing and return the error,
-		       * otherwise we just log the error. */
-		      if (zMapGFFTerminated(parser))
-			{
-			  result = FALSE ;
-			  setErrMsg(server,  g_strdup_printf("%s", error->message)) ;
-			}
-		      else
-			{
-			  ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, server->host,
-					 "%s", error->message) ;
-			}
-		    }
-		}
+          /* We probably won't have to deal with part lines here acedb should only return whole lines
+           * ....but should check for sure...bomb out for now....
+           * Note that we already have the first line from the loop above. */
+          result = TRUE ;
+          do
+            {
+              /* acedb server can return "error" and "comment" lines interleaved with gff output,
+               * otherwise we assume it's gff. */
+              if (g_str_has_prefix((char *)next_line, "//"))
+                {
+                  ZMAPSERVER_LOG(Message, ACEDB_PROTOCOL_STR, server->host,
+                                 "%s: %s",
+                                 (g_str_has_prefix((char *)next_line, "// ERROR")
+                                  ? "Error fetching features" : "Information from server"),
+                                 next_line) ;
+                }
+              else if (!zMapGFFParseLineLength(parser, next_line, line_length))
+                {
+                  GError *error = zMapGFFGetError(parser) ;
 
-	      if (!(result = zMapReadLineNext(line_reader, &next_line, &line_length)))
-		{
-		  /* If the readline fails it may be because of an error or because its reached the
-		   * end, if next_line is empty then its reached the end. */
-		  if (*next_line)
-		    {
-		      setErrMsg(server,  g_strdup_printf("Request from server contained incomplete line: %s",
-							 next_line)) ;
-		      ZMAPSERVER_LOG(Critical, ACEDB_PROTOCOL_STR, server->host,
-				     "%s", server->last_err_msg) ;
-		    }
-		  else
-		    {
-		      result = TRUE ;
-		    }
-		}
+                  if (!error)
+                    {
+                      setErrMsg(server,
+                                g_strdup_printf("zMapGFFParseLine() failed with no GError for line %d: %s",
+                                                zMapGFFGetLineNumber(parser), next_line)) ;
+                      ZMAPSERVER_LOG(Critical, ACEDB_PROTOCOL_STR, server->host,
+                                     "%s", server->last_err_msg) ;
 
-	    }
-	  while (result && *next_line) ;
+                      result = FALSE ;
+                    }
+                  else
+                    {
+                      /* If the error was serious we stop processing and return the error,
+                       * otherwise we just log the error. */
+                      if (zMapGFFTerminated(parser))
+                        {
+                          result = FALSE ;
+                          setErrMsg(server,  g_strdup_printf("%s", error->message)) ;
+                        }
+                      else
+                        {
+                          ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, server->host,
+                                         "%s", error->message) ;
+                        }
+                    }
+                }
 
-	  free_on_destroy = TRUE ;
-	  if (result)
-	    {
-	      if (zMapGFFGetFeatures(parser, feature_block))
-		{
-		  GList *src_names;
-		  free_on_destroy = FALSE ;	/* Make sure parser does _not_ free our data. ! */
+              if (!(result = zMapReadLineNext(line_reader, &next_line, &line_length)))
+                {
+                  /* If the readline fails it may be because of an error or because its reached the
+                   * end, if next_line is empty then its reached the end. */
+                  if (*next_line)
+                    {
+                      setErrMsg(server,  g_strdup_printf("Request from server contained incomplete line: %s",
+                                                         next_line)) ;
+                      ZMAPSERVER_LOG(Critical, ACEDB_PROTOCOL_STR, server->host,
+                                     "%s", server->last_err_msg) ;
+                    }
+                  else
+                    {
+                      result = TRUE ;
+                    }
+                }
 
-		  /* get the featuresets actually put in the block
-		   * and pass upstream, returning a list of featuresets in all blocks
-		   */
-		  src_names = zMapGFFGetFeaturesets(parser) ;
+            }
+          while (result && *next_line) ;
 
-		  get_features->src_feature_set_names =
-		    zMap_g_list_merge(get_features->src_feature_set_names, src_names) ;
-		}
-	      else
-		{
-		  result = FALSE ;
-		}
-	    }
+          free_on_destroy = TRUE ;
+          if (result)
+            {
+              if (zMapGFFGetFeatures(parser, feature_block))
+                {
+                  GList *src_names;
+                  free_on_destroy = FALSE ;     /* Make sure parser does _not_ free our data. ! */
 
-	  zMapGFFSetFreeOnDestroy(parser, free_on_destroy) ;
-	  zMapGFFDestroyParser(parser) ;
-	}
+                  /* get the featuresets actually put in the block
+                   * and pass upstream, returning a list of featuresets in all blocks
+                   */
+                  src_names = zMapGFFGetFeaturesets(parser) ;
 
-      zMapReadLineDestroy(line_reader, FALSE) ;		    /* n.b. don't free string as it is the
-							       same as reply which is freed later.*/
+                  get_features->src_feature_set_names =
+                    zMap_g_list_merge(get_features->src_feature_set_names, src_names) ;
+                }
+              else
+                {
+                  result = FALSE ;
+                }
+            }
+
+          zMapGFFSetFreeOnDestroy(parser, free_on_destroy) ;
+          zMapGFFDestroyParser(parser) ;
+        }
+
+      zMapReadLineDestroy(line_reader, FALSE) ;             /* n.b. don't free string as it is the
+                                                               same as reply which is freed later.*/
 
       g_free(reply) ;
 
@@ -1603,7 +1603,7 @@ static gboolean sequenceRequest(DoAllAlignBlocks get_features, ZMapFeatureBlock 
  *
  */
 static gboolean getDNARequest(AcedbServer server, char *sequence_name, int start, int end,
-			      int *dna_length_out, char **dna_sequence_out)
+                              int *dna_length_out, char **dna_sequence_out)
 {
   gboolean result = FALSE ;
   char *acedb_request = NULL ;
@@ -1626,25 +1626,25 @@ static gboolean getDNARequest(AcedbServer server, char *sequence_name, int start
 
       server->last_err_status = AceConnRequest(server->connection, acedb_request, &reply, &reply_len) ;
       if (server->last_err_status == ACECONN_OK)
-	{
-	  if ((reply_len - 1) != ((dna_length = end - start + 1)))
-	    {
-	      setErrMsg(server,  g_strdup_printf("DNA request failed (\"%s\"),  "
-						 "expected dna length: %d "
-						 "returned length: %d",
-						 acedb_request,
-						 dna_length, (reply_len - 1))) ;
-	      result = FALSE ;
-	    }
-	  else
-	    {
-	      *dna_length_out = dna_length ;
-	      *dna_sequence_out = (char *)reply ;
+        {
+          if ((reply_len - 1) != ((dna_length = end - start + 1)))
+            {
+              setErrMsg(server,  g_strdup_printf("DNA request failed (\"%s\"),  "
+                                                 "expected dna length: %d "
+                                                 "returned length: %d",
+                                                 acedb_request,
+                                                 dna_length, (reply_len - 1))) ;
+              result = FALSE ;
+            }
+          else
+            {
+              *dna_length_out = dna_length ;
+              *dna_sequence_out = (char *)reply ;
 
-	      /* everything should now be done, result is true */
-	      result = TRUE ;
-	    }
-	}
+              /* everything should now be done, result is true */
+              result = TRUE ;
+            }
+        }
 
       g_free(acedb_request) ;
     }
@@ -1674,18 +1674,18 @@ static gboolean getSequenceMapping(AcedbServer server, ZMapFeatureContext featur
       /* NOTE that we hard code sequence in here...but what to do...gff does not give back the
        * class of the sequence object..... */
       if (getSMapLength(server, "sequence",
-			g_quark_to_string(server->req_context->sequence_name),
-			&child_length))
-	server->zmap_end = child_length ;
+                        g_quark_to_string(server->req_context->sequence_name),
+                        &child_length))
+        server->zmap_end = child_length ;
     }
 
   zMapLogWarning("getSequenceMapping %d -> %d",server->zmap_start,server->zmap_end);
 
   if (getSMapping(server, NULL, (char *)g_quark_to_string(server->req_context->sequence_name),
-		  server->zmap_start,server->zmap_end,
-		  &parent_class, &parent_name, &sequence_to_parent)
+                  server->zmap_start,server->zmap_end,
+                  &parent_class, &parent_name, &sequence_to_parent)
       && ((server->zmap_end - server->zmap_start + 1) ==
-	  (sequence_to_parent.block.x2 - sequence_to_parent.block.x1 + 1))
+          (sequence_to_parent.block.x2 - sequence_to_parent.block.x1 + 1))
 
       && getSMapLength(server, parent_class, parent_name, &parent_length))
     {
@@ -1693,37 +1693,37 @@ static gboolean getSequenceMapping(AcedbServer server, ZMapFeatureContext featur
       g_free(parent_name) ;
 
       if (!feature_context->parent_span.x2)
-	{
-	  feature_context->parent_span.x1 = 1;
-	  feature_context->parent_span.x2 = parent_length;
-	}
+        {
+          feature_context->parent_span.x1 = 1;
+          feature_context->parent_span.x2 = parent_length;
+        }
 
       feature_context->master_align->sequence_span.x1 = sequence_to_parent.parent.x1 ;
       feature_context->master_align->sequence_span.x2 = sequence_to_parent.parent.x2 ;
 
       /* set up block coords as well in case not supplied in context (req = 1,0) */
       {
-	ZMapFeatureAlignment align = feature_context->master_align;
-	GHashTable *blocks = align->blocks ;
-	ZMapFeatureBlock block ;
+        ZMapFeatureAlignment align = feature_context->master_align;
+        GHashTable *blocks = align->blocks ;
+        ZMapFeatureBlock block ;
 
-	block = (ZMapFeatureBlock)(zMap_g_hash_table_nth(blocks, 0)) ;
+        block = (ZMapFeatureBlock)(zMap_g_hash_table_nth(blocks, 0)) ;
 
-	zMapLogWarning("getSequenceMapping block %d -> %d",
-		       block->block_to_sequence.block.x1,block->block_to_sequence.block.x2);
-	if(!block->block_to_sequence.parent.x2)
+        zMapLogWarning("getSequenceMapping block %d -> %d",
+                       block->block_to_sequence.block.x1,block->block_to_sequence.block.x2);
+        if(!block->block_to_sequence.parent.x2)
           {
             block->block_to_sequence.parent.x1 = server->zmap_start;   /* = align->sequence_span.x1 ; */
             block->block_to_sequence.parent.x2 = server->zmap_end;     /* = align->sequence_span.x2 ; */
           }
-	if(!block->block_to_sequence.block.x2)
+        if(!block->block_to_sequence.block.x2)
           {
             block->block_to_sequence.block.x1 = server->zmap_start;   /* = align->sequence_span.x1 ; */
             block->block_to_sequence.block.x2 = server->zmap_end;     /* = align->sequence_span.x2 ; */
-	    zMapLogWarning("getSequenceMapping set block %d -> %d",
-			   block->block_to_sequence.block.x1,block->block_to_sequence.block.x2);
+            zMapLogWarning("getSequenceMapping set block %d -> %d",
+                           block->block_to_sequence.block.x1,block->block_to_sequence.block.x2);
           }
-	block->block_to_sequence.reversed = FALSE;
+        block->block_to_sequence.reversed = FALSE;
       }
 
       result = TRUE ;
@@ -1760,9 +1760,9 @@ static gboolean getSequenceMapping(AcedbServer server, ZMapFeatureContext featur
  * IN THE GIVEN SEQUENCE NAME ETC..... BECAUSE OUR CLONE DISPLAY IS BROKEN. */
 
 static gboolean getSMapping(AcedbServer server, char *class_name,
-			    char *sequence, int start, int end,
-			    char **parent_class_out, char **parent_name_out,
-			    ZMapMapBlock child_to_parent_out)
+                            char *sequence, int start, int end,
+                            char **parent_class_out, char **parent_name_out,
+                            ZMapMapBlock child_to_parent_out)
 {
   gboolean result = FALSE ;
   char *acedb_request = NULL ;
@@ -1770,7 +1770,7 @@ static gboolean getSMapping(AcedbServer server, char *class_name,
   int reply_len = 0 ;
 
   acedb_request = g_strdup_printf("gif smap -coords %d %d -from sequence:%s",
-				  start, end, sequence) ;
+                                  start, end, sequence) ;
 
   if ((server->last_err_status = AceConnRequest(server->connection, acedb_request, &reply, &reply_len))
       == ACECONN_OK)
@@ -1781,48 +1781,48 @@ static gboolean getSMapping(AcedbServer server, char *class_name,
        * if anything has gone wrong is to examine the contents of the text that is returned...
        * in our case if the reply starts with acedb comment chars, this means trouble.. */
       if (g_str_has_prefix(reply_text, "//"))
-	{
-	  setErrMsg(server,  g_strdup_printf("SMap request failed, "
-					     "request: \"%s\",  "
-					     "reply: \"%s\"", acedb_request, reply_text)) ;
-	  result = FALSE ;
-	}
+        {
+          setErrMsg(server,  g_strdup_printf("SMap request failed, "
+                                             "request: \"%s\",  "
+                                             "reply: \"%s\"", acedb_request, reply_text)) ;
+          result = FALSE ;
+        }
       else
-	{
-	  enum {FIELD_BUFFER_LEN = 257} ;
-	  char parent_class[FIELD_BUFFER_LEN] = {'\0'}, parent_name[FIELD_BUFFER_LEN] = {'\0'} ;
-	  char status[FIELD_BUFFER_LEN] = {'\0'} ;
-	  ZMapMapBlockStruct child_to_parent =  { {0, 0} , {0, 0}, FALSE } ;
-	  enum {FIELD_NUM = 7} ;
-	  char *format_str = "SMAP %256[^:]:%256s%d%d%d%d%256s" ;
-	  int fields ;
+        {
+          enum {FIELD_BUFFER_LEN = 257} ;
+          char parent_class[FIELD_BUFFER_LEN] = {'\0'}, parent_name[FIELD_BUFFER_LEN] = {'\0'} ;
+          char status[FIELD_BUFFER_LEN] = {'\0'} ;
+          ZMapMapBlockStruct child_to_parent =  { {0, 0} , {0, 0}, FALSE } ;
+          enum {FIELD_NUM = 7} ;
+          char *format_str = "SMAP %256[^:]:%256s%d%d%d%d%256s" ;
+          int fields ;
 
-	  if ((fields = sscanf(reply_text, format_str, &parent_class[0], &parent_name[0],
-			       &child_to_parent.parent.x1, &child_to_parent.parent.x2,
-			       &child_to_parent.block.x1, &child_to_parent.block.x2,
-			       &status[0])) != FIELD_NUM)
-	    {
-	      setErrMsg(server,  g_strdup_printf("Could not parse smap data, "
-						 "request: \"%s\",  "
-						 "reply: \"%s\"", acedb_request, reply_text)) ;
-	      result = FALSE ;
-	    }
-	  else
-	    {
-	      /* Really we need to do more than this, we should check the status of the mapping. */
+          if ((fields = sscanf(reply_text, format_str, &parent_class[0], &parent_name[0],
+                               &child_to_parent.parent.x1, &child_to_parent.parent.x2,
+                               &child_to_parent.block.x1, &child_to_parent.block.x2,
+                               &status[0])) != FIELD_NUM)
+            {
+              setErrMsg(server,  g_strdup_printf("Could not parse smap data, "
+                                                 "request: \"%s\",  "
+                                                 "reply: \"%s\"", acedb_request, reply_text)) ;
+              result = FALSE ;
+            }
+          else
+            {
+              /* Really we need to do more than this, we should check the status of the mapping. */
 
-	      if (parent_class_out)
-		*parent_class_out = g_strdup(&parent_class[0]) ;
+              if (parent_class_out)
+                *parent_class_out = g_strdup(&parent_class[0]) ;
 
-	      if (parent_name_out)
-		*parent_name_out = g_strdup(&parent_name[0]) ;
+              if (parent_name_out)
+                *parent_name_out = g_strdup(&parent_name[0]) ;
 
-	      if (child_to_parent_out)
-		*child_to_parent_out = child_to_parent ;    /* n.b. struct copy. */
+              if (child_to_parent_out)
+                *child_to_parent_out = child_to_parent ;    /* n.b. struct copy. */
 
-	      result = TRUE ;
-	    }
-	}
+              result = TRUE ;
+            }
+        }
 
       g_free(reply) ;
     }
@@ -1836,9 +1836,9 @@ static gboolean getSMapping(AcedbServer server, char *class_name,
 
 /* DUMMY VERSION....JUST COPIES IN EXISTING SEQUENCE TO PARENT SLOTS.... */
 static gboolean getSMapping(AcedbServer server, char *class_name,
-			    char *sequence, int start, int end,
-			    char **parent_class_out, char **parent_name_out,
-			    ZMapMapBlock child_to_parent_out)
+                            char *sequence, int start, int end,
+                            char **parent_class_out, char **parent_name_out,
+                            ZMapMapBlock child_to_parent_out)
 {
   gboolean result = FALSE ;
   ZMapMapBlockStruct child_to_parent = {{0, 0}, {0, 0}, FALSE} ;
@@ -1887,7 +1887,7 @@ static gboolean getSMapping(AcedbServer server, char *class_name,
  *
  *  */
 static gboolean getSMapLength(AcedbServer server, const char *obj_class, const char *obj_name,
-			      int *obj_length_out)
+                              int *obj_length_out)
 {
   gboolean result = FALSE ;
   const char *command = "smaplength" ;
@@ -1906,36 +1906,36 @@ static gboolean getSMapLength(AcedbServer server, const char *obj_class, const c
        * if anything has gone wrong is to examine the contents of the text that is returned...
        * in our case if the reply starts with acedb comment chars, this means trouble.. */
       if (g_str_has_prefix(reply_text, "//"))
-	{
-	  setErrMsg(server,  g_strdup_printf("%s request failed, "
-					     "request: \"%s\",  "
-					     "reply: \"%s\"", command, acedb_request, reply_text)) ;
-	  result = FALSE ;
-	}
+        {
+          setErrMsg(server,  g_strdup_printf("%s request failed, "
+                                             "request: \"%s\",  "
+                                             "reply: \"%s\"", command, acedb_request, reply_text)) ;
+          result = FALSE ;
+        }
       else
-	{
-	  enum {FIELD_BUFFER_LEN = 257} ;
-	  char obj_class_name[FIELD_BUFFER_LEN] = {'\0'} ;
-	  int length = 0 ;
-	  enum {FIELD_NUM = 2} ;
-	  const char *format_str = "SMAPLENGTH %256s%d" ;
-	  int fields ;
+        {
+          enum {FIELD_BUFFER_LEN = 257} ;
+          char obj_class_name[FIELD_BUFFER_LEN] = {'\0'} ;
+          int length = 0 ;
+          enum {FIELD_NUM = 2} ;
+          const char *format_str = "SMAPLENGTH %256s%d" ;
+          int fields ;
 
-	  if ((fields = sscanf(reply_text, format_str, &obj_class_name[0], &length)) != FIELD_NUM)
-	    {
-	      setErrMsg(server,  g_strdup_printf("Could not parse smap data, "
-						 "request: \"%s\",  "
-						 "reply: \"%s\"", acedb_request, reply_text)) ;
-	      result = FALSE ;
-	    }
-	  else
-	    {
-	      if (obj_length_out)
-		*obj_length_out = length ;
+          if ((fields = sscanf(reply_text, format_str, &obj_class_name[0], &length)) != FIELD_NUM)
+            {
+              setErrMsg(server,  g_strdup_printf("Could not parse smap data, "
+                                                 "request: \"%s\",  "
+                                                 "reply: \"%s\"", acedb_request, reply_text)) ;
+              result = FALSE ;
+            }
+          else
+            {
+              if (obj_length_out)
+                *obj_length_out = length ;
 
-	      result = TRUE ;
-	    }
-	}
+              result = TRUE ;
+            }
+        }
 
       g_free(reply) ;
     }
@@ -1980,30 +1980,30 @@ static gboolean checkServerVersion(AcedbServer server)
       acedb_request =  g_strdup_printf("%s", command) ;
 
       if ((server->last_err_status = AceConnRequest(server->connection, acedb_request,
-						    &reply, &reply_len)) == ACECONN_OK)
-	{
-	  char *reply_text = (char *)reply ;
-	  char *scan_text = reply_text ;
+                                                    &reply, &reply_len)) == ACECONN_OK)
+        {
+          char *reply_text = (char *)reply ;
+          char *scan_text = reply_text ;
           char *curr_pos = NULL ;
-	  char *next_line = NULL ;
+          char *next_line = NULL ;
           gboolean found = FALSE ;
 
-	  /* Scan lines for "Version:" and then extract the version, release and update numbers. */
-	  while ((next_line = strtok_r(scan_text, "\n", &curr_pos)))
-	    {
-	      scan_text = NULL ;
+          /* Scan lines for "Version:" and then extract the version, release and update numbers. */
+          while ((next_line = strtok_r(scan_text, "\n", &curr_pos)))
+            {
+              scan_text = NULL ;
 
-	      if (strstr(next_line, "Version:"))
-		{
+              if (strstr(next_line, "Version:"))
+                {
                   found = TRUE ;
 
-		  /* Parse this string: "//             Version: ACEDB 4.9.28" */
-		  char *next ;
+                  /* Parse this string: "//             Version: ACEDB 4.9.28" */
+                  char *next ;
                   char *tag_pos = NULL ;
 
-		  next = strtok_r(next_line, ":", &tag_pos) ;
-		  next = strtok_r(NULL, " ", &tag_pos) ;
-		  next = strtok_r(NULL, " ", &tag_pos) ;
+                  next = strtok_r(next_line, ":", &tag_pos) ;
+                  next = strtok_r(NULL, " ", &tag_pos) ;
+                  next = strtok_r(NULL, " ", &tag_pos) ;
 
                   if (!(result = zMapCompareVersionStings(server->version_str, next, &error)))
                     {
@@ -2014,18 +2014,18 @@ static gboolean checkServerVersion(AcedbServer server)
                   if (error)
                     g_error_free(error) ;
 
-		  break ;
-		}
-	    }
+                  break ;
+                }
+            }
 
-	  g_free(reply) ;
+          g_free(reply) ;
 
           if (!found)
             {
               setErrMsg(server, g_strdup_printf("Could not get acedb version: 'Version:' text not found in output from command '%s'.",
                                                 command)) ;
             }
-	}
+        }
       else
         {
           setErrMsg(server, g_strdup_printf("AceConn request '%s' failed with status '%d': %s",
@@ -2064,7 +2064,7 @@ static gboolean findSequence(AcedbServer server, char *sequence_name)
   acedb_request = g_strdup_printf("%s %s", command, sequence_name) ;
 
   if ((server->last_err_status = AceConnRequest(server->connection, acedb_request,
-						&reply, &reply_len)) == ACECONN_OK)
+                                                &reply, &reply_len)) == ACECONN_OK)
     {
       char *reply_text = (char *)reply ;
       char *scan_text = reply_text ;
@@ -2073,31 +2073,31 @@ static gboolean findSequence(AcedbServer server, char *sequence_name)
 
       /* Scan lines for "Found" and then extract the version, release and update numbers. */
       while ((next_line = strtok_r(scan_text, "\n", &curr_pos)))
-	{
-	  scan_text = NULL ;
+        {
+          scan_text = NULL ;
 
-	  if (strstr(next_line, "Found"))
-	    {
-	      /* Parse this string: "// Found 1 objects in this class" */
-	      char *next ;
-	      int num_obj ;
-	      char *tag_pos = NULL ;
+          if (strstr(next_line, "Found"))
+            {
+              /* Parse this string: "// Found 1 objects in this class" */
+              char *next ;
+              int num_obj ;
+              char *tag_pos = NULL ;
 
-	      next = strtok_r(next_line, " ", &tag_pos) ;
-	      next = strtok_r(NULL, " ", &tag_pos) ;
-	      next = strtok_r(NULL, " ", &tag_pos) ;
+              next = strtok_r(next_line, " ", &tag_pos) ;
+              next = strtok_r(NULL, " ", &tag_pos) ;
+              next = strtok_r(NULL, " ", &tag_pos) ;
 
-	      num_obj = atoi(next) ;
+              num_obj = atoi(next) ;
 
-	      if (num_obj == 1)
-		result = TRUE ;
-	      else
-		setErrMsg(server,  g_strdup_printf("Expected to find \"1\" sequence object with name %s, "
-						   "but found %d objects.",
-						   sequence_name, num_obj)) ;
-	      break ;
-	    }
-	}
+              if (num_obj == 1)
+                result = TRUE ;
+              else
+                setErrMsg(server,  g_strdup_printf("Expected to find \"1\" sequence object with name %s, "
+                                                   "but found %d objects.",
+                                                   sequence_name, num_obj)) ;
+              break ;
+            }
+        }
 
       g_free(reply) ;
     }
@@ -2125,16 +2125,16 @@ static gboolean setQuietMode(AcedbServer server)
   acedb_request =  g_strdup_printf("%s", command) ;
 
   if ((server->last_err_status = AceConnRequest(server->connection, acedb_request,
-						&reply, &reply_len)) == ACECONN_OK)
+                                                &reply, &reply_len)) == ACECONN_OK)
     {
       result = TRUE ;
 
       if (reply_len != 0 && reply && *((char*)reply))
-	{
-	  zMapLogWarning("Reply to \"%s\" should have been NULL but was: \"%s\"",
-			 command, (char *)reply) ;
-	  g_free(reply) ;
-	}
+        {
+          zMapLogWarning("Reply to \"%s\" should have been NULL but was: \"%s\"",
+                         command, (char *)reply) ;
+          g_free(reply) ;
+        }
     }
   else
     {
@@ -2192,7 +2192,7 @@ static gboolean getServerInfo(AcedbServer server, ZMapServerReqGetServerInfo inf
 
   acedb_request =  g_strdup_printf("%s", command) ;
   if ((server->last_err_status = AceConnRequest(server->connection, acedb_request,
-						&reply, &reply_len)) == ACECONN_OK)
+                                                &reply, &reply_len)) == ACECONN_OK)
     {
       char *scan_text = (char *)reply ;
       char *next_line = NULL ;
@@ -2202,50 +2202,48 @@ static gboolean getServerInfo(AcedbServer server, ZMapServerReqGetServerInfo inf
       info->data_format_out = g_strdup("GFF version 2") ;
 
       while ((next_line = strtok_r(scan_text, "\n", &curr_pos)))
-	{
-	  scan_text = NULL ;
+        {
+          scan_text = NULL ;
 
-	  if (strstr(next_line, "Directory") != NULL)
-	    {
-	      char *target ;
-	      char *tag_pos = NULL ;
+          if (strstr(next_line, "Directory") != NULL)
+            {
+              char *target ;
+              char *tag_pos = NULL ;
 
-	      target = strtok_r(next_line, ":", &tag_pos) ;
-	      target = strtok_r(NULL, " ", &tag_pos) ;
+              target = strtok_r(next_line, ":", &tag_pos) ;
+              target = strtok_r(NULL, " ", &tag_pos) ;
 
-	      if (target)
-		{
-		  result = TRUE ;
-		  info->database_path_out = g_strdup(target) ;
-		}
-	    }
-	  else if (strstr(next_line, "Title") != NULL)
-	    {
-	      char *target ;
-	      char *tag_pos = NULL ;
+              if (target)
+                {
+                  result = TRUE ;
+                  info->database_path_out = g_strdup(target) ;
+                }
+            }
+          else if (strstr(next_line, "Title") != NULL)
+            {
+              char *tag_pos = NULL ;
 
-	      target = strtok_r(next_line, ":", &tag_pos) ;
+              strtok_r(next_line, ":", &tag_pos) ;
 
-	      if (tag_pos && !(strstr(tag_pos, "<undefined>")))
-		{
-		  result = TRUE ;
-		  info->database_title_out = g_strstrip(g_strdup(tag_pos)) ;
-		}
-	    }
-	  else if (strstr(next_line, "Name") != NULL)
-	    {
-	      char *target ;
-	      char *tag_pos = NULL ;
+              if (tag_pos && !(strstr(tag_pos, "<undefined>")))
+                {
+                  result = TRUE ;
+                  info->database_title_out = g_strstrip(g_strdup(tag_pos)) ;
+                }
+            }
+          else if (strstr(next_line, "Name") != NULL)
+            {
+              char *tag_pos = NULL ;
 
-	      target = strtok_r(next_line, ":", &tag_pos) ;
+              strtok_r(next_line, ":", &tag_pos) ;
 
-	      if (tag_pos && !(strstr(tag_pos, "<undefined>")))
-		{
-		  result = TRUE ;
-		  info->database_name_out = g_strstrip(g_strdup(tag_pos)) ;
-		}
-	    }
-	}
+              if (tag_pos && !(strstr(tag_pos, "<undefined>")))
+                {
+                  result = TRUE ;
+                  info->database_name_out = g_strstrip(g_strdup(tag_pos)) ;
+                }
+            }
+        }
 
 
       g_free(reply) ;
@@ -2299,7 +2297,7 @@ static gboolean getServerInfo(AcedbServer server, ZMapServerReqGetServerInfo inf
  *
  *  */
 static gboolean parseTypes(AcedbServer server, GHashTable **types_out,
-			   ParseMethodNamesFunc parse_func_in, gpointer user_data)
+                           ParseMethodNamesFunc parse_func_in, gpointer user_data)
 {
   gboolean result = FALSE ;
   const char *command ;
@@ -2313,7 +2311,7 @@ static gboolean parseTypes(AcedbServer server, GHashTable **types_out,
   acedb_request = g_strdup_printf("%s", command) ;
 
   if ((server->last_err_status = AceConnRequest(server->connection, acedb_request,
-						&reply, &reply_len)) == ACECONN_OK)
+                                                &reply, &reply_len)) == ACECONN_OK)
     {
       ParseMethodFunc parse_func ;
       int num_types = 0 ;
@@ -2324,61 +2322,61 @@ static gboolean parseTypes(AcedbServer server, GHashTable **types_out,
 
       /* Set correct parser. */
       if (!parse_func_in)
-	{
-	  if (server->has_new_tags)
-	    parse_func = parseStyle ;
-	  else
-	    parse_func = parseMethod ;
-	}
+        {
+          if (server->has_new_tags)
+            parse_func = parseStyle ;
+          else
+            parse_func = parseMethod ;
+        }
 
 
       while ((next_line = strtok_r(scan_text, "\n", &curr_pos))
-	     && !g_str_has_prefix(next_line, "// "))
-	{
-	  ZMapFeatureTypeStyle style = NULL ;
-	  ZMapColGroupData col_group = NULL ;
+             && !g_str_has_prefix(next_line, "// "))
+        {
+          ZMapFeatureTypeStyle style = NULL ;
+          ZMapColGroupData col_group = NULL ;
 
-	  scan_text = NULL ;
+          scan_text = NULL ;
 
-	  if (parse_func_in)
-	    {
-	      GQuark method_id ;
+          if (parse_func_in)
+            {
+              GQuark method_id ;
 
-	      if ((method_id = (parse_func_in)(server, next_line, &curr_pos, user_data)))
-		{
-		  num_types++ ;
-		}
-	    }
-	  else if ((style = (parse_func)(next_line, &curr_pos, &col_group)))
-	    {
-	      if (!types)
-		types = g_hash_table_new(NULL, NULL) ;
+              if ((method_id = (parse_func_in)(server, next_line, &curr_pos, user_data)))
+                {
+                  num_types++ ;
+                }
+            }
+          else if ((style = (parse_func)(next_line, &curr_pos, &col_group)))
+            {
+              if (!types)
+                types = g_hash_table_new(NULL, NULL) ;
 
-	      g_hash_table_insert(types, GUINT_TO_POINTER(zMapStyleGetUniqueID(style)), (gpointer)style) ;
-	      num_types++ ;
-	    }
+              g_hash_table_insert(types, GUINT_TO_POINTER(zMapStyleGetUniqueID(style)), (gpointer)style) ;
+              num_types++ ;
+            }
 
-	}
+        }
 
       if (!num_types)
-	{
-	  result = FALSE ;
+        {
+          result = FALSE ;
 
-	  setErrMsg(server,  g_strdup("Styles found on server but they could not be parsed, check the log.")) ;
-	}
+          setErrMsg(server,  g_strdup("Styles found on server but they could not be parsed, check the log.")) ;
+        }
       else
-	{
-	  result = TRUE ;
+        {
+          result = TRUE ;
 
-	  if (!parse_func_in)
-	    {
-	      *types_out = types ;
+          if (!parse_func_in)
+            {
+              *types_out = types ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	      g_list_foreach(types, stylePrintCB, NULL) ; /* debug */
+              g_list_foreach(types, stylePrintCB, NULL) ; /* debug */
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-	    }
-	}
+            }
+        }
 
       g_free(reply) ;
       reply = NULL ;
@@ -2420,14 +2418,14 @@ static ZMapServerResponseType findMethods(AcedbServer server, char *search_str, 
     {
       /* Get all the methods or styles into the current keyset on the server. */
       if (server->has_new_tags)
-	command = "query find zmap_style" ;
+        command = "query find zmap_style" ;
       else
-	command = "query find method" ;
+        command = "query find method" ;
     }
 
   acedb_request =  g_strdup_printf("%s", command) ;
   if ((server->last_err_status = AceConnRequest(server->connection, (char *)acedb_request,
-						&reply, &reply_len)) == ACECONN_OK)
+                                                &reply, &reply_len)) == ACECONN_OK)
     {
       /* reply is:
        *
@@ -2442,25 +2440,25 @@ static ZMapServerResponseType findMethods(AcedbServer server, char *search_str, 
       int num_methods ;
 
       while ((next_line = strtok_r(scan_text, "\n", &curr_pos)))
-	{
-	  scan_text = NULL ;
+        {
+          scan_text = NULL ;
 
-	  if (g_str_has_prefix(next_line, "// "))
-	    {
-	      num_methods = getFoundObj(next_line) ;
-	      if (num_methods > 0)
-		{
-		  if (num_found_out)
-		    *num_found_out = num_methods ;
+          if (g_str_has_prefix(next_line, "// "))
+            {
+              num_methods = getFoundObj(next_line) ;
+              if (num_methods > 0)
+                {
+                  if (num_found_out)
+                    *num_found_out = num_methods ;
 
-		  result = ZMAP_SERVERRESPONSE_OK ;
-		}
-	      else
-		setErrMsg(server,  g_strdup_printf("Expected to find %s objects but found none.",
-						   (server->has_new_tags ? "ZMap_style" : "Method"))) ;
-	      break ;
-	    }
-	}
+                  result = ZMAP_SERVERRESPONSE_OK ;
+                }
+              else
+                setErrMsg(server,  g_strdup_printf("Expected to find %s objects but found none.",
+                                                   (server->has_new_tags ? "ZMap_style" : "Method"))) ;
+              break ;
+            }
+        }
 
       g_free(reply) ;
       reply = NULL ;
@@ -2477,8 +2475,8 @@ static ZMapServerResponseType findMethods(AcedbServer server, char *search_str, 
 /* The method string should be of the form:
  *
  * Method : "wublastx_briggsae"
- * Remark	 "wublastx search of C. elegans genomic clones vs C. briggsae peptides"
- * Colour	 LIGHTGREEN
+ * Remark        "wublastx search of C. elegans genomic clones vs C. briggsae peptides"
+ * Colour        LIGHTGREEN
  * etc
  * Style
  * <white space only lines>
@@ -2494,7 +2492,7 @@ static ZMapServerResponseType findMethods(AcedbServer server, char *search_str, 
  *
  */
 static gboolean parseMethodStyleNames(AcedbServer server, char *method_str_in,
-				      char **end_pos, gpointer user_data)
+                                      char **end_pos, gpointer user_data)
 {
   gboolean result = FALSE ;
   char *method_str = method_str_in ;
@@ -2509,62 +2507,62 @@ static gboolean parseMethodStyleNames(AcedbServer server, char *method_str_in,
     return FALSE ;
 
 
-  obj_lines = 0 ;				    /* Used to detect empty objects. */
+  obj_lines = 0 ;                                   /* Used to detect empty objects. */
   line_pos = NULL ;
   do
     {
       char *tag = NULL ;
 
       if (!(tag = strtok_r(next_line, "\t ", &line_pos)))
-	break ;
+        break ;
 
       /* We don't formally test this but Method _MUST_ be the first line of the acedb output
        * representing an object. */
       if (g_ascii_strcasecmp(tag, "Method") == 0)
-	{
-	  /* Line format:    Method : "possibly long method name"  */
-	  name = strtok_r(NULL, "\"", &line_pos) ;
-	  name = g_strdup(strtok_r(NULL, "\"", &line_pos)) ;
+        {
+          /* Line format:    Method : "possibly long method name"  */
+          name = strtok_r(NULL, "\"", &line_pos) ;
+          name = g_strdup(strtok_r(NULL, "\"", &line_pos)) ;
 
-	  if (!name)
-	    {
-	      result = FALSE ;
-	      break ;
-	    }
-	  else
-	    {
-	      result = TRUE ;
-	    }
-	}
+          if (!name)
+            {
+              result = FALSE ;
+              break ;
+            }
+          else
+            {
+              result = TRUE ;
+            }
+        }
       else if (server->has_new_tags && g_ascii_strcasecmp(tag, "Style") == 0)
-	{
-	  /* Format for this tag:   Style     "some_zmap_style" */
-	  zmap_style = strtok_r(NULL, "\"", &line_pos) ; /* Skip '"' */
-	  zmap_style = g_strdup(strtok_r(NULL, "\"", &line_pos)) ;
+        {
+          /* Format for this tag:   Style     "some_zmap_style" */
+          zmap_style = strtok_r(NULL, "\"", &line_pos) ; /* Skip '"' */
+          zmap_style = g_strdup(strtok_r(NULL, "\"", &line_pos)) ;
 
-	  if (!zmap_style)
-	    {
-	      result = FALSE ;
-	      break ;
-	    }
-	  else
-	    {
-	      result = TRUE ;
-	    }
-	}
+          if (!zmap_style)
+            {
+              result = FALSE ;
+              break ;
+            }
+          else
+            {
+              result = TRUE ;
+            }
+        }
       else if (server->has_new_tags && g_ascii_strcasecmp(tag, COL_PARENT) == 0)
-	{
-	  /* Format for this tag:   Column_parent     "some_method" */
-	  if ((col_parent = strtok_r(NULL, "\"", &line_pos))) /* Skip '"' */
-	    col_parent = g_strdup(strtok_r(NULL, "\"", &line_pos)) ;
-	}
+        {
+          /* Format for this tag:   Column_parent     "some_method" */
+          if ((col_parent = strtok_r(NULL, "\"", &line_pos))) /* Skip '"' */
+            col_parent = g_strdup(strtok_r(NULL, "\"", &line_pos)) ;
+        }
       else if (server->has_new_tags && g_ascii_strcasecmp(tag, "Remark") == 0)
-	{
-	  /* Line format:    Remark "possibly quite long bit of text"  */
+        {
+          /* Line format:    Remark "possibly quite long bit of text"  */
 
-	  remark = strtok_r(NULL, "\"", &line_pos) ;
-	  remark = g_strdup(strtok_r(NULL, "\"", &line_pos)) ;
-	}
+          remark = strtok_r(NULL, "\"", &line_pos) ;
+          remark = g_strdup(strtok_r(NULL, "\"", &line_pos)) ;
+        }
 
 
     }
@@ -2593,18 +2591,18 @@ static gboolean parseMethodStyleNames(AcedbServer server, char *method_str_in,
       style_id = zMapStyleCreateID(zmap_style) ;
 
       if (col_parent)
-	feature_set_id = zMapStyleCreateID(col_parent) ;
+        feature_set_id = zMapStyleCreateID(col_parent) ;
       else
-	feature_set_id = zMapStyleCreateID(name) ;
+        feature_set_id = zMapStyleCreateID(name) ;
 
       if (remark)
-	text_id = g_quark_from_string(remark) ;
+        text_id = g_quark_from_string(remark) ;
 
       get_sets->feature_methods = g_list_append(get_sets->feature_methods,
-						GINT_TO_POINTER(method_id)) ;
+                                                GINT_TO_POINTER(method_id)) ;
 
       get_sets->required_styles = g_list_append(get_sets->required_styles,
-						GINT_TO_POINTER(style_id)) ;
+                                                GINT_TO_POINTER(style_id)) ;
 
       zMap_g_hashlist_insert(get_sets->set_2_styles, feature_set_id, GINT_TO_POINTER(style_id)) ;
 
@@ -2619,8 +2617,8 @@ static gboolean parseMethodStyleNames(AcedbServer server, char *method_str_in,
   else
     {
       ZMAPSERVER_LOG(Critical, ACEDB_PROTOCOL_STR, server->host,
-		     "Feature Set \"%s\" : Method obj for feature set does not have a valid ZMap_style"
-		     " so this feature set will be excluded.", name) ;
+                     "Feature Set \"%s\" : Method obj for feature set does not have a valid ZMap_style"
+                     " so this feature set will be excluded.", name) ;
     }
 
 
@@ -2636,8 +2634,8 @@ static gboolean parseMethodStyleNames(AcedbServer server, char *method_str_in,
 /* The method string should be of the form:
  *
  * Method : "wublastx_briggsae"
- * Remark	 "wublastx search of C. elegans genomic clones vs C. briggsae peptides"
- * Colour	 LIGHTGREEN
+ * Remark        "wublastx search of C. elegans genomic clones vs C. briggsae peptides"
+ * Colour        LIGHTGREEN
  * Frame_sensitive
  * Show_up_strand
  * etc
@@ -2661,7 +2659,7 @@ static gboolean parseMethodStyleNames(AcedbServer server, char *method_str_in,
  *
  */
 static gboolean parseMethodColGroupNames(AcedbServer server, char *method_str_in,
-					 char **end_pos, gpointer user_data)
+                                         char **end_pos, gpointer user_data)
 {
   gboolean result = TRUE ;
   char *method_str = method_str_in ;
@@ -2669,7 +2667,7 @@ static gboolean parseMethodColGroupNames(AcedbServer server, char *method_str_in
   GetMethodsStyles get_sets = (GetMethodsStyles)user_data ;
   GList *feature_sets, *method_list, *child_list = NULL ;
   char *name = NULL, *column_parent = NULL, *column_child = NULL, *style = NULL, *remark = NULL ;
-  int obj_lines = 0 ;					    /* Used to detect empty objects. */
+  int obj_lines = 0 ;                                       /* Used to detect empty objects. */
   char *line_pos ;
 
 
@@ -2688,47 +2686,47 @@ static gboolean parseMethodColGroupNames(AcedbServer server, char *method_str_in
       char *tag = NULL ;
 
       if (!(tag = strtok_r(next_line, "\t ", &line_pos)))
-	break ;
+        break ;
 
       /* We don't formally test this but Method _MUST_ be the first line of the acedb output
        * representing an object. */
       if (g_ascii_strcasecmp(tag, "Method") == 0)
-	{
-	  /* Line format:    Method : "possibly long method name"  */
+        {
+          /* Line format:    Method : "possibly long method name"  */
 
-	  name = strtok_r(NULL, "\"", &line_pos) ;
-	  name = g_strdup(strtok_r(NULL, "\"", &line_pos)) ;
-	}
+          name = strtok_r(NULL, "\"", &line_pos) ;
+          name = g_strdup(strtok_r(NULL, "\"", &line_pos)) ;
+        }
       else if (g_ascii_strcasecmp(tag, COL_PARENT) == 0)
-	{
-	  /* Format for this tag:   Column_parent     "some_method_object" */
-	  column_parent = strtok_r(NULL, "\"", &line_pos) ; /* Skip '"' */
-	  column_parent = g_strdup(strtok_r(NULL, "\"", &line_pos)) ;
-	}
+        {
+          /* Format for this tag:   Column_parent     "some_method_object" */
+          column_parent = strtok_r(NULL, "\"", &line_pos) ; /* Skip '"' */
+          column_parent = g_strdup(strtok_r(NULL, "\"", &line_pos)) ;
+        }
       else if (g_ascii_strcasecmp(tag, COL_CHILD) == 0)
-	{
-	  /* Format for this tag:   Column_child     "some_method_object",
-	   * keep a list of all children found. */
-	  column_child = strtok_r(NULL, "\"", &line_pos) ;  /* Skip '"' */
-	  column_child = g_strdup(strtok_r(NULL, "\"", &line_pos)) ;
+        {
+          /* Format for this tag:   Column_child     "some_method_object",
+           * keep a list of all children found. */
+          column_child = strtok_r(NULL, "\"", &line_pos) ;  /* Skip '"' */
+          column_child = g_strdup(strtok_r(NULL, "\"", &line_pos)) ;
 
-	  child_list = g_list_append(child_list, GINT_TO_POINTER(zMapStyleCreateID(column_child))) ;
+          child_list = g_list_append(child_list, GINT_TO_POINTER(zMapStyleCreateID(column_child))) ;
 
-	  g_free(column_child) ;
-	}
+          g_free(column_child) ;
+        }
       else if (g_ascii_strcasecmp(tag, STYLE) == 0)
-	{
-	  /* Format for this tag:   Style     "some_style_object" */
-	  style = strtok_r(NULL, "\"", &line_pos) ; /* Skip '"' */
-	  style = g_strdup(strtok_r(NULL, "\"", &line_pos)) ;
-	}
+        {
+          /* Format for this tag:   Style     "some_style_object" */
+          style = strtok_r(NULL, "\"", &line_pos) ; /* Skip '"' */
+          style = g_strdup(strtok_r(NULL, "\"", &line_pos)) ;
+        }
       else if (g_ascii_strcasecmp(tag, "Remark") == 0)
-	{
-	  /* Line format:    Remark "possibly quite long bit of text"  */
+        {
+          /* Line format:    Remark "possibly quite long bit of text"  */
 
-	  remark = strtok_r(NULL, "\"", &line_pos) ;
-	  remark = g_strdup(strtok_r(NULL, "\"", &line_pos)) ;
-	}
+          remark = strtok_r(NULL, "\"", &line_pos) ;
+          remark = g_strdup(strtok_r(NULL, "\"", &line_pos)) ;
+        }
     }
   while (++obj_lines && **end_pos != '\n' && (next_line = strtok_r(NULL, "\n", end_pos))) ;
 
@@ -2751,58 +2749,58 @@ static gboolean parseMethodColGroupNames(AcedbServer server, char *method_str_in
   else
     {
       if (column_parent)
-	{
-	  /* None of these methods should be true "child" methods, they should either be parent
-	   * methods or feature set methods in their own right. */
+        {
+          /* None of these methods should be true "child" methods, they should either be parent
+           * methods or feature set methods in their own right. */
 
-	  result = FALSE ;
-	}
+          result = FALSE ;
+        }
       else
-	{
-	  if ((child_list && !style) || (!child_list && style))
-	    {
-	      HashFeatureSetStruct hash_data = {0} ;
-	      GQuark feature_set_id ;
+        {
+          if ((child_list && !style) || (!child_list && style))
+            {
+              HashFeatureSetStruct hash_data = {0} ;
+              GQuark feature_set_id ;
 
-	      feature_set_id = zMapStyleCreateID(name) ;
+              feature_set_id = zMapStyleCreateID(name) ;
 
-	      hash_data.feature_set_id = feature_set_id ;
-	      hash_data.remark = remark ;
-	      hash_data.method_2_feature_set = server->method_2_feature_set ;
+              hash_data.feature_set_id = feature_set_id ;
+              hash_data.remark = remark ;
+              hash_data.method_2_feature_set = server->method_2_feature_set ;
 
-	      /* Add this feature_set to valid list. */
-	      feature_sets = g_list_append(feature_sets, GINT_TO_POINTER(feature_set_id)) ;
+              /* Add this feature_set to valid list. */
+              feature_sets = g_list_append(feature_sets, GINT_TO_POINTER(feature_set_id)) ;
 
-	      if (!child_list)
-		{
-		  addMethodCB(GINT_TO_POINTER(zMapStyleCreateID(name)), &hash_data) ;
+              if (!child_list)
+                {
+                  addMethodCB(GINT_TO_POINTER(zMapStyleCreateID(name)), &hash_data) ;
 
-		  /* This has no children but has it's own features so add it to the feature
-		   * method list. */
-		  method_list = g_list_append(method_list, GINT_TO_POINTER(g_quark_from_string(name))) ;
-		}
-	      else
-		{
-		  g_list_foreach(child_list, addMethodCB, &hash_data) ;
+                  /* This has no children but has it's own features so add it to the feature
+                   * method list. */
+                  method_list = g_list_append(method_list, GINT_TO_POINTER(g_quark_from_string(name))) ;
+                }
+              else
+                {
+                  g_list_foreach(child_list, addMethodCB, &hash_data) ;
 
-		  /* Add all the child methods to the feature method list. */
-		  method_list = g_list_concat(method_list, child_list) ; /* Subsumes child list, no
-									    need to free. */
+                  /* Add all the child methods to the feature method list. */
+                  method_list = g_list_concat(method_list, child_list) ; /* Subsumes child list, no
+                                                                            need to free. */
 
-		  child_list = NULL ;
-		}
+                  child_list = NULL ;
+                }
 
-	      get_sets->feature_set_methods = feature_sets ;
-	      get_sets->feature_methods = method_list ;
-	    }
-	  else
-	    {
-	      zMapLogWarning("Method \"%s\" ignored, Column Methods should either have " COL_CHILD
+              get_sets->feature_set_methods = feature_sets ;
+              get_sets->feature_methods = method_list ;
+            }
+          else
+            {
+              zMapLogWarning("Method \"%s\" ignored, Column Methods should either have " COL_CHILD
                              " or " STYLE " tags, not both.", name) ;
 
-	      result = FALSE ;
-	    }
-	}
+              result = FALSE ;
+            }
+        }
     }
 
   if (child_list)
@@ -2828,8 +2826,8 @@ static void addMethodCB(gpointer data, gpointer user_data)
   set_data->feature_set_text = hash_data->remark ;
 
   g_hash_table_insert(hash_data->method_2_feature_set,
-		      GINT_TO_POINTER(child_id),
-		      set_data) ;
+                      GINT_TO_POINTER(child_id),
+                      set_data) ;
 
   return ;
 }
@@ -2840,8 +2838,8 @@ static void addMethodCB(gpointer data, gpointer user_data)
 /* The method string should be of the form:
  *
  * Method : "wublastx_briggsae"
- * Remark	 "wublastx search of C. elegans genomic clones vs C. briggsae peptides"
- * Colour	 LIGHTGREEN
+ * Remark        "wublastx search of C. elegans genomic clones vs C. briggsae peptides"
+ * Colour        LIGHTGREEN
  * Frame_sensitive
  * Show_up_strand
  * <white space only line>
@@ -2866,7 +2864,7 @@ static void addMethodCB(gpointer data, gpointer user_data)
  *
  */
 ZMapFeatureTypeStyle parseMethod(char *method_str_in,
-				 char **end_pos, ZMapColGroupData *col_group_data_out)
+                                 char **end_pos, ZMapColGroupData *col_group_data_out)
 {
   ZMapFeatureTypeStyle style = NULL ;
   char *method_str = method_str_in ;
@@ -2876,7 +2874,7 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
   char *gff_source = NULL, *gff_feature = NULL ;
   char *column_group = NULL, *orig_style = NULL ;
   ZMapStyleBumpMode default_bump_mode = ZMAPBUMP_OVERLAP, curr_bump_mode = ZMAPBUMP_UNBUMP ;
-  double width = -999.0 ;				    /* this is going to cause problems.... */
+  double width = -999.0 ;                                   /* this is going to cause problems.... */
   gboolean strand_specific = FALSE, show_up_strand = FALSE ;
   ZMapStyle3FrameMode frame_mode = ZMAPSTYLE_3_FRAME_INVALID ;
   ZMapStyleMode mode = ZMAPSTYLE_MODE_INVALID ;
@@ -2887,8 +2885,7 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
   double min_score = 0.0, max_score = 0.0 ;
   gboolean score_by_histogram = FALSE ;
   double histogram_baseline = 0.0 ;
-  gboolean status = TRUE, outline_flag = FALSE, directional_end = FALSE, gaps = FALSE, join_aligns = FALSE ;
-  gboolean deferred_flag = FALSE;
+  gboolean status = TRUE, directional_end = FALSE, gaps = FALSE, join_aligns = FALSE ;
   int obj_lines ;
   int between_align_error = 0 ;
   char *line_pos ;
@@ -2897,194 +2894,186 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
   if (!g_str_has_prefix(method_str, "Method : "))
     return style ;
 
-  obj_lines = 0 ;				    /* Used to detect empty objects. */
+  obj_lines = 0 ;                                   /* Used to detect empty objects. */
   line_pos = NULL ;
   do
     {
       char *tag = NULL ;
 
       if (!(tag = strtok_r(next_line, "\t ", &line_pos)))
-	break ;
+        break ;
 
       /* We don't formally test this but Method _MUST_ be the first line of the acedb output
        * representing an object. */
       if (g_ascii_strcasecmp(tag, "Method") == 0)
-	{
-	  /* Line format:    Method : "possibly long method name"  */
+        {
+          /* Line format:    Method : "possibly long method name"  */
 
-	  name = strtok_r(NULL, "\"", &line_pos) ;
-	  name = g_strdup(strtok_r(NULL, "\"", &line_pos)) ;
+          name = strtok_r(NULL, "\"", &line_pos) ;
+          name = g_strdup(strtok_r(NULL, "\"", &line_pos)) ;
 
-	}
+        }
 
       if (g_ascii_strcasecmp(tag, "Remark") == 0)
-	{
-	  /* Line format:    Remark "possibly quite long bit of text"  */
+        {
+          /* Line format:    Remark "possibly quite long bit of text"  */
 
-	  remark = strtok_r(NULL, "\"", &line_pos) ;
-	  remark = g_strdup(strtok_r(NULL, "\"", &line_pos)) ;
-	}
+          remark = strtok_r(NULL, "\"", &line_pos) ;
+          remark = g_strdup(strtok_r(NULL, "\"", &line_pos)) ;
+        }
       else if (g_ascii_strcasecmp(tag, "Colour") == 0)
-	{
-	  char *tmp_colour ;
+        {
+          char *tmp_colour ;
 
-	  tmp_colour = strtok_r(NULL, " ", &line_pos) ;
+          tmp_colour = strtok_r(NULL, " ", &line_pos) ;
 
-	  /* Is colour one of the standard acedb colours ? It's really an acedb bug if it
-	   * isn't.... */
-	  if (!(colour = getAcedbColourSpec(tmp_colour)))
-	    colour = tmp_colour ;
+          /* Is colour one of the standard acedb colours ? It's really an acedb bug if it
+           * isn't.... */
+          if (!(colour = getAcedbColourSpec(tmp_colour)))
+            colour = tmp_colour ;
 
-	  colour = g_strdup(colour) ;
-	}
+          colour = g_strdup(colour) ;
+        }
       else if (g_ascii_strcasecmp(tag, "ZMap_mode_text") == 0)
-	{
-	  mode = ZMAPSTYLE_MODE_TEXT ;
-	}
+        {
+          mode = ZMAPSTYLE_MODE_TEXT ;
+        }
       else if (g_ascii_strcasecmp(tag, "ZMap_mode_basic") == 0)
-	{
-	  mode = ZMAPSTYLE_MODE_BASIC ;
-	}
+        {
+          mode = ZMAPSTYLE_MODE_BASIC ;
+        }
       else if (g_ascii_strcasecmp(tag, "ZMap_mode_graph") == 0)
-	{
-	  mode = ZMAPSTYLE_MODE_GRAPH ;
-	}
-      else if (g_ascii_strcasecmp(tag, "Immediate") == 0)
-	{
-	  deferred_flag = FALSE ;
-	}
-      else if (g_ascii_strcasecmp(tag, "Outline") == 0)
-	{
-	  outline_flag = TRUE;
-	}
+        {
+          mode = ZMAPSTYLE_MODE_GRAPH ;
+        }
       else if (g_ascii_strcasecmp(tag, "CDS_colour") == 0)
-	{
-	  char *tmp_colour ;
+        {
+          char *tmp_colour ;
 
-	  tmp_colour = strtok_r(NULL, " ", &line_pos) ;
+          tmp_colour = strtok_r(NULL, " ", &line_pos) ;
 
-	  /* Is colour one of the standard acedb colours ? It's really an acedb bug if it
-	   * isn't.... */
-	  if (!(cds_colour = getAcedbColourSpec(tmp_colour)))
-	    cds_colour = tmp_colour ;
+          /* Is colour one of the standard acedb colours ? It's really an acedb bug if it
+           * isn't.... */
+          if (!(cds_colour = getAcedbColourSpec(tmp_colour)))
+            cds_colour = tmp_colour ;
 
-	  cds_colour = g_strdup(cds_colour) ;
-	}
+          cds_colour = g_strdup(cds_colour) ;
+        }
 
       /* The link between bump mode and what actually happens to the column is not straight
        * forward in acedb, really it should be partly dependant on feature type.... */
       else if (g_ascii_strcasecmp(tag, "Bump") == 0)
-	{
-	  default_bump_mode = ZMAPBUMP_OVERLAP ;
-	  curr_bump_mode = ZMAPBUMP_UNBUMP ;
-	}
+        {
+          default_bump_mode = ZMAPBUMP_OVERLAP ;
+          curr_bump_mode = ZMAPBUMP_UNBUMP ;
+        }
       else if (g_ascii_strcasecmp(tag, "Bumpable") == 0
-	       || g_ascii_strcasecmp(tag, "Cluster") == 0)
-	{
-	  default_bump_mode = curr_bump_mode = ZMAPBUMP_NAME_BEST_ENDS ;
-	}
+               || g_ascii_strcasecmp(tag, "Cluster") == 0)
+        {
+          default_bump_mode = curr_bump_mode = ZMAPBUMP_NAME_BEST_ENDS ;
+        }
 
       else if (g_ascii_strcasecmp(tag, "GFF_source") == 0)
-	{
-	  gff_source = g_strdup(strtok_r(NULL, " \"", &line_pos)) ;
-	}
+        {
+          gff_source = g_strdup(strtok_r(NULL, " \"", &line_pos)) ;
+        }
       else if (g_ascii_strcasecmp(tag, "GFF_feature") == 0)
-	{
-	  gff_feature = g_strdup(strtok_r(NULL, " \"", &line_pos)) ;
-	}
+        {
+          gff_feature = g_strdup(strtok_r(NULL, " \"", &line_pos)) ;
+        }
       else if (g_ascii_strcasecmp(tag, "Width") == 0)
-	{
-	  char *value ;
+        {
+          char *value ;
 
-	  value = strtok_r(NULL, " ", &line_pos) ;
+          value = strtok_r(NULL, " ", &line_pos) ;
 
-	  if (!(status = zMapStr2Double(value, &width)))
-	    {
-	      zMapLogWarning("No value for \"Width\" specified in method: %s", name) ;
-	      break ;
-	    }
-	}
+          if (!(status = zMapStr2Double(value, &width)))
+            {
+              zMapLogWarning("No value for \"Width\" specified in method: %s", name) ;
+              break ;
+            }
+        }
 
       else if (g_ascii_strcasecmp(tag, "Strand_sensitive") == 0)
-	strand_specific = TRUE ;
+        strand_specific = TRUE ;
       else if (g_ascii_strcasecmp(tag, "Show_up_strand") == 0)
-	show_up_strand = TRUE ;
+        show_up_strand = TRUE ;
       else if (g_ascii_strcasecmp(tag, "Frame_sensitive") == 0)
-	frame_mode = ZMAPSTYLE_3_FRAME_AS_WELL ;
+        frame_mode = ZMAPSTYLE_3_FRAME_AS_WELL ;
 
       else if (g_ascii_strcasecmp(tag, "No_display") == 0)
-	{
-	  /* Objects that have the No_display tag set should not be shown at all. */
-	  displayable = FALSE ;
+        {
+          /* Objects that have the No_display tag set should not be shown at all. */
+          displayable = FALSE ;
 
-	  /* If No_display is the first tag in the models file we end
-	   * up breaking here and obj_lines == 1 forcing status =
-	   * FALSE later on. */
+          /* If No_display is the first tag in the models file we end
+           * up breaking here and obj_lines == 1 forcing status =
+           * FALSE later on. */
 #ifdef CANT_BREAK_HERE
-	  break ;
+          break ;
 #endif
-	}
+        }
       else if (g_ascii_strcasecmp(tag, "init_hidden") == 0)
-	{
-	  col_state = ZMAPSTYLE_COLDISPLAY_HIDE ;
-	}
+        {
+          col_state = ZMAPSTYLE_COLDISPLAY_HIDE ;
+        }
       else if (g_ascii_strcasecmp(tag, "Directional_ends") == 0)
-	{
-	  directional_end = TRUE ;
-	}
+        {
+          directional_end = TRUE ;
+        }
       else if (g_ascii_strcasecmp(tag, "Gapped") == 0)
-	{
-	  gaps = TRUE ;
-	}
+        {
+          gaps = TRUE ;
+        }
       else if (g_ascii_strcasecmp(tag, "Join_aligns") == 0)
-	{
-	  char *value ;
+        {
+          char *value ;
 
-	  join_aligns = TRUE ;
+          join_aligns = TRUE ;
 
-	  if ((value = strtok_r(NULL, " ", &line_pos)))
-	    {
-	      if (!(status = zMapStr2Int(value, &between_align_error)))
-		{
-		  zMapLogWarning("Bad value for \"Join_aligns\" align error specified in method: %s", name) ;
+          if ((value = strtok_r(NULL, " ", &line_pos)))
+            {
+              if (!(status = zMapStr2Int(value, &between_align_error)))
+                {
+                  zMapLogWarning("Bad value for \"Join_aligns\" align error specified in method: %s", name) ;
 
-		  break ;
-		}
-	    }
-	}
+                  break ;
+                }
+            }
+        }
       else if (g_ascii_strcasecmp(tag, "Min_mag") == 0)
-	{
-	  char *value ;
+        {
+          char *value ;
 
-	  value = strtok_r(NULL, " ", &line_pos) ;
+          value = strtok_r(NULL, " ", &line_pos) ;
 
-	  if (!(status = zMapStr2Double(value, &min_mag)))
-	    {
-	      zMapLogWarning("Bad value for \"Min_mag\" specified in method: %s", name) ;
+          if (!(status = zMapStr2Double(value, &min_mag)))
+            {
+              zMapLogWarning("Bad value for \"Min_mag\" specified in method: %s", name) ;
 
-	      break ;
-	    }
-	}
+              break ;
+            }
+        }
       else if (g_ascii_strcasecmp(tag, "Max_mag") == 0)
-	{
-	  char *value ;
+        {
+          char *value ;
 
-	  value = strtok_r(NULL, " ", &line_pos) ;
+          value = strtok_r(NULL, " ", &line_pos) ;
 
-	  if (!(status = zMapStr2Double(value, &max_mag)))
-	    {
-	      zMapLogWarning("Bad value for \"Max_mag\" specified in method: %s", name) ;
+          if (!(status = zMapStr2Double(value, &max_mag)))
+            {
+              zMapLogWarning("Bad value for \"Max_mag\" specified in method: %s", name) ;
 
-	      break ;
-	    }
-	}
+              break ;
+            }
+        }
       else if (g_ascii_strcasecmp(tag, "Score_by_histogram") == 0)
-	{
-	  char *value ;
+        {
+          char *value ;
 
-	  score_by_histogram = TRUE ;
+          score_by_histogram = TRUE ;
 
-	  if((value = strtok_r(NULL, " ", &line_pos)))
+          if((value = strtok_r(NULL, " ", &line_pos)))
             {
               if (!(status = zMapStr2Double(value, &histogram_baseline)))
                 {
@@ -3093,33 +3082,33 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
                   break ;
                 }
             }
-	}
+        }
       else if (g_ascii_strcasecmp(tag, "Score_bounds") == 0)
-	{
-	  char *value ;
+        {
+          char *value ;
 
-	  score_set = TRUE ;
+          score_set = TRUE ;
 
-	  value = strtok_r(NULL, " ", &line_pos) ;
+          value = strtok_r(NULL, " ", &line_pos) ;
 
-	  if (!(status = zMapStr2Double(value, &min_score)))
-	    {
-	      zMapLogWarning("Bad value for \"Score_bounds\" specified in method: %s", name) ;
-	      score_set = FALSE ;
-	      break ;
-	    }
-	  else
-	    {
-	      value = strtok_r(NULL, " ", &line_pos) ;
+          if (!(status = zMapStr2Double(value, &min_score)))
+            {
+              zMapLogWarning("Bad value for \"Score_bounds\" specified in method: %s", name) ;
+              score_set = FALSE ;
+              break ;
+            }
+          else
+            {
+              value = strtok_r(NULL, " ", &line_pos) ;
 
-	      if (!(status = zMapStr2Double(value, &max_score)))
-		{
-		  zMapLogWarning("Bad value for \"Score_bounds\" specified in method: %s", name) ;
-		  score_set = FALSE ;
-		  break ;
-		}
-	    }
-	}
+              if (!(status = zMapStr2Double(value, &max_score)))
+                {
+                  zMapLogWarning("Bad value for \"Score_bounds\" specified in method: %s", name) ;
+                  score_set = FALSE ;
+                  break ;
+                }
+            }
+        }
     }
   while (++obj_lines && **end_pos != '\n' && (next_line = strtok_r(NULL, "\n", end_pos))) ;
 
@@ -3147,99 +3136,99 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
       style = zMapStyleCreate(name, remark) ;
 
       if (mode != ZMAPSTYLE_MODE_INVALID)
-	zMapStyleSetMode(style, mode) ;
+        zMapStyleSetMode(style, mode) ;
 
 
       /* In acedb methods the colour is interpreted differently according to the type of the
        * feature which we have to intuit here from the GFF type. acedb also has colour names
        * that don't exist in X Windows. */
       if (colour || cds_colour)
-	{
-	  /* When it comes to colours acedb has some built in rules which we have to simulate,
-	   * e.g. "Colour" when applied to transcripts means "outline", not "fill".
-	   *  */
+        {
+          /* When it comes to colours acedb has some built in rules which we have to simulate,
+           * e.g. "Colour" when applied to transcripts means "outline", not "fill".
+           *  */
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  /* THIS IS REALLY THE PLACE THAT WE SHOULD SET UP THE ACEDB SPECIFIC DISPLAY STUFF... */
+          /* THIS IS REALLY THE PLACE THAT WE SHOULD SET UP THE ACEDB SPECIFIC DISPLAY STUFF... */
 
-	  /* this doesn't work because it messes up the rev. video.... */
-	  if (gff_type && (g_ascii_strcasecmp(gff_type, "\"similarity\"") == 0
-			   || g_ascii_strcasecmp(gff_type, "\"repeat\"")
-			   || g_ascii_strcasecmp(gff_type, "\"experimental\"")))
-	    background = colour ;
-	  else
-	    outline = colour ;
+          /* this doesn't work because it messes up the rev. video.... */
+          if (gff_type && (g_ascii_strcasecmp(gff_type, "\"similarity\"") == 0
+                           || g_ascii_strcasecmp(gff_type, "\"repeat\"")
+                           || g_ascii_strcasecmp(gff_type, "\"experimental\"")))
+            background = colour ;
+          else
+            outline = colour ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-	  /* Set default acedb colours. */
-	  background = colour ;
-	  outline = "black" ;
+          /* Set default acedb colours. */
+          background = colour ;
+          outline = "black" ;
 
-	  /* If there's a cds then it must be a transcript which are shown in outline. */
-	  if (cds_colour
-	      || g_ascii_strcasecmp(name, "coding_transcript") == 0)
-	    {
-	      outline = colour ;
-	      background = NULL ;
-	    }
+          /* If there's a cds then it must be a transcript which are shown in outline. */
+          if (cds_colour
+              || g_ascii_strcasecmp(name, "coding_transcript") == 0)
+            {
+              outline = colour ;
+              background = NULL ;
+            }
 
 
-	  if (colour)
-	    zMapStyleSetColoursStr(style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
+          if (colour)
+            zMapStyleSetColoursStr(style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
                                    background, foreground, outline) ;
 
-	  if (cds_colour)
-	    {
-	      zMapStyleSetColoursStr(style, STYLE_PROP_TRANSCRIPT_CDS_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
+          if (cds_colour)
+            {
+              zMapStyleSetColoursStr(style, STYLE_PROP_TRANSCRIPT_CDS_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
                                      NULL, NULL, cds_colour) ;
-	      g_free((void *)cds_colour);
-	      cds_colour = NULL;
-	    }
-	}
+              g_free((void *)cds_colour);
+              cds_colour = NULL;
+            }
+        }
 
 
       if (width != -999.0)
-	{
-	  /* acedb widths are wider on the screen than zmaps, so scale them up. */
-	  width = width * ACEDB_MAG_FACTOR ;
+        {
+          /* acedb widths are wider on the screen than zmaps, so scale them up. */
+          width = width * ACEDB_MAG_FACTOR ;
 
-	  zMapStyleSetWidth(style, width) ;
-	}
+          zMapStyleSetWidth(style, width) ;
+        }
 
       if (parent)
-	zMapStyleSetParent(style, parent) ;
+        zMapStyleSetParent(style, parent) ;
 
       if (min_mag || max_mag)
-	zMapStyleSetMag(style, min_mag, max_mag) ;
+        zMapStyleSetMag(style, min_mag, max_mag) ;
 
       /* Note that we require bounds to be set for graphing.... */
       if (score_set)
-	{
-	  ZMapStyleGraphMode graph_mode = ZMAPSTYLE_GRAPH_HISTOGRAM ; /* Hard coded for now. */
+        {
+          ZMapStyleGraphMode graph_mode = ZMAPSTYLE_GRAPH_HISTOGRAM ; /* Hard coded for now. */
 
-	  if (score_by_histogram)
-	    zMapStyleSetGraph(style, graph_mode, min_score, max_score, histogram_baseline) ;
-	  else
-	    zMapStyleSetScore(style, min_score, max_score) ;
-	}
+          if (score_by_histogram)
+            zMapStyleSetGraph(style, graph_mode, min_score, max_score, histogram_baseline) ;
+          else
+            zMapStyleSetScore(style, min_score, max_score) ;
+        }
 
       if (strand_specific)
-	zMapStyleSetStrandSpecific(style, strand_specific) ;
+        zMapStyleSetStrandSpecific(style, strand_specific) ;
 
       if (show_up_strand)
-	zMapStyleSetStrandShowReverse(style, show_up_strand) ;
+        zMapStyleSetStrandShowReverse(style, show_up_strand) ;
 
       if (frame_mode)
-	zMapStyleSetFrameMode(style, frame_mode) ;
+        zMapStyleSetFrameMode(style, frame_mode) ;
 
       zMapStyleInitBumpMode(style, default_bump_mode, curr_bump_mode) ;
 
       if (gff_source || gff_feature)
-	zMapStyleSetGFF(style, gff_source, gff_feature) ;
+        zMapStyleSetGFF(style, gff_source, gff_feature) ;
 
       zMapStyleSetDisplayable(style, displayable) ;
 
       if (col_state != ZMAPSTYLE_COLDISPLAY_INVALID)
-	zMapStyleSetDisplay(style, col_state) ;
+        zMapStyleSetDisplay(style, col_state) ;
 
       if(directional_end)
         zMapStyleSetEndStyle(style, directional_end);
@@ -3247,10 +3236,10 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
       /* Current setting is for gaps to be parsed but they will only
        * be displayed when the feature is bumped. */
       if (gaps)
-	zMapStyleSetGappedAligns(style, TRUE, FALSE) ;
+        zMapStyleSetGappedAligns(style, TRUE, FALSE) ;
 
       if (join_aligns)
-	zMapStyleSetJoinAligns(style, between_align_error) ;
+        zMapStyleSetJoinAligns(style, between_align_error) ;
     }
 
 
@@ -3273,11 +3262,11 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
  *
  * ZMap_style : "Allele"
  * Description   "Alleles in WormBase represent small sequence mutations...etc"
- * Colours	 Normal Fill "ORANGE"
- * Width	 1.100000
+ * Colours       Normal Fill "ORANGE"
+ * Width         1.100000
  * Strand_sensitive
- * GFF	 Source "Allele"
- * GFF	 Feature "Allele"
+ * GFF   Source "Allele"
+ * GFF   Feature "Allele"
  * <white space only line>
  * more styles....
  *
@@ -3300,7 +3289,7 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
  *
  */
 ZMapFeatureTypeStyle parseStyle(char *style_str_in,
-				char **end_pos, ZMapColGroupData *col_group_data_out)
+                                char **end_pos, ZMapColGroupData *col_group_data_out)
 {
   ZMapFeatureTypeStyle style = NULL ;
   gboolean status = TRUE ;
@@ -3312,7 +3301,6 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
     *gff_source = NULL, *gff_feature = NULL,
     *column_group = NULL, *orig_style = NULL ;
   gboolean width_set = FALSE ;
-  gboolean deferred = FALSE ;
   double width = 0.0 ;
   gboolean strand_specific = FALSE, show_up_strand = FALSE ;
   ZMapStyle3FrameMode frame_mode = ZMAPSTYLE_3_FRAME_INVALID ;
@@ -3340,7 +3328,7 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
   gboolean some_CDS_colours = FALSE ;
   StyleFeatureColoursStruct CDS_style_colours = {{NULL}, {NULL}} ;
   double min_score = 0.0, max_score = 0.0 ;
-  gboolean score_by_width, score_is_percent ;
+  gboolean score_by_width ;
   gboolean histogram = FALSE, score_set = FALSE ;
   double histogram_baseline = 0.0 ;
   gboolean pfetchable = FALSE ;
@@ -3351,7 +3339,7 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
     return style ;
 
 
-  obj_lines = 0 ;				    /* Used to detect empty objects. */
+  obj_lines = 0 ;                                   /* Used to detect empty objects. */
   line_pos = NULL ;
   do
     {
@@ -3359,35 +3347,31 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 
 
       if (!(tag = strtok_r(next_line, "\t ", &line_pos)))
-	break ;
+        break ;
 
       /* We don't formally test this but Style _MUST_ be the first line of the acedb output
        * representing an object. */
       if (g_ascii_strcasecmp(tag, "ZMap_style") == 0)
-	{
-	  /* Line format:    ZMap_style : "possibly long style name"  */
+        {
+          /* Line format:    ZMap_style : "possibly long style name"  */
 
-	  name = strtok_r(NULL, "\"", &line_pos) ;
-	  name = g_strdup(strtok_r(NULL, "\"", &line_pos)) ;
-	}
+          name = strtok_r(NULL, "\"", &line_pos) ;
+          name = g_strdup(strtok_r(NULL, "\"", &line_pos)) ;
+        }
 
 
       if (g_ascii_strcasecmp(tag, "Description") == 0)
-	{
-	  /* Line format:    Description "possibly quite long bit of text"  */
+        {
+          /* Line format:    Description "possibly quite long bit of text"  */
 
-	  description = strtok_r(NULL, "\"", &line_pos) ;
-	  description = g_strdup(strtok_r(NULL, "\"", &line_pos)) ;
-	}
+          description = strtok_r(NULL, "\"", &line_pos) ;
+          description = g_strdup(strtok_r(NULL, "\"", &line_pos)) ;
+        }
       else if (g_ascii_strcasecmp(tag, "Style_parent") == 0)
-	{
-	  parent = strtok_r(NULL, "\"", &line_pos) ;
-	  parent = g_strdup(strtok_r(NULL, "\"", &line_pos)) ;
-	}
-      else if (g_ascii_strcasecmp(tag, "Immediate") == 0)
-	{
-	  deferred = FALSE ;
-	}
+        {
+          parent = strtok_r(NULL, "\"", &line_pos) ;
+          parent = g_strdup(strtok_r(NULL, "\"", &line_pos)) ;
+        }
 
 
       /* OK, THIS MODE STUFF IS NO GOOD, WE NEED TO USE THE STYLE CALL THAT WILL HAVE THE LATEST
@@ -3395,347 +3379,341 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 
       /* Grab the mode... */
       else if (g_ascii_strcasecmp(tag, "Basic") == 0)
-	{
-	  mode = ZMAPSTYLE_MODE_BASIC ;
-	}
+        {
+          mode = ZMAPSTYLE_MODE_BASIC ;
+        }
       else if (g_ascii_strcasecmp(tag, "Transcript") == 0)
-	{
-	  char *tmp_next_tag ;
+        {
+          char *tmp_next_tag ;
 
-	  mode = ZMAPSTYLE_MODE_TRANSCRIPT ;
+          mode = ZMAPSTYLE_MODE_TRANSCRIPT ;
 
-	  if ((tmp_next_tag = strtok_r(NULL, " ", &line_pos)))
-	    {
-	      if (g_ascii_strcasecmp(tmp_next_tag, "CDS_colour") == 0)
-		{
-		  gboolean colour_parse ;
+          if ((tmp_next_tag = strtok_r(NULL, " ", &line_pos)))
+            {
+              if (g_ascii_strcasecmp(tmp_next_tag, "CDS_colour") == 0)
+                {
+                  gboolean colour_parse ;
 
-		  if ((colour_parse = getStyleColour(&CDS_style_colours, &line_pos)))
-		    some_CDS_colours = TRUE ;
-		  else
-		    zMapLogWarning("Style \"%s\": Bad CDS colour spec: %s", name, next_line) ;
-		}
-	      /* OTHER THINGS WILL NEED TO BE PARSED HERE AS WE EXPAND THIS.... */
-	    }
-	}
+                  if ((colour_parse = getStyleColour(&CDS_style_colours, &line_pos)))
+                    some_CDS_colours = TRUE ;
+                  else
+                    zMapLogWarning("Style \"%s\": Bad CDS colour spec: %s", name, next_line) ;
+                }
+              /* OTHER THINGS WILL NEED TO BE PARSED HERE AS WE EXPAND THIS.... */
+            }
+        }
       else if (g_ascii_strcasecmp(tag, "Alignment") == 0)
-	{
-	  char *align_type ;
-	  char *value ;
+        {
+          char *align_type ;
+          char *value ;
 
-	  mode = ZMAPSTYLE_MODE_ALIGNMENT ;
+          mode = ZMAPSTYLE_MODE_ALIGNMENT ;
 
-	  if ((align_type = strtok_r(NULL, " ", &line_pos)))
-	    {
-	      if (g_ascii_strcasecmp(align_type, "Join_align") == 0)
-		{
-		  join_aligns = TRUE ;
+          if ((align_type = strtok_r(NULL, " ", &line_pos)))
+            {
+              if (g_ascii_strcasecmp(align_type, "Join_align") == 0)
+                {
+                  join_aligns = TRUE ;
 
-		  value = strtok_r(NULL, " ", &line_pos) ;
+                  value = strtok_r(NULL, " ", &line_pos) ;
 
-		  if (value && !(status = zMapStr2Int(value, &join_align)))
-		    {
-		      zMapLogWarning("Style \"%s\": Bad Join_align factor \"Alignment Join_align %s\"",
-				     name, value) ;
-		      break ;
-		    }
-		}
-	      else if (g_ascii_strcasecmp(align_type, "Parse") == 0)
-		parse_gaps = TRUE ;
-	      else if (g_ascii_strcasecmp(align_type, "Show") == 0)
-		parse_gaps = show_gaps = TRUE ;
-	      else if (g_ascii_strcasecmp(align_type, "Allow_misalign") == 0)
-		allow_misalign = TRUE ;
-	      else if (g_ascii_strcasecmp(align_type, "Pfetchable") == 0)
-		pfetchable = TRUE ;
-	      else if (g_ascii_strcasecmp(align_type, "Blixem_N") == 0)
-		blixem_type = ZMAPSTYLE_BLIXEM_N ;
-	      else if (g_ascii_strcasecmp(align_type, "Blixem_X") == 0)
-		blixem_type = ZMAPSTYLE_BLIXEM_X ;
-	      else
-		zMapLogWarning("Style \"%s\": Unknown tag \"%s\" for \"Alignment\" specified in style: %s",
-			       name, align_type, name) ;
+                  if (value && !(status = zMapStr2Int(value, &join_align)))
+                    {
+                      zMapLogWarning("Style \"%s\": Bad Join_align factor \"Alignment Join_align %s\"",
+                                     name, value) ;
+                      break ;
+                    }
+                }
+              else if (g_ascii_strcasecmp(align_type, "Parse") == 0)
+                parse_gaps = TRUE ;
+              else if (g_ascii_strcasecmp(align_type, "Show") == 0)
+                parse_gaps = show_gaps = TRUE ;
+              else if (g_ascii_strcasecmp(align_type, "Allow_misalign") == 0)
+                allow_misalign = TRUE ;
+              else if (g_ascii_strcasecmp(align_type, "Pfetchable") == 0)
+                pfetchable = TRUE ;
+              else if (g_ascii_strcasecmp(align_type, "Blixem_N") == 0)
+                blixem_type = ZMAPSTYLE_BLIXEM_N ;
+              else if (g_ascii_strcasecmp(align_type, "Blixem_X") == 0)
+                blixem_type = ZMAPSTYLE_BLIXEM_X ;
+              else
+                zMapLogWarning("Style \"%s\": Unknown tag \"%s\" for \"Alignment\" specified in style: %s",
+                               name, align_type, name) ;
 
-	    }
-	}
+            }
+        }
       else if (g_ascii_strcasecmp(tag, "Sequence") == 0
-	       || g_ascii_strcasecmp(tag, "Peptide") == 0)
-	{
-	  mode = ZMAPSTYLE_MODE_SEQUENCE ;
-	}
+               || g_ascii_strcasecmp(tag, "Peptide") == 0)
+        {
+          mode = ZMAPSTYLE_MODE_SEQUENCE ;
+        }
       else if (g_ascii_strcasecmp(tag, "Assembly_path") == 0)
-	{
-	  mode = ZMAPSTYLE_MODE_ASSEMBLY_PATH ;
-	}
+        {
+          mode = ZMAPSTYLE_MODE_ASSEMBLY_PATH ;
+        }
       else if (g_ascii_strcasecmp(tag, "Plain_text") == 0)
-	{
-	  mode = ZMAPSTYLE_MODE_TEXT ;
-	}
+        {
+          mode = ZMAPSTYLE_MODE_TEXT ;
+        }
       else if (g_ascii_strcasecmp(tag, "Graph") == 0)
-	{
-	  char *tmp_next_tag ;
+        {
+          char *tmp_next_tag ;
 
-	  mode = ZMAPSTYLE_MODE_GRAPH ;
+          mode = ZMAPSTYLE_MODE_GRAPH ;
 
-	  tmp_next_tag = strtok_r(NULL, " ", &line_pos) ;
+          tmp_next_tag = strtok_r(NULL, " ", &line_pos) ;
 
-	  if (g_ascii_strcasecmp(tmp_next_tag, "Histogram") == 0)
-	    {
-	      histogram = TRUE ;
-	    }
-	  else if (g_ascii_strcasecmp(tmp_next_tag, "Baseline") == 0)
-	    {
-	      char *value ;
+          if (g_ascii_strcasecmp(tmp_next_tag, "Histogram") == 0)
+            {
+              histogram = TRUE ;
+            }
+          else if (g_ascii_strcasecmp(tmp_next_tag, "Baseline") == 0)
+            {
+              char *value ;
 
-	      value = strtok_r(NULL, " ", &line_pos) ;
+              value = strtok_r(NULL, " ", &line_pos) ;
 
-	      if (!(status = zMapStr2Double(value, &histogram_baseline)))
-		{
-		  zMapLogWarning("Style \"%s\": No value for \"Baseline\".", name) ;
-		  break ;
-		}
-	    }
-	}
+              if (!(status = zMapStr2Double(value, &histogram_baseline)))
+                {
+                  zMapLogWarning("Style \"%s\": No value for \"Baseline\".", name) ;
+                  break ;
+                }
+            }
+        }
       else if (g_ascii_strcasecmp(tag, "Glyph") == 0)
-	{
-	  char *tmp_next_tag ;
+        {
+          char *tmp_next_tag ;
 
-	  mode = ZMAPSTYLE_MODE_GLYPH ;
+          mode = ZMAPSTYLE_MODE_GLYPH ;
 
-	  tmp_next_tag = strtok_r(NULL, " ", &line_pos) ;
+          tmp_next_tag = strtok_r(NULL, " ", &line_pos) ;
 
-	  if (tmp_next_tag && g_ascii_strcasecmp(tmp_next_tag, "Splice") == 0)
-	    {
-//	      glyph_mode = ZMAPSTYLE_GLYPH_3FRAME_SPLICE ;
-	    }
-	}
+          if (tmp_next_tag && g_ascii_strcasecmp(tmp_next_tag, "Splice") == 0)
+            {
+//            glyph_mode = ZMAPSTYLE_GLYPH_3FRAME_SPLICE ;
+            }
+        }
       else if (g_ascii_strcasecmp(tag, "Colours") == 0)
-	{
-	  gboolean colour_parse ;
+        {
+          gboolean colour_parse ;
 
-	  if ((colour_parse = getStyleColour(&style_colours, &line_pos)))
-	    some_colours = TRUE ;
-	  else
-	    zMapLogWarning("Style \"%s\": Bad colour spec: %s", name, next_line) ;
-	}
+          if ((colour_parse = getStyleColour(&style_colours, &line_pos)))
+            some_colours = TRUE ;
+          else
+            zMapLogWarning("Style \"%s\": Bad colour spec: %s", name, next_line) ;
+        }
       else if (g_ascii_strcasecmp(tag, "Frame_0") == 0
-	       || g_ascii_strcasecmp(tag, "Frame_1") == 0
-	       || g_ascii_strcasecmp(tag, "Frame_2") == 0)
-	{
-	  StyleFeatureColours colours = NULL ;
-	  gboolean *is_set = NULL ;
+               || g_ascii_strcasecmp(tag, "Frame_1") == 0
+               || g_ascii_strcasecmp(tag, "Frame_2") == 0)
+        {
+          StyleFeatureColours colours = NULL ;
+          gboolean *is_set = NULL ;
 
-	  if (g_ascii_strcasecmp(tag, "Frame_0") == 0)
-	    {
-	      colours = &frame0_style_colours ;
-	      is_set = &some_frame0_colours ;
-	    }
-	  else if (g_ascii_strcasecmp(tag, "Frame_1") == 0)
-	    {
-	      colours = &frame1_style_colours ;
-	      is_set = &some_frame1_colours ;
-	    }
-	  else if (g_ascii_strcasecmp(tag, "Frame_2") == 0)
-	    {
-	      colours = &frame2_style_colours ;
-	      is_set = &some_frame2_colours ;
-	    }
+          if (g_ascii_strcasecmp(tag, "Frame_0") == 0)
+            {
+              colours = &frame0_style_colours ;
+              is_set = &some_frame0_colours ;
+            }
+          else if (g_ascii_strcasecmp(tag, "Frame_1") == 0)
+            {
+              colours = &frame1_style_colours ;
+              is_set = &some_frame1_colours ;
+            }
+          else if (g_ascii_strcasecmp(tag, "Frame_2") == 0)
+            {
+              colours = &frame2_style_colours ;
+              is_set = &some_frame2_colours ;
+            }
 
-	  if (!colours)
-	    {
-	      zMapLogWarning("Style \"%s\": Bad Frame name: %s", name, next_line) ;
-	    }
-	  else
-	    {
-	      gboolean colour_parse ;
+          if (!colours)
+            {
+              zMapLogWarning("Style \"%s\": Bad Frame name: %s", name, next_line) ;
+            }
+          else
+            {
+              gboolean colour_parse ;
 
-	      if ((colour_parse = getStyleColour(colours, &line_pos)))
-		*is_set = TRUE ;
-	      else
-		zMapLogWarning("Style \"%s\": Bad colour spec: %s", name, next_line) ;
-	    }
-	}
+              if ((colour_parse = getStyleColour(colours, &line_pos)))
+                *is_set = TRUE ;
+              else
+                zMapLogWarning("Style \"%s\": Bad colour spec: %s", name, next_line) ;
+            }
+        }
 
       /* Bumping types */
       else if (g_ascii_strcasecmp(tag, "Bump_initial") == 0 || g_ascii_strcasecmp(tag, "Bump_default") == 0)
-	{
-	  char *tmp_next_tag ;
-	  ZMapStyleBumpMode *tmp_bump ;
+        {
+          char *tmp_next_tag ;
+          ZMapStyleBumpMode *tmp_bump ;
 
-	  if (g_ascii_strcasecmp(tag, "Bump_initial") == 0)
-	    {
-	      tmp_bump = &curr_bump_mode ;
-	      bump_mode_set = TRUE ;
-	    }
-	  else
-	    {
-	      tmp_bump = &default_bump_mode ;
-	      bump_default_set = TRUE ;
-	    }
+          if (g_ascii_strcasecmp(tag, "Bump_initial") == 0)
+            {
+              tmp_bump = &curr_bump_mode ;
+              bump_mode_set = TRUE ;
+            }
+          else
+            {
+              tmp_bump = &default_bump_mode ;
+              bump_default_set = TRUE ;
+            }
 
-	  tmp_next_tag = strtok_r(NULL, " ", &line_pos) ;
+          tmp_next_tag = strtok_r(NULL, " ", &line_pos) ;
 
-	  if (g_ascii_strcasecmp(tmp_next_tag, "Unbump") == 0)
-	    *tmp_bump = ZMAPBUMP_UNBUMP ;
-	  else if (g_ascii_strcasecmp(tmp_next_tag, "Overlap") == 0)
-	    *tmp_bump = ZMAPBUMP_OVERLAP ;
-//	  else if (g_ascii_strcasecmp(tmp_next_tag, "Navigator") == 0)
-//	    *tmp_bump = ZMAPBUMP_NAVIGATOR ;
+          if (g_ascii_strcasecmp(tmp_next_tag, "Unbump") == 0)
+            *tmp_bump = ZMAPBUMP_UNBUMP ;
+          else if (g_ascii_strcasecmp(tmp_next_tag, "Overlap") == 0)
+            *tmp_bump = ZMAPBUMP_OVERLAP ;
+//        else if (g_ascii_strcasecmp(tmp_next_tag, "Navigator") == 0)
+//          *tmp_bump = ZMAPBUMP_NAVIGATOR ;
 // we'll get an error if this legcay stuff appears, gets mapped to alternating and doesn't work very well anyway
-	  else if (g_ascii_strcasecmp(tmp_next_tag, "Start_position") == 0)
-	    *tmp_bump = ZMAPBUMP_START_POSITION ;
-	  else if (g_ascii_strcasecmp(tmp_next_tag, "Alternating") == 0)
-	    *tmp_bump = ZMAPBUMP_ALTERNATING ;
-	  else if (g_ascii_strcasecmp(tmp_next_tag, "All") == 0)
-	    *tmp_bump = ZMAPBUMP_ALL ;
-	  else if (g_ascii_strcasecmp(tmp_next_tag, "Name") == 0)
-	    *tmp_bump = ZMAPBUMP_NAME ;
-	  else if (g_ascii_strcasecmp(tmp_next_tag, "Name_interleave") == 0)
-	    *tmp_bump = ZMAPBUMP_NAME_INTERLEAVE ;
-	  else if (g_ascii_strcasecmp(tmp_next_tag, "Name_no_interleave") == 0)
-	    *tmp_bump = ZMAPBUMP_NAME_NO_INTERLEAVE ;
-	  else if (g_ascii_strcasecmp(tmp_next_tag, "Name_colinear") == 0)
-	    *tmp_bump = ZMAPBUMP_NAME_COLINEAR ;
-	  else if (g_ascii_strcasecmp(tmp_next_tag, "Name_best_ends") == 0)
-	    *tmp_bump = ZMAPBUMP_NAME_BEST_ENDS ;
-	  else
-	    zMapLogWarning("Style \"%s\": Bad bump spec: %d", name, *tmp_bump) ;
-	}
+          else if (g_ascii_strcasecmp(tmp_next_tag, "Start_position") == 0)
+            *tmp_bump = ZMAPBUMP_START_POSITION ;
+          else if (g_ascii_strcasecmp(tmp_next_tag, "Alternating") == 0)
+            *tmp_bump = ZMAPBUMP_ALTERNATING ;
+          else if (g_ascii_strcasecmp(tmp_next_tag, "All") == 0)
+            *tmp_bump = ZMAPBUMP_ALL ;
+          else if (g_ascii_strcasecmp(tmp_next_tag, "Name") == 0)
+            *tmp_bump = ZMAPBUMP_NAME ;
+          else if (g_ascii_strcasecmp(tmp_next_tag, "Name_interleave") == 0)
+            *tmp_bump = ZMAPBUMP_NAME_INTERLEAVE ;
+          else if (g_ascii_strcasecmp(tmp_next_tag, "Name_no_interleave") == 0)
+            *tmp_bump = ZMAPBUMP_NAME_NO_INTERLEAVE ;
+          else if (g_ascii_strcasecmp(tmp_next_tag, "Name_colinear") == 0)
+            *tmp_bump = ZMAPBUMP_NAME_COLINEAR ;
+          else if (g_ascii_strcasecmp(tmp_next_tag, "Name_best_ends") == 0)
+            *tmp_bump = ZMAPBUMP_NAME_BEST_ENDS ;
+          else
+            zMapLogWarning("Style \"%s\": Bad bump spec: %d", name, *tmp_bump) ;
+        }
       else if (g_ascii_strcasecmp(tag, "Bump_spacing") == 0)
-	{
-	  char *value ;
+        {
+          char *value ;
 
-	  value = strtok_r(NULL, " ", &line_pos) ;
+          value = strtok_r(NULL, " ", &line_pos) ;
 
-	  if ((status = zMapStr2Double(value, &bump_spacing)))
-	    {
-	      bump_spacing_set = TRUE ;
-	    }
-	  else
-	    {
-	      zMapLogWarning("Style \"%s\": No value for \"Bump_spacing\".", name) ;
-	      break ;
-	    }
-	}
+          if ((status = zMapStr2Double(value, &bump_spacing)))
+            {
+              bump_spacing_set = TRUE ;
+            }
+          else
+            {
+              zMapLogWarning("Style \"%s\": No value for \"Bump_spacing\".", name) ;
+              break ;
+            }
+        }
       else if (g_ascii_strcasecmp(tag, "Bump_fixed") == 0)
-	{
-	  bump_fixed = TRUE ;
-	}
+        {
+          bump_fixed = TRUE ;
+        }
       else if (g_ascii_strcasecmp(tag, "GFF") == 0)
-	{
-	  char *gff_type ;
+        {
+          strtok_r(NULL, " ", &line_pos) ;
 
-	  gff_type = strtok_r(NULL, " ", &line_pos) ;
-
-	  if (g_ascii_strcasecmp(tag, "Source") == 0)
-	    gff_source = g_strdup(strtok_r(NULL, " \"", &line_pos)) ;
-	  else if (g_ascii_strcasecmp(tag, "Feature") == 0)
-	    gff_feature = g_strdup(strtok_r(NULL, " \"", &line_pos)) ;
-	}
+          if (g_ascii_strcasecmp(tag, "Source") == 0)
+            gff_source = g_strdup(strtok_r(NULL, " \"", &line_pos)) ;
+          else if (g_ascii_strcasecmp(tag, "Feature") == 0)
+            gff_feature = g_strdup(strtok_r(NULL, " \"", &line_pos)) ;
+        }
       else if (g_ascii_strcasecmp(tag, "Width") == 0)
-	{
-	  char *value ;
+        {
+          char *value ;
 
-	  value = strtok_r(NULL, " ", &line_pos) ;
+          value = strtok_r(NULL, " ", &line_pos) ;
 
-	  if ((status = zMapStr2Double(value, &width)))
-	    {
-	      width_set = TRUE ;
-	    }
-	  else
-	    {
-	      zMapLogWarning("Style \"%s\": No value for \"Width\".", name) ;
-	      break ;
-	    }
-	}
+          if ((status = zMapStr2Double(value, &width)))
+            {
+              width_set = TRUE ;
+            }
+          else
+            {
+              zMapLogWarning("Style \"%s\": No value for \"Width\".", name) ;
+              break ;
+            }
+        }
       else if (g_ascii_strcasecmp(tag, "Strand_sensitive") == 0)
-	strand_specific = TRUE ;
+        strand_specific = TRUE ;
       else if (g_ascii_strcasecmp(tag, "Show_up_strand") == 0)
-	show_up_strand = TRUE ;
+        show_up_strand = TRUE ;
       else if (g_ascii_strcasecmp(tag, "Frame_sensitive") == 0)
-	frame_mode = ZMAPSTYLE_3_FRAME_AS_WELL ;
+        frame_mode = ZMAPSTYLE_3_FRAME_AS_WELL ;
       else if (g_ascii_strcasecmp(tag, "Show_only_as_3_frame") == 0)
-	frame_mode = ZMAPSTYLE_3_FRAME_ONLY_3 ;
+        frame_mode = ZMAPSTYLE_3_FRAME_ONLY_3 ;
       else if (g_ascii_strcasecmp(tag, "Show_only_as_1_column") == 0)
-	frame_mode = ZMAPSTYLE_3_FRAME_ONLY_1 ;
+        frame_mode = ZMAPSTYLE_3_FRAME_ONLY_1 ;
       else if (g_ascii_strcasecmp(tag, "Not_displayable") == 0)
-	{
-	  /* Objects that have the Not_displayable tag set should not be shown at all. */
-	  displayable_set = displayable = FALSE ;
+        {
+          /* Objects that have the Not_displayable tag set should not be shown at all. */
+          displayable_set = displayable = FALSE ;
 
-	  break ;
-	}
+          break ;
+        }
       else if (g_ascii_strcasecmp(tag, "Hide") == 0)
-	{
-	  col_state = ZMAPSTYLE_COLDISPLAY_HIDE ;
-	}
+        {
+          col_state = ZMAPSTYLE_COLDISPLAY_HIDE ;
+        }
       else if (g_ascii_strcasecmp(tag, "Show_when_empty") == 0)
-	{
-	  show_when_empty_set = show_when_empty = TRUE ;
-	}
+        {
+          show_when_empty_set = show_when_empty = TRUE ;
+        }
       else if (g_ascii_strcasecmp(tag, "Directional_ends") == 0)
-	{
-	  directional_end_set = directional_end = TRUE ;
-	}
+        {
+          directional_end_set = directional_end = TRUE ;
+        }
       else if (g_ascii_strcasecmp(tag, "Min_mag") == 0)
-	{
-	  char *value ;
+        {
+          char *value ;
 
-	  value = strtok_r(NULL, " ", &line_pos) ;
+          value = strtok_r(NULL, " ", &line_pos) ;
 
-	  if (!(status = zMapStr2Double(value, &min_mag)))
-	    {
-	      zMapLogWarning("Style \"%s\": Bad value for \"Min_mag\"", name) ;
+          if (!(status = zMapStr2Double(value, &min_mag)))
+            {
+              zMapLogWarning("Style \"%s\": Bad value for \"Min_mag\"", name) ;
 
-	      break ;
-	    }
-	}
+              break ;
+            }
+        }
       else if (g_ascii_strcasecmp(tag, "Max_mag") == 0)
-	{
-	  char *value ;
+        {
+          char *value ;
 
-	  value = strtok_r(NULL, " ", &line_pos) ;
+          value = strtok_r(NULL, " ", &line_pos) ;
 
-	  if (!(status = zMapStr2Double(value, &max_mag)))
-	    {
-	      zMapLogWarning("Style \"%s\": Bad value for \"Max_mag\".", name) ;
+          if (!(status = zMapStr2Double(value, &max_mag)))
+            {
+              zMapLogWarning("Style \"%s\": Bad value for \"Max_mag\".", name) ;
 
-	      break ;
-	    }
-	}
+              break ;
+            }
+        }
       else if (g_ascii_strcasecmp(tag, "Score_by_width") == 0)
-	{
-	  score_by_width = TRUE ;
-	}
-      else if (g_ascii_strcasecmp(tag, "Score_percent") == 0)
-	{
-	  score_is_percent = TRUE ;
-	}
+        {
+          score_by_width = TRUE ;
+        }
       else if (g_ascii_strcasecmp(tag, "Score_bounds") == 0)
-	{
-	  char *value ;
+        {
+          char *value ;
 
-	  value = strtok_r(NULL, " ", &line_pos) ;
-	  score_set = TRUE;
+          value = strtok_r(NULL, " ", &line_pos) ;
+          score_set = TRUE;
 
-	  if (!(status = zMapStr2Double(value, &min_score)))
-	    {
-	      zMapLogWarning("Style \"%s\": Bad value for \"Score_bounds\".", name) ;
-	      score_set = FALSE;
-	      break ;
-	    }
-	  else
-	    {
-	      value = strtok_r(NULL, " ", &line_pos) ;
+          if (!(status = zMapStr2Double(value, &min_score)))
+            {
+              zMapLogWarning("Style \"%s\": Bad value for \"Score_bounds\".", name) ;
+              score_set = FALSE;
+              break ;
+            }
+          else
+            {
+              value = strtok_r(NULL, " ", &line_pos) ;
 
-	      if (!(status = zMapStr2Double(value, &max_score)))
-		{
-		  zMapLogWarning("Style \"%s\": Bad value for \"Score_bounds\".", name) ;
-		  score_set = FALSE;
-		  break ;
-		}
-	    }
-	}
+              if (!(status = zMapStr2Double(value, &max_score)))
+                {
+                  zMapLogWarning("Style \"%s\": Bad value for \"Score_bounds\".", name) ;
+                  score_set = FALSE;
+                  break ;
+                }
+            }
+        }
 
     }
   while (++obj_lines && **end_pos != '\n' && (next_line = strtok_r(NULL, "\n", end_pos))) ;
@@ -3765,146 +3743,146 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
       style = zMapStyleCreate(name, description) ;
 
       if (mode != ZMAPSTYLE_MODE_INVALID)
-	zMapStyleSetMode(style, mode) ;
+        zMapStyleSetMode(style, mode) ;
 
 //      if (glyph_mode != ZMAPSTYLE_GLYPH_INVALID)
-//	zMapStyleSetGlyphMode(style, glyph_mode) ;
+//      zMapStyleSetGlyphMode(style, glyph_mode) ;
 
       if (parent)
-	zMapStyleSetParent(style, parent) ;
+        zMapStyleSetParent(style, parent) ;
 
 
       if (some_colours)
-	{
-	  /* May need to put some checking code here to test which colours set. */
-	  zMapStyleSetColoursStr(style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
+        {
+          /* May need to put some checking code here to test which colours set. */
+          zMapStyleSetColoursStr(style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
                                  style_colours.normal.fill_str, style_colours.normal.draw_str, style_colours.normal.border_str) ;
-	  zMapStyleSetColoursStr(style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_SELECTED,
+          zMapStyleSetColoursStr(style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_SELECTED,
                                  style_colours.selected.fill_str, style_colours.selected.draw_str,
                                  style_colours.selected.border_str) ;
-	}
+        }
 
       if (some_frame0_colours || some_frame1_colours || some_frame2_colours)
-	{
-	  if (some_frame0_colours && some_frame1_colours && some_frame2_colours)
-	    {
-	      /* May need to put some checking code here to test which colours set. */
-	      zMapStyleSetColoursStr(style, STYLE_PROP_FRAME0_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
+        {
+          if (some_frame0_colours && some_frame1_colours && some_frame2_colours)
+            {
+              /* May need to put some checking code here to test which colours set. */
+              zMapStyleSetColoursStr(style, STYLE_PROP_FRAME0_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
                                      frame0_style_colours.normal.fill_str, frame0_style_colours.normal.draw_str,
                                      frame0_style_colours.normal.border_str) ;
-	      zMapStyleSetColoursStr(style, STYLE_PROP_FRAME0_COLOURS, ZMAPSTYLE_COLOURTYPE_SELECTED,
+              zMapStyleSetColoursStr(style, STYLE_PROP_FRAME0_COLOURS, ZMAPSTYLE_COLOURTYPE_SELECTED,
                                      frame0_style_colours.selected.fill_str, frame0_style_colours.selected.draw_str,
                                      frame0_style_colours.selected.border_str) ;
 
-	      zMapStyleSetColoursStr(style, STYLE_PROP_FRAME1_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
+              zMapStyleSetColoursStr(style, STYLE_PROP_FRAME1_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
                                      frame1_style_colours.normal.fill_str, frame1_style_colours.normal.draw_str,
                                      frame1_style_colours.normal.border_str) ;
-	      zMapStyleSetColoursStr(style, STYLE_PROP_FRAME1_COLOURS, ZMAPSTYLE_COLOURTYPE_SELECTED,
+              zMapStyleSetColoursStr(style, STYLE_PROP_FRAME1_COLOURS, ZMAPSTYLE_COLOURTYPE_SELECTED,
                                      frame1_style_colours.selected.fill_str, frame1_style_colours.selected.draw_str,
                                      frame1_style_colours.selected.border_str) ;
 
-	      zMapStyleSetColoursStr(style, STYLE_PROP_FRAME2_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
+              zMapStyleSetColoursStr(style, STYLE_PROP_FRAME2_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
                                      frame2_style_colours.normal.fill_str, frame2_style_colours.normal.draw_str,
                                      frame2_style_colours.normal.border_str) ;
-	      zMapStyleSetColoursStr(style, STYLE_PROP_FRAME2_COLOURS, ZMAPSTYLE_COLOURTYPE_SELECTED,
+              zMapStyleSetColoursStr(style, STYLE_PROP_FRAME2_COLOURS, ZMAPSTYLE_COLOURTYPE_SELECTED,
                                      frame2_style_colours.selected.fill_str, frame2_style_colours.selected.draw_str,
                                      frame2_style_colours.selected.border_str) ;
-	    }
-	  else
-	    zMapLogWarning("Style \"%s\": Bad frame colour spec, following were not set:%s%s%s", name,
-			   (some_frame0_colours ? "" : " frame0"),
-			   (some_frame1_colours ? "" : " frame1"),
-			   (some_frame2_colours ? "" : " frame2")) ;
-	}
+            }
+          else
+            zMapLogWarning("Style \"%s\": Bad frame colour spec, following were not set:%s%s%s", name,
+                           (some_frame0_colours ? "" : " frame0"),
+                           (some_frame1_colours ? "" : " frame1"),
+                           (some_frame2_colours ? "" : " frame2")) ;
+        }
 
       if (some_CDS_colours)
-	{
+        {
 
-	  /* May need to put some checking code here to test which colours set. */
-	  zMapStyleSetColoursStr(style, STYLE_PROP_TRANSCRIPT_CDS_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
+          /* May need to put some checking code here to test which colours set. */
+          zMapStyleSetColoursStr(style, STYLE_PROP_TRANSCRIPT_CDS_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
                                  CDS_style_colours.normal.fill_str, CDS_style_colours.normal.draw_str,
                                  CDS_style_colours.normal.border_str) ;
-	  zMapStyleSetColoursStr(style, STYLE_PROP_TRANSCRIPT_CDS_COLOURS, ZMAPSTYLE_COLOURTYPE_SELECTED,
+          zMapStyleSetColoursStr(style, STYLE_PROP_TRANSCRIPT_CDS_COLOURS, ZMAPSTYLE_COLOURTYPE_SELECTED,
                                  CDS_style_colours.selected.fill_str, CDS_style_colours.selected.draw_str,
                                  CDS_style_colours.selected.border_str) ;
-	}
+        }
 
       if (width_set)
-	zMapStyleSetWidth(style, width) ;
+        zMapStyleSetWidth(style, width) ;
 
 
       if (min_mag || max_mag)
-	zMapStyleSetMag(style, min_mag, max_mag) ;
+        zMapStyleSetMag(style, min_mag, max_mag) ;
 
 
       /* OTHER SCORE STUFF MUST BE SET HERE.... */
       if (score_by_width)
-	g_object_set(G_OBJECT(style),
-		     ZMAPSTYLE_PROPERTY_SCORE_MODE, ZMAPSCORE_WIDTH,
-		     NULL) ;
+        g_object_set(G_OBJECT(style),
+                     ZMAPSTYLE_PROPERTY_SCORE_MODE, ZMAPSCORE_WIDTH,
+                     NULL) ;
 
       /* Note that we require bounds to be set for graphing.... */
       if (score_set)
-	{
-	  ZMapStyleGraphMode graph_mode = ZMAPSTYLE_GRAPH_HISTOGRAM; /* HARD CODED! */
+        {
+          ZMapStyleGraphMode graph_mode = ZMAPSTYLE_GRAPH_HISTOGRAM; /* HARD CODED! */
 
-	  if (histogram)
-	    zMapStyleSetGraph(style, graph_mode, min_score, max_score, histogram_baseline) ;
-	  else if(min_score || max_score)
-	    zMapStyleSetScore(style, min_score, max_score) ;
-	}
+          if (histogram)
+            zMapStyleSetGraph(style, graph_mode, min_score, max_score, histogram_baseline) ;
+          else if(min_score || max_score)
+            zMapStyleSetScore(style, min_score, max_score) ;
+        }
 
       if (strand_specific)
-	zMapStyleSetStrandSpecific(style, strand_specific) ;
+        zMapStyleSetStrandSpecific(style, strand_specific) ;
 
       if (show_up_strand)
-	zMapStyleSetStrandShowReverse(style, show_up_strand) ;
+        zMapStyleSetStrandShowReverse(style, show_up_strand) ;
 
       if (frame_mode)
-	zMapStyleSetFrameMode(style, frame_mode) ;
+        zMapStyleSetFrameMode(style, frame_mode) ;
 
       if (bump_mode_set || bump_default_set)
-	zMapStyleInitBumpMode(style, default_bump_mode, curr_bump_mode) ;
+        zMapStyleInitBumpMode(style, default_bump_mode, curr_bump_mode) ;
 
       if (bump_spacing_set)
-	zMapStyleSetBumpSpace(style, bump_spacing) ;
+        zMapStyleSetBumpSpace(style, bump_spacing) ;
 
       if (bump_fixed)
-	zMapStyleSet(style,
-		     ZMAPSTYLE_PROPERTY_BUMP_FIXED, bump_fixed,
-		     NULL) ;
+        zMapStyleSet(style,
+                     ZMAPSTYLE_PROPERTY_BUMP_FIXED, bump_fixed,
+                     NULL) ;
 
       if (gff_source || gff_feature)
-	zMapStyleSetGFF(style, gff_source, gff_feature) ;
+        zMapStyleSetGFF(style, gff_source, gff_feature) ;
 
       if (displayable_set)
-	zMapStyleSetDisplayable(style, displayable) ;
+        zMapStyleSetDisplayable(style, displayable) ;
 
       if (col_state != ZMAPSTYLE_COLDISPLAY_INVALID)
-	zMapStyleSetDisplay(style, col_state) ;
+        zMapStyleSetDisplay(style, col_state) ;
 
       if (show_when_empty_set)
-	zMapStyleSetShowWhenEmpty(style, show_when_empty) ;
+        zMapStyleSetShowWhenEmpty(style, show_when_empty) ;
 
       if (directional_end_set)
         zMapStyleSetEndStyle(style, directional_end);
 
       if (join_aligns)
-	zMapStyleSetJoinAligns(style, join_align) ;
+        zMapStyleSetJoinAligns(style, join_align) ;
 
       if (parse_gaps)
-	zMapStyleSetGappedAligns(style, parse_gaps, show_gaps) ;
+        zMapStyleSetGappedAligns(style, parse_gaps, show_gaps) ;
 
       if (pfetchable)
-	zMapStyleSetPfetch(style, pfetchable) ;
+        zMapStyleSetPfetch(style, pfetchable) ;
 
       /* Should be building the list dynamically.....could do this on the create step using
        * my zMapStyleCreateV() function. */
       if (blixem_type)
-	zMapStyleSet(style,
-		     ZMAPSTYLE_PROPERTY_ALIGNMENT_BLIXEM, blixem_type,
-		     ZMAPSTYLE_PROPERTY_ALIGNMENT_ALLOW_MISALIGN, allow_misalign,
-		     NULL) ;
+        zMapStyleSet(style,
+                     ZMAPSTYLE_PROPERTY_ALIGNMENT_BLIXEM, blixem_type,
+                     ZMAPSTYLE_PROPERTY_ALIGNMENT_ALLOW_MISALIGN, allow_misalign,
+                     NULL) ;
     }
 
 
@@ -3956,7 +3934,7 @@ static ZMapServerResponseType getObjNames(AcedbServer server, GList **style_name
   acedb_request =  g_strdup_printf("%s", command) ;
 
   if ((server->last_err_status = AceConnRequest(server->connection, acedb_request,
-						&reply, &reply_len)) == ACECONN_OK)
+                                                &reply, &reply_len)) == ACECONN_OK)
     {
       char *scan_text = (char *)reply ;
       char *next_line = NULL ;
@@ -3965,37 +3943,37 @@ static ZMapServerResponseType getObjNames(AcedbServer server, GList **style_name
       GList *style_names = NULL ;
 
       while ((next_line = strtok_r(scan_text, "\n", &curr_pos)))
-	{
-	  scan_text = NULL ;
+        {
+          scan_text = NULL ;
 
-	  /* Look for start/end of methods list. */
-	  if (!found_method && g_str_has_prefix(next_line, "Method:"))
-	    {
-	      found_method = TRUE ;
-	      continue ;
-	    }
-	  else if (found_method && (*next_line == '/'))
-	    break ;
+          /* Look for start/end of methods list. */
+          if (!found_method && g_str_has_prefix(next_line, "Method:"))
+            {
+              found_method = TRUE ;
+              continue ;
+            }
+          else if (found_method && (*next_line == '/'))
+            break ;
 
-	  if (found_method)
-	    {
-	      /* Watch out...hacky...method names have a space in front of them...sigh... */
-	      style_names = g_list_append(style_names,
-					  GINT_TO_POINTER(g_quark_from_string(next_line + 1))) ;
-	    }
-	}
+          if (found_method)
+            {
+              /* Watch out...hacky...method names have a space in front of them...sigh... */
+              style_names = g_list_append(style_names,
+                                          GINT_TO_POINTER(g_quark_from_string(next_line + 1))) ;
+            }
+        }
 
 
       if (style_names)
-	{
-	  *style_names_out = style_names ;
-	  result = ZMAP_SERVERRESPONSE_OK ;
-	}
+        {
+          *style_names_out = style_names ;
+          result = ZMAP_SERVERRESPONSE_OK ;
+        }
       else
-	{
-	  setErrMsg(server,  g_strdup_printf("No styles found.")) ;
-	  result = ZMAP_SERVERRESPONSE_REQFAIL ;
-	}
+        {
+          setErrMsg(server,  g_strdup_printf("No styles found.")) ;
+          result = ZMAP_SERVERRESPONSE_REQFAIL ;
+        }
 
       g_free(reply) ;
       reply = NULL ;
@@ -4075,28 +4053,28 @@ static void eachBlockSequenceRequest(gpointer key_id, gpointer data, gpointer us
   if (get_features->result == ZMAP_SERVERRESPONSE_OK)
     {
       if (!sequenceRequest(get_features, feature_block))
-	{
-	  /* If the call failed it may be that the connection failed or that the data coming
-	   * back had a problem. */
-	  if (get_features->server->last_err_status == ACECONN_OK)
-	    {
-	      get_features->result = ZMAP_SERVERRESPONSE_REQFAIL ;
-	    }
-	  else if (get_features->server->last_err_status == ACECONN_TIMEDOUT)
-	    {
-	      get_features->result = ZMAP_SERVERRESPONSE_TIMEDOUT ;
-	    }
-	  else
-	    {
-	      /* Probably we will want to analyse the response more than this ! */
-	      get_features->result = ZMAP_SERVERRESPONSE_SERVERDIED ;
-	    }
+        {
+          /* If the call failed it may be that the connection failed or that the data coming
+           * back had a problem. */
+          if (get_features->server->last_err_status == ACECONN_OK)
+            {
+              get_features->result = ZMAP_SERVERRESPONSE_REQFAIL ;
+            }
+          else if (get_features->server->last_err_status == ACECONN_TIMEDOUT)
+            {
+              get_features->result = ZMAP_SERVERRESPONSE_TIMEDOUT ;
+            }
+          else
+            {
+              /* Probably we will want to analyse the response more than this ! */
+              get_features->result = ZMAP_SERVERRESPONSE_SERVERDIED ;
+            }
 
-	  ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, get_features->server->host,
-			 "Could not map %s because: %s",
-			 g_quark_to_string(get_features->server->req_context->sequence_name),
-			 get_features->server->last_err_msg) ;
-	}
+          ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, get_features->server->host,
+                         "Could not map %s because: %s",
+                         g_quark_to_string(get_features->server->req_context->sequence_name),
+                         get_features->server->last_err_msg) ;
+        }
     }
 
   return ;
@@ -4155,10 +4133,10 @@ static const char *getAcedbColourSpec(char *acedb_colour_name)
   while (colour->name)
     {
       if (g_ascii_strcasecmp(colour->name, acedb_colour_name) == 0)
-	{
-	  colour_spec = colour->spec ;
-	  break ;
-	}
+        {
+          colour_spec = colour->spec ;
+          break ;
+        }
 
       colour++ ;
     }
@@ -4175,7 +4153,7 @@ static void stylePrintCB(gpointer data, gpointer user_data)
   ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)data ;
 
   printf("%s (%s)\n", g_quark_to_string(zMapStyleGetID(style)),
-	 g_quark_to_string(zMapStyleGetUniqueID(style))) ;
+         g_quark_to_string(zMapStyleGetUniqueID(style))) ;
 
   return ;
 }
@@ -4208,22 +4186,22 @@ static gboolean getStyleColour(StyleFeatureColours style_colours, char **line_po
   if (colour)
     {
       if (g_ascii_strcasecmp(colour_type, "Normal") == 0)
-	style_colour = &(style_colours->normal) ;
+        style_colour = &(style_colours->normal) ;
       else if (g_ascii_strcasecmp(colour_type, "Selected") == 0)
-	style_colour = &(style_colours->selected) ;
+        style_colour = &(style_colours->selected) ;
 
       if (style_colour)
-	{
-	  result = TRUE ;
-	  if (g_ascii_strcasecmp(colour_target, "Draw") == 0)
-	    style_colour->draw_str = g_strdup(colour) ;
-	  else if (g_ascii_strcasecmp(colour_target, "Fill") == 0)
-	    style_colour->fill_str = g_strdup(colour) ;
-	  else if (g_ascii_strcasecmp(colour_target, "Border") == 0)
-	    style_colour->border_str = g_strdup(colour) ;
-	  else
-	    result = FALSE ;
-	}
+        {
+          result = TRUE ;
+          if (g_ascii_strcasecmp(colour_target, "Draw") == 0)
+            style_colour->draw_str = g_strdup(colour) ;
+          else if (g_ascii_strcasecmp(colour_target, "Fill") == 0)
+            style_colour->fill_str = g_strdup(colour) ;
+          else if (g_ascii_strcasecmp(colour_target, "Border") == 0)
+            style_colour->border_str = g_strdup(colour) ;
+          else
+            result = FALSE ;
+        }
     }
 
   return result ;
@@ -4266,84 +4244,84 @@ static ZMapServerResponseType doGetSequences(AcedbServer server, GList *sequence
 
       /* Try to find the sequence... */
       if (sequence->type == ZMAPSEQUENCE_DNA)
-	command = "find sequence" ;
+        command = "find sequence" ;
       else
-	command = "find peptide" ;
+        command = "find peptide" ;
 
       g_string_printf(acedb_request, "%s %s", command, g_quark_to_string(sequence->name)) ;
 
       if ((server->last_err_status = AceConnRequest(server->connection, acedb_request->str,
-						    &reply, &reply_len)) == ACECONN_OK)
-	{
-	  /* reply should be:
-	   *
-	   * <blank line>
-	   * // Found 1 objects in this class
-	   * // 1 Active Objects
-	   */
-	  char *scan_text = (char *)reply ;
-	  char *next_line = NULL ;
+                                                    &reply, &reply_len)) == ACECONN_OK)
+        {
+          /* reply should be:
+           *
+           * <blank line>
+           * // Found 1 objects in this class
+           * // 1 Active Objects
+           */
+          char *scan_text = (char *)reply ;
+          char *next_line = NULL ;
           char *curr_pos = NULL ;
-	  int num_objs ;
+          int num_objs ;
 
-	  while ((next_line = strtok_r(scan_text, "\n", &curr_pos)))
-	    {
-	      scan_text = NULL ;
+          while ((next_line = strtok_r(scan_text, "\n", &curr_pos)))
+            {
+              scan_text = NULL ;
 
-	      if (g_str_has_prefix(next_line, "// "))
-		{
-		  if ((num_objs = getFoundObj(next_line)) == 1)
-		    {
-		      result = ZMAP_SERVERRESPONSE_OK ;
-		    }
-		  else
-		    {
-		      setErrMsg(server, g_strdup_printf("Expected to find 1 sequence object"
-							"named \"%s\" but found %d.",
-							g_quark_to_string(sequence->name), num_objs)) ;
+              if (g_str_has_prefix(next_line, "// "))
+                {
+                  if ((num_objs = getFoundObj(next_line)) == 1)
+                    {
+                      result = ZMAP_SERVERRESPONSE_OK ;
+                    }
+                  else
+                    {
+                      setErrMsg(server, g_strdup_printf("Expected to find 1 sequence object"
+                                                        "named \"%s\" but found %d.",
+                                                        g_quark_to_string(sequence->name), num_objs)) ;
 
-		      result = ZMAP_SERVERRESPONSE_REQFAIL ;
-		    }
+                      result = ZMAP_SERVERRESPONSE_REQFAIL ;
+                    }
 
-		  break ;
-		}
-	    }
+                  break ;
+                }
+            }
 
-	  g_free(reply) ;
-	  reply = NULL ;
-	}
+          g_free(reply) ;
+          reply = NULL ;
+        }
 
       /* All ok ?  Then get the sequence.... */
       if (result == ZMAP_SERVERRESPONSE_OK)
-	{
-	  if (sequence->type == ZMAPSEQUENCE_DNA)
-	    command = "dna -u" ;
-	  else
-	    command = "peptide -u" ;
+        {
+          if (sequence->type == ZMAPSEQUENCE_DNA)
+            command = "dna -u" ;
+          else
+            command = "peptide -u" ;
 
-	  g_string_printf(acedb_request, "%s", command) ;
+          g_string_printf(acedb_request, "%s", command) ;
 
-	  if ((server->last_err_status = AceConnRequest(server->connection, acedb_request->str,
-							&reply, &reply_len)) == ACECONN_OK)
-	    {
-	      /* reply should be:
-	       *
-	       * gactctttgcaggggagaagctccacaacctcagcaaa....etc etc
-	       */
-	      sequence->length = reply_len - 1 ;
-	      sequence->sequence = (char *)reply ;
+          if ((server->last_err_status = AceConnRequest(server->connection, acedb_request->str,
+                                                        &reply, &reply_len)) == ACECONN_OK)
+            {
+              /* reply should be:
+               *
+               * gactctttgcaggggagaagctccacaacctcagcaaa....etc etc
+               */
+              sequence->length = reply_len - 1 ;
+              sequence->sequence = (char *)reply ;
 
-	      result = ZMAP_SERVERRESPONSE_OK ;
-	    }
-	  else
-	    {
-	      setErrMsg(server, g_strdup_printf("Failed to fetch %s sequence for object \"%s\".",
-						(sequence->type == ZMAPSEQUENCE_DNA ? "nucleotide" : "peptide"),
-						g_quark_to_string(sequence->name))) ;
+              result = ZMAP_SERVERRESPONSE_OK ;
+            }
+          else
+            {
+              setErrMsg(server, g_strdup_printf("Failed to fetch %s sequence for object \"%s\".",
+                                                (sequence->type == ZMAPSEQUENCE_DNA ? "nucleotide" : "peptide"),
+                                                g_quark_to_string(sequence->name))) ;
 
-	      result = ZMAP_SERVERRESPONSE_REQFAIL ;
-	    }
-	}
+              result = ZMAP_SERVERRESPONSE_REQFAIL ;
+            }
+        }
 
       next_seq = g_list_next(next_seq) ;
     }
@@ -4364,7 +4342,7 @@ static ZMapServerResponseType doGetSequences(AcedbServer server, GList *sequence
  * Note function assumes names occur only once in each list.
  */
 static int equaliseLists(AcedbServer server, GList **query_names_inout, GList *reference_names,
-			 const char *query_name, const char *reference_name)
+                         const char *query_name, const char *reference_name)
 {
   int num_found = 0 ;
   int num_query ;
@@ -4383,22 +4361,22 @@ static int equaliseLists(AcedbServer server, GList **query_names_inout, GList *r
   do
     {
       if ((g_list_find_custom(reference_names, curr->data, quarkCaseCmp)))
-	{
-	  curr = curr->next ;
-	  num_found++ ;
-	}
+        {
+          curr = curr->next ;
+          num_found++ ;
+        }
       else
-	{
-	  GList *tmp ;
+        {
+          GList *tmp ;
 
-	  g_string_append_printf(missing, " \"%s\"", g_quark_to_string(GPOINTER_TO_INT(curr->data))) ;
+          g_string_append_printf(missing, " \"%s\"", g_quark_to_string(GPOINTER_TO_INT(curr->data))) ;
 
-	  tmp = curr->next ;				    /* Best move on before removing link. */
+          tmp = curr->next ;                                /* Best move on before removing link. */
 
-	  query_names = g_list_delete_link(query_names, curr) ;
+          query_names = g_list_delete_link(query_names, curr) ;
 
-	  curr = tmp ;
-	}
+          curr = tmp ;
+        }
 
     } while (curr) ;
 
@@ -4406,16 +4384,16 @@ static int equaliseLists(AcedbServer server, GList **query_names_inout, GList *r
   if (!num_found)
     {
       ZMAPSERVER_LOG(Critical, ACEDB_PROTOCOL_STR, server->host,
-		     "Complete %s -> %s mismatch, %d %s specified but none found in %s list. Missing %s were: %s",
-		     query_name, reference_name, num_query, query_name, reference_name,
-		     query_name, missing->str) ;
+                     "Complete %s -> %s mismatch, %d %s specified but none found in %s list. Missing %s were: %s",
+                     query_name, reference_name, num_query, query_name, reference_name,
+                     query_name, missing->str) ;
     }
   else if (num_found < num_query)
     {
       ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, server->host,
-		     "Partial %s -> %s mismatch, %d %s specified but only %d found in %s list. Missing %s were: %s",
-		     query_name, reference_name, num_query, query_name, num_found, reference_name,
-		     query_name, missing->str) ;
+                     "Partial %s -> %s mismatch, %d %s specified but only %d found in %s list. Missing %s were: %s",
+                     query_name, reference_name, num_query, query_name, num_found, reference_name,
+                     query_name, missing->str) ;
     }
 
   g_string_free(missing, TRUE) ;
@@ -4472,20 +4450,20 @@ static void overlaySource2Data(GHashTable *method_2_data, GHashTable *source_2_d
       zMap_g_hash_table_iter_init(&iter,method_2_data);
 
       while(zMap_g_hash_table_iter_next(&iter,&key,&value))
-	{
-	  source_data = (ZMapFeatureSource)g_hash_table_lookup(source_2_data, key) ;
-	  method_src  = (ZMapFeatureSource)value;
+        {
+          source_data = (ZMapFeatureSource)g_hash_table_lookup(source_2_data, key) ;
+          method_src  = (ZMapFeatureSource)value;
 
-	  if (source_data)
-	    {
-	      if(source_data->style_id)
-		method_src->style_id = source_data->style_id;
-	      if(source_data->source_id)
-		method_src->source_id = source_data->source_id;
-	      if(source_data->source_text)
-		method_src->source_text = source_data->source_text;
-	    }
-	}
+          if (source_data)
+            {
+              if(source_data->style_id)
+                method_src->style_id = source_data->style_id;
+              if(source_data->source_id)
+                method_src->source_id = source_data->source_id;
+              if(source_data->source_text)
+                method_src->source_text = source_data->source_text;
+            }
+        }
     }
 
   return ;
@@ -4609,8 +4587,8 @@ static gboolean isStyleFromMethod(char *config_file)
 
       /* Should we get style names directly from the method name. */
       if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
-					 ZMAPSTANZA_APP_STYLE_FROM_METHOD, &tmp_bool))
-	style_from_method = tmp_bool ;
+                                         ZMAPSTANZA_APP_STYLE_FROM_METHOD, &tmp_bool))
+        style_from_method = tmp_bool ;
 
       zMapConfigIniContextDestroy(context);
     }

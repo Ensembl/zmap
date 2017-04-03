@@ -1,28 +1,28 @@
 /*  File: zmapGUIutils.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2015: Genome Research Ltd.
+ *  Copyright (c) 2006-2017: Genome Research Ltd.
  *-------------------------------------------------------------------
- * ZMap is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
- * and was written by
- *        Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk and,
- *          Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
- *
+ * originally written by:
+ * 
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *       Gemma Guest (Sanger Institute, UK) gb10@sanger.ac.uk
+ *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
+ *  
  * Description: Various GUI convenience functions for messages, text,
  *              notebook creation and so on.
  *
@@ -1364,9 +1364,7 @@ GtkResponseType zMapGUIMsgGetSaveFull(GtkWindow *parent, ZMapMsgType msg_type, c
  *  */
 void zMapGUIShowText(const char *title, const char *text, gboolean edittable)
 {
-  GtkWidget *dialog ;
-
-  dialog = zMapGUIShowTextFull(title, text, edittable, NULL, NULL) ;
+  zMapGUIShowTextFull(title, text, edittable, NULL, NULL) ;
 
   return ;
 }
@@ -2269,7 +2267,6 @@ static GtkResponseType messageFull(GtkWindow *parent, const char *title_in, cons
   GtkWidget *entry = NULL ;
   const char *title = NULL, *full_title ;
   GtkDialogFlags flags = GTK_DIALOG_DESTROY_WITH_PARENT ;
-  guint timeout_func_id ;
   int interval = display_timeout * 1000 ;    /* glib needs time in milliseconds. */
   GtkResponseType first_response = (GtkResponseType)0, second_response = (GtkResponseType)0,
     third_response = (GtkResponseType)0, default_response = (GtkResponseType)0 ;
@@ -2390,9 +2387,9 @@ static GtkResponseType messageFull(GtkWindow *parent, const char *title_in, cons
   if (interval > 0)
     {
       if (modal)
-        timeout_func_id = g_timeout_add(interval, timeoutHandlerModal, (gpointer)dialog) ;
+        g_timeout_add(interval, timeoutHandlerModal, (gpointer)dialog) ;
       else
-        timeout_func_id = g_timeout_add(interval, timeoutHandler, (gpointer)dialog) ;
+        g_timeout_add(interval, timeoutHandler, (gpointer)dialog) ;
     }
 
 

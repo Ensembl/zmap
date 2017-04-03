@@ -1,29 +1,28 @@
 /*  File: zmapWindowState.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2015: Genome Research Ltd.
+ *  Copyright (c) 2006-2017: Genome Research Ltd.
  *-------------------------------------------------------------------
- * ZMap is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originally written by:
- *
- *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ * 
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
- *
+ *       Gemma Guest (Sanger Institute, UK) gb10@sanger.ac.uk
+ *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
+ *  
  * Description: Implements saving state for zmapwindow prior to
  *              operations after which we must restore ourselves.
  *
@@ -363,7 +362,6 @@ static void get_bumped_columns(ZMapWindowContainerGroup container,
     {
       StyleBumpModeStruct bump_data = {{0}, (ZMapStyleBumpMode)0, FALSE};
       ZMapWindowContainerFeatureSet container_set;
-      ZMapStyleBumpMode default_bump;
       ZMapFeatureAny feature_any;
       ZMapFeatureSet fset;
 
@@ -380,7 +378,6 @@ static void get_bumped_columns(ZMapWindowContainerGroup container,
           bump_data.column.strand     = container_set->strand;
           bump_data.strand_specific   = zmapWindowContainerFeatureSetIsStrandShown(container_set);
           bump_data.bump_mode         = zmapWindowContainerFeatureSetGetBumpMode(container_set);
-          default_bump                = zmapWindowContainerFeatureSetGetDefaultBumpMode(container_set);
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
           printf("bump_save %s/%s = %d\n", g_quark_to_string(bump_data.column.column_id),g_quark_to_string(bump_data.column.fset_id),bump_data.bump_mode);
@@ -521,18 +518,10 @@ static void state_mark_restore(ZMapWindow window, ZMapWindowMark mark, ZMapWindo
 
 static void state_position_restore(ZMapWindow window, ZMapWindowPositionStruct *position)
 {
-  FooCanvas *canvas;
-  GtkAdjustment *v_adjuster, *h_adjuster;
-  GtkScrolledWindow *scrolled_window;
   ZMapWindowPositionStruct new_position = {};
 
   if (window->canvas && FOO_IS_CANVAS(window->canvas))
     {
-      canvas = window->canvas;
-
-      scrolled_window = GTK_SCROLLED_WINDOW(window->scrolled_window);
-      v_adjuster      = gtk_scrolled_window_get_vadjustment(scrolled_window);
-      h_adjuster      = gtk_scrolled_window_get_hadjustment(scrolled_window);
       /* I'm copying this, so as not to alter the state->position version. */
       /* Accidentally or otherwise doing a state restore more than once should be ok. */
       new_position = *position;        /* n.b. struct copy! */

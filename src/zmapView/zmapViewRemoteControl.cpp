@@ -1,29 +1,28 @@
 /*  File: zmapViewRemoteControl.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2012-2015: Genome Research Ltd.
+ *  Copyright (c) 2006-2017: Genome Research Ltd.
  *-------------------------------------------------------------------
- * ZMap is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * originally written by:
- *
- *         Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ * 
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
- *
+ *       Gemma Guest (Sanger Institute, UK) gb10@sanger.ac.uk
+ *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
+ *  
  * Description: Functions to handle requests originating from a
  *              remote peer and to send requests originating at this
  *              level to a remote peer.
@@ -976,7 +975,6 @@ static void showColumn(ZMapView view, RequestData request_data)
 /* Load features on request from a client. */
 static void loadFeatures(ZMapView view, RequestData request_data)
 {
-  gboolean use_mark = FALSE ;
   int start = 0, end = 0 ;
 
 
@@ -990,11 +988,7 @@ static void loadFeatures(ZMapView view, RequestData request_data)
 
       window = request_data->view_window->window ;
 
-      if ((zMapWindowMarkGetSequenceSpan(window, &start, &end)))
-        {
-          use_mark = TRUE ;
-        }
-      else
+      if (!(zMapWindowMarkGetSequenceSpan(window, &start, &end)))
         {
           g_string_append(request_data->err_msg, "Load features to marked region failed: no mark set.") ;
           request_data->command_rc = REMOTE_COMMAND_RC_FAILED ;
@@ -1019,12 +1013,7 @@ static void loadFeatures(ZMapView view, RequestData request_data)
 /* Get the names of all features within a given range. */
 static void getFeatureNames(ZMapViewWindow view_window, RequestData request_data)
 {
-  ZMapWindow window ;
-
   request_data->command_rc = REMOTE_COMMAND_RC_OK ;
-
-  window = view_window->window ;
-
 
   /* IS THIS RIGHT ??? AREN'T WE USING PARENT COORDS...??? */
   if (request_data->start < request_data->edit_block->block_to_sequence.block.x2
@@ -1236,18 +1225,14 @@ static gboolean xml_align_start_cb(gpointer user_data, ZMapXMLElement set_elemen
 
   if (align_name)
     {
-      gboolean master_align ;
-
       request_data->orig_align = NULL ;
 
-      if ((request_data->orig_align
-           = zMapFeatureContextGetAlignmentByID(request_data->orig_context,
-                                                zMapFeatureAlignmentCreateID(align_name, TRUE))))
-        master_align = TRUE ;
-      else if ((request_data->orig_align
-                = zMapFeatureContextGetAlignmentByID(request_data->orig_context,
-                                                     zMapFeatureAlignmentCreateID(align_name, FALSE))))
-        master_align = FALSE ;
+      if (!(request_data->orig_align
+            = zMapFeatureContextGetAlignmentByID(request_data->orig_context,
+                                                 zMapFeatureAlignmentCreateID(align_name, TRUE))))
+        request_data->orig_align
+          = zMapFeatureContextGetAlignmentByID(request_data->orig_context,
+                                               zMapFeatureAlignmentCreateID(align_name, FALSE)) ;
 
       if ((request_data->orig_align))
         {
@@ -1382,7 +1367,6 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
   GQuark featureset_id ;
   char *featureset_name ;
   GQuark unique_set_id ;
-  char *unique_set_name ;
   gboolean load_features = FALSE ;
 
 
@@ -1489,7 +1473,6 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
           featureset_name = (char *)g_quark_to_string(featureset_id) ;
 
           request_data->source_id = unique_set_id = zMapFeatureSetCreateID(featureset_name) ;
-          unique_set_name = (char *)g_quark_to_string(unique_set_id);
 
           /* Look for the feature set in the current context, it's an error if it's supposed to exist. */
           request_data->orig_feature_set = zMapFeatureBlockGetSetByID(request_data->orig_block, unique_set_id) ;

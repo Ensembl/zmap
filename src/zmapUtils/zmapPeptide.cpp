@@ -1,28 +1,28 @@
 /*  File: zmapPeptide.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2015: Genome Research Ltd.
+ *  Copyright (c) 2006-2017: Genome Research Ltd.
  *-------------------------------------------------------------------
- * ZMap is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
- * originated by
- *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ * originally written by:
+ * 
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
- *
+ *       Gemma Guest (Sanger Institute, UK) gb10@sanger.ac.uk
+ *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
+ *  
  * Description: Routines to translate DNA to peptide, optionally with
  *              an alternative genetic code.
  *
@@ -606,7 +606,6 @@ GList *zMapPeptideMatchFindAll(char *target, char *query,
               &start, &end, match_ptr))
         {
           ZMapDNAMatch match ;
-          int incr ;
 
           /* Record this match but match needs to record if its dna or peptide so coords are
            * interpreted correctly.... */
@@ -617,13 +616,6 @@ GList *zMapPeptideMatchFindAll(char *target, char *query,
 
           match->start = start - search_start ;
           match->end = end - search_start ;
-
-          /* There are routines to do these calculations...find them.... */
-          /* start/end on reference (dna) sequence. */
-          if (rev_comped)
-            incr = -2 ;
-          else
-            incr = 0 ;
 
           match->ref_start = from_in + ((match->start * 3)  + frame_offset + 1) ;
           match->ref_end = from_in + (((match->end * 3) + 2)  + frame_offset + 1) ;
@@ -896,7 +888,6 @@ static GArray *translateDNASegment(const char *dna_in, int from, int length, ZMa
   char *dna ;
   int dna_len ;
   GArray *dna_array ;
-  char *data ;
 
   /* zMapAssert(dna_in && *dna_in && incomplete_final_codon) ; */
   if (!dna_in || !*dna_in || !incomplete_final_codon) 
@@ -932,12 +923,8 @@ static GArray *translateDNASegment(const char *dna_in, int from, int length, ZMa
 
       peptide = doDNATranslation(translation_table, dna_array, strand, FALSE, include_stop) ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* Tidy up, note how we just leave the dna as it is still the original data. */
-      data = g_array_free(dna_array, FALSE) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
       /* in this version we now free the dna... */
-      data = g_array_free(dna_array, TRUE) ;
+      g_array_free(dna_array, TRUE) ;
     }
 
   return peptide ;

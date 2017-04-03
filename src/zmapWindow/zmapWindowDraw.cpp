@@ -1,28 +1,28 @@
 /*  File: zmapWindowDraw.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2015: Genome Research Ltd.
+ *  Copyright (c) 2006-2017: Genome Research Ltd.
  *-------------------------------------------------------------------
- * ZMap is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
- * originated by
- *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ * originally written by:
+ * 
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
- *
+ *       Gemma Guest (Sanger Institute, UK) gb10@sanger.ac.uk
+ *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
+ *  
  * Description: General drawing functions for zmap window, e.g.
  *              repositioning columns after one has been bumped
  *              or removed etc.
@@ -641,16 +641,11 @@ void zmapWindowColumnShow(FooCanvasGroup *column_group)
 void zmapWindowColumnsCompress(FooCanvasItem *column_item, ZMapWindow window, ZMapWindowCompressMode compress_mode)
 {
   ZMapWindowContainerGroup column_container, block_container;
-  FooCanvasGroup *column_group =  NULL;
   GList *compressed, *bumped;
   VisCoordsStruct coords ;
   double wx1, wy1, wx2, wy2 ;
 
   column_container = zmapWindowContainerCanvasItemGetContainer(column_item);
-  if(column_container)
-    column_group = (FooCanvasGroup *)column_container;
-  else
-    zMapWarnIfReached() ;
 
   block_container = zmapWindowContainerUtilsGetParentLevel(column_container, ZMAPCONTAINER_LEVEL_BLOCK) ;
 
@@ -917,8 +912,6 @@ static void positionColumnCB(ZMapWindowContainerGroup container, FooCanvasPoints
   GList *l ;
   FooCanvasItem *foo ;
   ZMapWindowFeaturesetItem cfs = NULL;
-  ZMapWindowContainerBlock block;
-  ZMapWindowContainerFeatureSet featureset;
   double col_width, width;
   gboolean debug = FALSE ;
 
@@ -935,7 +928,6 @@ static void positionColumnCB(ZMapWindowContainerGroup container, FooCanvasPoints
       break ;
 
     case ZMAPCONTAINER_LEVEL_BLOCK:
-      block = (ZMapWindowContainerBlock) container ;
       pc->block_spacing_x = container->child_spacing ;
       pc->x1 -= container->child_spacing ;
       pc->last_left = pc->last_right = 0.0 ;
@@ -951,7 +943,6 @@ static void positionColumnCB(ZMapWindowContainerGroup container, FooCanvasPoints
       if (!(foo->object.flags & FOO_CANVAS_ITEM_VISIBLE))
         break;
 
-      featureset = (ZMapWindowContainerFeatureSet) container;
       col_width = 0.0;
       cfs = NULL;
 

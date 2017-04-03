@@ -1,29 +1,28 @@
 /*  File: zmapWindowList.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2015: Genome Research Ltd.
+ *  Copyright (c) 2006-2017: Genome Research Ltd.
  *-------------------------------------------------------------------
- * ZMap is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
- * and was written by
- *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ * originally written by:
+ * 
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *       Gemma Guest (Sanger Institute, UK) gb10@sanger.ac.uk
  *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
- *
+ *  
  * Description: Displays a list of features from which the user may select
  *
  *
@@ -233,7 +232,6 @@ void zmapWindowListWindowCreate(ZMapWindow                   window,
                                 GDestroyNotify               search_hash_free,
                                 gboolean                     zoom_to_item)
 {
-  ZMapWindowList window_list = NULL ;
   GList *items = NULL ;
 
   if (!get_hash_func)
@@ -256,11 +254,11 @@ void zmapWindowListWindowCreate(ZMapWindow                   window,
     }
   else
     {
-      window_list = window_list_window_create(NULL, current_item, title, window,
-                                              items,
-                                              get_hash_func, get_hash_data, context_map,
-                                              search_hash_func, search_hash_data, search_hash_free,
-                                              zoom_to_item) ;
+      window_list_window_create(NULL, current_item, title, window,
+                                items,
+                                get_hash_func, get_hash_data, context_map,
+                                search_hash_func, search_hash_data, search_hash_free,
+                                zoom_to_item) ;
     }
 
   return ;
@@ -1142,9 +1140,6 @@ static void exportCB(gpointer data, guint cb_action, GtkWidget *widget)
  */
 static void helpMenuCB(gpointer data, guint cb_action, GtkWidget *widget)
 {
-  ZMapWindowList wList = (ZMapWindowList)data;
-  GtkWidget *window    = NULL;
-  window = wList->toplevel;
   switch(cb_action)
     {
     case WINLISTHELP:
