@@ -21,15 +21,6 @@ table.zmap_actions td{ border-width: 0px 1px 1px 0px; border-style: solid; paddi
 table.zmap_actions tr{ vertical-align: top; }
 table.zmap_actions th{ border-width: 0px 0px 1px 0px; border-style: solid; }
 
-fieldset
-{
-background-color: lightblue;
-border-style: solid; border-width: 3px; border-color: black;
-padding: 10px
-}
-
-legend{ font-weight: bold }
-
 </style>
 
 
