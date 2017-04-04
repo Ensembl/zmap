@@ -1,33 +1,43 @@
-<h2> zmapFeature - Feature Context - the model part of MVC </h2>
+<h1> zmapFeature, the Feature Context - all the sequence and features for a single view</h1>
 
 <h2>Index</h2>
 
-<a href="zmapFeature.html#identity">Identifying</a> <a
-href="zmapFeature.html#mapping">Mapping to columns and styles</a> <a
-href="zmapFeature.html#source">Source Code</a> <a
-href="zmapFeature.html#styles">Styles</a> <a
-href="zmapFeature.html#styles_impl"> -implementation</a> <a
-href="zmapFeature.html#terminology">Terminology</a> <a
-href="zmapFeature.html#display">Display</a><br /> <a
-href="../Features/f_context.html">Restructuring the Feature Context</a>: teasing apart featuresets and columns.<br /> <a
-href="../Display/ContainerFeatureset.html">Containers and Styles</a> <a
-href="../Configuring_Using/feature_search.html">Searching for features</a><br />
+<ul>
+  <li><a href="#identity">Identifying</a></li>
+  <li><a href="#mapping">Mapping to columns and styles</a></li>
+  <li><a href="#source">Source Code</a></li>
+  <li><a href="#styles">Styles</a></li>
+  <li><a href="#styles_impl"> -implementation</a></li>
+  <li><a href="#terminology">Terminology</a></li>
+  <li><a href="#display">Display</a><br /></li>
+  <li><a href="f_context.shtml">Restructuring the Feature Context</a>: teasing apart featuresets and columns.<br /></li>
+  <li><a href="../Display/ContainerFeatureset.shtml">Containers and Styles</a></li>
+  <li><a href="../Configuring_Using/feature_search.shtml">Searching for features</a><br />
+</ul>
 
 
+<a name="source"> <h2>Source Code</h2>
 
-<a name="source"> <h2>Source Code</h2> <p> <table border="1" cellpadding="3">
+<p>
+<table border="1" cellpadding="3">
 <thead><tr><th>Source Files</th> <th></th></tr><thead> <tbody>
 <tr><td>zmapStyleUtils.c</td><td>Print functions for debugging</td></tr>
 <tr><td>zmapStyle.c</td><td>Implementation of the style objects</td></tr>
 <tr><td>zmapFeatureUtils.c</td><td>No style specific data or
 functions</td></tr> <tr><td>zmapFeatureTypes.c</td><td>Pre-defined styles and
-inheritance</td></tr> <tr><td>more to come...</td></tr> </tbody> </table>
+inheritance</td></tr> <tr><td>more to come...</td></tr> </tbody>
+</table>
+</p>
 
-<table border="1" cellpadding="3"> <thead><tr><th>Headers</th>
+<p>
+<table border="1" cellpadding="3">
+  <thead><tr><th>Headers</th>
 <th></th></tr><thead> <tbody> <tr><td>zmapStyle.h</td><td>Contains all the
 config strings, similar to zmapConfigStrings.c</td></tr> <tr><td>zmapStyle_I.h
 </td><td>Private style data structures</td></tr> <tr><td>more to
-come...</td></tr> </tbody> </table> </p>
+come...</td></tr> </tbody>
+</table>
+</p>
 
 
 

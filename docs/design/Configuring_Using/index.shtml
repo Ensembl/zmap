@@ -2,7 +2,7 @@
 <!--#include virtual="/perl/header"-->
 <!--#set var="author" value="edgrif@sanger.ac.uk" -->
 
-<h1>ZMap Display</h1>
+<h1>Configuring and Using ZMap</h1>
 
 
 <h2>Configuration</h2>

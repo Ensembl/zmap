@@ -60,7 +60,7 @@ script via command line arguments.  </p>
 The blixem configuration file <b>blixemrc</b> will be amended to include a
 stanza for fetching short-read data, which will include a script with optional
 arguments, not including the sequence name or start or end coordinates. Refer
-<a href="../Futures/standalone.shtml">here</a> for some relevant comments
+<a href="../Servers/pipeServer.shtml">here</a> for some relevant comments
 regarding other pipe-server arguments which may affect this configuration in
 future.  </p> <p> The config file already specifies the default pfetch mode for
 our current data type (EMBL sequences).  This fetch mode relates to fetching
@@ -71,10 +71,10 @@ knowledge of what those sequences are.  We could in the future want additional
 fetch methods for different data types that we don't yet know about, which may
 fetch sequences or just sequence data.  </p> <p>The following suggestion for a
 config file format is an attempt to be as flexible as possible in these
-requirements. See the <a
-href="http://mediawiki.internal.sanger.ac.uk/wiki/index.php/Blixem_Config_file">wiki
-page</a> for more info about the Blixem config file.  <pre> [blixem] bulk-fetch
-= pfetch-socket # default fetch method to use when there is no data type given
+requirements.
+
+<pre> [blixem]
+bulk-fetch = pfetch-socket # default fetch method to use when there is no data type given
 for an item in the GFF file user-fetch = pfetch-http # optionally, this can be
 used to specify a different fetch method for when the user double-clicks a
 sequence
@@ -127,9 +127,7 @@ needed.  </p>
 <td>A list of featuresets containing SR data<br /> As for DNA and protein
 featuresets we try to match both columns<br /> and featuresets to allow simple
 configuration.<br /> (Note: each column/featureset has options for short names
-and more lengthy descriptions). <br /> Refer <a
-href="../Futures/standalone.shtml">here</a> for some relevant comments regarding
-extra ZMap config options
+and more lengthy descriptions). 
  </td> </tr> </table>
 
 ZMap will hold this list in the View's context_map (accessable to the Window
@@ -179,7 +177,7 @@ present). Whether or not this causes the columns to switch or display together
 is not relevant here.  Existing ZMap configuration (eg
 [featureset-description]) will be used to specify display names and helpful
 information as at present.  </p> <p>Referring to the <a
-href="../Loading/RNAseq.html">request</a> for a new pane on the load columns
+href="../Loading/RNAseq.shtml">request</a> for a new pane on the load columns
 dialog, the existance of a [Coverage] mapping may be used to include
 featuresets in this page or not, and also the existing load columns pane.  </p>
 

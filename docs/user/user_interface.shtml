@@ -337,32 +337,42 @@ bump a column follow this procedure:</li>
 
 <p>
 <img src="align1.png" alt="[Image of alignment displayed in ZMap]" align=left border=2 hspace=20>
+</p>
 
-<p>(Please refer to the picture to the left in the following description.)
+<p>(Please refer to the picture to the left in the following description.)</p>
 
-<p>ZMap gives three types of visual indication about the quality of alignments to a sequence:
+<p>ZMap gives three types of visual indication about the quality of alignments to a sequence:</p>
 
 <p><b>Alignment Quality:</b> the width of every alignment displayed is a measure of its score,
 the wider it is the closer the score is to 100% (the precise score is displayed in the ZMap
-details bar by clicking on the alignment).
+details bar by clicking on the alignment).</p>
 
 <p><b>Alignment colinearity:</b> Where a particular protein or DNA sequence has several alignments to a sequence, 
 ZMap gives a visual indicator of the colinearity of that set of alignments. This is given by the colour of
-the bars joining up the alignment blocks:
+the bars joining up the alignment blocks:</p>
 
+<p>
 <ul>
-  <li><b>Green:</b> the blocks are "perfectly" colinear within a given "slop" factor which can be set in
-      the style for that set of alignments.
+  <li><b>Green:</b> the blocks are "perfectly" colinear, i.e. there are no deletions from the match sequence
+      in the alignment (but see <b>**</b>).
   <li><b>Orange:</b> the blocks are colinear but there is missing sequence in the alignment.
   <li><b>Red:</b> the blocks are not colinear.
 </ul>
+</p>
 
-<p><b>Missing start/end:</b> The first and last alignments in the set are marked with a red bar at their
-start/end respectively to indicate that they do not start at the first base/amino acid
-and/or do not end with the last base/amino acid of the alignment sequence.
+<p><b>**</b> a "slop" factor can be given which allows up to the specified
+number of match bases to be deleted between alignment blocks in the match
+sequence and it still be shown as "perfectly" colinear. This is useful for
+alignments such as protein to nucleotide where splice sites can be inexact.</p>
 
-<p>The third alignment from the right shows all of these indicators, while the next alignment to the left
-shows a section that aligns colinearly for only part of its sequence.
+<p><b>Missing start/end:</b> The first and last alignments in the set are
+marked with a red bar at their start/end respectively if they do not start at
+the first base/amino acid and/or do not end with the last base/amino acid of
+the alignment sequence.</p>
+
+<p>The third alignment from the right shows all of these indicators, while the
+next alignment to the left shows a section that aligns colinearly for only part
+of its sequence.</p>
 
 
 

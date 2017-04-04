@@ -1,4 +1,4 @@
-<!--#set var="banner" value="Configuring Data as ZMap Columns"-->
+<!--#set var="banner" value="Configuring Data into ZMap Columns"-->
 <!--#include virtual="/perl/header"-->
 
 <!--#set var="author" value="edgrif@sanger.ac.uk" -->
@@ -33,7 +33,7 @@ legend{ font-weight: bold }
 </style>
 
 
-<h1 align="center">ZMap Remote Control Interface</h1>
+<h1 align="center">Configuring Data into ZMap Columns</h1>
 
 
 <h2>Main Contents</h2>
@@ -48,12 +48,14 @@ legend{ font-weight: bold }
 <a name="introduction"></a>
 <h2>Introduction</h2>
 
-Some old blurb.
+<p>This is the start of documenting the current structs used to represent
+columns, feature sets and features in a ZMap display.</p>
 
 
 <a name="stanzas"></a>
 <h2>Configuration File Stanzas</h2>
 
+<p>Stanzas used to configure features and feature sets into columns.</p>
 
 <pre>
 [ZMap]

@@ -5,7 +5,7 @@
 ZMap implements 'servers' which provide access to databases either via an interactive connection (eg ACEDB) or a passive one (eg pipeServers) and a few layers of software have been implemented to allow this. These layers have thoer own private data and information is passed bewteen the layers via callback functions which are driven by a number of requests and responses defined in <b>zmapServerProtocolHandler.c</b>.
 At each layer requests and responses are copied from one data structure to another and request codes and responses code are translated to something else.
 </p>
-<p>A further section below deals with <a href="../notes/server_layers.shtml#req_coords">passing request coordinates to a server</a>.
+<p>A further section below deals with <a href="server_layers.shtml#req_coords">passing request coordinates to a server</a>.
 </p>
 <p>Hopefully this little document may help someone else find their way through the code.
 </p>
@@ -527,8 +527,12 @@ This is called indirectly via window_cbs_G->command().  Note that zmapWindowFetc
 </table>
 
 <h4>A problem</h4>
-<p>When started from otterlace ZMap does not read its configuration in a way that results in dataset or sequence being accessable. What was actually happening was that teh zmap view was created vvia the new_view XRemote command that didi not have access to the configuration data. This is a faairly obscure area to understand, refer to <a href="../notes/app_callbacks.shtml">Application Callbacks</a> for a summary.
-</p>
+
+<p>When started from otterlace ZMap does not read its configuration in a way
+that results in dataset or sequence being accessable. What was actually
+happening was that teh zmap view was created vvia the new_view XRemote command
+that didi not have access to the configuration data.</p>
+
 <h4>Another problem</h4>
 <p>ZMap should create a view window if the "win-id" arg is not given. The function that checks this did not work, instead reported that an argument was set if it was coded as a possible arg rather than given on the command line.
 </p>

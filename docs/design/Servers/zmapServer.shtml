@@ -11,10 +11,10 @@ acedb/, DAS, and pipe/ are the servers that run in these threads.
 <br />
 
 <h3>Related pages</h3>
-<p><a href="modules/zmapView.shtml#reqdata">zmapView</a> contains some notes about requesting data from pipeServer modules and other issues.</p>
-<p><a href="pipeServer.shtml">pipeServer</a> details usage of that module.</p>
+<p><a href="../Loading/zmapView.shtml#reqdata">zmapView</a> contains some notes about requesting data from pipeServer modules and other issues.</p>
+<p><a href="../Servers/pipeServer.shtml">pipeServer</a> details usage of that module.</p>
 <p><a href="../Threads/slaveThread.shtml">Threads</a> some notes about thread startup and shutdown.</p>
-<p><a href="./server_layers.shtml">Server layering</a>
+<p><a href="server_layers.shtml">Server layering</a>
 </p>
 
 

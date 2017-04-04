@@ -10,15 +10,24 @@ featuresets that are related in several different ways.  </p>
 <h4>Insufficient flexibilty</h4> <p>Please refer to the following diagram,
 which illustrates how the current ZMap architecture cannot implement what is
 required (but see <a href="./data_config.shtml#bingo">Bingo</a>
-below).<br /> a) shows the traditional approach derived from ACEDB and now in
-use with data provided by pipe servers (NOTE: this is not a brilliant example
-as all the featuresets actually come from one pipe server). <br />
+below).
 
+<p>
+<img src="./data_config.png" class="img" alt="column config">
+</p>
+
+<p>
+a) shows the traditional approach derived from ACEDB and now in
+use with data provided by pipe servers (NOTE: this is not a brilliant example
+as all the featuresets actually come from one pipe server).</p>
+
+<p>
 b) shows a simple BAM data column with two reps of the same experiment combined
 into one column. Each rep is sourced from it's own pipe server and the features
 can be colour code via styles easily - this fits quite well into existing
-architecture. <br />
+architecture. </p>
 
+<p>
 c) shows a coverage column. Coverage is displayed as several featuresets in a
 column, so for instance for a given grouping of cell lines in ENCODE (eg tier
 1) we present all the cytosol experiments for each cell line/ cell compartment
@@ -44,12 +53,13 @@ related featureset, and column) and we only have two.  </p>
 coverage to data to allow requests via the mouse and this has become unwieldy.
 </p>
 
-<h4>Interim solution</h4> <p>This leads to the current interim solution where
+<h4>Interim solution</h4>
+<p>This leads to the current interim solution where
 the pipe script that provides coverage data amalgamates several different data
 sources into one featureset, which is not an ideal solution as: <ul> <li> we
 are handling the problem externally: ZMap should have control over this <li> if
 one of the sources fails it is difficult to recover from the situation </ul>
-<img src="./data_config.png" class="img" alt="column config"> </p>
+ </p>
 
 
 <h3>Some approaches</h3>

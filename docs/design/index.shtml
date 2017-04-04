@@ -4,20 +4,22 @@
 
 <h1>ZMap Design Documentation</h1>
 
-<font color="red">
-<h2>An Apology</h2>
 
-<p>Much of the documentation linked from this page is now out of date, pages
-that were irrelevant have been removed. You should be aware that the code
-may have moved on some way from the description.</p>
+<h3>An Apology</h3>
+
+<font color="red">
+
+<p>Much of the documentation linked from this page is now out of date and you
+should be aware that the code may have moved on some way from these
+descriptions. Pages that have become completely irrelevant have been
+removed. </p>
 
 <p>In an ideal world the documentation would have been constantly updated but
 as resources have fluctuated wildly over the course of the project it has not
-been possible to devote as much time to documentation as would have been
-wished.</p> </font>
+been possible to devote as much time to this as would have been wished.</p>
 
+</font>
 
-<h2>Current Code</h2>
 
 <h3>Configuring and Data Loading</h3>
 

@@ -16,7 +16,7 @@ Scripts are to be installed locally with ZMap and the directory itself will be i
 
 
 <h2>Configuration</h2>
-(complete config documentation <a href="user_doc/configuration.shtml">here</a>).
+(complete config documentation <a href="../../user/configuration.shtml">here</a>).
 In ZMap's main configuration file (~/.ZMap/ZMap, or as otherwise optioned) we specify each pipeServer and also set up a few other options as needed.  This is driven from the ZMap stanza, and each source is specified in a stanza of its own:
 </p>
 <pre>

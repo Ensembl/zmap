@@ -1,11 +1,15 @@
-<!-- $Id: glyph_style.html,v 1.1 2011-01-10 13:47:48 edgrif Exp $ -->
-<h2>Style definitions for Glyphs</h2>
+<h1>Style definitions for Glyphs</h1>
+
 <h2>Summarised</h2>
+
 <p>
 Quick links:
-<a href="../../user/styles.shtml">Style configuration options</a>
-<a href="../notes/glyph_style.shtml#impl">Implementation notes</a>.
+<ul>
+  <li><a href="../../user/styles.shtml">Style configuration options</a>
+  <li><a href="#impl">Implementation notes</a>.
+</ul>
 </p>
+
 <hr />
 <p>
 As of April 2010 glyphs will be changed, the main differences being:

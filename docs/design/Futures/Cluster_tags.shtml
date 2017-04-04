@@ -16,9 +16,6 @@ pre{ width: 95%; background-color: #DDDDDD; border-style: solid; border-width: 1
 
 <h3>Introduction</h3>
 
-<p>Please see the <a href="./Tag_sets.shtml">Tag Set</a> documentation for a key to
-colouring in Acedb tag examples.</p>
-
 
 <p>For a number of reasons we wish to cluster together features for processing in various
 ways. Obvious examples are:

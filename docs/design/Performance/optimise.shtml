@@ -18,9 +18,11 @@ It may be beneficial to consider some different aspects of speed and percieved s
 </p>
 <hr>
 <p>
-<a href="../notes/optimise.shtml#ideas">Ideas/Action</a>
-<a href="../notes/optimise.shtml#gobj_build">Notes on ZMap build</a>
-<a href="../notes/optimise.shtml#results">Results</a>
+<ul>
+  <li><a href="#ideas">Ideas/Action</a>
+  <li><a href="#gobj_build">Notes on ZMap build</a>
+  <li><a href="#results">Results</a>
+</ul>
 </p>
 
 
@@ -258,9 +260,14 @@ If would be advisable to create a test environment that can exercise ZMap functi
 <p>Processing these (just the function g_datalist_id_get_data()) accounts for 14% of 17% of the total or approximately 3% CPU overall.</p>
 <p>They are used only for styles and feature contexts - lists of featuresets.  Given that we can easily have 300+ styles these would be better coded as a GHashTable.
 </p>
-<p>It appears that this function is only called from zMapFindStyle() which could be removed from most of the code if we did as <a href="../notes/optimise.shtml#featurestyle">above</a>.
-Note that this function is called from processFeature(), (once directly and once via zmapWindowFeatureStrand()) which is called to display every feature, and has to search the window-global list of ~300 styles for each feature.
-</p>
+
+<p>It appears that this function is only called from zMapFindStyle() which
+could be removed from most of the code if we did as <a
+href="#featurestyle">above</a>.  Note that this function
+is called from processFeature(), (once directly and once via
+zmapWindowFeatureStrand()) which is called to display every feature, and has to
+search the window-global list of ~300 styles for each feature.  </p>
+
 <h2>Action plan</h2>
 <p>Remove the style GData list structures and replace then with small hashes and intergrate styles into the feature context.</p>
 <p><b>Expected gain 3% CPU overall, plus a few % more</b></p>
@@ -287,7 +294,10 @@ which equates to a saving of 7.3% of GLib CPU, whidh is approx 50% more signific
 
 <a name="gobj_build"></a>
 <h2>Action plan</h2>
-<p>Implement a global header or build option to allow these macros to be changed easily. Click <a href="../build/build.shtml">here</a> for some notes on how to operate the build system.</p>
+
+<p>Implement a global header or build option to allow these macros to be
+changed easily.</p>
+
 <p>This option is controlled by:
 <pre>
 #if GOBJ_CAST

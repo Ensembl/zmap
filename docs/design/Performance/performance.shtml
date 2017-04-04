@@ -10,11 +10,6 @@ This will cut network delays by half, but note that there is a memory problem to
 </ul>
 </p>
 
-<h2>Profiling ZMap</h2>
-<p>Click <a href="../notes/profile.shtml">here</a> for some ideas on profiling.
-</p>
-
-
 <h2>Network bandwidth: some fantasy figures</h2>
 <p>Currently, depending on the amount of data requested, it can take as much as 10 minutes (anecdotally) for Otterlace/ ZMap to load.  Because of this it is common for people to save thier ACEDB sessions locally to avoid this load time the following day.  By routing data directly to ZMap we loose this option and as a result we expect a large increase in network traffic from current levels at the start of the day.
 </p>

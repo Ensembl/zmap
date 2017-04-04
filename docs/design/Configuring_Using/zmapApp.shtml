@@ -1,14 +1,17 @@
-<h2> zmapApp - main program </h2>
-<fieldset> <legend>Configuration of sequence and control of ZMap</legend>
-<h3>Sequence options</h3>
+<h2>Configuration of Initial ZMap display </h2>
+
+
 <p>Historically there have been two options inthe [Zmap] stanza that controlled how ZMap started up and loaded data:
+
 <pre>
 [ZMap]
 show-main-window = false
 default-sequence = chr6-18_12314500-12344230
 </pre>
+
 The main window is normally hidden when ZMap is run and controlled via Otterlace and visible when run from the command line, and if the default-sequence is specified then it is loaded automatically.  This is not specified when Zmap is run from Otterlace, and Otterlace requests the sequence to be loaded via an XRemote message. If the main window is hidden then if a ZMap is closed ZMap does not exit.
 </p>
+
 <p>This is a little clumsy and the following changes are introduced:
 <ul>
 <li> by default the main window will be visible if ZMap is run from the command line. This is defined as no 'win_id' argument is supplied.  If the main window is hidden then ZMap will exit when no more ZMaps are open.
@@ -20,6 +23,7 @@ The main window is normally hidden when ZMap is run and controlled via Otterlace
 Note that we do not require start and end coordinates to be specified as this preserves existing function with ACEDB, but if used with pipe servers only then this is necessary for correct use.
 </ul>
 </p>
+
 <p> Note that the above implies that Otterlace will also include the dataset name eitehr in the sequence name or as a separate XML field.
 </p>
-</fieldset>
+

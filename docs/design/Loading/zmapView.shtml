@@ -1,13 +1,18 @@
-<h2> zmapView - a mixture of V and C from MVC </h2>
- <h2>Summary</h2> <p>zmapView is quite a large module! When adding a topic to
- this file please include a link here.</p> <a
- href="zmapView.shtml#reqdata">Requesting data from sources</a> <a
- href="zmapView.shtml#steplists">Step lists</a> <a
- href="zmapView.shtml#reqcontext">Retreiving data from a server</a> <a
- href="zmapView.shtml#loaddata">Rationalising load-features code</a> <br /> <a
- href="../Features/BAM.shtml#blixem_bam">Asking Blixem to Request BAM data</a><br>
- <a href="../Styles/view_window_style.shtml">Views and Styles</a><br />
+<h1> zmapView - The data/functions representing a sequence and its features</h1>
 
+<h2>Summary</h2>
+
+<p>zmapView is quite a large module! When adding a topic to
+ this file please include a link here:</p>
+
+<ul>
+  <li><a href="zmapView.shtml#reqdata">Requesting data from sources</a>
+  <li> <a href="zmapView.shtml#steplists">Step lists</a>
+  <li> <a href="zmapView.shtml#reqcontext">Retreiving data from a server</a>
+  <li> <a href="zmapView.shtml#loaddata">Rationalising load-features code</a>
+  <li><a href="../Features/BAM.shtml#blixem_bam">Asking Blixem to Request BAM data</a>
+  <li> <a href="../Styles/view_window_style.shtml">Views and Styles</a><br />
+</ul>
 
 <h2>General notes</h2> (need some def on how windows views etc hang together,
 now and ideally)
