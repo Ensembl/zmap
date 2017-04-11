@@ -146,10 +146,11 @@ function config_set_ZMAP_ARCH
 }
 
 
+bale_early='no'
 force_remake_all=''
 gb_tools='maybe'
 ensc_core='maybe'
-run_autoupdate=''					    # don't run autoupdate by default.
+run_autoupdate=''                                           # don't run autoupdate by default.
 install_missing='-i'
 verbose=''
 version_arg=''
@@ -210,9 +211,10 @@ ensembl_file='ensembl_ref_but_no_build'
 usage="
 
 Usage:
- $SCRIPT_NAME [ -a -d -e -f -g -h -i -n -u -v ]
+ $SCRIPT_NAME [ -a -b -d -e -f -g -h -i -n -u -v ]
 
    -a  Force checkout of aceconn (overwrite existing subdir)
+   -b  Bale early: just install sub libraries, no autoconf stuff.
    -d  Disable checkout/build of ensc-core, use local install.
    -e  Force checkout of ensc-core (overwrite existing subdir)
    -f  Force remake all
@@ -232,26 +234,27 @@ if [[ -f $ensembl_file ]] ; then
 fi
 
 
-while getopts ":adefghinouvz" opt ; do
+while getopts ":abdefghinouvz" opt ; do
     case $opt in
-	a  ) install[$aceconn_key]='yes' ;;
-	d  ) touch $ensembl_file
+        a  ) install[$aceconn_key]='yes' ;;
+        b  ) bale_early='yes' ;;
+        d  ) touch $ensembl_file
              install[$ensc_core_key]='no' ;;
-	e  ) install[$ensc_core_key]='yes' ;;
-	f  ) force_remake_all='-f' ;;
-	g  ) install[$gb_tools_key]='yes' ;;
-	o  ) checkout_old_commits='yes' ;;
-	h  ) zmap_message_exit "$usage" ;;
-	i  ) install_missing='-i' ;;
-	n  ) install[$gb_tools_key]='no' ;;
-	u  ) run_autoupdate_key]='yes' ;;
-	v  ) verbose='-v' ;;
-	z  ) install[$aceconn_key]='no'
+        e  ) install[$ensc_core_key]='yes' ;;
+        f  ) force_remake_all='-f' ;;
+        g  ) install[$gb_tools_key]='yes' ;;
+        o  ) checkout_old_commits='yes' ;;
+        h  ) zmap_message_exit "$usage" ;;
+        i  ) install_missing='-i' ;;
+        n  ) install[$gb_tools_key]='no' ;;
+        u  ) run_autoupdate_key]='yes' ;;
+        v  ) verbose='-v' ;;
+        z  ) install[$aceconn_key]='no'
              install[$ensc_core_key]='no'
              install[$gb_tools_key]='yes'
              install[$htslib_key]='no'
              install[$zeromq_key]='no' ;;
-	\? ) zmap_message_exit "Bad arg flag: $usage" ;;
+        \? ) zmap_message_exit "Bad arg flag: $usage" ;;
     esac
 done
 
@@ -322,7 +325,7 @@ for i in "${!install[@]}"
           cd ./${dir[$i]}
           ./autogen.sh
           cd $cur_dir
-	
+        
         fi
         ;;
 
@@ -338,7 +341,7 @@ for i in "${!install[@]}"
           cd ./${dir[$i]}/src
           ./autogen.sh
           cd $cur_dir
-	
+        
         fi
         ;;
 
@@ -364,6 +367,16 @@ for i in "${!install[@]}"
 
 zmap_message_out "finished installing external libraries:  ${!dir[*]}"
 zmap_message_out "-------------------------------------------------------------------"
+
+
+
+# Sometimes we want a tree containing any necessary subdirectories (aceconn etc)
+# but don't want to run any autoconf stuff.
+#
+if [ "$bale_early" = 'yes' ] ; then
+  zmap_message_exit "Subdirectories installed, exiting before autoreconf."
+fi
+
 
 
 # Remove any files/dirs from previous builds, necessary because different
@@ -444,21 +457,6 @@ rm -f $qmake_location
 echo "QMAKE_LOCAL=$QMAKE_LOCAL" > $qmake_location 
 echo "QMAKE_ARGS=$QMAKE_ARGS" >> $qmake_location
 
-
-
-# trying commenting this out...........
-
-# SURELY THIS ISN'T NEEDED NOW....OR WE SHOULD DELETE THE CVSIGNORE STUFF FROM THE REPOSITORY.
-# clean up first
-# xargs: I've removed the -r because not all platforms have it.
-# rm: I've added -r to deal with directories and taken away the -f so we can see any errors.
-# I've changed from just cat'ing the root dir .cvsignore to all of them and then grep'ing them
-# replacing .cvsignore: in the output from grep and removing the file! Ha ha.
-#cat .cvsignore | xargs -t rm -r
-#find . -name '.cvsignore' | \
-#xargs grep '.' | \
-#sed -e 's/.cvsignore://' | \
-#while read file; do [ ! -f "$file" ] || rm -r $file; done
 
 
 # Optionally run autoupdate.....
