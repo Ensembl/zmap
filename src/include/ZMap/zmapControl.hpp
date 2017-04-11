@@ -38,7 +38,7 @@
 #include <ZMap/zmapView.hpp>
 #include <ZMap/zmapFeature.hpp>
 #include <ZMap/zmapWindow.hpp>
-#include <ZMap/zmapAppRemote.hpp>
+
 
 /* Opaque type, represents an instance of a ZMap. */
 typedef struct _ZMapStruct *ZMap ;
@@ -81,14 +81,8 @@ int zMapNumViews(ZMap zmap) ;
 gboolean zMapSetSessionColour(ZMap zmap, GdkColor *session_colour) ;
 ZMapViewWindow zMapAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map, GError **error) ;
 ZMapView zMapControlInsertView(ZMap zmap, ZMapFeatureSequenceMap sequence_map, char **err_msg) ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-gboolean zMapGetDefaultView(ZMapAppRemoteViewID view_inout) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 gboolean zMapConnectView(ZMap zmap, ZMapView view, GError **error) ;
 gboolean zMapLoadView(ZMap zmap, ZMapView view) ;
-
 gboolean zMapStopView(ZMap zmap, ZMapView view) ;
 gboolean zMapControlCloseView(ZMap zmap, ZMapView view) ;
 void zMapDeleteView(ZMap zmap, ZMapView view, GList **destroyed_views_inout) ;
@@ -102,9 +96,13 @@ gboolean zMapCheckIfUnsaved(ZMap zmap) ;
 gboolean zMapReset(ZMap zmap) ;
 void zMapDestroy(ZMap zmap, GList **destroyed_views_inout) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 gboolean zMapControlProcessRemoteRequest(ZMap zmap,
 					 char *command_name, char *request, gpointer view_id,
 					 ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 void zMapAddClient(ZMap zmap, void *client);
 char *zMapControlRemoteReceiveAccepts(ZMap zmap);
 gboolean zMapReset(ZMap zmap) ;

@@ -42,8 +42,15 @@
 #include <ZMap/zmapUtilsGUI.hpp>
 #include <ZMap/zmapFeature.hpp>
 #include <ZMap/zmapFeatureLoadDisplay.hpp>
-#include <ZMap/zmapAppRemote.hpp>
+
 #include <ZMap/zmapXMLHandler.hpp>
+
+
+// Want this to go in the end...
+#include <ZMap/zmapAppRemote.hpp>
+
+
+
 
 
 #define SCRATCH_FEATURE_NAME "temp_feature"
@@ -460,6 +467,9 @@ typedef struct _ZMapWindowCallbacksStruct
   ZMapRemoteAppMakeRequestFunc remote_request_func ;
   ZMapRemoteAppMakeRequestFunc remote_request_func_data ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
   ZMapRemoteAppMakeRequestFunc remote_request_func ;
   gpointer remote_request_func_data ;
 
@@ -530,9 +540,13 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, ZMapFeatureSequenceMapStruct
 
 void zMapWindowBusyFull(ZMapWindow window, gboolean busy, const char *file, const char *func) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 gboolean zMapWindowProcessRemoteRequest(ZMapWindow window,
                                         char *command_name, char *request,
                                         ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 gboolean zMapWindowExecuteCommand(ZMapWindow window, ZMapWindowCallbackCommandAny cmd_any, char **err_msg_out) ;
 

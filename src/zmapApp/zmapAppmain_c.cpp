@@ -45,7 +45,11 @@
 #include <ZMap/zmapConfigIni.hpp>
 #include <ZMap/zmapConfigStrings.hpp>
 #include <ZMap/zmapGFF.hpp>
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #include <zmapApp_P.hpp>
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+#include <zmapAppRemote_P.hpp>
 
 
 

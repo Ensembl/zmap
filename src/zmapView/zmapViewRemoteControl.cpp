@@ -44,6 +44,8 @@
  * used in zmapView that's where it should be defined.....I'll move it some other time. */
 #include <ZMap/zmapConfigStanzaStructs.hpp>
 
+#include <ZMap/zmapWindowRemote.hpp>
+
 #include <zmapView_P.hpp>
 
 

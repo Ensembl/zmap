@@ -32,6 +32,8 @@
 #ifndef ZMAP_XML_P_H
 #define ZMAP_XML_P_H
 
+#include <expat.h>
+
 #include <ZMap/zmapXML.hpp>
 
 #define ZMAP_XML_BASE_ATTR "xml:base"
@@ -48,7 +50,7 @@ typedef struct _zmapXMLDocumentStruct
   GQuark encoding;
   int standalone;
   ZMapXMLElement root;
-} zmapXMLDocumentStruct;
+} zmapXMLDocumentStruct, *ZMapXMLDocument ;
 
 typedef struct _zmapXMLAttributeStruct
 {
@@ -110,6 +112,15 @@ typedef struct _ZMapXMLWriterStruct
   gboolean compress_empty_elements ;
 } ZMapXMLWriterStruct;
 
+
+/* DOCUMENTS */
+ZMapXMLDocument zMapXMLDocumentCreate(const XML_Char *version, const XML_Char *encoding, int standalone) ;
+void zMapXMLDocumentSetRoot(ZMapXMLDocument doc, ZMapXMLElement root) ;
+char *zMapXMLDocumentVersion(ZMapXMLDocument doc) ;
+char *zMapXMLDocumentEncoding(ZMapXMLDocument doc) ;
+gboolean zMapXMLDocumentIsStandalone(ZMapXMLDocument doc) ;
+void zMapXMLDocumentReset(ZMapXMLDocument doc) ;
+void zMapXMLDocumentDestroy(ZMapXMLDocument doc) ;
 
 /* ATTRIBUTES */
 ZMapXMLAttribute zmapXMLAttributeCreate(const XML_Char *name,

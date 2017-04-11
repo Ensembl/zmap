@@ -38,7 +38,8 @@
 #include <glib.h>
 
 #include <ZMap/zmapRemoteCommand.hpp>
-#include <zmapApp_P.hpp>
+#include <zmapAppRemote_P.hpp>
+
 
 
 

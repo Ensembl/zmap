@@ -17,6 +17,7 @@ ZMap/zmapConfigStrings.hpp \
 ZMap/zmapConfigStanzaStructs.hpp \
 ZMap/zmapConfigStyleDefaults.hpp \
 ZMap/zmapControl.hpp \
+ZMap/zmapControlRemote.hpp \
 ZMap/zmapDAS.hpp \
 ZMap/zmapDNA.hpp \
 ZMap/zmapDataSlave.hpp \
@@ -69,10 +70,12 @@ ZMap/zmapUtilsLogical.hpp \
 ZMap/zmapUtilsMesg.hpp \
 ZMap/zmapUtilsPrivate.hpp \
 ZMap/zmapView.hpp \
+ZMap/zmapViewRemote.hpp \
 ZMap/zmapWebPages.hpp \
 ZMap/zmapWindow.hpp \
 ZMap/zmapWindowDrawFeatures.hpp \
 ZMap/zmapWindowNavigator.hpp \
+ZMap/zmapWindowRemote.hpp \
 ZMap/zmapXML.hpp \
 ZMap/zmapXMLHandler.hpp \
 $(NULL)

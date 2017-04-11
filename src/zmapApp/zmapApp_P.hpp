@@ -34,10 +34,12 @@
 #include <gdk/gdkx.h>
 
 #include <ZMap/zmapUtils.hpp>
+
 #include <ZMap/zmapControl.hpp>
-#include <ZMap/zmapRemoteControl.hpp>
-#include <ZMap/zmapAppRemote.hpp>
+
 #include <ZMap/zmapAppServices.hpp>
+#include <ZMap/zmapAppRemote.hpp>
+
 
 
 #define INIT_FORMAT "Init - %s"
@@ -153,6 +155,8 @@ typedef void (*ZMapManagerForAllCallbackFunc)(ZMap zmap, void *user_data) ;
 
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* Opaque type, controls remote peer interaction with all current ZMap windows. */
 typedef struct ZMapAppRemoteStructType *ZMapAppRemote ;
 
@@ -215,6 +219,11 @@ typedef struct ZMapAppRemoteStructType
 
 
 } ZMapAppRemoteStruct ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+/* Opaque type, controls remote peer interaction with all current ZMap windows. */
+typedef struct ZMapAppRemoteStructType *ZMapAppRemote ;
 
 
 

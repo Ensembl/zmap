@@ -45,6 +45,7 @@
 #include <ZMap/zmapView.hpp>
 #include <ZMap/zmapFeature.hpp>
 #include <ZMap/zmapUtils.hpp>
+#include <ZMap/zmapViewRemote.hpp>
 #include <zmapControl_P.hpp>
 
 

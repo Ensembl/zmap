@@ -42,9 +42,11 @@
 #include <ZMap/zmapWindowNavigator.hpp>
 #include <ZMap/zmapXMLHandler.hpp>
 #include <ZMap/zmapUrl.hpp>
-#include <ZMap/zmapAppRemote.hpp>
 #include <ZMap/zmapConfigStanzaStructs.hpp>
 #include <ZMap/zmapFeatureLoadDisplay.hpp>
+
+// want this to go in the end...
+#include <ZMap/zmapAppRemote.hpp>
 
 
 /* Opaque type, represents an instance of a ZMapView. */
@@ -212,9 +214,13 @@ char *zMapViewGetDataset(ZMapView zmap_view) ;
 
 void zMapViewForAllZMapWindows(ZMapView view, ZMapViewForAllCallbackFunc user_func_cb, void *user_func_data) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 gboolean zMapViewProcessRemoteRequest(ZMapViewWindow view_window,
 				      char *command_name, char *request,
 				      ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 gpointer zMapViewFindView(ZMapView view, gpointer view_id) ;
 
 ZMapFeatureSequenceMap zMapViewGetSequenceMap(ZMapView zmap_view);

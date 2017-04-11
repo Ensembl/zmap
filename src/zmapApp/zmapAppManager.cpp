@@ -38,7 +38,9 @@
 #include <ZMap/zmapXML.hpp>
 #include <ZMap/zmapConfigIni.hpp>
 #include <ZMap/zmapConfigStrings.hpp>
+#include <ZMap/zmapControlRemote.hpp>
 #include <zmapApp/zmapApp_P.hpp>
+
 
 
 

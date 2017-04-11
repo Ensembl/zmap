@@ -15,6 +15,7 @@ zmapAppRemoteInternal.hpp \
 zmapAppRemoteInternal.cpp \
 zmapAppRemoteControl.cpp \
 zmapAppRemoteCommand.cpp \
+zmapAppRemote_P.hpp \
 zmapAppManager.cpp \
 $(NULL)
 

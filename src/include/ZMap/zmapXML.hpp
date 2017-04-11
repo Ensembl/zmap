@@ -27,20 +27,11 @@
  *
  *-------------------------------------------------------------------
  */
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-#ifdef __cplusplus
-extern "C" {
-#endif
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 #ifndef ZMAP_XML_H
 #define ZMAP_XML_H
 
 #include <stdio.h>
-#include <expat.h>
+
 #include <glib.h>
 
 /* macro to abort parsing if expression is true.
@@ -126,15 +117,16 @@ typedef struct _zmapXMLElementStruct
  * \typedef zmapXMLAttribute
  * \brief Opaque XML attribute object
  *
- * \typedef zmapXMLDocument
- * \brief Opaque XML document object
- *
  * \typedef zmapXMLParser
  * \brief Opaque XML parser object
  *
  */
 typedef struct _zmapXMLAttributeStruct *ZMapXMLAttribute;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 typedef struct _zmapXMLDocumentStruct  *ZMapXMLDocument;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 typedef struct _zmapXMLParserStruct    *ZMapXMLParser;
 typedef struct _ZMapXMLWriterStruct    *ZMapXMLWriter;
 
@@ -269,6 +261,8 @@ GQuark zMapXMLAttributeGetValue(ZMapXMLAttribute attr);
 
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* DOCUMENTS */
 ZMapXMLDocument zMapXMLDocumentCreate(const XML_Char *version, const XML_Char *encoding, int standalone) ;
 void zMapXMLDocumentSetRoot(ZMapXMLDocument doc, ZMapXMLElement root) ;
@@ -277,6 +271,8 @@ char *zMapXMLDocumentEncoding(ZMapXMLDocument doc) ;
 gboolean zMapXMLDocumentIsStandalone(ZMapXMLDocument doc) ;
 void zMapXMLDocumentReset(ZMapXMLDocument doc) ;
 void zMapXMLDocumentDestroy(ZMapXMLDocument doc) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
@@ -392,11 +388,4 @@ char *zMapXMLUtilsUnescapeStrdup(const char *str);	/* NOTE: incomplete */
 
 
 #endif /* ZMAP_XML_H */
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-#ifdef __cplusplus
-}
-#endif
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 

@@ -42,7 +42,7 @@
 #include <ZMap/zmapRemoteCommand.hpp>
 #include <ZMap/zmapAppRemote.hpp>
 #include <ZMap/zmapCmdLineArgs.hpp>
-#include <zmapApp_P.hpp>
+#include <zmapAppRemote_P.hpp>
 
 
 /* Timeout list for remote control for sends. */
@@ -489,9 +489,6 @@ static void zmapRequestSentCB(void *user_data)
 static void receivedPeerReplyCB(ZMapRemoteControl remote_control, char *reply, void *user_data)
 {
   ZMapAppContext app_context = (ZMapAppContext)user_data ;
-  ZMapAppRemote remote = app_context->remote_control ;
-  gboolean result ;
-  char *error_out = NULL ;
 
   zMapLogWarning("%s", "Setting modal off") ;
   setModal(app_context, FALSE) ;
