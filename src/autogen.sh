@@ -340,8 +340,6 @@ zmap_message_out "starting post-processing of external libraries:  ${!dir[*]}"
 for i in "${!install[@]}"
   do
 
-  if [[ "${install[$i]}" == "yes" ]] ; then
-
     zmap_message_out "starting post-processing of $i....."
 
     # Special case post-processing for some libraries....
@@ -385,8 +383,12 @@ for i in "${!install[@]}"
 
         cur_dir=`pwd`
         cd ./${dir[$i]}
-        mv configure.in configure.in.copy || zmap_message_exit "Could not mv configure.in to configure.in.copy"
-        cat configure.in.copy | sed 's/libzmq_werror="yes"/libzmq_werror="no"/' > configure.in ||  zmap_message_exit "Could not change libzmq_werror setting in configure.in"
+
+        if [ -e "./${dir[$i]}/src/autogen.sh" ] ; then
+          mv configure.in configure.in.copy || zmap_message_exit "Could not mv configure.in to configure.in.copy"
+          cat configure.in.copy | sed 's/libzmq_werror="yes"/libzmq_werror="no"/' > configure.in ||  zmap_message_exit "Could not change libzmq_werror setting in configure.in"
+        fi
+
         cd $cur_dir
 
         ;;
@@ -394,8 +396,6 @@ for i in "${!install[@]}"
     esac
 
     zmap_message_out "finished post-processing of $i....."
-
-  fi
 
   done
 
