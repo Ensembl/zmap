@@ -47,8 +47,8 @@
 #include <config.h>
 #include <ZMap/zmapAppRemote.hpp>
 
-/* NEEDED ??? */
-#include <zmapApp_P.hpp>
+/* NEEDED ??? it would seem so... */
+#include <zmapAppRemote_P.hpp>
 
 #include <zmapAppRemoteInternal.hpp>
 
