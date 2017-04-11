@@ -146,7 +146,7 @@ function config_set_ZMAP_ARCH
 }
 
 
-bale_early='no'
+checkout_only='no'
 force_remake_all=''
 gb_tools='maybe'
 ensc_core='maybe'
@@ -211,10 +211,10 @@ ensembl_file='ensembl_ref_but_no_build'
 usage="
 
 Usage:
- $SCRIPT_NAME [ -a -b -d -e -f -g -h -i -n -u -v ]
+ $SCRIPT_NAME [ -a -c -d -e -f -g -h -i -n -u -v ]
 
    -a  Force checkout of aceconn (overwrite existing subdir)
-   -b  Bale early: just install sub libraries, no autoconf stuff.
+   -c  Checkout only: just checkout sub libraries, no autoconf stuff.
    -d  Disable checkout/build of ensc-core, use local install.
    -e  Force checkout of ensc-core (overwrite existing subdir)
    -f  Force remake all
@@ -234,10 +234,10 @@ if [[ -f $ensembl_file ]] ; then
 fi
 
 
-while getopts ":abdefghinouvz" opt ; do
+while getopts ":acdefghinouvz" opt ; do
     case $opt in
         a  ) install[$aceconn_key]='yes' ;;
-        b  ) bale_early='yes' ;;
+        c  ) checkout_only='yes' ;;
         d  ) touch $ensembl_file
              install[$ensc_core_key]='no' ;;
         e  ) install[$ensc_core_key]='yes' ;;
@@ -310,6 +310,40 @@ for i in "${!install[@]}"
 
     fi
 
+    zmap_message_out "finished install of $i....."
+
+  fi
+
+  done
+
+zmap_message_out "finished installing external libraries:  ${!dir[*]}"
+zmap_message_out "-------------------------------------------------------------------"
+
+
+
+# Sometimes we want a tree containing any necessary subdirectories (aceconn etc)
+# but don't want to run any autoconf stuff.
+#
+if [ "$checkout_only" = 'yes' ] ; then
+  zmap_message_exit "Subdirectories installed, exiting before autoreconf."
+fi
+
+
+# Loop through external libraries trying to copy them into our src tree.
+# Note loop only works because all associative arrays have the same set of
+# keys, i.e. one for each library.
+#
+
+zmap_message_out "-------------------------------------------------------------------"
+zmap_message_out "starting post-processing of external libraries:  ${!dir[*]}"
+
+for i in "${!install[@]}"
+  do
+
+  if [[ "${install[$i]}" == "yes" ]] ; then
+
+    zmap_message_out "starting post-processing of $i....."
+
     # Special case post-processing for some libraries....
     case $i in
 
@@ -359,23 +393,14 @@ for i in "${!install[@]}"
 
     esac
 
-    zmap_message_out "finished install of $i....."
+    zmap_message_out "finished post-processing of $i....."
 
   fi
 
   done
 
-zmap_message_out "finished installing external libraries:  ${!dir[*]}"
+zmap_message_out "finished post-processing of external libraries:  ${!dir[*]}"
 zmap_message_out "-------------------------------------------------------------------"
-
-
-
-# Sometimes we want a tree containing any necessary subdirectories (aceconn etc)
-# but don't want to run any autoconf stuff.
-#
-if [ "$bale_early" = 'yes' ] ; then
-  zmap_message_exit "Subdirectories installed, exiting before autoreconf."
-fi
 
 
 
