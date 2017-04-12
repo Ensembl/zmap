@@ -7,6 +7,13 @@
 m4_include([zmap_version.m4])
 
 
+# Needed for EBI Redhat which is old....the below was added after autoconf 2.63
+# copied from: https://github.com/Netflix/dynomite/pull/252/commits/13d63441143aac4aab09e4a67a1ea779cea436f0
+#
+m4_ifndef([m4_esyscmd_s], [m4_define([m4_chomp_all], [m4_format([[%.*s]], m4_bregexp(m4_translit([[$1]], [/], [/ ]), [/*$]), [$1])])])
+m4_ifndef([m4_esyscmd_s], [m4_define([m4_esyscmd_s], [m4_chomp_all(m4_esyscmd([$1]))])])
+
+
 AC_PREREQ(2.61)
 AC_INIT([ZMap], [VERSION_NUMBER], [zmap@sanger.ac.uk], [zmap], [http://www.sanger.ac.uk/resources/software/zmap/])
 
