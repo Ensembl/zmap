@@ -48,6 +48,31 @@
 
 
 
+// Temporary hack while moving zmap to antiquated Redhat in the EBI.
+//
+// Defines macros for glib mutex calls using old and new interfaces.
+// Once EBI catches up then the old ones can be removed.
+//
+
+#if (GLIB_MINOR_VERSION < 32)
+
+#define OUR_MUTEX_PTR GStaticMutex *log_lock
+#define OUR_MUTEX_DECL GStaticMutex log_lock_G = G_STATIC_MUTEX_INIT
+#define OUR_MUTEX_LOCK g_static_mutex_lock(log->log_lock)
+#define OUR_MUTEX_UNLOCK g_static_mutex_unlock(log->log_lock)
+#define OUR_MUTEX_CLEAR g_static_mutex_init(log->log_lock)
+
+#else
+
+#define OUR_MUTEX_PTR GMutex  *log_lock
+#define OUR_MUTEX_DECL static GMutex log_lock_G
+#define OUR_MUTEX_LOCK g_mutex_lock(log->log_lock)
+#define OUR_MUTEX_UNLOCK g_mutex_unlock(log->log_lock)
+#define OUR_MUTEX_CLEAR g_mutex_clear(log->log_lock)
+
+#endif
+
+
 
 
 /* I don't know what all this foo log stuff is about....seems dubious and wrong to me...
@@ -80,7 +105,7 @@ typedef struct
 /* State for the logger as a whole. */
 typedef struct  _ZMapLogStruct
 {
-  GMutex  *log_lock ;                                       /* Ensure only single threading in log handler routine. */
+  OUR_MUTEX_PTR ;                                      /* Ensure only single threading in log handler routine. */
 
   /* Logging action. */
   gboolean logging ;                                        /* logging on or off ? */
@@ -145,7 +170,8 @@ static bool getFuncNamePosition(const char *function_prototype, char **start_out
 static ZMapLog log_G = NULL ;
 
 // glib says that we should not intialise this, it is done for us.
-static GMutex log_lock_G ;
+OUR_MUTEX_DECL ;
+
 
 
 
@@ -303,11 +329,11 @@ gboolean zMapLogStart(GError **error)
   if (!log)
     return result  ;
 
-  g_mutex_lock(log->log_lock) ;
+  OUR_MUTEX_LOCK ;
 
   result = startLogging(log, &g_error) ;
 
-  g_mutex_unlock(log->log_lock) ;
+  OUR_MUTEX_UNLOCK ;
 
   if (g_error)
     g_propagate_error(error, g_error) ;
@@ -514,7 +540,7 @@ void zMapLogStack(void)
   if (!log || !log->logging)
     return ;
 
-  g_mutex_lock(log->log_lock);
+  OUR_MUTEX_LOCK ;
 
   if (log->active_handler.logfile &&
       (log_fd = g_io_channel_unix_get_fd(log->active_handler.logfile)))
@@ -522,7 +548,7 @@ void zMapLogStack(void)
       zMapStack2fd(1, log_fd) ;
     }
 
-  g_mutex_unlock(log->log_lock);
+  OUR_MUTEX_UNLOCK ;
 
   /*  if (!logged)
       zMapLogWarning("Failed to log stack trace to fd %d. "
@@ -542,11 +568,11 @@ gboolean zMapLogStop(void)
   if (!log)
     return result ;
 
-  g_mutex_lock(log->log_lock) ;
+  OUR_MUTEX_LOCK ;
 
   result = stopLogging(log, FALSE) ;
 
-  g_mutex_unlock(log->log_lock) ;
+  OUR_MUTEX_UNLOCK ;
 
   return result ;
 }
@@ -565,11 +591,11 @@ void zMapLogDestroy(void)
   if (!log)
     return ;
 
-  g_mutex_lock(log->log_lock) ;
+  OUR_MUTEX_LOCK  ;
 
   stopLogging(log, TRUE) ;
 
-  g_mutex_unlock(log->log_lock) ;
+  OUR_MUTEX_UNLOCK ;
 
   destroyLog(log) ;
 
@@ -639,7 +665,7 @@ static void destroyLog(ZMapLog log)
 
   g_free(log->nodeid) ;
 
-  g_mutex_clear(log->log_lock) ;
+  OUR_MUTEX_CLEAR ;
 
   g_free(log) ;
 
@@ -908,7 +934,7 @@ static void fileLogger(const gchar *log_domain, GLogLevelFlags log_level, const 
     }
 
   /* glib logging routines are not thread safe so must lock here. */
-  g_mutex_lock(log->log_lock) ;
+  OUR_MUTEX_LOCK ;
 
   if ((g_io_channel_write_chars(log->active_handler.logfile, message, -1, &bytes_written, &g_error)
        != G_IO_STATUS_NORMAL)
@@ -923,7 +949,7 @@ static void fileLogger(const gchar *log_domain, GLogLevelFlags log_level, const 
 
 
   /* now unlock. */
-  g_mutex_unlock(log->log_lock) ;
+  OUR_MUTEX_UNLOCK ;
 
   return ;
 }
