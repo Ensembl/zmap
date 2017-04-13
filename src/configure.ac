@@ -24,7 +24,7 @@ AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_SRCDIR([zmapApp/zmapAppmain_c.cpp])
 AC_CONFIG_HEADERS([config.h])
 
-# try it....
+# Set up local m4 macros
 AC_CONFIG_MACRO_DIR([m4])
 
 

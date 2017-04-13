@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
-###############################################################################
-# Simple script to bootstrap and create the configure script, should be run
-# when any control files have been changed (e.g. new source files added which
-# led to changes to Makefile.am files) including:
+#
+# Script to bootstrap and create the configure script, should be run when any
+# control files have been changed including:
 #
 #    configure.ac
 #    Makefile.am
@@ -12,8 +11,10 @@
 
 
 SCRIPT_NAME=$(basename $0)
+
 INITIAL_DIR=$(pwd)
- SCRIPT_DIR=$(dirname $0)
+
+SCRIPT_DIR=$(dirname $0)
 if ! echo $SCRIPT_DIR | egrep -q "(^)/" ; then
    BASE_DIR=$INITIAL_DIR/$SCRIPT_DIR
 else
@@ -208,24 +209,43 @@ ensembl_file='ensembl_ref_but_no_build'
 #
 # Do args.
 #
+
+#
+# NOT SURE ABOUT THIS CHANGE AS IT LOOKS LIKE FOR ENSEMBL THERE ARE COMPLICATIONS
+# WITH HANDLING THE USING OF A LOCAL INSTALL.....THERE ARE 3 OPTIONS: install,
+# don't install and don't install but reference....
+#
+
+
 usage="
 
 Usage:
- $SCRIPT_NAME [ -a -c -d -e -f -g -h -i -n -u -v ]
+ $SCRIPT_NAME [ -n -a -e -g -h -z -c -f -i -u -v ]
+
+   Optional libraries:
+
+   -n  Disable checkout of any sub libraries
 
    -a  Force checkout of aceconn (overwrite existing subdir)
-   -c  Checkout only: just checkout sub libraries, no autoconf stuff.
-   -d  Disable checkout/build of ensc-core, use local install.
-   -e  Force checkout of ensc-core (overwrite existing subdir)
+   -e  Force checkout of ensc-core
+   -g  Force checkout of gbtools
+   -h  Force checkout of htslib
+   -z  Force checkout of zeromq
+
+   -d  Force a reference to an existing ensembl checkout (mutually exclusive to -e)
+
+   (i.e. to select a subset of libraries specify -n and then specify the libs you want)
+
+   -c  Checkout sub libraries then exit (no autoreconf step)
+
+   -o  Checkout versions of sub libs that match the current zmap version
+       (currently only gbtools and enscore)
+
    -f  Force remake all
-   -g  Force checkout of gbtools (overwrite existing subdir)
-   -h  Show this usage info
    -i  Install missing
-   -n  Disable checkout of gbtools repository (use existing subdir or local install)
    -u  Run autoupdate
    -v  Verbose
 
-   -z  testing, no checkout of any optional libs.
 "
 
 
@@ -234,26 +254,32 @@ if [[ -f $ensembl_file ]] ; then
 fi
 
 
-while getopts ":acdefghinouvz" opt ; do
+while getopts ":naceghzdcfiouv" opt ; do
     case $opt in
-        a  ) install[$aceconn_key]='yes' ;;
-        c  ) checkout_only='yes' ;;
-        d  ) touch $ensembl_file
-             install[$ensc_core_key]='no' ;;
-        e  ) install[$ensc_core_key]='yes' ;;
-        f  ) force_remake_all='-f' ;;
-        g  ) install[$gb_tools_key]='yes' ;;
-        o  ) checkout_old_commits='yes' ;;
-        h  ) zmap_message_exit "$usage" ;;
-        i  ) install_missing='-i' ;;
-        n  ) install[$gb_tools_key]='no' ;;
-        u  ) run_autoupdate_key]='yes' ;;
-        v  ) verbose='-v' ;;
-        z  ) install[$aceconn_key]='no'
+        n  ) install[$aceconn_key]='no'
              install[$ensc_core_key]='no'
-             install[$gb_tools_key]='yes'
+             install[$gb_tools_key]='no'
              install[$htslib_key]='no'
              install[$zeromq_key]='no' ;;
+
+        a  ) install[$aceconn_key]='yes' ;;
+        e  ) install[$ensc_core_key]='yes' ;;
+        g  ) install[$gb_tools_key]='yes' ;;
+        h  ) install[$htslib_key]='yes' ;;
+
+        z  ) install[$zeromq_key]='yes' ;;
+
+        d  ) touch $ensembl_file
+             install[$ensc_core_key]='no' ;;
+
+        c  ) checkout_only='yes' ;;
+
+        f  ) force_remake_all='-f' ;;
+        i  ) install_missing='-i' ;;
+        o  ) checkout_old_commits='yes' ;;
+        u  ) run_autoupdate_key]='yes' ;;
+        v  ) verbose='-v' ;;
+
         \? ) zmap_message_exit "Bad arg flag: $usage" ;;
     esac
 done
@@ -271,8 +297,7 @@ fi
 # Off we go......
 #
 zmap_message_out "-------------------------------------------------------------------"
-zmap_message_out "build bootstrap starting...."
-
+zmap_message_out "build bootstrap started...."
 
 
 # Loop through external libraries trying to copy them into our src tree.
@@ -281,7 +306,9 @@ zmap_message_out "build bootstrap starting...."
 #
 
 zmap_message_out "-------------------------------------------------------------------"
-zmap_message_out "starting installing external libraries:  ${!dir[*]}"
+zmap_message_out "started installing external libraries from ${!dir[*]}"
+
+lib_list=''
 
 for i in "${!install[@]}"
   do
@@ -292,7 +319,7 @@ for i in "${!install[@]}"
 
   else
 
-    zmap_message_out "starting install of $i....."
+    zmap_message_out "started install of $i....."
 
     if [[ "${install[$i]}" == "yes" ]] ; then
 
@@ -312,11 +339,13 @@ for i in "${!install[@]}"
 
     zmap_message_out "finished install of $i....."
 
+    libs_list="$libs_list $i"
+
   fi
 
   done
 
-zmap_message_out "finished installing external libraries:  ${!dir[*]}"
+zmap_message_out "finished installing external libraries:  $libs_list"
 zmap_message_out "-------------------------------------------------------------------"
 
 
@@ -335,13 +364,11 @@ fi
 #
 
 zmap_message_out "-------------------------------------------------------------------"
-zmap_message_out "starting post-processing of external libraries:  ${!dir[*]}"
+zmap_message_out "started post-processing of external libraries from  ${!dir[*]}"
 
+libs_list=''
 for i in "${!install[@]}"
   do
-
-    zmap_message_out "starting post-processing of $i....."
-
     # Special case post-processing for some libraries....
     case $i in
 
@@ -349,6 +376,8 @@ for i in "${!install[@]}"
       # for gbtools to create its gbtools_version.m4 file.
       $gb_tools_key )
         if [ -e "./${dir[$i]}/autogen.sh" ] ; then
+
+          zmap_message_out "started post-processing of $i....."
 
           cur_dir=`pwd`
 
@@ -358,6 +387,9 @@ for i in "${!install[@]}"
           ./autogen.sh
           cd $cur_dir
         
+          zmap_message_out "finished post-processing of $i....."
+
+          lib_list="$libs_list $i"
         fi
         ;;
 
@@ -365,6 +397,8 @@ for i in "${!install[@]}"
       # for ensc-core to create its ensc_version.m4 file.
       $ensc_core_key )
         if [ -e "./${dir[$i]}/src/autogen.sh" ] ; then
+
+          zmap_message_out "started post-processing of $i....."
 
           cur_dir=`pwd`
 
@@ -374,6 +408,10 @@ for i in "${!install[@]}"
           ./autogen.sh
           cd $cur_dir
         
+        
+          zmap_message_out "finished post-processing of $i....."
+
+          lib_list="$libs_list $i"
         fi
         ;;
 
@@ -385,21 +423,24 @@ for i in "${!install[@]}"
         cd ./${dir[$i]}
 
         if [ -e "./${dir[$i]}/src/autogen.sh" ] ; then
+          zmap_message_out "started post-processing of $i....."
+
           mv configure.in configure.in.copy || zmap_message_exit "Could not mv configure.in to configure.in.copy"
           cat configure.in.copy | sed 's/libzmq_werror="yes"/libzmq_werror="no"/' > configure.in ||  zmap_message_exit "Could not change libzmq_werror setting in configure.in"
+
+        
+          zmap_message_out "finished post-processing of $i....."
+
+          lib_list="$libs_list $i"
         fi
 
         cd $cur_dir
-
         ;;
 
     esac
-
-    zmap_message_out "finished post-processing of $i....."
-
   done
 
-zmap_message_out "finished post-processing of external libraries:  ${!dir[*]}"
+zmap_message_out "finished post-processing of external libraries:  $libs_list"
 zmap_message_out "-------------------------------------------------------------------"
 
 
