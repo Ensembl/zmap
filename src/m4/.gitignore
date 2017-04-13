@@ -1,4 +1,7 @@
 # Ignore everything in this directory
 *
 # Except this file
-!.gitignore ax_check_openssl.m4 ax_cxx_compile_stdcxx_0x.m4 ax_lib_mysql.m4
+!.gitignore 
+# or these files...
+!ax_check_openssl.m4 ax_cxx_compile_stdcxx_0x.m4 ax_lib_mysql.m4
+
