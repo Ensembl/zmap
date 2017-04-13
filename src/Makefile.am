@@ -306,6 +306,8 @@ $(top_srcdir)/config.h.in $(top_srcdir)/configure $(top_srcdir)/zmap_version.m4
 GENERATED_FILES = $(top_builddir)/.deps $(top_builddir)/.libs $(top_builddir)/* $(top_srcdir)/config \
 $(top_srcdir)/autom4te.cache
 
+M4_GENERATED = $(top_srcdir)/m4/libtool.m4 $(top_srcdir)/m4/lt*
+
 EXTERNAL_LIBS = $(top_srcdir)/AceConn $(top_srcdir)/ensc-core $(top_srcdir)/gbtools \
 $(top_srcdir)/htslib $(top_srcdir)/zeromq
 EXTERNAL_PLACEHOLDERS = $(top_srcdir)/AceConn $(top_srcdir)/ensc-core \
@@ -314,7 +316,7 @@ $(top_srcdir)/gbtools $(top_srcdir)/htslib $(top_srcdir)/zeromq
 maintainer-clean-local:
 	@echo 'maintainer-clean-local: Removing all generated files....'
 	rm -rf $(GENERATED_FILES)
-	rm -f $(top_srcdir)/m4/*.m4
+	rm -f $(M4_GENERATED)
 	@echo 'maintainer-clean-local: Finished removing all generated files....'
 	@echo 'maintainer-clean-local: Removing all external library files....'
 	rm -rf $(EXTERNAL_LIBS)
