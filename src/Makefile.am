@@ -288,43 +288,45 @@ remotecontrol_LINK         = $(CXX)  $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFL
 # as "all" etc.)
 #----------------------------------------------------------------------
 
-# The most clean you can get your tree is to use the targer maintainer-clean
-# but this does not clean out everything to the state when you check out a
-# copy from git...so we add some stuff to maintainer-clean to try to achieve
+
+# The most clean you can get your tree is to use the targer maintainer-clean but
+# this does not clean out everything to the initial state (i.e. where you would
+# run autogen.sh), so we add some stuff to maintainer-clean to try to achieve
 # this.
 
-
-# Standard way to add _files_ to the list deleted by the maintainer-clean target, 
-# cannot be used for directories.
+# Standard way to specify individual _files_ to be automatically deleted by the
+# maintainer-clean target (you cannot specify directories or regex lists here).
+#
 MAINTAINERCLEANFILES = $(top_srcdir)/Makefile.in $(top_srcdir)/aclocal.m4 \
 $(top_srcdir)/config.h.in $(top_srcdir)/configure $(top_srcdir)/zmap_version.m4
-
 
 # To remove directories and other more complex lists of files we use the standard
 # maintainer-clean-local target which is run after all the stuff in maintainer-clean
 #
-GENERATED_FILES = $(top_builddir)/.deps $(top_builddir)/.libs $(top_builddir)/* $(top_srcdir)/config \
-$(top_srcdir)/autom4te.cache
-
-M4_GENERATED = $(top_srcdir)/m4/libtool.m4 $(top_srcdir)/m4/lt*
+GENERATED_FILES = \
+$(top_srcdir)/config $(top_srcdir)/autom4te.cache $(top_srcdir)/m4/libtool.m4 $(top_srcdir)/m4/lt* \
+$(top_builddir)/.deps $(top_builddir)/.libs $(top_builddir)/*
 
 EXTERNAL_LIBS = $(top_srcdir)/AceConn $(top_srcdir)/ensc-core $(top_srcdir)/gbtools \
 $(top_srcdir)/htslib $(top_srcdir)/zeromq
+
 EXTERNAL_PLACEHOLDERS = $(top_srcdir)/AceConn $(top_srcdir)/ensc-core \
 $(top_srcdir)/gbtools $(top_srcdir)/htslib $(top_srcdir)/zeromq
 
 maintainer-clean-local:
 	@echo 'maintainer-clean-local: Removing all generated files....'
 	rm -rf $(GENERATED_FILES)
-	rm -f $(M4_GENERATED)
 	@echo 'maintainer-clean-local: Finished removing all generated files....'
 	@echo 'maintainer-clean-local: Removing all external library files....'
 	rm -rf $(EXTERNAL_LIBS)
 	git checkout $(EXTERNAL_PLACEHOLDERS)
 	@echo 'maintainer-clean-local: Finished removing all external library files....'
 
-# Removes all build files in the zmapXXX sub-directories in the build directory which
-# will result in zmap being rebuilt.
+
+# Target to clean _just_ the zmap build objects, i.e. removes all build files in
+# the zmapXXX sub-directories in the build directory which will result in zmap
+# being completely rebuilt.
+#
 zmap-clean:
 	@echo 'Starting cleaning up all zmap build files....'
 	@for i in `ls -d $(top_builddir)/zmap*` ; \
