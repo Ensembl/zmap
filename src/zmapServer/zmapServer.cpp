@@ -138,41 +138,69 @@ gboolean zMapServerGlobalInit(ZMapURL url, void **server_global_data_out)
 }
 
 
+// Make the server connection, note that a server is _always_created here even if there is an
+// error. What this means is that if the caller does not pass in server_out this code will
+// segfault, not a great design but there's not point in changing it now.
 ZMapServerResponseType zMapServerCreateConnection(ZMapServer *server_out, void *global_data,
-                                                  GQuark source_name,
-                                                  char *config_file,
-                                                  ZMapURL url, char *format,
-                                                  int timeout, char *version_str,
-                                                  pthread_mutex_t *mutex)
+                                                  ZMapConfigSource config_source)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   ZMapServer server ;
   ZMapServerFuncs serverfuncs = (ZMapServerFuncs)global_data ;
   int parse_error ;
 
-  zMapReturnValIfFail((server_out && global_data && url), ZMAP_SERVERRESPONSE_BADREQ) ;
-
+  // If there's no server_out we will segfault...would be better to throw here but would need a rewrite.
   server = g_new0(ZMapServerStruct, 1) ;
   *server_out = server ;
 
-  server->config_file = config_file;
-
-  /* set function table. */
-  server->funcs = serverfuncs ;
-
-  /* COPY/REPARSE the url into server... with paranoia as it managed to parse 1st time! */
-  if ((server->url = url_parse(url->url, &parse_error)) == NULL)
+  if (result == ZMAP_SERVERRESPONSE_OK)
     {
-      result = ZMAP_SERVERRESPONSE_REQFAIL ;
-      zMapServerSetErrorMsg(server, ZMAPSERVER_MAKEMESSAGE(url->protocol,
-                                                           url->host, "%s",
-                                                           url_error(parse_error))) ;
+      if (serverfuncs)
+        {
+          /* set function table. */
+          server->funcs = serverfuncs ;
+        }
+      else
+        {
+          char *err_msg ;
+
+          result = ZMAP_SERVERRESPONSE_BADREQ ;
+          err_msg = g_strdup("No server callbacks specified.") ;
+          zMapServerSetErrorMsg(server, err_msg) ;
+        }
     }
 
   if (result == ZMAP_SERVERRESPONSE_OK)
     {
-      if ((server->funcs->create)(&(server->server_conn), source_name, config_file, url, format,
-                                  version_str, timeout, mutex))
+      if (!config_source->urlObj() || !(config_source->urlObj()->url))
+        {
+          char *err_msg ;
+
+          result = ZMAP_SERVERRESPONSE_BADREQ ;
+          err_msg = g_strdup("No server url specified.") ;
+          zMapServerSetErrorMsg(server, err_msg) ;
+        }
+      else
+        {
+          /* COPY/REPARSE the url into server... with paranoia as it managed to parse 1st time! */
+          if (!(server->url = url_parse(config_source->urlObj()->url, &parse_error)))
+            {
+              result = ZMAP_SERVERRESPONSE_REQFAIL ;
+              zMapServerSetErrorMsg(server, ZMAPSERVER_MAKEMESSAGE(config_source->urlObj()->protocol,
+                                                                   config_source->urlObj()->host, "%s",
+                                                                   url_error(parse_error))) ;
+            }
+        }
+    }
+
+  if (result == ZMAP_SERVERRESPONSE_OK)
+    {
+      server->config_file = g_strdup(config_source->configFile()) ;
+    }
+
+  if (result == ZMAP_SERVERRESPONSE_OK)
+    {
+      if ((server->funcs->create)(&(server->server_conn), config_source))
         {
           zMapServerSetErrorMsg(server, NULL) ;
           result = ZMAP_SERVERRESPONSE_OK ;
@@ -498,13 +526,14 @@ ZMapServerResponseType zMapServerGetContextSequences(ZMapServer server, ZMapStyl
 ZMapServerResponseType zMapServerCloseConnection(ZMapServer server)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
+  zMapReturnValIfFail(server, ZMAP_SERVERRESPONSE_REQFAIL) ;
 
   result = server->last_response
     = (server->funcs->close)(server->server_conn) ;
 
   if (result != ZMAP_SERVERRESPONSE_OK)
-    zMapServerSetErrorMsg(server,ZMAPSERVER_MAKEMESSAGE(server->url->protocol,
-                                                        server->url->host, "%s",
+    zMapServerSetErrorMsg(server,ZMAPSERVER_MAKEMESSAGE((server->url ? server->url->protocol : ""),
+                                                         (server->url ? server->url->host : ""), "%s",
                                                         (server->funcs->errmsg)(server->server_conn))) ;
 
   return result ;
@@ -519,6 +548,10 @@ ZMapServerResponseType zMapServerFreeConnection(ZMapServer server)
   result = (server->funcs->destroy)(server->server_conn) ;
 
   /* Free ZMapURL!!!! url_free(server->url)*/
+  
+  if (server->config_file)
+    g_free(server->config_file) ;
+
   g_free(server) ;
 
   return result ;

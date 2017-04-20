@@ -73,7 +73,7 @@ typedef struct ZMapGFF2ParserStruct_
 /*
  * Code specific to this version of the parser only.
  */
-ZMapGFFParser zMapGFFCreateParser_V2(const char *sequence, int features_start, int features_end) ;
+ZMapGFFParser zMapGFFCreateParser_V2(const char *sequence, int features_start, int features_end, ZMapConfigSource source) ;
 gboolean zMapGFFParseHeader_V2(ZMapGFFParser parser_base, char *line, gboolean *header_finished, ZMapGFFHeaderState *header_state) ;
 gboolean zMapGFFParseSequence_V2(ZMapGFFParser parser_base, char *line, gboolean *sequence_finished) ;
 gboolean zMapGFFParseLineLength_V2(ZMapGFFParser parser_base, char *line, gsize line_length) ;

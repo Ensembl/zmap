@@ -1,4 +1,4 @@
-/*  File: zmapDataSource_P.h
+/*  File: zmapDataStream_P.h
  *  Author: Steve Miller (sm23@sanger.ac.uk)
  *  Copyright (c) 2006-2015: Genome Research Ltd.
  *-------------------------------------------------------------------
@@ -28,12 +28,11 @@
  * Exported functions:
  *-------------------------------------------------------------------
  */
+#ifndef DATA_STREAM_P_H
+#define DATA_STREAM_P_H
 
-#ifndef DATA_SOURCE_P_H
-#define DATA_SOURCE_P_H
 
-
-#include <ZMap/zmapDataSource.hpp>
+#include <ZMap/zmapDataStream.hpp>
 
 
 #ifdef USE_HTSLIB
@@ -55,10 +54,10 @@ struct errCatch ;
 /*
  * Utility class to store info about a feature
  */
-class ZMapDataSourceFeatureData
+class ZMapDataStreamFeatureData
 {
 public:
-  ZMapDataSourceFeatureData(const int start = 0,
+  ZMapDataStreamFeatureData(const int start = 0,
                             const int end = 0,
                             const double score = 0.0,
                             const char strand_c = '.',
@@ -97,13 +96,13 @@ public:
 
 
 /*
- * General source type
+ * General stream type
  */
-class ZMapDataSourceStruct
+class ZMapDataStreamStruct
 {
 public:
-  ZMapDataSourceStruct(const GQuark source_name, const char *sequence, const int start, const int end) ;
-  virtual ~ZMapDataSourceStruct() ;
+  ZMapDataStreamStruct(ZMapConfigSource source, const char *sequence, const int start, const int end) ;
+  virtual ~ZMapDataStreamStruct() ;
 
   virtual gboolean init(const char *region_name, int start, int end) ;
 
@@ -121,37 +120,38 @@ public:
   virtual ZMapSequence getSequence(GQuark seq_id, GError **error) ;
   virtual bool terminated() ;
 
-  ZMapFeatureSet makeFeatureSet(const char *feature_name_id, GQuark feature_set_id, 
-                                ZMapStyleMode feature_mode, const bool is_seq) ;
-  ZMapFeature makeFeature(const char *sequence, const char *source, const char *so_type,
+  ZMapFeatureSet makeFeatureSet(const char *feature_name_id, ZMapStyleMode feature_mode, const bool is_seq) ;
+  ZMapFeature makeBEDFeature(struct bed *bed_feature, const int standard_fields, 
+                             const char *so_term, GError **error) ;
+  ZMapFeature makeFeature(const char *sequence, const char *so_type,
                           const int start, const int end, const double score,
                           const char strand_c, const char *feature_name_in,
                           const bool have_target = false, const int target_start = 0, const int target_end = 0, 
                           const char target_strand = '.', const char *cigar_string = NULL,
                           ZMapStyleMode feature_mode = ZMAPSTYLE_MODE_INVALID, 
                           const bool is_seq = false, GError **error = NULL) ;
-  
   bool endOfFile() ;
   GError* error() ;
 
-  ZMapDataSourceType type ;
+  ZMapDataStreamType type{ZMapDataStreamType::UNK} ;
 
 protected:
 
-  GQuark source_name_ ;
-  char *sequence_ ;
-  int start_ ;
-  int end_ ;
-  GError *error_ ;
+  ZMapConfigSource source_{NULL} ;
+  char *sequence_{nullptr} ;
+  int start_{0} ;
+  int end_{0} ;
+  GError *error_{NULL} ;
 
-  ZMapGFFParser parser_ ;
-  ZMapFeatureSet feature_set_ ; // only used if all features go into same feature set
-  int num_features_ ;           // counts how many features we have created
-  bool end_of_file_ ;           // set to true when there is no more to read
+  ZMapGFFParser parser_{NULL} ;
+  ZMapFeatureSet feature_set_{NULL} ; // only used if all features go into same feature set
+  int num_features_{0}    ;           // counts how many features we have created
+  bool end_of_file_{false} ;          // set to true when there is no more to read
 
-  GHashTable *featureset_2_column_ ;
-  GHashTable *source_2_sourcedata_ ;
-  ZMapStyleTree *styles_ ;
+  GHashTable *featureset_2_column_{NULL} ;
+  GHashTable *source_2_sourcedata_{NULL} ;
+  ZMapStyleTree *styles_{NULL} ;
+
 } ;
 
 
@@ -159,12 +159,13 @@ protected:
  *  Full declarations of concrete types to represent the specific data sources types
  */
 
-class ZMapDataSourceGIOStruct : public ZMapDataSourceStruct
+class ZMapDataStreamGIOStruct : public ZMapDataStreamStruct
 {
 public:
-  ZMapDataSourceGIOStruct(const GQuark source_name, const char *file_name, const char *open_mode, 
+  ZMapDataStreamGIOStruct(ZMapConfigSource source, 
+                          const char *file_name, const char *open_mode, 
                           const char *sequence, const int start, const int end) ;
-  ~ZMapDataSourceGIOStruct() ;
+  ~ZMapDataStreamGIOStruct() ;
 
   bool isOpen() ;
   bool checkHeader(std::string &err_msg, bool &empty_or_eof, const bool sequence_server) ;
@@ -181,19 +182,20 @@ private:
   int curLineNumber() ;
   bool parseHeader(gboolean &done_header, ZMapGFFHeaderState &header_state, GError **error) ;
 
-  GIOChannel *io_channel ;
-  int gff_version_ ;
-  bool gff_version_set_ ;
-  GString *buffer_line_ ;
+  GIOChannel *io_channel{NULL} ;
+  int gff_version_{0} ;
+  bool gff_version_set_{false} ;
+  GString *buffer_line_{NULL} ;
 } ;
 
 
-class ZMapDataSourceBEDStruct : public ZMapDataSourceStruct
+class ZMapDataStreamBEDStruct : public ZMapDataStreamStruct
 {
 public:
-  ZMapDataSourceBEDStruct(const GQuark source_name, const char *file_name, const char *open_mode, 
+  ZMapDataStreamBEDStruct(ZMapConfigSource source, 
+                          const char *file_name, const char *open_mode, 
                           const char *sequence, const int start, const int end) ;
-  ~ZMapDataSourceBEDStruct() ;
+  ~ZMapDataStreamBEDStruct() ;
 
   bool isOpen() ;
   bool checkHeader(std::string &err_msg, bool &empty_or_eof, const bool sequence_server) ;
@@ -201,17 +203,19 @@ public:
   bool parseBodyLine(GError **error) ;
 
 private:
-  struct bed* bed_features_ ;   // list of features read from the file
-  struct bed* cur_feature_ ;    // current feature to process in the list of bed_features_
+  struct bed* bed_features_{NULL} ;   // list of features read from the file
+  struct bed* cur_feature_{NULL} ;    // current feature to process in the list of bed_features_
+  int standard_fields_{0} ;
 } ;
 
 
-class ZMapDataSourceBIGBEDStruct : public ZMapDataSourceStruct
+class ZMapDataStreamBIGBEDStruct : public ZMapDataStreamStruct
 {
 public:
-  ZMapDataSourceBIGBEDStruct(const GQuark source_name, const char *file_name, const char *open_mode, 
+  ZMapDataStreamBIGBEDStruct(ZMapConfigSource source, 
+                             const char *file_name, const char *open_mode, 
                              const char *sequence, const int start, const int end) ;
-  ~ZMapDataSourceBIGBEDStruct() ;
+  ~ZMapDataStreamBIGBEDStruct() ;
 
   bool isOpen() ;
   bool checkHeader(std::string &err_msg, bool &empty_or_eof, const bool sequence_server) ;
@@ -219,20 +223,22 @@ public:
   bool parseBodyLine(GError **error) ;
 
 private:
-  struct bbiFile *bbi_file_ ;
-  struct lm *lm_;                        // Memory pool to hold returned list from bbi file
-  struct bigBedInterval *list_ ;         // list of intervals returned from the file
-  struct bigBedInterval *cur_interval_ ; // current interval from list_
-  struct bed* cur_feature_ ;             // current feature from interval
+  struct bbiFile *bbi_file_{NULL} ;
+  struct lm *lm_{NULL};                        // Memory pool to hold returned list from bbi file
+  struct bigBedInterval *list_{NULL} ;         // list of intervals returned from the file
+  struct bigBedInterval *cur_interval_{NULL} ; // current interval from list_
+  struct bed* cur_feature_{NULL} ;             // current feature from interval
+  int standard_fields_{0} ;
 } ;
 
 
-class ZMapDataSourceBIGWIGStruct : public ZMapDataSourceStruct
+class ZMapDataStreamBIGWIGStruct : public ZMapDataStreamStruct
 {
 public:
-  ZMapDataSourceBIGWIGStruct(const GQuark source_name, const char *file_name, const char *open_mode, 
+  ZMapDataStreamBIGWIGStruct(ZMapConfigSource source, 
+                             const char *file_name, const char *open_mode, 
                              const char *sequence, const int start, const int end) ;
-  ~ZMapDataSourceBIGWIGStruct() ;
+  ~ZMapDataStreamBIGWIGStruct() ;
 
   bool isOpen() ;
   bool checkHeader(std::string &err_msg, bool &empty_or_eof, const bool sequence_server) ;
@@ -240,21 +246,22 @@ public:
   bool parseBodyLine(GError **error) ;
 
 private:
-  struct bbiFile *bbi_file_ ;
-  struct lm *lm_; // Memory pool to hold returned list from bbi file
-  struct bbiInterval *list_ ;
-  struct bbiInterval *cur_interval_ ; // current item from list_
+  struct bbiFile *bbi_file_{NULL} ;
+  struct lm *lm_{NULL}; // Memory pool to hold returned list from bbi file
+  struct bbiInterval *list_{NULL} ;
+  struct bbiInterval *cur_interval_{NULL} ; // current item from list_
 } ;
 
 
 #ifdef USE_HTSLIB
 
-class ZMapDataSourceHTSStruct : public ZMapDataSourceStruct
+class ZMapDataStreamHTSStruct : public ZMapDataStreamStruct
 {
 public:
-  ZMapDataSourceHTSStruct(const GQuark source_name, const char *file_name, const char *open_mode, 
+  ZMapDataStreamHTSStruct(ZMapConfigSource source, 
+                          const char *file_name, const char *open_mode, 
                           const char *sequence, const int start, const int end) ;
-  ~ZMapDataSourceHTSStruct() ;
+  ~ZMapDataStreamHTSStruct() ;
 
   gboolean init(const char *region_name, int start, int end) ;
   bool isOpen() ;
@@ -262,64 +269,55 @@ public:
   bool readLine() ;
   bool parseBodyLine(GError **error) ;
 
-  htsFile *hts_file ;
+  htsFile *hts_file{NULL} ;
   /* bam header and record object */
-  bam_hdr_t *hts_hdr ;
-  hts_idx_t *hts_idx ;
-  hts_itr_t *hts_iter ;
-  bam1_t *hts_rec ;
-
-  /*
-   * Data that we need to store
-   */
-  char *so_type ;
+  bam_hdr_t *hts_hdr{NULL} ;
+  hts_idx_t *hts_idx{NULL} ;
+  hts_itr_t *hts_iter{NULL} ;
+  bam1_t *hts_rec{NULL} ;
 
 private:
   bool processRead() ;
 
-  ZMapDataSourceFeatureData cur_feature_data_ ;  
+  ZMapDataStreamFeatureData cur_feature_data_ ;  
 } ;
 
 
-class ZMapDataSourceBCFStruct : public ZMapDataSourceStruct
+class ZMapDataStreamBCFStruct : public ZMapDataStreamStruct
 {
 public:
-  ZMapDataSourceBCFStruct(const GQuark source_name, const char *file_name, const char *open_mode, 
+  ZMapDataStreamBCFStruct(ZMapConfigSource source, 
+                          const char *file_name, const char *open_mode, 
                           const char *sequence, const int start, const int end) ;
-  ~ZMapDataSourceBCFStruct() ;
+  ~ZMapDataStreamBCFStruct() ;
   bool isOpen() ;
   bool checkHeader(std::string &err_msg, bool &empty_or_eof, const bool sequence_server) ;
   bool readLine() ;
   bool parseBodyLine(GError **error) ;
 
-  htsFile *hts_file ;
+  htsFile *hts_file{NULL} ;
   /* bam header and record object */
-  bcf_hdr_t *hts_hdr ;
-  bcf1_t *hts_rec ;
-
-  /*
-   * Data that we need to store
-   */
-  char *so_type ;
+  bcf_hdr_t *hts_hdr{NULL} ;
+  bcf1_t *hts_rec{NULL} ;
 
 private:
-  int rid_ ; // stores the ref sequence id value used by bcf parser for our required sequence_
-  ZMapDataSourceFeatureData cur_feature_data_ ;
+  int rid_{0} ; // stores the ref sequence id value used by bcf parser for our required sequence_
+  ZMapDataStreamFeatureData cur_feature_data_ ;
 } ;
 
 #endif
 
 
-typedef ZMapDataSourceGIOStruct *ZMapDataSourceGIO ;
-typedef ZMapDataSourceBEDStruct *ZMapDataSourceBED ;
-typedef ZMapDataSourceBIGBEDStruct *ZMapDataSourceBIGBED ;
-typedef ZMapDataSourceBIGWIGStruct *ZMapDataSourceBIGWIG ;
+typedef ZMapDataStreamGIOStruct *ZMapDataStreamGIO ;
+typedef ZMapDataStreamBEDStruct *ZMapDataStreamBED ;
+typedef ZMapDataStreamBIGBEDStruct *ZMapDataStreamBIGBED ;
+typedef ZMapDataStreamBIGWIGStruct *ZMapDataStreamBIGWIG ;
 #ifdef USE_HTSLIB
-typedef ZMapDataSourceHTSStruct *ZMapDataSourceHTS ;
-typedef ZMapDataSourceBCFStruct *ZMapDataSourceBCF ;
+typedef ZMapDataStreamHTSStruct *ZMapDataStreamHTS ;
+typedef ZMapDataStreamBCFStruct *ZMapDataStreamBCF ;
 #endif
 
 
 
 
-#endif
+#endif /* DATA_STREAM_P_H */

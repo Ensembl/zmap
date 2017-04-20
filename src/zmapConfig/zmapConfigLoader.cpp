@@ -92,7 +92,6 @@ static ZMapConfigIniContextKeyEntry get_source_group_data(const char **stanza_na
 static ZMapConfigIniContextKeyEntry get_window_group_data(const char **stanza_name, const char **stanza_type);
 static ZMapConfigIniContextKeyEntry get_blixem_group_data(const char **stanza_name, const char **stanza_type);
 static gpointer create_config_source(gpointer data);
-static void free_source_list_item(gpointer list_data, gpointer unused_data);
 static void source_set_property(char *current_stanza_name, const char *key, GType type,
 gpointer parent_data, GValue *property_value) ;
 static gpointer create_config_style(gpointer data) ;
@@ -122,6 +121,194 @@ static void stylesFreeList(GList *config_styles_list) ;
 
 static bool debug_loading_G = false ;                       // Use to turn debugging logging/messages on/off.
 
+
+
+
+
+/*
+ *                  ZMapConfigSource class
+ */
+
+ZMapConfigSourceStruct::ZMapConfigSourceStruct()
+{
+}
+
+
+ZMapConfigSourceStruct::~ZMapConfigSourceStruct()
+{
+  if(url_)
+    g_free(url_);
+  if(version)
+    g_free(version);
+  if(featuresets)
+    g_free(featuresets);
+  if(biotypes)
+    g_free(biotypes);
+  //  if(navigatorsets)
+  //    g_free(navigatorsets);
+  if(stylesfile)
+    g_free(stylesfile);
+  //  if(styles_list)
+  //    g_free(styles_list);
+  if(format)
+    g_free(format);
+  if (url_obj_)
+    url_free(url_obj_) ;
+}
+
+
+void ZMapConfigSourceStruct::setUrl(const char *url)
+{
+  // Clear existing url, url_obj and url parser error, if set
+  if (url_)
+    {
+      g_free(url_) ;
+      url_ = NULL ;
+    }
+
+  if (url_obj_)
+    {
+      url_free(url_obj_) ;
+      url_obj_ = NULL ;
+    }
+
+  url_parse_error_ = 0 ;
+
+  // Set the url string
+  if (url && *url)
+    url_ = g_strdup(url) ;
+}
+
+void ZMapConfigSourceStruct::setConfigFile(const char *config_file)
+{
+  config_file_ = g_quark_from_string(config_file) ;
+}
+
+void ZMapConfigSourceStruct::setFileType(const string &file_type)
+{
+  file_type_ = file_type ;
+}
+
+void ZMapConfigSourceStruct::setNumFields(const int num_fields)
+{
+  num_fields_ = num_fields ;
+}
+
+
+const char* ZMapConfigSourceStruct::url() const
+{
+  return url_ ; 
+}
+
+const ZMapURL ZMapConfigSourceStruct::urlObj() const
+{
+  // If not already done, parse the string into url_obj. Set to null and set the error if this
+  // fails. If the error is already set, then don't bother trying to re-parse.
+  if (!url_obj_ && !url_parse_error_ && url_)
+    {
+      // Can return NULL and an error if it fails.
+      url_obj_ = url_parse(url_, &url_parse_error_) ;
+    }
+
+  return url_obj_ ; 
+}
+
+const string ZMapConfigSourceStruct::urlError() const
+{
+  string result("No error") ;
+
+  if (url_parse_error_)
+    result = url_error(url_parse_error_) ;
+
+  return result ;
+}
+
+const char* ZMapConfigSourceStruct::configFile() const
+{
+  return g_quark_to_string(config_file_) ; 
+}
+
+/* Return the file type. Returns an empty string if not applicable */
+const string ZMapConfigSourceStruct::fileType() const
+{
+  return file_type_ ; 
+}
+
+/* Return the number of fileds for file sources. Returns 0 if not applicable. */
+int ZMapConfigSourceStruct::numFields() const
+{
+  return num_fields_ ; 
+}
+
+/* Get a descriptive type for this source. This returns the type of the source, e.g. "ensembl",
+ * and also the file type and number of fields, if applicable e.g. "file (bigbed 12)" */
+string ZMapConfigSourceStruct::type() const
+{
+  string result("") ;
+  
+  if (urlObj())
+    {
+      stringstream result_ss ;
+      result_ss << urlObj()->protocol ;
+
+      if (!fileType().empty())
+        {
+          result_ss << " (" << fileType() ;
+                
+          if (numFields() > 0)
+            result_ss << " " << numFields() ;
+
+          result_ss << ")" ;
+        }
+      
+      result = result_ss.str() ;
+    }
+
+  return result ;
+}
+
+// Return the toplevel source name; that is, if this source is in a hierarchy return the name of
+// the toplevel parent. Otherwise just return this source's name.
+string ZMapConfigSourceStruct::toplevelName() const
+{
+  string result ;
+
+  if (parent)
+    result = parent->toplevelName() ;
+  else
+    result = g_quark_to_string(name_) ;
+
+  return result ;
+}
+
+
+void ZMapConfigSourceStruct::countSources(unsigned int &num_total, 
+                                          unsigned int &num_with_data, 
+                                          unsigned int &num_to_load, 
+                                          const bool recent_only) const
+{
+  if (!recent_only || recent)
+    {
+      ++num_total ;
+
+      // Check if this source has data to load. It has data if it has a valid URL object which is
+      // not a trackhub url (because trackhub urls are not loaded directly - only their children
+      // are loaded).
+      if (urlObj() && urlObj()->scheme != SCHEME_TRACKHUB)
+        {
+          ++num_with_data ;
+
+          if (!delayed)
+            ++num_to_load ;
+        }
+    }
+
+  // recurse
+  for (ZMapConfigSource child : children)
+    {
+      child->countSources(num_total, num_with_data, num_to_load, recent_only) ;
+    }
+}
 
 
 
@@ -256,41 +443,6 @@ GList *zMapConfigIniContextGetNamed(ZMapConfigIniContext context, char *stanza_n
     }
 
   return glist ;
-}
-
-
-
-void zMapConfigSourceDestroy(ZMapConfigSource source_to_free)
-{
-  if(source_to_free->url)
-    g_free(source_to_free->url);
-  if(source_to_free->version)
-    g_free(source_to_free->version);
-  if(source_to_free->featuresets)
-    g_free(source_to_free->featuresets);
-  if(source_to_free->biotypes)
-    g_free(source_to_free->biotypes);
-  //  if(source_to_free->navigatorsets)
-  //    g_free(source_to_free->navigatorsets);
-  if(source_to_free->stylesfile)
-    g_free(source_to_free->stylesfile);
-  //  if(source_to_free->styles_list)
-  //    g_free(source_to_free->styles_list);
-  if(source_to_free->format)
-    g_free(source_to_free->format);
-
-  return ;
-}
-
-
-void zMapConfigSourcesFreeList(GList *config_sources_list)
-{
-  zMapReturnIfFail(config_sources_list) ;
-
-  g_list_foreach(config_sources_list, free_source_list_item, NULL);
-  g_list_free(config_sources_list);
-
-  return ;
 }
 
 
@@ -1131,6 +1283,16 @@ GList *zMapConfigGetSources(const char *config_file, const char *config_str, cha
 
       settings_list = zMapConfigIniContextGetSources(context);
 
+      // For each source, record which config file it came from
+      if (config_file)
+        {
+          for (GList *item = settings_list; item; item = item->next)
+            {
+              ZMapConfigSource config_source = (ZMapConfigSource)settings_list->data ;
+              config_source->setConfigFile(config_file) ;
+            }
+        }
+
       if(stylesfile)
         {
           zMapConfigIniContextGetFilePath(context,
@@ -1671,6 +1833,7 @@ static ZMapConfigIniContextKeyEntry get_app_group_data(const char **stanza_name,
     { ZMAPSTANZA_APP_SHRINKABLE,         G_TYPE_BOOLEAN, NULL, FALSE },
     { ZMAPSTANZA_APP_HIGHLIGHT_FILTERED, G_TYPE_BOOLEAN, NULL, FALSE },
     { ZMAPSTANZA_APP_ENABLE_ANNOTATION,  G_TYPE_BOOLEAN, NULL, FALSE },
+    { ZMAPSTANZA_APP_MAX_FEATURES,       G_TYPE_INT,     NULL, FALSE },
     {NULL}
   };
   static const char *name = ZMAPSTANZA_APP_CONFIG;
@@ -2137,12 +2300,6 @@ static gpointer create_config_source(gpointer data)
   return src ;
 }
 
-static void free_source_list_item(gpointer list_data, gpointer unused_data)
-{
-  ZMapConfigSource source_to_free = (ZMapConfigSource)list_data;
-  zMapConfigSourceDestroy(source_to_free) ;
-}
-
 
 /* This might seem a little long winded, but then so is all the gobject gubbins... */
 static ZMapConfigIniContextKeyEntry get_source_group_data(const char **stanza_name, const char **stanza_type)
@@ -2189,7 +2346,7 @@ gpointer parent_data, GValue *property_value)
   if (key && *key)
     {
       if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_URL) == 0)
-        str_ptr = &(config_source->url) ;
+        str_ptr = &(config_source->url_) ;
       else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_VERSION) == 0)
         str_ptr = &(config_source->version) ;
       else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_FEATURESETS) == 0)

@@ -57,7 +57,7 @@ AX_CXX_COMPILE_STDCXX_0X()
 #
 AX_CHECK_OPENSSL()
 
-AC_CHECK_HEADERS([openssl.h], [HAVE_OPENSSL_HEADER=1])
+AC_CHECK_HEADERS([opensslv.h], [HAVE_OPENSSL_HEADER=1])
 AM_CONDITIONAL([HAVE_SSL], [ test -n "$HAVE_OPENSSL_HEADER" || test -n "$OPENSSL_INCLUDES" ])
 
 AM_COND_IF([HAVE_SSL], 
@@ -224,12 +224,12 @@ esac
 # replaces -DLINUX
 if test "$zmap_os_type" = "Linux" ; then
    AC_MSG_RESULT([Got OS type of LINUX])
-   AC_DEFINE(LINUX, [], [Operating System is LINUX.  See zmapThreads/zmapThreads_P.h])
+   AC_DEFINE(LINUX, [], [Operating System is LINUX.  See zmapThreadSource/zmapThreads_P.h])
 
 elif test "$zmap_os_type" = "darwin" ; then
 
    AC_MSG_RESULT([Got OS type of Darwin])
-   AC_DEFINE(DARWIN, [], [Operating System is DARWIN.  See zmapThreads/zmapThreads_P.h])
+   AC_DEFINE(DARWIN, [], [Operating System is DARWIN.  See zmapThreadSource/zmapThreads_P.h])
 
 fi
 
@@ -533,13 +533,15 @@ ZMAP_SRC_DIRS="zmapApp \
 zmapAppServices \
 zmapConfig \
 zmapControl \
+zmapDataSource \
 zmapDraw \
 zmapFeature \
 zmapGFF \
 zmapRemoteControl \
 zmapRemoteControl/remotetest \
 zmapServer \
-zmapThreads \
+zmapThreadSource \
+zmapThreadsLib \
 zmapUtils \
 zmapView \
 zmapWindow \
@@ -569,6 +571,7 @@ zmapApp/Makefile
 zmapAppServices/Makefile
 zmapConfig/Makefile
 zmapControl/Makefile
+zmapDataSource/Makefile
 zmapDraw/Makefile
 zmapFeature/Makefile
 zmapFeature/tests/Makefile
@@ -577,10 +580,12 @@ zmapRemoteControl/Makefile
 zmapRemoteControl/remotetest/Makefile
 zmapServer/Makefile
 zmapServer/acedb/Makefile
-zmapServer/pipe/Makefile
-zmapServer/file/Makefile
+zmapServer/datastream/Makefile
 zmapServer/ensembl/Makefile
-zmapThreads/Makefile
+zmapServer/file/Makefile
+zmapServer/pipe/Makefile
+zmapThreadSource/Makefile
+zmapThreadsLib/Makefile
 zmapUtils/Makefile
 zmapUtils/tests/Makefile
 zmapView/Makefile
@@ -694,7 +699,8 @@ fi
 
 if test -z "$HAVE_SSL"
 then
-  echo " Warning: openssl is not installed so https access is disabled."
+  echo " Warning: openssl is not installed. ZMap will not be able to load"
+  echo " files from https locations (including via Track Hub)."
   echo
 fi
 

@@ -45,9 +45,8 @@ ZMapGFFHeader zMapGFFCreateHeader()
 {
   unsigned int iDir ;
   ZMapGFFHeader pHeader = NULL;
+
   pHeader = g_new0(ZMapGFFHeaderStruct, 1) ;
-  if (!pHeader)
-    return NULL;
 
   pHeader->sequence_name = NULL ;
   pHeader->features_start = 0 ;

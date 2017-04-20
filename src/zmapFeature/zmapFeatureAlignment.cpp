@@ -1901,7 +1901,7 @@ static AlignStrCanonical alignStrMakeCanonical(const char *match_str, ZMapFeatur
   AlignStrCanonical canon = NULL ;
   gboolean result = FALSE ;
 
-  zMapReturnValIfFail(match_str && *match_str, canon) ;
+  zMapReturnValIfFailSafe(match_str && *match_str, canon) ;
 
   canon = alignStrCanonicalCreate(align_format) ;
 

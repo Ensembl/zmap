@@ -46,6 +46,7 @@
 #include <glib.h>
 #include <string>
 
+#include <gbtools/gbtools.hpp>
 #include <ZMap/zmapUtils.hpp>
 #include <ZMap/zmapSO.hpp>
 #include <ZMap/zmapGLibUtils.hpp>
@@ -53,7 +54,7 @@
 #include <ZMap/zmapConfigIni.hpp>
 #include <ZMap/zmapConfigDir.hpp>
 #include <ZMap/zmapConfigStrings.hpp>
-#include <ZMap/zmapThreads.hpp>
+#include <ZMap/zmapThreadSource.hpp>
 #include <ZMap/zmapGFF.hpp>
 #include <ZMap/zmapUrlUtils.hpp>
 #include <ZMap/zmapGFFStringUtils.hpp>
@@ -62,6 +63,8 @@
 #include <zmapView_P.hpp>
 
 using namespace std ;
+using namespace gbtools ;
+
 
 
 /* some blixem defaults.... */
@@ -461,33 +464,52 @@ gboolean zmapViewCallBlixem(ZMapView view,
        * (sm23 08/01/15) It calls  g_spawn_async_with_pipes() without pipes, so yes would
        * appear to be the answer to that.
        */
-      zMapThreadForkLock() ;
+      {
+        bool result ;
+        int err_num = 0 ;
 
-      if (!(g_spawn_async(cwd, argv, envp, flags, pre_exec, pre_exec_data, &spawned_pid, &error)))
-        {
-          status = FALSE;
-          if (error)
-            {
-              g_error_free(error) ;
-            }
-        }
-      else
-        {
-          string cmdline ;
+        if (!(result = UtilsGlobalThreadLock(&err_num)))
+          {
+            zMapLogCriticalSysErr(err_num, "%s", "Error trying to lock for blixem") ;
+          }
 
-          buildCmdLine((const char **)argv, cmdline) ;
+        if (result)
+          {
+            if (!(g_spawn_async(cwd, argv, envp, flags, pre_exec, pre_exec_data, &spawned_pid, &error)))
+              {
+                status = FALSE;
+                if (error)
+                  {
+                    g_error_free(error) ;
+                  }
+              }
+            else
+              {
+                string cmdline ;
 
-          zMapLogMessage("Blixem process spawned with PID = '%d' and command line:\"%s\"",
-                         spawned_pid, cmdline.c_str()) ;
-        }
+                buildCmdLine((const char **)argv, cmdline) ;
 
-      zMapThreadForkUnlock();
+                zMapLogMessage("Blixem process spawned with PID = '%d' and command line:\"%s\"",
+                               spawned_pid, cmdline.c_str()) ;
+              }
+          }
 
-      if (status && child_pid)
-        *child_pid = spawned_pid ;
+        if (result)
+          {
+            if (!(result = UtilsGlobalThreadUnlock(&err_num)))
+              {
+                zMapLogCriticalSysErr(err_num, "%s", "Error trying to lock for pfetch") ;
+              }
+          }
 
-      if (kill_on_exit)
-        *kill_on_exit = blixem_data->kill_on_exit ;
+
+        if (status && child_pid)
+          *child_pid = spawned_pid ;
+
+        if (kill_on_exit)
+          *kill_on_exit = blixem_data->kill_on_exit ;
+
+      }
     }
 
   if (!status)
@@ -2754,15 +2776,18 @@ static ZMapGuiNotebookChapter makeChapter(ZMapGuiNotebook note_book_parent, ZMap
                                              ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE,
                                              NULL, NULL) ;
 
-  tagvalue = zMapGUINotebookCreateTagValue(paragraph, "Scope", "The maximum length of sequence to send to Blixem",
+  tagvalue = zMapGUINotebookCreateTagValue(paragraph, "Scope",
+                                           "The maximum length of sequence to send to Blixem",
                                            ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
                                            "int", blixem_config_curr_G.scope) ;
 
-  tagvalue = zMapGUINotebookCreateTagValue(paragraph, "Restrict scope to Mark", "Restricts the scope to the current marked region",
+  tagvalue = zMapGUINotebookCreateTagValue(paragraph, "Restrict scope to Mark",
+                                           "Restricts the scope to the current marked region",
                                            ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,
                                            "bool", blixem_config_curr_G.scope_from_mark) ;
 
-  tagvalue = zMapGUINotebookCreateTagValue(paragraph, "Restrict features to Mark", "Still uses the default scope but only sends features that are within the marked region to Blixem",
+  tagvalue = zMapGUINotebookCreateTagValue(paragraph, "Restrict features to Mark",
+                                           "Still uses the default scope but only sends features that are within the marked region to Blixem",
                                            ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,
                                            "bool", blixem_config_curr_G.features_from_mark) ;
 
@@ -2796,23 +2821,28 @@ static ZMapGuiNotebookChapter makeChapter(ZMapGuiNotebook note_book_parent, ZMap
                                              ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE,
                                              NULL, NULL) ;
 
-  tagvalue = zMapGUINotebookCreateTagValue(paragraph, "Config File", "The path to the configuration file to use for Blixem",
+  tagvalue = zMapGUINotebookCreateTagValue(paragraph, "Config File",
+                                           "The path to the configuration file to use for Blixem",
                                            ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
                                            "string", blixem_config_curr_G.config_file) ;
 
-  tagvalue = zMapGUINotebookCreateTagValue(paragraph, "Launch script", "The path to the Blixem executable",
+  tagvalue = zMapGUINotebookCreateTagValue(paragraph, "Launch script",
+                                           "The path to the Blixem executable",
                                            ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
                                            "string", blixem_config_curr_G.script) ;
 
-  tagvalue = zMapGUINotebookCreateTagValue(paragraph, "Keep temporary Files", "Tell Blixem not to destroy the temporary input files that ZMap sends to it.",
+  tagvalue = zMapGUINotebookCreateTagValue(paragraph, "Keep temporary Files",
+                                           "Tell Blixem not to destroy the temporary input files that ZMap sends to it.",
                                            ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,
                                            "bool", blixem_config_curr_G.keep_tmpfiles) ;
 
-  tagvalue = zMapGUINotebookCreateTagValue(paragraph, "Sleep on Startup", "Tell Blixem to sleep on startup (for debugging)",
+  tagvalue = zMapGUINotebookCreateTagValue(paragraph, "Sleep on Startup",
+                                           "Tell Blixem to sleep on startup (for debugging)",
                                            ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,
                                            "bool", blixem_config_curr_G.sleep_on_startup) ;
 
-  tagvalue = zMapGUINotebookCreateTagValue(paragraph, "Kill Blixem on Exit", "Close all Blixems that were started from this ZMap when ZMap exits",
+  tagvalue = zMapGUINotebookCreateTagValue(paragraph, "Kill Blixem on Exit",
+                                           "Close all Blixems that were started from this ZMap when ZMap exits",
                                            ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,
                                            "bool", blixem_config_curr_G.kill_on_exit) ;
 

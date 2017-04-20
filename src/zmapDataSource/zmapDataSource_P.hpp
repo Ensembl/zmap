@@ -1,17 +1,17 @@
-/*  File: zmapControlImportFile.h
+/*  File: zmapDataSource_P.hpp
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2012-2015: Genome Research Ltd.
+ *  Copyright (c) 2006-2015: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- *
+ * 
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *
+ * 
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -21,24 +21,20 @@
  * originally written by:
  *
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk,
+ *      Gemma Barson (Sanger Institute, UK) gb10@sanger.ac.uk
  *
- * Description: Domain specific services called by main subsystems
- *              of zmap.
+ * Description: Private types etc for DataSource package.
  *
  *-------------------------------------------------------------------
  */
-#ifndef ZMAP_CONTROL_IMPORT_H
-#define ZMAP_CONTROL_IMPORT_H
+#ifndef ZMAPDATASOURCE_P_H
+#define ZMAPDATASOURCE_P_H
 
-#include <ZMap/zmapFeatureLoadDisplay.hpp>
+#include <ZMap/zmapDataSource.hpp>
 
-typedef void (*ZMapControlImportFileCB)(gpointer user_data) ;
+ZMapThreadReturnCode zmapDataSourceThreadRequestHandler(void **slave_data, void *request_in, char **err_msg_out) ;
+ZMapThreadReturnCode zmapDataSourceThreadTerminateHandler(void **slave_data, char **err_msg_out) ;
+ZMapThreadReturnCode zmapDataSourceThreadDestroyHandler(void **slave_data) ;
 
-void zMapControlImportFile(ZMapControlImportFileCB user_func, gpointer user_data,
-			    ZMapFeatureSequenceMap sequence_map, int req_start, int req_end) ;
-
-
-
-#endif /* !ZMAP_CONTROL_IMPORT_H */
+#endif /* ZMAPDATASOURCE_P_H */

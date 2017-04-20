@@ -1,20 +1,71 @@
 
-Git commits for  from commit "production" until commit "release/2.11.0"
+Git commits for  from commit "production" until commit "release/2.12.0"
 
-f427323 2016-09-23 Fix regression from de531ea - REGRESSION FIX
-18eff12 2016-09-23 Fix bug displaying reads with introns gaps (from a patch by Thibaut Hourlier) - BUG FIX
-e0f2d1f 2016-09-23 Add BAM index support (from a patch by Thibaut Hourlier) - NEW FEATURE 'BAM index'
-7b61f80 2016-09-16 Add environment and X11 to instructions - DOC
-0627177 2016-09-12 Use user-specific temp dir for file cache - NEW FEATURE 'trackhub'
-9457118 2016-09-12 Change blixem tmp dir to /tmp/zmap_<uid>
-7f42dac 2016-08-26 Merge branch 'feature/trackhub' into develop
-34e0c2a 2016-08-24 Merge branch 'feature/trackhub' into develop
-eacad9a 2016-08-17 Merge branch 'feature/trackhub' into develop
-2750bcf 2016-08-15 Merge branch 'feature/trackhub' into develop
-8361397 2016-08-09 Merge branch 'feature/composite' into develop
-f82001b 2016-07-28 Add VirtualBox installation instructions - DOC
-34e1273 2016-07-26 bug fix to gff parser
-e34803f 2016-07-26 Add debug for addfeature bug - DEVELOP
+af89d82 2017-02-27 Fix my own bug, broke the link between featureset and style, restored now. - RT '109833'
+e83990f 2016-11-18 Add db prefix to manual - DOC
+a6b56d0 2016-11-18 Update revision date in manual - DOC
+9496862 2016-11-18 Improve docs for managing sources - DOC
+68becfc 2016-11-17 Add trackhub instructions - DOC
+771b699 2016-11-16 Fix a bug loading extended bigbed files - BUG FIX
+03780e4 2016-11-16 Fix potential access of free'd variable - BUG FIX
+7821422 2016-11-15 Fix bug editing non-default styles with auto score range - BUG FIX
+4a734e6 2016-11-14 Fix bug looking up incorrect name in bam files - REGRESSION FIX
+ae8b410 2016-11-10 fix to makefile
+c68dc27 2016-11-08 Add buttons to interact with sources list - NEW FEATURE 'Sources list'
+c5cccf2 2016-11-08 Update examples config with different source types - DOC
+263fee3 2016-11-07 Make max features configurable - NEW FEATURE 'Max features'
+512a061 2016-11-07 Fix stupid oversight in returning status of lock/unlock and g_spawn. - DEVELOP
+52612f4 2016-11-07 Revert "Revert "Swop old threadforklock calls for new gbtools version. - DEVELOP""
+810c0dc 2016-11-07 Revert "Revert "Remove threadfork lock/unlock, moved to gbtools, better place for them. - DEVELOP""
+823e20a 2016-11-07 remove redundant checks of return of g_new0, makes code look wrong when it is actually fine. - DEVELOP
+dc70bbe 2016-11-07 Revert "Remove threadfork lock/unlock, moved to gbtools, better place for them. - DEVELOP"
+681d28b 2016-11-07 Revert "Swop old threadforklock calls for new gbtools version. - DEVELOP"
+33cda28 2016-11-04 Set correct server info for ensembl servers - BUG FIX
+a2e439b 2016-11-03 Swop old threadforklock calls for new gbtools version. - DEVELOP
+137ef94 2016-11-03 Remove threadfork lock/unlock, moved to gbtools, better place for them. - DEVELOP
+5cbc379 2016-11-02 Fix a major memory corruption bug caused by incorrectly deleting sources - REGRESSION FIX
+4796f04 2016-11-02 Header migrated to zmapThreadsLib.hpp, zmapThreadSlave.hpp and zmapThreadSlave.hpp - DEVELOP
+b9a52ce 2016-10-31 Revert "Fix memory corruption caused by passing func instead of member - REGRESSION FIX"
+1b25431 2016-10-31 Fix memory corruption caused by passing func instead of member - REGRESSION FIX
+00a27d2 2016-10-31 Fix compilation error from previous fix - REGRESSION FIX
+44d37d4 2016-10-31 Fix a bug handling errors from BED files - BUG FIX
+5e3cb31 2016-10-28 Fix bug where source-config constructor creates a child array with a null pointer in it - REGRESSION FIX
+a1e486c 2016-10-28 Fix incorrect free of url object - BUG FIX
+284238a 2016-10-28 Fix memory corruption bug caused by double free - REGRESSION FIX
+36df63c 2016-10-27 add missing contructor fields. -  BUG FIX
+b0bbd1a 2016-10-27 Fix bug in datastream class constructor. - BUG FIX
+791f3ea 2016-10-26 Error messages are now scrollable if very long - NEW FEATURE 'Error messages'
+a37bd57 2016-10-25 Show file type as well as source type in sources list - NEW FEATURE 'sources list'
+9b052ef 2016-10-25 Merge branch 'feature/sources' into develop - NEW FEATURE 'sources list'
+2f0e136 2016-10-24 Merge branch 'feature/columns' into develop - NEW FEATURE 'search/filter'
+e29497c 2016-10-24 Merge branch 'feature/featureset_source' into develop
+2d87770 2016-10-20 Fix typo meaning config file is not set correctly - REGRESSION FIX
+03e6ae5 2016-10-20 Fix spurious warnings about empty cigar string - REGRESSION FIX
+b941dbf 2016-10-20 Fix a bug loading sources from the config file - REGRESSION FIX
+c842ae1 2016-10-20 Merge branch 'feature/columns' into develop - NEW FEATURE 'bump selected columns'
+4871b07 2016-10-19 Merge branch 'feature/servers' into develop
+864ba16 2016-10-18 Fix bug passing args to server request - REGRESSION FIX
+28ded4a 2016-10-17 Fix regression where pipe/file servers were not being terminated - REGRESSION FIX
+c901b1f 2016-10-14 Fix a bug changing the group/style for tracks - RT '550986'
+8ed0e60 2016-10-13 Remove some redundant code, make sure that we are tidied up when our parent zmap goes. - DEVELOP
+d7263b5 2016-10-13 remove an unused and redundant callback for import file. - DEVELOP
+0d01325 2016-10-13 remove some redundant params, fix a memory leak, add code to handle closing properly closing of our parent zmap window. - BUG FIX
+eeab355 2016-10-13 Add dummy params for change to zMapCreateSequenceViewWidg() params - DEVELOP
+d989e1a 2016-10-13 Change toplevel window to a dialog to make sure it is displayed on top of all other windows.
+05c5821 2016-10-11 Remove debug messages.
+2b2a3d3 2016-10-11 Change misleading default value for reply. - DEVELOP
+e50df8e 2016-10-11 Merge branch 'feature/Unbundle_view' into develop
+5fb50e9 2016-10-06 Fix spurious warnings introduced in 2.11.5 - REGRESSION FIX
+0f1f607 2016-10-05 Fix bug displaying spliced reads - RT '542750'
+c42502c 2016-10-03 Move pthread mutex from all server calls into just ensembl server where it is actually needed. - DEVELOP
+995a54b 2016-09-30 Merge branch 'feature/github' into develop
+7631979 2016-09-29 Fix potential crash with null error message - REGRESSION FIX
+79bd278 2016-09-28 Merge branch 'feature/file_extensions' into develop
+4f616c3 2016-09-26 Merge branch 'feature/file_extensions' into develop
+e424104 2016-09-26 Add .gff3 and case-insensitive filename extension support
+5a49941 2016-09-23 Fix regression from de531ea - REGRESSION FIX
+6394783 2016-09-23 Fix bug displaying reads with introns gaps (from a patch by Thibaut Hourlier) - BUG FIX
+de531ea 2016-09-23 Add BAM index support (from a patch by Thibaut Hourlier) - NEW FEATURE 'BAM index'
 
 
 End of git commits

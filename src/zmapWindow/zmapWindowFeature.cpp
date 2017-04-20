@@ -48,7 +48,7 @@
 #include <zmapWindowContainerFeatureSet_I.hpp>
 
 
-#include <ZMap/zmapThreads.hpp> // for ForkLock functions
+#include <ZMap/zmapThreadsLib.hpp> // for ForkLock functions
 
 
 using namespace gbtools ;
@@ -329,19 +329,34 @@ void zmapWindowPfetchEntry(ZMapWindow window, char *sequence_name)
 
       /* It would seem that PFetchHandleFetch() calls g_spawn_async_with_pipes() which is not
        * thread safe so lock round it...should locks be in pfetch code ?? */
-      zMapThreadForkLock();   // see zmapThreads.c
+      {
+        bool result ;
+        int err_num = 0 ;
+        char *err_msg = NULL ;
 
-      char *err_msg = NULL ;
+        if (!(result = UtilsGlobalThreadLock(&err_num)))
+          {
+            zMapLogCriticalSysErr(err_num, "%s", "Error trying to lock for pfetch") ;
+          }
 
+        if (result)
+          {
+            if (!(pfetch_data->pfetch->fetch(pfetch_args_str->str, &err_msg)))
+              {
+                zMapWarning("Error fetching sequence '%s':%s", sequence_name, err_msg) ;
+                
+                free((void *)err_msg) ;
+              }
+          }
 
-      if (!(pfetch_data->pfetch->fetch(pfetch_args_str->str, &err_msg)))
-        {
-          zMapWarning("Error fetching sequence '%s':%s", sequence_name, err_msg) ;
-
-          free((void *)err_msg) ;
-        }
-
-      zMapThreadForkUnlock();
+        if (result)
+          {
+            if (!(result = UtilsGlobalThreadUnlock(&err_num)))
+              {
+                zMapLogCriticalSysErr(err_num, "%s", "Error trying to lock for pfetch") ;
+              }
+          }
+      }
 
       g_string_free(pfetch_args_str, TRUE) ;
     }
@@ -748,7 +763,6 @@ FooCanvasItem *zmapWindowFeatureFactoryRunSingle(GHashTable *ftoi_hash,
 
   if(feature_item)        // will always work
     {
-      gboolean status = FALSE;
       ZMapFrame frame;
       ZMapStrand strand;
 
@@ -782,6 +796,8 @@ FooCanvasItem *zmapWindowFeatureFactoryRunSingle(GHashTable *ftoi_hash,
 
       if(ftoi_hash)
         {
+          gboolean status ;
+
           if(!feature_stack->col_hash[strand])
             {
               feature_stack->col_hash[strand] = zmapWindowFToIGetSetHash(ftoi_hash,
@@ -820,7 +836,10 @@ void zmapWindowFeatureGetSourceTxt(ZMapFeature feature, char **source_name_out, 
 {
   zMapReturnIfFail(feature) ;
 
-  if (feature->source_id)
+  // gb10: The 
+  if (feature->parent && ((ZMapFeatureSet)(feature->parent))->source)
+    *source_name_out = g_strdup(((ZMapFeatureSet)(feature->parent))->source->toplevelName().c_str());
+  else if (feature->source_id)
     *source_name_out = g_strdup(g_quark_to_string(feature->source_id)) ;
 
   if (feature->source_text)

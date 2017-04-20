@@ -32,7 +32,10 @@
 #include <ZMap/zmap.hpp>
 
 #include <string.h>
+#include <string>
 #include <list>
+#include <map>
+#include <algorithm>
 
 #include <ZMap/zmapUtils.hpp>
 #include <ZMap/zmapGLibUtils.hpp>
@@ -48,6 +51,9 @@ using namespace std ;
 #define SHOW_LABEL     "Show"
 #define SHOWHIDE_LABEL "Auto"
 #define HIDE_LABEL     "Hide"
+#define BUMPED_TEXT    "bumped"
+#define UNBUMPED_TEXT  "unbumped"
+
 
 #define XPAD 4
 #define YPAD 4
@@ -67,11 +73,16 @@ typedef enum
     SHOW_REV_COLUMN,   /* toggle button to show this track on the reversestrand */
     AUTO_REV_COLUMN,   /* toggle button to set visibility to auto on the reverse strand */
     HIDE_REV_COLUMN,   /* toggle button to hide this track on the reverse strand */
+    BUMPED_COLUMN,
     GROUP_COLUMN,
     STYLE_COLUMN,
+    SOURCE_COLUMN,
 
-    N_COLUMNS
+    N_COLUMNS, /* must appear after main list of columns */
+    NO_COLUMN
   } DialogColumns ;
+
+
 
 
 typedef struct _ColConfigureStruct
@@ -164,6 +175,7 @@ typedef struct _LoadedPageDataStruct
   GtkEntry *search_entry ;
   GtkEntry *filter_entry ;
   GtkLabel *selection_feedback ;
+  GtkComboBox *search_field_combo ;
 
   ColConfigure configure_data ;
 
@@ -178,6 +190,8 @@ typedef struct _LoadedPageDataStruct
 
   GQuark last_style_id ;   /* the last style id that was chosen using the Choose Style option */
   GQuark last_group_id ;
+
+  DialogColumns search_field ; /* which field to apply the search/filter to */
 } LoadedPageDataStruct;
 
 
@@ -316,6 +330,7 @@ static GList* tree_model_get_column_featuresets(LoadedPageData page_data, GtkTre
 static GQuark tree_model_get_column_id(GtkTreeModel *model, GtkTreeIter *iter, const gboolean unique) ;
 static char* tree_model_get_style_ids(GtkTreeModel *model, GtkTreeIter *iter) ;
 static GQuark tree_model_get_group_id(GtkTreeModel *model, GtkTreeIter *iter) ;
+static bool tree_model_get_bumped(GtkTreeModel *model, GtkTreeIter *iter) ;
 
 static GQuark hashListFindID(GHashTable *column_groups, const GQuark search_id) ;
 
@@ -327,6 +342,13 @@ static GList* tree_view_get_selected_featuresets(LoadedPageData page_data) ;
 
 static GList* getFeaturesetStructsFromIDs(GList *featureset_ids, ZMapFeatureContext context) ;
 
+static DialogColumns comboGetValue(GtkComboBox *combo) ;
+
+
+
+/*
+ *          Globals
+ */
 
 static GtkItemFactoryEntry menu_items_G[] =
   {
@@ -338,6 +360,15 @@ static GtkItemFactoryEntry menu_items_G[] =
     { (gchar *)"/Help/Display",    NULL,          (GtkItemFactoryCallback)helpDisplayCB,           0, NULL, NULL}
   };
 
+
+/* Map of search field enum to a descriptive string for use in the drop-down box. */
+static map<DialogColumns, string> searchfields_G = {
+  {NO_COLUMN, "All"},    // if no column is specified, we'll search/filter all relevant fields
+  {NAME_COLUMN, "Name"},
+  {GROUP_COLUMN, "Group"},
+  {STYLE_COLUMN, "Style"},
+  {SOURCE_COLUMN, "Source"}
+  } ;
 
 
 /*
@@ -585,6 +616,7 @@ static void loaded_page_populate (NotebookPage notebook_page, FooCanvasGroup *co
   loaded_page_data->window = configure_data->window ; 
   loaded_page_data->page_container = notebook_page->page_container ;
   loaded_page_data->configure_data = configure_data ;
+  loaded_page_data->search_field = NO_COLUMN ;
 
   loaded_cols_panel(loaded_page_data, column_group) ;
 
@@ -739,6 +771,46 @@ static char* columnGetStylesList(LoadedPageData page_data, ZMapFeatureContextMap
     {
       GList *styles_list = (GList*)g_hash_table_lookup(context_map->column_2_styles, GINT_TO_POINTER(column_id)) ;
       style_names = zMap_g_list_quark_to_string(styles_list, ";") ;
+    }
+
+  return style_names ;
+}
+
+
+/* Get the list of sources as a ;-separated string for the given column */
+static string columnGetSourcesList(LoadedPageData page_data, ZMapFeatureContextMap context_map, const GQuark column_id)
+{
+  string style_names ;
+  zMapReturnValIfFail(context_map && 
+                      page_data && 
+                      page_data->window && 
+                      page_data->window->feature_context &&
+                      context_map->columns, 
+                      style_names) ;
+
+  std::map<GQuark, ZMapFeatureColumn>::iterator col_iter = context_map->columns->find(column_id) ;
+  ZMapFeatureColumn column = NULL ;
+
+  if (col_iter != context_map->columns->end())
+    column = col_iter->second ;
+
+  if (column)
+    {
+      ZMapFeatureContext context = page_data->window->feature_context ;
+
+      for (GList *item = column->featuresets_unique_ids; item; item = item->next)
+        {
+          GQuark fset_id = (GQuark)GPOINTER_TO_INT(item->data) ;
+          ZMapFeatureSet feature_set = zmapFeatureContextGetFeaturesetFromId(context, fset_id) ;
+
+          if (feature_set && feature_set->source && !feature_set->source->toplevelName().empty())
+            {
+              if (!style_names.empty())
+                style_names += "; " ;
+
+              style_names += feature_set->source->toplevelName() ;
+            }
+        }
     }
 
   return style_names ;
@@ -917,6 +989,75 @@ static void loaded_page_apply_groups(LoadedPageData page_data)
 }
 
 
+/* Assign bump status based on the value in the tree */
+static void loaded_page_apply_bumped(LoadedPageData page_data)
+{
+  zMapReturnIfFail(page_data && 
+                   page_data->tree_model &&
+                   page_data->window &&
+                   page_data->window->context_map &&
+                   page_data->window->context_map->column_groups) ;
+
+  if (page_data->apply_now)
+    {
+      GtkTreeModel *model = page_data->tree_model ;
+
+      /* Loop through all rows in the tree */
+      GtkTreeIter iter;
+  
+      if (gtk_tree_model_get_iter_first(model, &iter))
+        {
+          do
+            {
+              // Get the column id for this row
+              GQuark column_id = tree_model_get_column_id(model, &iter, TRUE) ;
+
+              // Get the canvas items for the columns (forward and rev strand)
+              FooCanvasGroup *column_group_fwd = zmapWindowGetColumnByID(page_data->window, ZMAPSTRAND_FORWARD, column_id) ;
+              FooCanvasGroup *column_group_rev = zmapWindowGetColumnByID(page_data->window, ZMAPSTRAND_REVERSE, column_id) ;
+
+              ZMapWindowContainerFeatureSet container_fwd = (ZMapWindowContainerFeatureSet)column_group_fwd ;
+              ZMapWindowContainerFeatureSet container_rev = (ZMapWindowContainerFeatureSet)column_group_rev ;
+
+              // Get the compress mode depending on whether the mark is set
+              ZMapWindowCompressMode compress_mode ;
+
+              if (zmapWindowMarkIsSet(page_data->window->mark))
+                compress_mode = ZMAPWINDOW_COMPRESS_MARK ;
+              else
+                compress_mode = ZMAPWINDOW_COMPRESS_ALL ;
+
+              // Get the required bump status from the tree row. Note that this is just bumped or
+              // unbumped - if bumped, we use the default bump mode for the column.
+              bool bumped = tree_model_get_bumped(model, &iter) ;
+              
+              ZMapStyleBumpMode bump_mode_fwd = ZMAPBUMP_UNBUMP ;
+              ZMapStyleBumpMode bump_mode_rev = ZMAPBUMP_UNBUMP ;
+
+              if (bumped)
+                {
+                  if (container_fwd)
+                    bump_mode_fwd = zmapWindowContainerFeatureSetGetDefaultBumpMode(container_fwd);
+
+                  if (container_rev)
+                    bump_mode_rev = zmapWindowContainerFeatureSetGetDefaultBumpMode(container_rev);
+                }
+
+              // Do the bump
+              if (container_fwd)
+                zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(column_group_fwd), bump_mode_fwd, compress_mode) ;
+
+              if (container_rev)
+                zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(column_group_rev), bump_mode_rev, compress_mode) ;
+
+              // Redraw
+              zmapWindowFullReposition(page_data->window->feature_root_group,TRUE, "apply bump mode to columns") ;
+            } while (gtk_tree_model_iter_next(model, &iter)) ;
+        }
+    }
+}
+
+
 /* Apply column order changes on the loaded-columns page */
 static void loaded_page_reorder(NotebookPage notebook_page)
 {
@@ -983,6 +1124,7 @@ static void loaded_page_apply(NotebookPage notebook_page)
   loaded_page_apply_visibility(loaded_page_data) ;
   loaded_page_apply_styles(loaded_page_data) ;
   loaded_page_apply_groups(loaded_page_data) ;
+  loaded_page_apply_bumped(loaded_page_data) ;
 
   zmapWindowBusy(loaded_page_data->window, FALSE) ;
   zmapWindowColOrderColumns(loaded_page_data->window);
@@ -1387,8 +1529,8 @@ static gint find_name_cb(gconstpointer list_data, gconstpointer user_data)
 
 /* column loaded in a range? (set by the mark) */
 /* also called for full range by using seq start and end coords */
-gboolean column_is_loaded_in_range(ZMapFeatureContextMap map,
-                                   ZMapFeatureBlock block, GQuark column_id, int start, int end)
+static gboolean column_is_loaded_in_range(ZMapFeatureContextMap map,
+                                          ZMapFeatureBlock block, GQuark column_id, int start, int end)
 {
 #define MH17_DEBUG      0
   GList *fsets = NULL;
@@ -1691,7 +1833,7 @@ static FooCanvasGroup *configure_get_point_block_container(ColConfigure configur
 
 
 
-gint col_sort_by_name(gconstpointer a, gconstpointer b)
+static gint col_sort_by_name(gconstpointer a, gconstpointer b)
 {
   int result = 0 ;
 
@@ -2046,7 +2188,7 @@ static void loaded_cols_panel_create_column(LoadedPageData page_data,
 
 /* Called after the tree selection has changed. Updates info about the selected tracks in the
  * selection_feedback label. */
-void tree_selection_changed_cb(GtkTreeSelection *selection, gpointer user_data)
+static void tree_selection_changed_cb(GtkTreeSelection *selection, gpointer user_data)
 {
   LoadedPageData page_data = (LoadedPageData)user_data ;
   zMapReturnIfFail(page_data && page_data->selection_feedback) ;
@@ -2184,32 +2326,66 @@ static char* my_strcasestr(const char *haystack, const char *needle)
 }
 
 
+/* Utility to see if the value in the given column matches the given text */
+static gboolean columnMatchesText(GtkTreeModel *model,
+                                  GtkTreeIter *iter,
+                                  DialogColumns col_id, 
+                                  const char *text)
+{
+  gboolean result = FALSE ;
+
+  // Get the string value for this column from the selected row in the drop-down box
+  char *value = NULL ;
+  gtk_tree_model_get(model, iter, col_id, &value, -1) ;
+
+  if (text &&
+      value && 
+      *text != 0 &&
+      *value != 0 && 
+      my_strcasestr(value, text) != NULL)
+    {
+      result = TRUE ;
+    }
+
+  g_free(value) ;
+
+  return result ;
+}
+
+
 /* Callback used to determine if a search term matches a row in the tree. Returns false if it
  * matches, true otherwise. */
-gboolean tree_view_search_equal_func_cb(GtkTreeModel *model,
-                                        gint column,
-                                        const gchar *key,
-                                        GtkTreeIter *iter,
-                                        gpointer user_data)
+static gboolean tree_view_search_equal_func_cb(GtkTreeModel *model,
+                                               gint column,
+                                               const gchar *key,
+                                               GtkTreeIter *iter,
+                                               gpointer user_data)
 {
   gboolean result = TRUE ;
 
-  char *column_name = NULL ;
+  LoadedPageData page_data = (LoadedPageData)user_data ;
+  gboolean found = FALSE ;
 
-  gtk_tree_model_get(model, iter,
-                     NAME_COLUMN, &column_name,
-                     -1) ;
+  /* Get the column to search */
+  DialogColumns col_id = comboGetValue(page_data->search_field_combo) ;
 
-  if (column_name && 
-      key && 
-      strlen(column_name) > 0 && 
-      strlen(key) > 0 &&
-      my_strcasestr(column_name, key) != NULL)
+  if (col_id != NO_COLUMN)
     {
-      result = FALSE ;
+      // Check the specified column
+      found = columnMatchesText(model, iter, col_id, key) ;
+    }
+  else
+    {
+      // Check all relevant columns
+      for (auto &field_iter : searchfields_G)
+        {
+          if (field_iter.first != NO_COLUMN)
+            found |= columnMatchesText(model, iter, field_iter.first, key) ;
+        }
     }
 
-  g_free(column_name) ;
+  // The return value is false if it matches, true otherwise
+  result = !found ;
 
   return result ;
 }
@@ -2241,7 +2417,7 @@ static GtkWidget* loaded_cols_panel_create_tree_view(LoadedPageData page_data,
       gtk_tree_view_set_enable_search(tree_view, FALSE);
       gtk_tree_view_set_search_column(tree_view, NAME_COLUMN);
       gtk_tree_view_set_search_entry(tree_view, page_data->search_entry) ;
-      gtk_tree_view_set_search_equal_func(tree_view, tree_view_search_equal_func_cb, NULL, NULL) ;
+      gtk_tree_view_set_search_equal_func(tree_view, tree_view_search_equal_func_cb, page_data, NULL) ;
     }
 
   GtkTreeSelection *tree_selection = gtk_tree_view_get_selection(tree_view) ;
@@ -2261,11 +2437,17 @@ static GtkWidget* loaded_cols_panel_create_tree_view(LoadedPageData page_data,
   loaded_cols_panel_create_column(page_data, model, tree_view, ZMAPSTRAND_REVERSE, AUTO_REV_COLUMN, "RA") ;
   loaded_cols_panel_create_column(page_data, model, tree_view, ZMAPSTRAND_REVERSE, HIDE_REV_COLUMN, "RH") ;
 
+  /* Create the bumped column */
+  createTreeViewColumn(tree_view, "Bumped", BUMPED_COLUMN, text_renderer, "text", TRUE) ;
+
   /* Create the group column */
   createTreeViewColumn(tree_view, "Group", GROUP_COLUMN, text_renderer, "text", TRUE) ;
 
   /* Create the style column */
   createTreeViewColumn(tree_view, "Styles", STYLE_COLUMN, text_renderer, "text", TRUE) ;
+
+  /* Create the source column */
+  createTreeViewColumn(tree_view, "Source", SOURCE_COLUMN, text_renderer, "text", TRUE) ;
 
 
   page_data->tree_view = GTK_TREE_VIEW(tree) ;
@@ -2315,6 +2497,42 @@ static GQuark hashListFindID(GHashTable *ghash, const GQuark search_id)
 }
 
 
+static string getBumpedText(ZMapWindowContainerFeatureSet container_fwd,
+                            ZMapWindowContainerFeatureSet container_rev)
+{
+  /* Set whether bumped or unbumped. We don't currently bother listing forward and rev
+   * strand: just show bumped or unbumped if both are the same or blank otherwise. */
+  string bumped_text ;
+
+  if (container_fwd && container_rev)
+    {
+      ZMapStyleBumpMode bumped_fwd = zmapWindowContainerFeatureSetGetBumpMode(container_fwd) ;
+      ZMapStyleBumpMode bumped_rev = zmapWindowContainerFeatureSetGetBumpMode(container_rev) ;
+      
+      if (bumped_fwd == ZMAPBUMP_UNBUMP && bumped_rev == ZMAPBUMP_UNBUMP)
+        bumped_text = UNBUMPED_TEXT ;
+      else if (bumped_fwd != ZMAPBUMP_UNBUMP && bumped_rev != ZMAPBUMP_UNBUMP)
+        bumped_text = BUMPED_TEXT ;
+    }
+  else if (container_fwd || container_rev)
+    {
+      ZMapStyleBumpMode bumped ;
+
+      if (container_fwd)
+        bumped = zmapWindowContainerFeatureSetGetBumpMode(container_fwd) ;
+      else
+        bumped = zmapWindowContainerFeatureSetGetBumpMode(container_rev) ;
+
+      if (bumped == ZMAPBUMP_UNBUMP)
+        bumped_text = UNBUMPED_TEXT ;
+      else
+        bumped_text = BUMPED_TEXT ;
+    }
+
+  return bumped_text ;
+}
+
+
 static void loaded_cols_panel_create_tree_row(LoadedPageData page_data, 
                                               GtkListStore *store,
                                               ZMapFeatureColumn column,
@@ -2359,6 +2577,10 @@ static void loaded_cols_panel_create_tree_row(LoadedPageData page_data,
           g_free(style_names) ;
         }
 
+      /* Set the source name(s) */
+      string source_names = columnGetSourcesList(page_data, page_data->window->context_map, column->unique_id) ;
+      gtk_list_store_set(store, &iter, SOURCE_COLUMN, source_names.c_str(), -1);
+
       /* Set the group name */
       GQuark group_id = hashListFindID(page_data->window->context_map->column_groups, column->column_id) ;
  
@@ -2367,6 +2589,9 @@ static void loaded_cols_panel_create_tree_row(LoadedPageData page_data,
           
       if (group_id)
         gtk_list_store_set(store, &iter, GROUP_COLUMN, g_quark_to_string(group_id), -1);
+
+      string bumped_text = getBumpedText(container_fwd, container_rev) ;
+      gtk_list_store_set(store, &iter, BUMPED_COLUMN, bumped_text.c_str(), -1);
 
       /* Show two sets of radio buttons for each column to change column display state for
        * each strand. gb10: not sure why but historically we only added an apply button if we set
@@ -2399,33 +2624,41 @@ static void loaded_cols_panel_create_tree_row(LoadedPageData page_data,
 
 
 /* Callback used to determine if a given row in the filtered tree model is visible */
-gboolean tree_model_filter_visible_cb(GtkTreeModel *model, GtkTreeIter *iter, gpointer user_data)
+static gboolean tree_model_filter_visible_cb(GtkTreeModel *model, GtkTreeIter *iter, gpointer user_data)
 {
   gboolean result = FALSE ;
 
-  GtkEntry *search_entry = GTK_ENTRY(user_data) ;
+  LoadedPageData page_data = (LoadedPageData)user_data ;
+  GtkEntry *search_entry = page_data->filter_entry ;
   zMapReturnValIfFail(search_entry, result) ;
 
   const char *text = gtk_entry_get_text(search_entry) ;
-  char *column_name = NULL ;
-
-  gtk_tree_model_get(model, iter,
-                     NAME_COLUMN, &column_name,
-                     -1) ;
 
   if (!text || *text == 0)
     {
       /* If text isn't specified, show everything */
       result = TRUE ;
     }
-  else if (column_name && 
-           *column_name != 0 && 
-           my_strcasestr(column_name, text) != NULL)
+  else
     {
-      result = TRUE ;
+      /* Get the column to filter */
+      DialogColumns col_id = comboGetValue(page_data->search_field_combo) ;
+      
+      if (col_id != NO_COLUMN)
+        {
+          // Check the specified column
+          result = columnMatchesText(model, iter, col_id, text) ;
+        }
+      else
+        {
+          // Check all relevant columns
+          for (auto &field_iter : searchfields_G)
+            {
+              if (field_iter.first != NO_COLUMN)
+                result |= columnMatchesText(model, iter, field_iter.first, text) ;
+            }
+        }
     }
-
-  g_free(column_name) ;
 
   return result ;
 }
@@ -2445,7 +2678,7 @@ static GtkTreeModel* loaded_cols_panel_create_tree_model(LoadedPageData page_dat
   GtkListStore *store = gtk_list_store_new(N_COLUMNS, G_TYPE_STRING, 
                                            G_TYPE_BOOLEAN, G_TYPE_BOOLEAN, G_TYPE_BOOLEAN, 
                                            G_TYPE_BOOLEAN, G_TYPE_BOOLEAN, G_TYPE_BOOLEAN,
-                                           G_TYPE_STRING, G_TYPE_STRING) ;
+                                           G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING) ;
 
   /* Loop through all columns in display order (columns are shown in mirror order on the rev
    * strand but we always use forward-strand order) */
@@ -2474,7 +2707,7 @@ static GtkTreeModel* loaded_cols_panel_create_tree_model(LoadedPageData page_dat
      
       gtk_tree_model_filter_set_visible_func(GTK_TREE_MODEL_FILTER(filtered), 
                                              tree_model_filter_visible_cb, 
-                                             page_data->filter_entry,
+                                             page_data,
                                              NULL);
       page_data->tree_filtered = filtered ;
     }
@@ -2506,14 +2739,13 @@ static void filter_entry_activate_cb(GtkEntry *entry, gpointer user_data)
 }
 
 
-/* Called for each row in the current selection to set the style to the last-selected style in
- * the data */
-static void set_column_style(GtkTreeModel *model_in, GtkTreePath *path, LoadedPageData page_data)
+/* Utility to get a GtkTreeIter for the given path from the tree model. This uses the filtered
+ * model if appropriate, or the base model otherwise. Sets the relevant model in model_out. */
+static void treeGetIter(GtkTreePath *path, 
+                        GtkTreeModel *model_in, 
+                        GtkTreeModel **model_out, 
+                        GtkTreeIter *iter_out)
 {
-  zMapReturnIfFail(page_data && page_data->tree_model && page_data->window) ;
-
-  /* Update the group column in the tree model */
-  GtkTreeIter iter ;
   GtkTreeModel *model = model_in ;
 
   if (GTK_IS_TREE_MODEL_FILTER(model_in))
@@ -2522,14 +2754,29 @@ static void set_column_style(GtkTreeModel *model_in, GtkTreePath *path, LoadedPa
       model = gtk_tree_model_filter_get_model(GTK_TREE_MODEL_FILTER(model)) ;
       GtkTreeIter iter_in ;
       gtk_tree_model_get_iter(model_in, &iter_in, path) ;
-      gtk_tree_model_filter_convert_iter_to_child_iter(GTK_TREE_MODEL_FILTER(model_in), &iter, &iter_in) ;
+      gtk_tree_model_filter_convert_iter_to_child_iter(GTK_TREE_MODEL_FILTER(model_in), iter_out, &iter_in) ;
     }
   else
     {
-      gtk_tree_model_get_iter(model_in, &iter, path) ;
+      gtk_tree_model_get_iter(model_in, iter_out, path) ;
     }
-      
-  gtk_list_store_set(GTK_LIST_STORE(model), &iter, 
+
+  if (model_out)
+    *model_out = model ;
+}
+
+
+/* Called for each row in the current selection to set the style to the last-selected style in
+ * the data */
+static void set_column_style(GtkTreeModel *model_in, GtkTreePath *path, LoadedPageData page_data)
+{
+  zMapReturnIfFail(page_data && page_data->tree_model && page_data->window) ;
+
+  /* Update the group column in the tree model */
+  GtkTreeIter iter ;
+  gtk_tree_model_get_iter(model_in, &iter, path) ;
+
+  gtk_list_store_set(GTK_LIST_STORE(model_in), &iter, 
                      STYLE_COLUMN, g_quark_to_string(page_data->last_style_id),
                      -1) ;
 }
@@ -2586,6 +2833,52 @@ static void select_invert_button_cb(GtkButton *button, gpointer user_data)
 }
 
 
+/* Get the selected rows from the given model as row references (these can be edited without
+ * safely without messing up the iterators e.g. if the changes cause the row order to change).
+ * Optionally also return the tree model. */
+static list<GtkTreeRowReference*> getSelectedRows(GtkTreeView *tree_view,
+                                                  GtkTreeModel **model_out = NULL)
+{
+  list<GtkTreeRowReference*> row_refs ;
+
+  GtkTreeSelection *selection = gtk_tree_view_get_selection(tree_view) ;
+
+  if (selection)
+    {
+      GtkTreeModel *model = NULL ;
+      GList *rows = gtk_tree_selection_get_selected_rows(selection, &model) ;
+      GtkTreeModel *model_base = model ;
+
+      // get the base (unfiltered) model
+      if (GTK_IS_TREE_MODEL_FILTER(model))
+        model_base = gtk_tree_model_filter_get_model(GTK_TREE_MODEL_FILTER(model)) ;
+
+      if (model_out)
+        *model_out = model_base ;
+
+      // Loop through the selection and convert the paths to row references. 
+      for (GList *item = rows; item; item = item->next)
+        {
+          GtkTreePath *path = (GtkTreePath*)(item->data) ;
+
+          // convert to path in base model
+          GtkTreeIter iter_base ;
+          treeGetIter(path, model, NULL, &iter_base) ;
+          GtkTreePath *path_base = gtk_tree_model_get_path(model_base, &iter_base) ;
+
+          row_refs.push_back(gtk_tree_row_reference_new(model_base, path_base)) ;
+
+          gtk_tree_path_free(path_base) ;
+        }
+
+      // Clean up
+      g_list_free_full (rows, (GDestroyNotify) gtk_tree_path_free);
+    }
+
+  return row_refs ;
+}
+
+
 /* Called when the user hits the set-group button. Prompts for a style and assigns it to the
  * currently-selected rows. */
 static void choose_style_button_cb(GtkButton *button, gpointer user_data)
@@ -2593,11 +2886,12 @@ static void choose_style_button_cb(GtkButton *button, gpointer user_data)
   LoadedPageData page_data = (LoadedPageData)user_data ;
   zMapReturnIfFail(page_data && page_data->tree_model && page_data->window) ;
 
-  GtkTreeSelection *selection = gtk_tree_view_get_selection(page_data->tree_view) ;
+  GtkTreeModel *model = NULL ;
+  list<GtkTreeRowReference*> selected_rows = getSelectedRows(page_data->tree_view, &model) ;
 
   GList *feature_sets = tree_view_get_selected_featuresets(page_data) ;
 
-  if (selection)
+  if (!selected_rows.empty())
     {
       /* Open a dialog for the user to choose a style */
       GQuark style_id = zMapWindowChooseStyleDialog(page_data->window, feature_sets) ;
@@ -2606,13 +2900,15 @@ static void choose_style_button_cb(GtkButton *button, gpointer user_data)
         {
           page_data->last_style_id = style_id ;
 
-          GtkTreeModel *model = NULL ;
-          GList *rows = gtk_tree_selection_get_selected_rows(selection, &model) ;
-          
-          for (GList *item = rows; item; item = item->next)
+          // Loop through each row ref and update the group
+          for (GtkTreeRowReference *row : selected_rows)
             {
-              GtkTreePath *path = (GtkTreePath*)(item->data) ;
+              GtkTreePath *path = gtk_tree_row_reference_get_path(row) ;
+
               set_column_style(model, path, page_data) ;
+
+              gtk_tree_row_reference_free(row) ;
+              gtk_tree_path_free(path) ;
             }
 
           /* Apply the changes (if the apply-now flag is set) */
@@ -2638,18 +2934,7 @@ static void set_column_group(LoadedPageData page_data,
   GtkTreeIter iter ;
   GtkTreeModel *model = model_in ;
 
-  if (GTK_IS_TREE_MODEL_FILTER(model_in))
-    {
-      /* Its the filtered model, so we must find the child model and iter */
-      model = gtk_tree_model_filter_get_model(GTK_TREE_MODEL_FILTER(model)) ;
-      GtkTreeIter iter_in ;
-      gtk_tree_model_get_iter(model_in, &iter_in, path) ;
-      gtk_tree_model_filter_convert_iter_to_child_iter(GTK_TREE_MODEL_FILTER(model_in), &iter, &iter_in) ;
-    }
-  else
-    {
-      gtk_tree_model_get_iter(model_in, &iter, path) ;
-    }
+  treeGetIter(path, model_in, &model, &iter) ;
 
   if (page_data->last_group_id)
     {
@@ -2672,24 +2957,51 @@ static void selected_tracks_set_visibility(LoadedPageData page_data,
 {
   zMapReturnIfFail(page_data && page_data->tree_view) ;
 
-  GtkTreeSelection *selection = gtk_tree_view_get_selection(page_data->tree_view) ;
+  GtkTreeModel *model = NULL ;
+  list<GtkTreeRowReference*> selected_rows = getSelectedRows(page_data->tree_view, &model) ;
 
-  if (selection)
+  if (!selected_rows.empty())
     {
-      /* Loop through all selected rows and update the visibility */
-      GtkTreeModel *model = NULL ;
-      GList *rows = gtk_tree_selection_get_selected_rows(selection, &model) ;
-      GtkListStore *store = GTK_LIST_STORE(model) ;
-          
-      for (GList *item = rows; item; item = item->next)
+      // Loop through each row ref and update the group
+      for (GtkTreeRowReference *row : selected_rows)
         {
-          GtkTreePath *path = (GtkTreePath*)(item->data) ;
+          GtkTreePath *path = gtk_tree_row_reference_get_path(row) ;
           GtkTreeIter iter ;
           gtk_tree_model_get_iter(model, &iter, path) ;
 
           /* Set the visibility of both strands */
-          set_tree_store_value_from_state(col_state, store, &iter, TRUE) ;
-          set_tree_store_value_from_state(col_state, store, &iter, FALSE) ;
+          set_tree_store_value_from_state(col_state, GTK_LIST_STORE(model), &iter, TRUE) ;
+          set_tree_store_value_from_state(col_state, GTK_LIST_STORE(model), &iter, FALSE) ;
+
+          gtk_tree_row_reference_free(row) ;
+          gtk_tree_path_free(path) ;
+        }
+    }
+}
+
+/* Set the visibility of the selected tracks to the given state */
+static void selected_tracks_set_bumped(LoadedPageData page_data,
+                                       const bool bumped)
+{
+  zMapReturnIfFail(page_data && page_data->tree_view) ;
+
+  GtkTreeModel *model = NULL ;
+  list<GtkTreeRowReference*> selected_rows = getSelectedRows(page_data->tree_view, &model) ;
+
+  if (!selected_rows.empty())
+    {
+      // Loop through each row ref and update the group
+      for (GtkTreeRowReference *row : selected_rows)
+        {
+          GtkTreePath *path = gtk_tree_row_reference_get_path(row) ;
+          GtkTreeIter iter ;
+          gtk_tree_model_get_iter(model, &iter, path) ;
+
+          string bumped_text = (bumped ? BUMPED_TEXT : UNBUMPED_TEXT) ;
+          gtk_list_store_set(GTK_LIST_STORE(model), &iter, BUMPED_COLUMN, bumped_text.c_str(), -1);
+
+          gtk_tree_row_reference_free(row) ;
+          gtk_tree_path_free(path) ;
         }
     }
 }
@@ -2712,13 +3024,31 @@ static void auto_cb(GtkButton *button, gpointer user_data)
   selected_tracks_set_visibility(page_data, ZMAPSTYLE_COLDISPLAY_SHOW_HIDE) ;
 }
 
-/* Called when the user hits the button to hide sleected tracks. */
+/* Called when the user hits the button to hide selected tracks. */
 static void hide_cb(GtkButton *button, gpointer user_data)
 {
   LoadedPageData page_data = (LoadedPageData)user_data ;
   zMapReturnIfFail(page_data && page_data->tree_view) ;
 
   selected_tracks_set_visibility(page_data, ZMAPSTYLE_COLDISPLAY_HIDE) ;
+}
+
+/* Called when the user hits the button to bump selected tracks. */
+static void bump_cb(GtkButton *button, gpointer user_data)
+{
+  LoadedPageData page_data = (LoadedPageData)user_data ;
+  zMapReturnIfFail(page_data && page_data->tree_view) ;
+
+  selected_tracks_set_bumped(page_data, true) ;
+}
+
+/* Called when the user hits the button to unbump sleected tracks. */
+static void unbump_cb(GtkButton *button, gpointer user_data)
+{
+  LoadedPageData page_data = (LoadedPageData)user_data ;
+  zMapReturnIfFail(page_data && page_data->tree_view) ;
+
+  selected_tracks_set_bumped(page_data, false) ;
 }
 
 
@@ -2728,12 +3058,13 @@ static void set_group_button_cb(GtkButton *button, gpointer user_data)
 {
   LoadedPageData page_data = (LoadedPageData)user_data ;
   zMapReturnIfFail(page_data && page_data->tree_model && page_data->window) ;
+  
+  GtkTreeModel *model = NULL ;
+  list<GtkTreeRowReference*> selected_rows = getSelectedRows(page_data->tree_view, &model) ;
 
-  GtkTreeSelection *selection = gtk_tree_view_get_selection(page_data->tree_view) ;
-
-  if (selection)
+  if (!selected_rows.empty())
     {
-      const char *msg = "Please enter a group name (lowercase only).\n\nClear the text to remvoe the group." ;
+      const char *msg = "Please enter a group name (lowercase only).\n\nClear the text to remove the group." ;
       char *text_out = NULL ;
 
       GtkResponseType response = zMapGUIMsgGetText(NULL, ZMAP_MSG_INFORMATION, msg, FALSE, &text_out) ;
@@ -2745,18 +3076,18 @@ static void set_group_button_cb(GtkButton *button, gpointer user_data)
           else
             page_data->last_group_id = 0 ;
 
-          GtkTreeModel *model = NULL ;
-          GList *rows = gtk_tree_selection_get_selected_rows(selection, &model) ;
-          
-          for (GList *item = rows; item; item = item->next)
+          // Loop through each row ref and update the group
+          for (GtkTreeRowReference *row : selected_rows)
             {
-              GtkTreePath *path = (GtkTreePath*)(item->data) ;
+              GtkTreePath *path = gtk_tree_row_reference_get_path(row) ;
               set_column_group(page_data, model, path) ;
+              gtk_tree_row_reference_free(row) ;
+              gtk_tree_path_free(path) ;
             }
 
-          /* Apply the changes (if the apply-now flag is set) */
+          // Apply the changes (if the apply-now flag is set)
           loaded_page_apply_groups(page_data) ;
-        }
+         }
     }
   else
     {
@@ -2765,10 +3096,10 @@ static void set_group_button_cb(GtkButton *button, gpointer user_data)
 }
 
 
-static void clear_button_cb(GtkButton *button, gpointer user_data)
+/* Clear the text in the search/filter boxes */
+static void clearSearchFilter(LoadedPageData page_data)
 {
-  LoadedPageData page_data = (LoadedPageData)user_data ;
-  zMapReturnIfFail(page_data && page_data->tree_model) ;
+  zMapReturnIfFail(page_data) ;
 
   if (page_data->search_entry)
     gtk_entry_set_text(page_data->search_entry, "") ;
@@ -2789,6 +3120,111 @@ static void clear_button_cb(GtkButton *button, gpointer user_data)
   gtk_tree_sortable_set_sort_column_id(GTK_TREE_SORTABLE(page_data->tree_model), 
                                        GTK_TREE_SORTABLE_UNSORTED_SORT_COLUMN_ID,
                                        GTK_SORT_ASCENDING) ;
+}
+
+
+/* Callback to clear the current search/filter */
+static void clear_button_cb(GtkButton *button, gpointer user_data)
+{
+  LoadedPageData page_data = (LoadedPageData)user_data ;
+  zMapReturnIfFail(page_data && page_data->tree_model) ;
+
+  clearSearchFilter(page_data) ;
+}
+
+
+/* Returns the selected value in the combo box */
+static DialogColumns comboGetValue(GtkComboBox *combo)
+{
+  DialogColumns result = NO_COLUMN ;
+
+  GtkTreeIter iter;
+  
+  if (gtk_combo_box_get_active_iter(GTK_COMBO_BOX(combo), &iter))
+    {
+      GtkTreeModel *model = gtk_combo_box_get_model(GTK_COMBO_BOX(combo));
+      char *value = NULL ;
+
+      // Get the string value
+      gtk_tree_model_get(model, &iter, 0, &value, -1);
+
+      if (value)
+        {
+          // Find this string value in the map of search fields
+          auto search_result = find_if(searchfields_G.begin(), searchfields_G.end(),
+                                       [&value](const pair<DialogColumns, string> &search_pair) 
+                                       { 
+                                         return search_pair.second == value ; 
+                                       }) ;
+          
+          if (search_result != searchfields_G.end())
+            result = search_result->first ;
+
+          g_free(value) ;
+        }
+    }
+
+  return result ;
+}
+
+
+/* Called when the user changes the value in the search/filter drop-down box */
+static void search_field_changed_cb(GtkComboBox *combo, gpointer data)
+{
+  LoadedPageData page_data = (LoadedPageData)data ;
+  zMapReturnIfFail(page_data) ;
+
+  // Just update the search field in the data
+  page_data->search_field = comboGetValue(combo) ;
+
+  // Reset the search/filter boxes because any results are now invalid
+  clearSearchFilter(page_data) ;
+}
+
+
+static void createComboItem(GtkComboBox *combo, 
+                            GtkListStore *store,
+                            const char *text,
+                            const bool active)
+{
+  GtkTreeIter iter;
+  gtk_list_store_append(store, &iter);
+  gtk_list_store_set(store, &iter, 0, text, -1);
+
+  if (active)
+    gtk_combo_box_set_active_iter(combo, &iter);
+}
+
+
+static GtkComboBox *createSearchFieldCombo(GCallback cb_func, gpointer cb_data)
+{
+  GtkComboBox *combo = NULL ;
+
+  LoadedPageData page_data = (LoadedPageData)cb_data ;
+  zMapReturnValIfFail(page_data, combo) ;
+
+  /* Create a combo box to choose the type of source to create */
+  GtkListStore *store = gtk_list_store_new(1, G_TYPE_STRING);
+  combo = GTK_COMBO_BOX(gtk_combo_box_new_with_model(GTK_TREE_MODEL(store)));
+  g_object_unref(store) ;
+
+  GtkCellRenderer *renderer = gtk_cell_renderer_text_new();
+  gtk_cell_layout_pack_start(GTK_CELL_LAYOUT(combo), renderer, FALSE);
+  gtk_cell_layout_set_attributes(GTK_CELL_LAYOUT(combo), renderer, "text", 0, NULL);
+
+  gtk_widget_set_tooltip_text(GTK_WIDGET(combo), "Select which field to search/filter") ;
+
+  /* Add the rows to the combo box. Make "All" (NO_COLUMN) active by default. */
+  for (auto &iter : searchfields_G)
+    {
+      createComboItem(combo, store, iter.second.c_str(), iter.first == NO_COLUMN) ;
+    }
+
+  g_signal_connect(G_OBJECT(combo), "changed", cb_func, cb_data);
+
+  page_data->search_field_combo = combo ;
+
+  return combo ;
 }
 
 
@@ -2814,6 +3250,10 @@ static GtkWidget* loaded_cols_panel_create_buttons(LoadedPageData page_data)
       gtk_box_pack_start(GTK_BOX(hbox), GTK_WIDGET(page_data->filter_entry), FALSE, FALSE, 0) ;
       g_signal_connect(G_OBJECT(page_data->filter_entry), "activate", G_CALLBACK(filter_entry_activate_cb), page_data) ;
       gtk_widget_set_tooltip_text(GTK_WIDGET(page_data->filter_entry), "Show only column names containing this text. Press enter to apply the filter.") ;
+
+      /* Add a drop-down box to select which fields to search/filter by */
+      GtkWidget *combo = GTK_WIDGET(createSearchFieldCombo(G_CALLBACK(search_field_changed_cb), page_data)) ;
+      gtk_box_pack_start(GTK_BOX(hbox), combo, FALSE, FALSE, 0) ;
 
       /* Add a button to clear the search/filter boxes and sort order */
       GtkWidget *button = gtk_button_new_with_mnemonic("C_lear") ;
@@ -2853,6 +3293,7 @@ static GtkWidget* loaded_cols_panel_create_buttons(LoadedPageData page_data)
   gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0) ;
   gtk_box_pack_start(GTK_BOX(hbox), gtk_label_new("Action:"), FALSE, FALSE, 0) ;
 
+
   /* Add a button to Show all selected columns */
   button = gtk_button_new_with_mnemonic("Sho_w") ;
   gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
@@ -2871,17 +3312,32 @@ static GtkWidget* loaded_cols_panel_create_buttons(LoadedPageData page_data)
   g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(hide_cb), page_data) ;
   gtk_widget_set_tooltip_text(button, "Set visibility of all selected tracks to Hide") ;
 
+  gtk_box_pack_start(GTK_BOX(hbox), gtk_label_new(" "), FALSE, FALSE, 0) ; //separator
+
+  /* Add buttons to bump/unbump all selected columns */
+  button = gtk_button_new_with_mnemonic("_Bump") ;
+  gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
+  g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(bump_cb), page_data) ;
+  gtk_widget_set_tooltip_text(button, "Bump (expand) all selected tracks") ;
+
+  button = gtk_button_new_with_mnemonic("_Unbump") ;
+  gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
+  g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(unbump_cb), page_data) ;
+  gtk_widget_set_tooltip_text(button, "Unbump (collapse) all selected tracks") ;
+
+  gtk_box_pack_start(GTK_BOX(hbox), gtk_label_new(" "), FALSE, FALSE, 0) ; //separator
+
   /* Add a button to set a group for the selected columns */
-  button = gtk_button_new_with_mnemonic("Assign _Group") ;
+  button = gtk_button_new_with_mnemonic("Change _Group") ;
   gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
   g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(set_group_button_cb), page_data) ;
-  gtk_widget_set_tooltip_text(button, "Choose a group for the selected tracks") ;
+  gtk_widget_set_tooltip_text(button, "Assign or clear the group for the selected tracks") ;
 
   /* Add a button to choose a style for the selected columns */
-  button = gtk_button_new_with_mnemonic("Assign _Style") ;
+  button = gtk_button_new_with_mnemonic("Change _Style") ;
   gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
   g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(choose_style_button_cb), page_data) ;
-  gtk_widget_set_tooltip_text(button, "Assign a style to the selected tracks") ;
+  gtk_widget_set_tooltip_text(button, "Edit the style and/or assign a new style for the selected tracks") ;
 
   return vbox ;
 }
@@ -2975,10 +3431,10 @@ static GtkWidget *create_revert_apply_button(ColConfigure configure_data)
   gtk_box_set_spacing (GTK_BOX(button_box), ZMAP_WINDOW_GTK_BUTTON_BOX_SPACING);
   gtk_container_set_border_width (GTK_CONTAINER (button_box), ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
 
-  revert_button = gtk_button_new_from_stock(GTK_STOCK_REVERT_TO_SAVED) ;
+  revert_button = gtk_button_new_from_stock(GTK_STOCK_REFRESH) ;
   gtk_box_pack_end(GTK_BOX(button_box), revert_button, FALSE, FALSE, 0) ;
   gtk_signal_connect(GTK_OBJECT(revert_button), "clicked", GTK_SIGNAL_FUNC(revert_button_cb), configure_data) ;
-  gtk_widget_set_tooltip_text(revert_button, "Revert to last applied values") ;
+  gtk_widget_set_tooltip_text(revert_button, "Revert unsaved changes and/or re-load data (required to view new columns that have been loaded in the background)") ;
 
   /* Add a button to apply the new column order. We want them to explicitly choose to reorder
    * rather than doing this when they hit the Apply button because they might have reordered just
@@ -3261,6 +3717,26 @@ static GQuark tree_model_get_group_id(GtkTreeModel *model, GtkTreeIter *iter)
 }
 
 
+/* Get the bumped status for the given row in the given tree (returns true if bumped, false if
+ * not) */
+static bool tree_model_get_bumped(GtkTreeModel *model, GtkTreeIter *iter)
+{
+  bool bumped = false ;
+  char *bumped_text = NULL ;
+
+  gtk_tree_model_get (model, iter,
+                      BUMPED_COLUMN, &bumped_text,
+                      -1);
+
+  if (bumped_text && bumped_text[0] != '\0')
+    {
+      bumped = (strcmp(bumped_text, BUMPED_TEXT) == 0) ;
+    }
+
+  return bumped ;
+}
+
+
 /* Convert a list of featureset ids to a list of ZMapFeatureSet structs. Returns a newly
  * allocated GList. */
 static GList* getFeaturesetStructsFromIDs(GList *featureset_ids, ZMapFeatureContext context)
@@ -3353,18 +3829,7 @@ static void set_and_apply_state(GtkTreeModel *model_in,
   GtkTreeIter iter ;
   GtkTreeModel *model = model_in ;
 
-  if (GTK_IS_TREE_MODEL_FILTER(model_in))
-    {
-      /* Its the filtered model, so we must find the child model and iter */
-      model = gtk_tree_model_filter_get_model(GTK_TREE_MODEL_FILTER(model)) ;
-      GtkTreeIter iter_in ;
-      gtk_tree_model_get_iter(model_in, &iter_in, path) ;
-      gtk_tree_model_filter_convert_iter_to_child_iter(GTK_TREE_MODEL_FILTER(model_in), &iter, &iter_in) ;
-    }
-  else
-    {
-      gtk_tree_model_get_iter(model_in, &iter, path) ;
-    }
+  treeGetIter(path, model_in, &model, &iter) ;
 
   /* Set the state of the cells */
   gboolean forward = (set_state_data->strand == ZMAPSTRAND_FORWARD) ;

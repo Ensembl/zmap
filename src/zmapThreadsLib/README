@@ -1,0 +1,7 @@
+================================================================================   
+Threads Lib
+
+Some basic routines for working with Threads. They are _not_ designed to be
+used directly by an application, they are used by the ThreadSource object
+which is the more high level and unified interface.
+

@@ -866,6 +866,9 @@ static void destroyZMap(ZMap zmap)
   if (zmap->sequence_dialog)
     gtk_widget_destroy(zmap->sequence_dialog) ;
 
+  if (zmap->import_file_dialog)
+    gtk_widget_destroy(zmap->import_file_dialog) ;
+
 
   g_free(zmap->zmap_id) ;
 

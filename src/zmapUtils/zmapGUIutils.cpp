@@ -2343,24 +2343,43 @@ static GtkResponseType messageFull(GtkWindow *parent, const char *title_in, cons
 
   gtk_dialog_set_default_response(GTK_DIALOG(dialog), default_response) ;
 
-  /* Set up the message text in a button widget so that it can put in the primary
-   * selection buffer for cut/paste when user clicks on it. */
-  button = gtk_button_new_with_label(msg) ;
-  gtk_box_pack_start(GTK_BOX(GTK_DIALOG(dialog)->vbox), button, TRUE, TRUE, 20);
-  gtk_button_set_relief(GTK_BUTTON(button), GTK_RELIEF_NONE) ;
-  label = gtk_bin_get_child(GTK_BIN(button)) ;    /* Center + wrap long lines. */
-  gtk_label_set_justify(GTK_LABEL(label), justify) ;
-  gtk_label_set_line_wrap(GTK_LABEL(label), TRUE) ;
+  if (strlen(msg) < 500)
+    {
+      /* Set up the message text in a button widget so that it can put in the primary
+       * selection buffer for cut/paste when user clicks on it. */
+      button = gtk_button_new_with_label(msg) ;
+      gtk_box_pack_start(GTK_BOX(GTK_DIALOG(dialog)->vbox), button, TRUE, TRUE, 20);
+      gtk_button_set_relief(GTK_BUTTON(button), GTK_RELIEF_NONE) ;
+      label = gtk_bin_get_child(GTK_BIN(button)) ;    /* Center + wrap long lines. */
+      gtk_label_set_justify(GTK_LABEL(label), justify) ;
+      gtk_label_set_line_wrap(GTK_LABEL(label), TRUE) ;
 
-  gtk_signal_connect(GTK_OBJECT(button), "clicked",
-     GTK_SIGNAL_FUNC(butClick), button) ;
+      gtk_signal_connect(GTK_OBJECT(button), "clicked",
+                         GTK_SIGNAL_FUNC(butClick), button) ;
+    }
+  else
+    {
+      /* If the message is very long, put it in a text view in a scrolled window */
+      GtkTextBuffer *text_buffer = gtk_text_buffer_new(gtk_text_tag_table_new());      
+      GtkWidget *text_view = gtk_text_view_new_with_buffer(GTK_TEXT_BUFFER(text_buffer));
+      gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(text_view), GTK_WRAP_WORD) ;
+      gtk_text_buffer_set_text(GTK_TEXT_BUFFER(text_buffer), msg, -1);
 
+      GtkWidget *scroll_win = gtk_scrolled_window_new(NULL, NULL);
+      gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll_win), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+      gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(scroll_win), GTK_WIDGET(text_view));
+    
+      gtk_box_pack_start(GTK_BOX(GTK_DIALOG(dialog)->vbox), scroll_win, TRUE, TRUE, 20);
+
+      gtk_window_set_default_size(GTK_WINDOW(dialog), 500, 350);  
+    }
 
   /* For text set up a an entry widget, optionally with hidden text entry. */
   if (user_data && user_data->type == ZMAPGUI_USERDATA_TEXT)
     {
       entry = gtk_entry_new() ;
       gtk_box_pack_start(GTK_BOX(GTK_DIALOG(dialog)->vbox), entry, TRUE, TRUE, 0) ;
+      gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE) ;
 
       if (user_data->hide_input)
         gtk_entry_set_visibility(GTK_ENTRY(entry), FALSE) ;
@@ -2379,7 +2398,13 @@ static GtkResponseType messageFull(GtkWindow *parent, const char *title_in, cons
 
   gtk_widget_show_all(dialog) ;
 
-  if (default_response)
+  /* For text-entry dialogs, set the focus in the entry box (must be done after the entry is
+   * realised and mapped). Otherwise, set the focus on the default response button. */
+  if (user_data && user_data->type == ZMAPGUI_USERDATA_TEXT)
+    {
+      gtk_widget_grab_focus(entry) ;
+    }
+  else if (default_response)
     {
       GtkWidget *default_widget = gtk_dialog_get_widget_for_response(GTK_DIALOG(dialog), default_response) ;
       gtk_widget_grab_focus(default_widget) ;

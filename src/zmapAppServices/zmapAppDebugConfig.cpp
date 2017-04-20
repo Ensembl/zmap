@@ -40,7 +40,7 @@
 #include <ZMap/zmapConfigStrings.hpp>
 
 // headers for globals
-#include <ZMap/zmapThreads.hpp>
+#include <ZMap/zmapThreadSource.hpp>
 #include <ZMap/zmapServerProtocol.hpp>
 #include <ZMap/zmapUtilsDebug.hpp>
 

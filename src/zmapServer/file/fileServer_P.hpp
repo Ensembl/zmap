@@ -31,10 +31,15 @@
 #ifndef FILE_SERVER_P_H
 #define FILE_SERVER_P_H
 
-#include <zmapServerPrototype.hpp>
+#include <ZMap/zmapDataStream.hpp>
 
-#include <ZMap/zmapDataSource.hpp>
+#include <zmapServerPrototype.hpp>
+#include <zmapDataStream_P.hpp>
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #include <zmapDataSource_P.hpp>
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 /*
  * File server connection.
@@ -42,12 +47,11 @@
 typedef struct FileServerStruct_
 {
   ZMapURLScheme scheme ;
-  ZMapDataSource data_source ;
+  ZMapDataStream data_stream ;
   ZMapServerResponseType result ;
   ZMapFeatureContext req_context ;
-  ZMapFeatureSequenceMap sequence_map ;
 
-  GQuark source_name ;
+  ZMapConfigSource config_source ;    /* The source the server will process */
   char *config_file ;
   char *url ;                          /* Full url string. */
   char *path ;                         /* Filename out of the URL  */
@@ -58,7 +62,7 @@ typedef struct FileServerStruct_
   GQuark req_sequence;
   int gff_version, zmap_start, zmap_end, exit_code ;
 
-  gboolean sequence_server, is_otter, error ;
+  gboolean sequence_server, error ;
   GHashTable *source_2_sourcedata ;
   GHashTable *featureset_2_column ;
 

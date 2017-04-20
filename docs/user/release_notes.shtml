@@ -6,6 +6,19 @@
 <body>
 <h2>ZMap - Release Notes</h2>
 
+<h4>Version 2.12.0</h4>
+<ul>
+  <li>When importing a file, ZMap will now prompt the user for the file type if it cannot be determined from the filename extension.
+  <li>File types are now passed through from the track hub registry, so they do not have to be determined by filename extensions.
+  <li>Featuresets now have a record of the source they were loaded from. This is displayed in the info bar when you click on a feature, and is also shown in the Columns dialog.
+  <li>The Columns dialog has improved search/filter functionality which can act on any text column.
+  <li>There is now a configurable limit (max-features in the ZMap stanza), which is a hard limit for the number of features ZMap will attempt to load.
+  <li>Various improvements to the sources list on the Main Window and Import dialog to make it easier to manage sources.
+  <li>RT550986: Fix a bug changing the group/style for tracks.
+  <li>Fix a crash bug which could happen when encountering errors while loading bed/bigBed/bigWig files.
+  <li>Fix a bug loading extended bigBed files.
+</ul>
+
 <h4>Version 2.11.6</h4>
 <ul>
   <li>Fix spurious warning messages introduced in 2.11.5

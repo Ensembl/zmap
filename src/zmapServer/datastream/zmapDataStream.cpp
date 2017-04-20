@@ -1,4 +1,4 @@
-/*  File: zmapDataSource.c
+/*  File: zmapDataStream.c
  *  Author: Steve Miller (sm23@sanger.ac.uk)
  *  Copyright (c) 2006-2015: Genome Research Ltd.
  *-------------------------------------------------------------------
@@ -49,7 +49,8 @@
 #include <ZMap/zmapGFF.hpp>
 #include <ZMap/zmapGFFStringUtils.hpp>
 #include <ZMap/zmapServerProtocol.hpp>
-#include <zmapDataSource_P.hpp>
+
+#include <zmapDataStream_P.hpp>
 
 #ifdef __cplusplus
 extern "C" {
@@ -98,14 +99,28 @@ namespace // unnamed namespace
  * http://www.sequenceontology.org/browser/current_svn/term/SO:0000150
  *
  */
-static const char * const ZMAP_BAM_SO_TERM  = "read" ;
-static const char * const ZMAP_BCF_SO_TERM  = "snv" ;
-static const char * const ZMAP_BED_SO_TERM  = "sequence_feature" ;
-static const char * const ZMAP_BIGBED_SO_TERM  = "sequence_feature" ;
-static const char * const ZMAP_BIGWIG_SO_TERM  = "score" ;
+#define ZMAP_BAM_SO_TERM  "read"
+#define ZMAP_BCF_SO_TERM  "snv"
+#define ZMAP_BED_SO_TERM  "sequence_feature"
+#define ZMAP_BIGBED_SO_TERM "sequence_feature"
+#define ZMAP_BIGWIG_SO_TERM "score"
 #define ZMAP_CIGARSTRING_MAXLENGTH 2048
 #define READBUFFER_SIZE 2048
+#define BED_DEFAULT_FIELDS 3       // min number of fields in a BED file
+#define MAX_FILE_THREADS 10        // max number of file threads at any one time
+#define SEQ_LIST_SEPARATOR "\n"    // used as separator in list of sequence names
 
+
+/* 
+ * Function declarations
+ */
+static string toLower(const string &s) ;
+static ZMapDataStreamType dataSourceTypeFromExtension(const string &file_ext, GError **error_out) ;
+
+
+/* 
+ * Utility classes
+ */
 
 /* Need a semaphore to limit the number of threads.
  * From http://stackoverflow.com/questions/4792449/c0x-has-no-semaphores-how-to-synchronize-threads */
@@ -134,64 +149,6 @@ private:
     std::condition_variable cv;
 };
 
-inline semaphore::semaphore(size_t n) : count{n} {}
-
-inline void semaphore::notify() {
-    std::lock_guard<std::mutex> lock{mutex};
-    ++count;
-    cv.notify_one();
-}
-
-inline void semaphore::wait() {
-    std::unique_lock<std::mutex> lock{mutex};
-    cv.wait(lock, [&]{ return count > 0; });
-    --count;
-}
-
-inline bool semaphore::try_wait() {
-    std::lock_guard<std::mutex> lock{mutex};
-
-    if (count > 0) {
-        --count;
-        return true;
-    }
-
-    return false;
-}
-
-template<class Rep, class Period>
-bool semaphore::wait_for(const std::chrono::duration<Rep, Period>& d) {
-    std::unique_lock<std::mutex> lock{mutex};
-    auto finished = cv.wait_for(lock, d, [&]{ return count > 0; });
-
-    if (finished)
-        --count;
-
-    return finished;
-}
-
-template<class Clock, class Duration>
-bool semaphore::wait_until(const std::chrono::time_point<Clock, Duration>& t) {
-    std::unique_lock<std::mutex> lock{mutex};
-    auto finished = cv.wait_until(lock, t, [&]{ return count > 0; });
-
-    if (finished)
-        --count;
-
-    return finished;
-}
-
-inline semaphore::native_handle_type semaphore::native_handle() {
-    return cv.native_handle();
-}
-
-
-
-
-/* Keep track of how many files we've opened in different threads */
-#define MAX_FILE_THREADS 10
-static semaphore semaphore_G(MAX_FILE_THREADS) ;
-
 
 // Utility class to do error handling for blatSrc library.
 // We must use this error handler for all calls to the library to make sure it doesn't abort.
@@ -206,66 +163,8 @@ public:
   string errMsg() ;
 
 private:
-  struct errCatch *err_catch_ ;
+  struct errCatch *err_catch_{NULL} ;
 } ;
-
-BlatLibErrHandler::BlatLibErrHandler()
-  : err_catch_(NULL)
-{
-}
-
-BlatLibErrHandler::~BlatLibErrHandler()
-{
-  if (err_catch_)
-    {
-      errCatchFree(&err_catch_) ;
-      err_catch_ = NULL ;
-    }
-}
-
-// Initialises the handler. Returns true if ok.
-bool BlatLibErrHandler::errTry()
-{
-  bool result = false ;
-
-  if (err_catch_)
-    errCatchFree(&err_catch_) ;
-
-  err_catch_ = errCatchNew() ;
-
-  if (err_catch_)
-    result = errCatchStart(err_catch_) ;
-
-  return result ;
-}
-
-// Ends the handler. Returns true if there was an error.
-bool BlatLibErrHandler::errCatch()
-{
-  bool result = false ;
-
-  if (err_catch_)
-    {
-      errCatchEnd(err_catch_) ;
-      result = err_catch_->gotError ;
-    }
-
-  return result ;
-}
-
-// Returns the error message (empty string if no error)
-string BlatLibErrHandler::errMsg()
-{
-  string err_msg ;
-
-  if (err_catch_ && err_catch_->gotError && 
-      err_catch_->message && err_catch_->message->string)
-    {
-      err_msg = err_catch_->message->string ;
-    }
-
-  return err_msg ;
-}
 
 
 /* Custom comparator for a map to make the key case-insensitive. This is a 'less' object,
@@ -277,20 +176,37 @@ public:
   {
     bool result = false ;
 
-    std::string a(a_in) ;
-    std::string b(b_in) ;
-
-    for (int i = 0; i < a.length(); ++i)
-      a[i] = std::tolower(a[i]) ;
-
-    for (int i = 0; i < b.length(); ++i)
-      b[i] = std::tolower(b[i]) ;
+    string a = toLower(a_in) ;
+    string b = toLower(b_in) ;
     
     result = (a < b) ;
 
     return result ;
   }
 };
+
+
+/* 
+ * Globals
+ */
+
+/* Keep track of how many files we've opened in different threads */
+static semaphore semaphore_G(MAX_FILE_THREADS) ;
+
+/* Map of file types to a data-source types */
+const map<string, ZMapDataStreamType> file_type_to_stream_type_G =
+  {
+    {"GFF",     ZMapDataStreamType::GIO}
+    ,{"Bed",    ZMapDataStreamType::BED}
+    ,{"bigBed", ZMapDataStreamType::BIGBED}
+    ,{"bigWig", ZMapDataStreamType::BIGWIG}
+    ,{"BAM",    ZMapDataStreamType::HTS}
+    ,{"SAM",    ZMapDataStreamType::HTS}
+    ,{"CRAM",   ZMapDataStreamType::HTS}
+    ,{"BCF",    ZMapDataStreamType::BCF}
+    ,{"VCF",    ZMapDataStreamType::BCF}
+  } ;
+
 
 } // unnamed namespace
 
@@ -299,12 +215,13 @@ public:
  * Constructors
  */
 
-ZMapDataSourceStruct::ZMapDataSourceStruct(const GQuark source_name,
+ZMapDataStreamStruct::ZMapDataStreamStruct(ZMapConfigSource source,
                                            const char *sequence,
                                            const int start,
                                            const int end)
-  : type(ZMapDataSourceType::UNK), 
-    source_name_(source_name),
+  : type(ZMapDataStreamType::UNK), 
+    source_(source),
+    sequence_{nullptr},
     start_(start),
     end_(end),
     error_(NULL),
@@ -322,17 +239,17 @@ ZMapDataSourceStruct::ZMapDataSourceStruct(const GQuark source_name,
     sequence_ = g_strdup(sequence) ;
 }
 
-ZMapDataSourceGIOStruct::ZMapDataSourceGIOStruct(const GQuark source_name, 
+ZMapDataStreamGIOStruct::ZMapDataStreamGIOStruct(ZMapConfigSource source, 
                                                  const char *file_name,
                                                  const char *open_mode,
                                                  const char *sequence,
                                                  const int start,
                                                  const int end)
-  : ZMapDataSourceStruct(source_name, sequence, start, end),
+  : ZMapDataStreamStruct(source, sequence, start, end),
     gff_version_(ZMAPGFF_VERSION_UNKNOWN),
     gff_version_set_(false)
 {
-  type = ZMapDataSourceType::GIO ;
+  type = ZMapDataStreamType::GIO ;
   io_channel = g_io_channel_new_file(file_name, open_mode, &error_) ;
 
   gffVersion(&gff_version_) ;
@@ -341,7 +258,8 @@ ZMapDataSourceGIOStruct::ZMapDataSourceGIOStruct(const GQuark source_name,
   parser_ = zMapGFFCreateParser(gff_version_,
                                 sequence,
                                 start,
-                                end) ;
+                                end,
+                                source_) ;
 
   /* The caller may only want a small part of the features in the stream so we set the
    * feature start/end from the block, not the gff stream start/end. */
@@ -356,21 +274,25 @@ ZMapDataSourceGIOStruct::ZMapDataSourceGIOStruct(const GQuark source_name,
 
 
 
-ZMapDataSourceBEDStruct::ZMapDataSourceBEDStruct(const GQuark source_name, 
+ZMapDataStreamBEDStruct::ZMapDataStreamBEDStruct(ZMapConfigSource source, 
                                                  const char *file_name,
                                                  const char *open_mode,
                                                  const char *sequence,
                                                  const int start,
                                                  const int end)
-  : ZMapDataSourceStruct(source_name, sequence, start, end),
-    cur_feature_(NULL)
+  : ZMapDataStreamStruct(source, sequence, start, end),
+    cur_feature_(NULL),
+    standard_fields_(BED_DEFAULT_FIELDS)
 {
-  zMapReturnIfFail(file_name) ;
-  type = ZMapDataSourceType::BED ;
+  zMapReturnIfFail(source && file_name) ;
+  type = ZMapDataStreamType::BED ;
+
+  if (source->numFields() > 0)
+    standard_fields_ = source->numFields() ;
 
   BlatLibErrHandler err_handler ;
   string err_msg ;
-
+  
   if (err_handler.errTry())
     {
       // Open the file
@@ -386,14 +308,17 @@ ZMapDataSourceBEDStruct::ZMapDataSourceBEDStruct(const GQuark source_name,
       // Remember the original error message
       err_msg = err_handler.errMsg() ;
 
-      if (strncasecmp(file_name, "http://", 7) == 0 && strlen(file_name) > 7 && err_handler.errTry())
+      if (strncasecmp(file_name, "http://", 7) == 0 && strlen(file_name) > 7)
         {
-          char *file_name_copy = g_strdup_printf("https://%s", file_name + 7) ;
-          bed_features_ = bedLoadAll(file_name_copy) ;
-          g_free(file_name_copy) ;
-        }
+          if (err_handler.errTry())
+            {
+              char *file_name_copy = g_strdup_printf("https://%s", file_name + 7) ;
+              bed_features_ = bedLoadAll(file_name_copy) ;
+              g_free(file_name_copy) ;
+            }
 
-      is_err = err_handler.errCatch() ;
+          is_err = err_handler.errCatch() ;
+        }
     }
 
   if (is_err)
@@ -410,7 +335,8 @@ ZMapDataSourceBEDStruct::ZMapDataSourceBEDStruct(const GQuark source_name,
   parser_ = zMapGFFCreateParser(gff_version,
                                 sequence,
                                 start,
-                                end) ;
+                                end,
+                                source_) ;
 
   /* The caller may only want a small part of the features in the stream so we set the
    * feature start/end from the block, not the gff stream start/end. */
@@ -421,20 +347,24 @@ ZMapDataSourceBEDStruct::ZMapDataSourceBEDStruct(const GQuark source_name,
     }
 }
 
-ZMapDataSourceBIGBEDStruct::ZMapDataSourceBIGBEDStruct(const GQuark source_name, 
+ZMapDataStreamBIGBEDStruct::ZMapDataStreamBIGBEDStruct(ZMapConfigSource source, 
                                                        const char *file_name,
                                                        const char *open_mode,
                                                        const char *sequence,
                                                        const int start,
                                                        const int end)
-  : ZMapDataSourceStruct(source_name, sequence, start, end),
+  : ZMapDataStreamStruct(source, sequence, start, end),
     lm_(NULL),
     list_(NULL),
     cur_interval_(NULL),
-    cur_feature_(NULL)
+    cur_feature_(NULL),
+    standard_fields_(BED_DEFAULT_FIELDS)
 {
   zMapReturnIfFail(file_name) ;
-  type = ZMapDataSourceType::BIGBED ;
+  type = ZMapDataStreamType::BIGBED ;
+
+  if (source->numFields() > 0)
+    standard_fields_ = source->numFields() ;
 
   BlatLibErrHandler err_handler ;
   string err_msg ;
@@ -445,6 +375,9 @@ ZMapDataSourceBIGBEDStruct::ZMapDataSourceBIGBEDStruct(const GQuark source_name,
       char *file_name_copy = g_strdup(file_name) ; // to avoid casting away const
       bbi_file_ = bigBedFileOpen(file_name_copy);
       g_free(file_name_copy) ;
+
+      if (bbi_file_)
+        standard_fields_ = bbi_file_->definedFieldCount ;
     }
 
   bool is_err = err_handler.errCatch() ;
@@ -454,14 +387,17 @@ ZMapDataSourceBIGBEDStruct::ZMapDataSourceBIGBEDStruct(const GQuark source_name,
       err_msg = err_handler.errMsg() ;
 
       /* If it's http try again as https */
-      if (strncasecmp(file_name, "http://", 7) == 0 && strlen(file_name) > 7 && err_handler.errTry())
+      if (strncasecmp(file_name, "http://", 7) == 0 && strlen(file_name) > 7)
         {
-          char *file_name_copy = g_strdup_printf("https://%s", file_name + 7) ;
-          bbi_file_ = bigBedFileOpen(file_name_copy) ;
-          g_free(file_name_copy) ;
-        }
+          if (err_handler.errTry())
+            {
+              char *file_name_copy = g_strdup_printf("https://%s", file_name + 7) ;
+              bbi_file_ = bigBedFileOpen(file_name_copy) ;
+              g_free(file_name_copy) ;
+            }
 
-      is_err = err_handler.errCatch() ;
+          is_err = err_handler.errCatch() ;
+        }
     }
 
   if (is_err)
@@ -479,7 +415,8 @@ ZMapDataSourceBIGBEDStruct::ZMapDataSourceBIGBEDStruct(const GQuark source_name,
   parser_ = zMapGFFCreateParser(gff_version,
                                 sequence,
                                 start,
-                                end) ;
+                                end,
+                                source_) ;
 
   /* The caller may only want a small part of the features in the stream so we set the
    * feature start/end from the block, not the gff stream start/end. */
@@ -490,18 +427,18 @@ ZMapDataSourceBIGBEDStruct::ZMapDataSourceBIGBEDStruct(const GQuark source_name,
     }
 }
 
-ZMapDataSourceBIGWIGStruct::ZMapDataSourceBIGWIGStruct(const GQuark source_name, 
+ZMapDataStreamBIGWIGStruct::ZMapDataStreamBIGWIGStruct(ZMapConfigSource source, 
                                                        const char *file_name,
                                                        const char *open_mode,
                                                        const char *sequence,
                                                        const int start,
                                                        const int end)
-  : ZMapDataSourceStruct(source_name, sequence, start, end),
+  : ZMapDataStreamStruct(source, sequence, start, end),
     lm_(NULL),
     list_(NULL),
     cur_interval_(NULL)
 {
-  type = ZMapDataSourceType::BIGWIG ;
+  type = ZMapDataStreamType::BIGWIG ;
 
   BlatLibErrHandler err_handler ;
   string err_msg ;
@@ -521,14 +458,17 @@ ZMapDataSourceBIGWIGStruct::ZMapDataSourceBIGWIGStruct(const GQuark source_name,
       err_msg = err_handler.errMsg() ;
 
       /* If it's http try again as https */
-      if (strncasecmp(file_name, "http://", 7) == 0 && strlen(file_name) > 7 && err_handler.errTry())
+      if (strncasecmp(file_name, "http://", 7) == 0 && strlen(file_name) > 7)
         {
-          char *file_name_copy = g_strdup_printf("https://%s", file_name + 7) ;
-          bbi_file_ = bigWigFileOpen(file_name_copy) ;
-          g_free(file_name_copy) ;
+          if (err_handler.errTry())
+            {
+              char *file_name_copy = g_strdup_printf("https://%s", file_name + 7) ;
+              bbi_file_ = bigWigFileOpen(file_name_copy) ;
+              g_free(file_name_copy) ;
+            }
+        
+          is_err = err_handler.errCatch() ;
         }
-
-      is_err = err_handler.errCatch() ;
     }
 
   if (is_err)
@@ -546,7 +486,8 @@ ZMapDataSourceBIGWIGStruct::ZMapDataSourceBIGWIGStruct(const GQuark source_name,
   parser_ = zMapGFFCreateParser(gff_version,
                                 sequence,
                                 start,
-                                end) ;
+                                end,
+                                source_) ;
 
   /* The caller may only want a small part of the features in the stream so we set the
    * feature start/end from the block, not the gff stream start/end. */
@@ -558,21 +499,20 @@ ZMapDataSourceBIGWIGStruct::ZMapDataSourceBIGWIGStruct(const GQuark source_name,
 }
 
 #ifdef USE_HTSLIB
-ZMapDataSourceHTSStruct::ZMapDataSourceHTSStruct(const GQuark source_name, 
+ZMapDataStreamHTSStruct::ZMapDataStreamHTSStruct(ZMapConfigSource source, 
                                                  const char *file_name, 
                                                  const char *open_mode,
                                                  const char *sequence,
                                                  const int start,
                                                  const int end)
-  : ZMapDataSourceStruct(source_name, sequence, start, end),
+  : ZMapDataStreamStruct(source, sequence, start, end),
     hts_file(NULL),
     hts_hdr(NULL),
     hts_idx(NULL),
     hts_iter(NULL),
-    hts_rec(NULL),
-    so_type(NULL)
+    hts_rec(NULL)
 {
-  type = ZMapDataSourceType::HTS ;
+  type = ZMapDataStreamType::HTS ;
 
   hts_file = hts_open(file_name, open_mode);
 
@@ -585,7 +525,6 @@ ZMapDataSourceHTSStruct::ZMapDataSourceHTSStruct(const GQuark source_name,
   hts_rec = bam_init1() ;
   if (hts_file && hts_hdr && hts_rec)
     {
-      so_type = g_strdup(ZMAP_BAM_SO_TERM) ;
     }
   else
     {
@@ -601,7 +540,8 @@ ZMapDataSourceHTSStruct::ZMapDataSourceHTSStruct(const GQuark source_name,
   parser_ = zMapGFFCreateParser(gff_version,
                                 sequence,
                                 start,
-                                end) ;
+                                end,
+                                source_) ;
 
   /* The caller may only want a small part of the features in the stream so we set the
    * feature start/end from the block, not the gff stream start/end. */
@@ -612,20 +552,19 @@ ZMapDataSourceHTSStruct::ZMapDataSourceHTSStruct(const GQuark source_name,
     }
 }
 
-ZMapDataSourceBCFStruct::ZMapDataSourceBCFStruct(const GQuark source_name, 
+ZMapDataStreamBCFStruct::ZMapDataStreamBCFStruct(ZMapConfigSource source, 
                                                  const char *file_name, 
                                                  const char *open_mode,
                                                  const char *sequence,
                                                  const int start,
                                                  const int end)
-  : ZMapDataSourceStruct(source_name, sequence, start, end),
+  : ZMapDataStreamStruct(source, sequence, start, end),
     hts_file(NULL),
     hts_hdr(NULL),
     hts_rec(NULL),
-    so_type(NULL),
     rid_(0)
 {
-  type = ZMapDataSourceType::BCF ;
+  type = ZMapDataStreamType::BCF ;
 
   hts_file = hts_open(file_name, open_mode);
 
@@ -635,7 +574,6 @@ ZMapDataSourceBCFStruct::ZMapDataSourceBCFStruct(const GQuark source_name,
   hts_rec = bcf_init1() ;
   if (hts_file && hts_hdr && hts_rec)
     {
-      so_type = g_strdup(ZMAP_BCF_SO_TERM) ;
     }
   else
     {
@@ -651,7 +589,8 @@ ZMapDataSourceBCFStruct::ZMapDataSourceBCFStruct(const GQuark source_name,
   parser_ = zMapGFFCreateParser(gff_version,
                                 sequence,
                                 start,
-                                end) ;
+                                end,
+                                source) ;
 
   /* The caller may only want a small part of the features in the stream so we set the
    * feature start/end from the block, not the gff stream start/end. */
@@ -667,7 +606,7 @@ ZMapDataSourceBCFStruct::ZMapDataSourceBCFStruct(const GQuark source_name,
  * Destructors
  */
 
-ZMapDataSourceStruct::~ZMapDataSourceStruct()
+ZMapDataStreamStruct::~ZMapDataStreamStruct()
 {
   semaphore_G.notify() ;
 
@@ -678,7 +617,7 @@ ZMapDataSourceStruct::~ZMapDataSourceStruct()
     zMapGFFDestroyParser(parser_) ;
 }
 
-ZMapDataSourceGIOStruct::~ZMapDataSourceGIOStruct()
+ZMapDataStreamGIOStruct::~ZMapDataStreamGIOStruct()
 {
   GIOStatus gio_status = G_IO_STATUS_NORMAL ;
   GError *err = NULL ;
@@ -692,14 +631,14 @@ ZMapDataSourceGIOStruct::~ZMapDataSourceGIOStruct()
     }
   else
     {
-      zMapLogCritical("Could not close GIOChannel in zMapDataSourceDestroy(), %s", "") ;
+      zMapLogCritical("Could not close GIOChannel in zMapDataStreamDestroy(), %s", "") ;
     }
 
   if (buffer_line_)
     g_string_free(buffer_line_, TRUE) ;
 }
 
-ZMapDataSourceBEDStruct::~ZMapDataSourceBEDStruct()
+ZMapDataStreamBEDStruct::~ZMapDataStreamBEDStruct()
 {
   if (bed_features_)
     {
@@ -708,7 +647,7 @@ ZMapDataSourceBEDStruct::~ZMapDataSourceBEDStruct()
     }
 }
 
-ZMapDataSourceBIGBEDStruct::~ZMapDataSourceBIGBEDStruct()
+ZMapDataStreamBIGBEDStruct::~ZMapDataStreamBIGBEDStruct()
 {
   if (bbi_file_)
     {
@@ -717,7 +656,7 @@ ZMapDataSourceBIGBEDStruct::~ZMapDataSourceBIGBEDStruct()
     }
 }
 
-ZMapDataSourceBIGWIGStruct::~ZMapDataSourceBIGWIGStruct()
+ZMapDataStreamBIGWIGStruct::~ZMapDataStreamBIGWIGStruct()
 {
   if (bbi_file_)
     {
@@ -728,7 +667,7 @@ ZMapDataSourceBIGWIGStruct::~ZMapDataSourceBIGWIGStruct()
 
 
 #ifdef USE_HTSLIB
-ZMapDataSourceHTSStruct::~ZMapDataSourceHTSStruct()
+ZMapDataStreamHTSStruct::~ZMapDataStreamHTSStruct()
 {
   if (hts_file)
     hts_close(hts_file) ;
@@ -740,11 +679,9 @@ ZMapDataSourceHTSStruct::~ZMapDataSourceHTSStruct()
     hts_idx_destroy(hts_idx) ;
   if (hts_iter)
     hts_itr_destroy(hts_iter) ;
-  if (so_type)
-    g_free(so_type) ;
 }
 
-ZMapDataSourceBCFStruct::~ZMapDataSourceBCFStruct()
+ZMapDataStreamBCFStruct::~ZMapDataStreamBCFStruct()
 {
   if (hts_file)
     hts_close(hts_file) ;
@@ -752,8 +689,6 @@ ZMapDataSourceBCFStruct::~ZMapDataSourceBCFStruct()
     bcf_destroy1(hts_rec) ;
   if (hts_hdr)
     bcf_hdr_destroy(hts_hdr) ;
-  if (so_type)
-    g_free(so_type) ;
 }
 #endif
 
@@ -762,12 +697,12 @@ ZMapDataSourceBCFStruct::~ZMapDataSourceBCFStruct()
  * Class member access/query functions
  */
 
-GError* ZMapDataSourceStruct::error()
+GError* ZMapDataStreamStruct::error()
 {
   return error_ ;
 }
 
-bool ZMapDataSourceGIOStruct::isOpen()
+bool ZMapDataStreamGIOStruct::isOpen()
 {
   bool result = false ;
 
@@ -780,7 +715,7 @@ bool ZMapDataSourceGIOStruct::isOpen()
   return result ;
 }
 
-bool ZMapDataSourceBEDStruct::isOpen()
+bool ZMapDataStreamBEDStruct::isOpen()
 {
   bool result = false ;
   
@@ -790,7 +725,7 @@ bool ZMapDataSourceBEDStruct::isOpen()
   return result ;
 }
 
-bool ZMapDataSourceBIGBEDStruct::isOpen()
+bool ZMapDataStreamBIGBEDStruct::isOpen()
 {
   bool result = false ;
 
@@ -800,7 +735,7 @@ bool ZMapDataSourceBIGBEDStruct::isOpen()
   return result ;
 }
 
-bool ZMapDataSourceBIGWIGStruct::isOpen()
+bool ZMapDataStreamBIGWIGStruct::isOpen()
 {
   bool result = false ;
 
@@ -811,7 +746,7 @@ bool ZMapDataSourceBIGWIGStruct::isOpen()
 }
 
 #ifdef USE_HTSLIB
-bool ZMapDataSourceHTSStruct::isOpen()
+bool ZMapDataStreamHTSStruct::isOpen()
 {
   bool result = false ;
 
@@ -821,7 +756,7 @@ bool ZMapDataSourceHTSStruct::isOpen()
   return result ;
 }
 
-bool ZMapDataSourceBCFStruct::isOpen()
+bool ZMapDataStreamBCFStruct::isOpen()
 {
   bool result = false ;
 
@@ -838,13 +773,13 @@ bool ZMapDataSourceBCFStruct::isOpen()
  * Get the GFF version. We must always return ZMAPGFF_VERSION_3 for any type 
  * where we are converting the input data to GFF later on.
  */
-bool ZMapDataSourceStruct::gffVersion(int * const p_out_val)
+bool ZMapDataStreamStruct::gffVersion(int * const p_out_val)
 {
   *p_out_val = ZMAPGFF_VERSION_3 ;
   return true ;
 }
 
-bool ZMapDataSourceGIOStruct::gffVersion(int * const p_out_val)
+bool ZMapDataStreamGIOStruct::gffVersion(int * const p_out_val)
 {
   if (gff_version_set_)
     {
@@ -886,7 +821,7 @@ bool ZMapDataSourceGIOStruct::gffVersion(int * const p_out_val)
 }
 
 
-bool ZMapDataSourceGIOStruct::checkHeader(string &err_msg, bool &empty_or_eof, const bool sequence_server)
+bool ZMapDataStreamGIOStruct::checkHeader(string &err_msg, bool &empty_or_eof, const bool sequence_server)
 {
   bool result = false ;
 
@@ -978,7 +913,7 @@ bool ZMapDataSourceGIOStruct::checkHeader(string &err_msg, bool &empty_or_eof, c
   return result ;
 }
 
-bool ZMapDataSourceBEDStruct::checkHeader(std::string &err_msg, bool &empty_or_eof, const bool sequence_server)
+bool ZMapDataStreamBEDStruct::checkHeader(std::string &err_msg, bool &empty_or_eof, const bool sequence_server)
 {
   // We can't easily check in advance what sequences are in the file so just allow it and filter
   // when we come to parse the individual lines.
@@ -987,7 +922,7 @@ bool ZMapDataSourceBEDStruct::checkHeader(std::string &err_msg, bool &empty_or_e
 
 /* Read the header info from the bigBed file and return true if it contains the required sequence
  * name */
-bool ZMapDataSourceBIGBEDStruct::checkHeader(std::string &err_msg, bool &empty_or_eof, const bool sequence_server)
+bool ZMapDataStreamBIGBEDStruct::checkHeader(std::string &err_msg, bool &empty_or_eof, const bool sequence_server)
 {
   bool result = false ;
   zMapReturnValIfFail(isOpen(), result) ;
@@ -1008,13 +943,14 @@ bool ZMapDataSourceBIGBEDStruct::checkHeader(std::string &err_msg, bool &empty_o
               break ;
             }
 
-          available_seqs << chrom->name << ", " ;
+          available_seqs << chrom->name << SEQ_LIST_SEPARATOR ;
         }
 
       if (!result)
         {
+          
           g_set_error(&error_, g_quark_from_string("ZMap"), 99,
-                      "File header does not contain sequence '%s'. Available sequences in this file are: %s\n", 
+                      "File header does not contain sequence '%s'. Available sequences in this file are:\n%s\n", 
                       sequence_, available_seqs.str().c_str()) ;
         }
     }
@@ -1032,7 +968,7 @@ bool ZMapDataSourceBIGBEDStruct::checkHeader(std::string &err_msg, bool &empty_o
 
 /* Read the header info from the bigBed file and return true if it contains the required sequence
  * name */
-bool ZMapDataSourceBIGWIGStruct::checkHeader(std::string &err_msg, bool &empty_or_eof, const bool sequence_server)
+bool ZMapDataStreamBIGWIGStruct::checkHeader(std::string &err_msg, bool &empty_or_eof, const bool sequence_server)
 {
   bool result = false ;
   zMapReturnValIfFail(isOpen(), result) ;
@@ -1053,13 +989,13 @@ bool ZMapDataSourceBIGWIGStruct::checkHeader(std::string &err_msg, bool &empty_o
               break ;
             }
 
-          available_seqs << chrom->name << ", " ;
+          available_seqs << chrom->name << SEQ_LIST_SEPARATOR ;
         }
 
       if (!result)
         {
           g_set_error(&error_, g_quark_from_string("ZMap"), 99,
-                      "File header does not contain sequence '%s'. Available sequences in this file are: %s\n", 
+                      "File header does not contain sequence '%s'. Available sequences in this file are:\n%s\n", 
                       sequence_, available_seqs.str().c_str()) ;
         }
     }
@@ -1083,7 +1019,7 @@ bool ZMapDataSourceBIGWIGStruct::checkHeader(std::string &err_msg, bool &empty_o
  * hts_hdr = sam_hdr_read() ;
  * Returns TRUE if reference sequence name found in BAM file header.
  */
-bool ZMapDataSourceHTSStruct::checkHeader(std::string &err_msg, bool &empty_or_eof, const bool sequence_server)
+bool ZMapDataStreamHTSStruct::checkHeader(std::string &err_msg, bool &empty_or_eof, const bool sequence_server)
 {
   bool result = false ;
   zMapReturnValIfFail(isOpen(), result) ;
@@ -1104,14 +1040,14 @@ bool ZMapDataSourceHTSStruct::checkHeader(std::string &err_msg, bool &empty_or_e
               break ;
             }
           
-          available_seqs << hts_hdr->target_name[i] << ", " ;
+          available_seqs << hts_hdr->target_name[i] << SEQ_LIST_SEPARATOR ;
         }
     }
 
   if (!result)
     {
       g_set_error(&error_, g_quark_from_string("ZMap"), 99,
-                  "File header does not contain sequence '%s'. Available sequences in this file are: %s\n", 
+                  "File header does not contain sequence '%s'. Available sequences in this file are:\n%s\n", 
                   sequence_, available_seqs.str().c_str()) ;
     }
 
@@ -1121,7 +1057,7 @@ bool ZMapDataSourceHTSStruct::checkHeader(std::string &err_msg, bool &empty_or_e
   return result ;
 }
 
-bool ZMapDataSourceBCFStruct::checkHeader(std::string &err_msg, bool &empty_or_eof, const bool sequence_server)
+bool ZMapDataStreamBCFStruct::checkHeader(std::string &err_msg, bool &empty_or_eof, const bool sequence_server)
 {
   bool result = false ;
   zMapReturnValIfFail(isOpen(), result) ;
@@ -1142,13 +1078,13 @@ bool ZMapDataSourceBCFStruct::checkHeader(std::string &err_msg, bool &empty_or_e
           break ;
         }
 
-      available_seqs << seqnames[i] << ", " ;
+      available_seqs << seqnames[i] << SEQ_LIST_SEPARATOR ;
     }
 
   if (!result)
     {
       g_set_error(&error_, g_quark_from_string("ZMap"), 99,
-                  "File header does not contain sequence '%s'. Available sequences in this file are: %s\n", 
+                  "File header does not contain sequence '%s'. Available sequences in this file are:\n%s\n", 
                   sequence_, available_seqs.str().c_str()) ;
     }
 
@@ -1166,7 +1102,7 @@ bool ZMapDataSourceBCFStruct::checkHeader(std::string &err_msg, bool &empty_or_e
  * "<string_data>\n" -> "<string_data>"
  * (It is still a NULL terminated c-string though.)
  */
-bool ZMapDataSourceGIOStruct::readLine()
+bool ZMapDataStreamGIOStruct::readLine()
 {
   bool result = false ;
   GError *pErr = NULL ;
@@ -1190,7 +1126,7 @@ bool ZMapDataSourceGIOStruct::readLine()
 /*
  * Read a record from a BED file and turn it into GFFv3.
  */
-bool ZMapDataSourceBEDStruct::readLine()
+bool ZMapDataStreamBEDStruct::readLine()
 {
   bool result = false ;
 
@@ -1216,7 +1152,7 @@ bool ZMapDataSourceBEDStruct::readLine()
 /*
  * Read a record from a BIGBED file and turn it into GFFv3.
  */
-bool ZMapDataSourceBIGBEDStruct::readLine()
+bool ZMapDataStreamBIGBEDStruct::readLine()
 {
   bool result = false ;
 
@@ -1253,7 +1189,14 @@ bool ZMapDataSourceBIGBEDStruct::readLine()
           char *line = g_strdup_printf("%s\t%d\t%d\t%s", 
                                        sequence_, cur_interval_->start, cur_interval_->end, cur_interval_->rest) ;
           char *row[bedKnownFields];
-          int num_fields = chopByWhite(line, row, ArraySize(row)) ;
+          const int fields_in_line = chopByWhite(line, row, ArraySize(row)) ;
+
+          // standard_fields_ contains the number of standard fields in the bed file we should
+          // read. There may be more fields in the line than this if it includes optional
+          // user-defined fields. We ignore these for now.
+          // gb10: I don't think there should be fewer than standard_fields_ in the line, but
+          // check just in case.
+          const int num_fields = min(fields_in_line, standard_fields_) ;
 
           // free previous feature, if there is one
           if (cur_feature_)
@@ -1263,7 +1206,9 @@ bool ZMapDataSourceBIGBEDStruct::readLine()
         
           // Clean up
           g_free(line) ;
-          result = true ;
+
+          if (cur_feature_)
+            result = true ;
         }
 
       if (err_handler.errCatch())
@@ -1296,7 +1241,7 @@ bool ZMapDataSourceBIGBEDStruct::readLine()
 /*
  * Read a record from a BIGWIG file and turn it into GFFv3.
  */
-bool ZMapDataSourceBIGWIGStruct::readLine()
+bool ZMapDataStreamBIGWIGStruct::readLine()
 {
   bool result = false ;
 
@@ -1349,7 +1294,7 @@ bool ZMapDataSourceBIGWIGStruct::readLine()
 }
 
 #ifdef USE_HTSLIB
-bool ZMapDataSourceHTSStruct::readLine()
+bool ZMapDataStreamHTSStruct::readLine()
 {
   bool result = false ;
 
@@ -1371,7 +1316,7 @@ bool ZMapDataSourceHTSStruct::readLine()
   return result ;
 }
 
-bool ZMapDataSourceBCFStruct::readLine()
+bool ZMapDataStreamBCFStruct::readLine()
 {
   bool result = false ;
 
@@ -1443,7 +1388,7 @@ bool ZMapDataSourceBCFStruct::readLine()
           else if (!snv)
             so_term = "substitution" ;
 
-          cur_feature_data_ = ZMapDataSourceFeatureData(iStart, iEnd, 0.0, '.', '.', 
+          cur_feature_data_ = ZMapDataStreamFeatureData(iStart, iEnd, 0.0, '.', '.', 
                                                         name, 0, 0) ;
 
           result = true ;
@@ -1463,7 +1408,7 @@ bool ZMapDataSourceBCFStruct::readLine()
  * Parse a header line from the source. Returns true if successful. Sets done_header if there are
  * no more header lines to read.
  */
-bool ZMapDataSourceGIOStruct::parseHeader(gboolean &done_header,
+bool ZMapDataStreamGIOStruct::parseHeader(gboolean &done_header,
                                           ZMapGFFHeaderState &header_state,
                                           GError **error)
 {
@@ -1482,14 +1427,14 @@ bool ZMapDataSourceGIOStruct::parseHeader(gboolean &done_header,
  * Parse sequence data from the source. Returns true if successful. Sets sequence_finished if
  * there is no more sequence to read.
  */
-bool ZMapDataSourceStruct::parseSequence(gboolean &sequence_finished, string &err_msg)
+bool ZMapDataStreamStruct::parseSequence(gboolean &sequence_finished, string &err_msg)
 {
   // Base class does nothing
   bool result = true ;
   return result ;
 }
 
-bool ZMapDataSourceGIOStruct::parseSequence(gboolean &sequence_finished, string &err_msg)
+bool ZMapDataStreamGIOStruct::parseSequence(gboolean &sequence_finished, string &err_msg)
 {
   bool result = true ;
 
@@ -1536,7 +1481,7 @@ bool ZMapDataSourceGIOStruct::parseSequence(gboolean &sequence_finished, string 
 /*
  * This sets some things up for the GFF parser and is required before calling parserBodyLine
  */
-void ZMapDataSourceStruct::parserInit(GHashTable *featureset_2_column,
+void ZMapDataStreamStruct::parserInit(GHashTable *featureset_2_column,
                                       GHashTable *source_2_sourcedata,
                                       ZMapStyleTree *styles)
 {
@@ -1545,7 +1490,7 @@ void ZMapDataSourceStruct::parserInit(GHashTable *featureset_2_column,
   styles_ = styles ;
 }
 
-void ZMapDataSourceGIOStruct::parserInit(GHashTable *featureset_2_column,
+void ZMapDataStreamGIOStruct::parserInit(GHashTable *featureset_2_column,
                                          GHashTable *source_2_sourcedata,
                                          ZMapStyleTree *styles)
 {
@@ -1558,8 +1503,7 @@ void ZMapDataSourceGIOStruct::parserInit(GHashTable *featureset_2_column,
   zMapGFFSetDefaultToBasic(parser_, TRUE);
 }
 
-ZMapFeatureSet ZMapDataSourceStruct::makeFeatureSet(const char *feature_name_id,
-                                                    GQuark feature_set_id,
+ZMapFeatureSet ZMapDataStreamStruct::makeFeatureSet(const char *feature_name_id,
                                                     ZMapStyleMode feature_mode,
                                                     const bool is_seq)
 {
@@ -1568,7 +1512,7 @@ ZMapFeatureSet ZMapDataSourceStruct::makeFeatureSet(const char *feature_name_id,
   /*
    * Now deal with the source -> data mapping referred to in the parser.
    */
-  GQuark source_id = zMapStyleCreateIDFromID(source_name_) ;
+  GQuark source_id = zMapStyleCreateIDFromID(source_->name_) ;
   GQuark feature_style_id = 0 ;
   ZMapFeatureSource source_data = NULL ;
 
@@ -1578,7 +1522,7 @@ ZMapFeatureSet ZMapDataSourceStruct::makeFeatureSet(const char *feature_name_id,
         {
           source_data = g_new0(ZMapFeatureSourceStruct,1);
           source_data->source_id = source_id;
-          source_data->source_text = source_id;
+          source_data->source_text = source_->name_ ;
           source_data->is_seq = is_seq ;
 
           g_hash_table_insert(source_2_sourcedata_,GINT_TO_POINTER(source_id), source_data);
@@ -1597,7 +1541,7 @@ ZMapFeatureSet ZMapDataSourceStruct::makeFeatureSet(const char *feature_name_id,
     }
   else
     {
-      source_id = feature_style_id = zMapStyleCreateID((char*)g_quark_to_string(source_name_)) ;
+      source_id = feature_style_id = zMapStyleCreateID((char*)g_quark_to_string(source_->name_)) ;
     }
 
   ZMapFeatureTypeStyle feature_style = NULL ;
@@ -1614,24 +1558,79 @@ ZMapFeatureSet ZMapDataSourceStruct::makeFeatureSet(const char *feature_name_id,
       if (source_data && feature_style->unique_id != feature_style_id)
         source_data->style_id = feature_style->unique_id;
 
-      feature_set = zMapFeatureSetCreate((char*)g_quark_to_string(feature_set_id) , NULL) ;
+      feature_set = zMapFeatureSetCreate((char*)g_quark_to_string(source_->name_) , NULL, source_) ;
 
-      zMapLogMessage("Created feature set: %s", g_quark_to_string(feature_set_id)) ;
+      zMapLogMessage("Created feature set: %s", g_quark_to_string(source_->name_)) ;
 
       feature_set->style = feature_style;
     }
   else
     {
       zMapLogWarning("Error creating feature %s (%s); no feature style found for %s",
-                     feature_name_id, g_quark_to_string(feature_set_id), g_quark_to_string(feature_style_id)) ;
+                     feature_name_id, g_quark_to_string(source_->name_), g_quark_to_string(feature_style_id)) ;
     }
 
   return feature_set ;
 }
 
 
-ZMapFeature ZMapDataSourceStruct::makeFeature(const char *sequence,
-                                              const char *source,
+// Utility to create a feature from a BED struct
+ZMapFeature ZMapDataStreamStruct::makeBEDFeature(struct bed *bed_feature, 
+                                                 const int standard_fields,
+                                                 const char *so_term,
+                                                 GError **error)
+{
+  ZMapStyleMode style = ZMAPSTYLE_MODE_BASIC ;
+
+  // BED files with 12 fields represent transcripts
+  if (standard_fields == 12)
+    {
+      so_term = "transcript" ;
+      style = ZMAPSTYLE_MODE_TRANSCRIPT ;
+    }
+
+  ZMapFeature feature = makeFeature(bed_feature->chrom,
+                                    so_term,
+                                    bed_feature->chromStart + 1, //0-based
+                                    bed_feature->chromEnd,       //chromEnd is one past the last coord
+                                    bed_feature->score,
+                                    bed_feature->strand[0],
+                                    bed_feature->name,
+                                    true,
+                                    1,
+                                    bed_feature->chromEnd - bed_feature->chromStart + 1,
+                                    '.',
+                                    NULL,
+                                    style,
+                                    false,
+                                    error) ;
+
+  if (feature && style == ZMAPSTYLE_MODE_TRANSCRIPT)
+    {
+      zMapFeatureTranscriptInit(feature);
+      zMapFeatureAddTranscriptStartEnd(feature, FALSE, 0, FALSE);
+
+      // If there is no CDS, the thickStart and thickEnd are usually set to chromStart
+      if (bed_feature->thickEnd != bed_feature->thickStart)
+        zMapFeatureAddTranscriptCDS(feature, TRUE, bed_feature->thickStart, bed_feature->thickEnd);
+
+      for (int i = 0; i < bed_feature->blockCount; ++i)
+        {
+          const int exon_start = bed_feature->chromStarts[i] + bed_feature->chromStart ;
+          const int exon_end = exon_start + bed_feature->blockSizes[i] ;
+          ZMapSpanStruct span = {exon_start, exon_end} ;
+
+          zMapFeatureAddTranscriptExonIntron(feature, &span, NULL) ;
+        }
+
+      zMapFeatureTranscriptRecreateIntrons(feature) ;
+    }
+
+  return feature ;
+}
+
+
+ZMapFeature ZMapDataStreamStruct::makeFeature(const char *sequence,
                                               const char *so_type,
                                               const int start,
                                               const int end,
@@ -1680,7 +1679,6 @@ ZMapFeature ZMapDataSourceStruct::makeFeature(const char *sequence,
   if (ok && !feature_set_)
     {
       feature_set_ = makeFeatureSet(feature_name,
-                                    g_quark_from_string(source),
                                     feature_mode,
                                     is_seq) ;
 
@@ -1691,9 +1689,9 @@ ZMapFeature ZMapDataSourceStruct::makeFeature(const char *sequence,
   // Ok, go ahead and create the feature
   if (ok)
     {
-      feature = zMapFeatureCreateEmpty(NULL) ;
+      feature = zMapFeatureCreateEmpty(error) ;
 
-      if (!feature)
+      if (!feature || (error && *error))
         ok = false ;
     }
 
@@ -1706,7 +1704,7 @@ ZMapFeature ZMapDataSourceStruct::makeFeature(const char *sequence,
 
   GArray *gaps = NULL ;
 
-  if (ok && cigar_string)
+  if (ok && cigar_string && *cigar_string)
     {
       ok = zMapFeatureAlignmentString2Gaps(ZMAPALIGN_FORMAT_CIGAR_BAM,
                                            strand, start, end,
@@ -1736,7 +1734,7 @@ ZMapFeature ZMapDataSourceStruct::makeFeature(const char *sequence,
     {          
       ++num_features_ ;
     }
-  else
+  else if (error && *error == NULL)
     {
       g_set_error(error, g_quark_from_string("ZMap"), 99, 
                   "Error creating feature: %s (%d %d) on sequence %s", 
@@ -1750,105 +1748,87 @@ ZMapFeature ZMapDataSourceStruct::makeFeature(const char *sequence,
 /*
  * Parse a body line from the source. Returns true if successful.
  */
-bool ZMapDataSourceGIOStruct::parseBodyLine(GError **error)
+bool ZMapDataStreamGIOStruct::parseBodyLine(GError **error)
 {
   // The buffer line has already been read by the functions that read the header etc. so parse it
   // first and then read the next line ready for next time.
   bool result = zMapGFFParseLine(parser_, buffer_line_->str) ;
 
   if (!result && error)
-    *error = zMapGFFGetError(parser_) ;
+    {
+      // the caller takes ownership of the error, so make a copy of the error in the gff parser
+      *error = g_error_copy(zMapGFFGetError(parser_)) ;
+    }
 
   readLine() ;
 
   return result ;
 }
 
-bool ZMapDataSourceBEDStruct::parseBodyLine(GError **error)
+
+bool ZMapDataStreamBEDStruct::parseBodyLine(GError **error)
 {
-  bool result = false ;
+  bool result = true ;
 
   if (readLine())
     {
-      makeFeature(cur_feature_->chrom,
-                  g_quark_to_string(source_name_),
-                  ZMAP_BED_SO_TERM,
-                  cur_feature_->chromStart + 1, //0-based
-                  cur_feature_->chromEnd,       //chromEnd is one past the last coord
-                  cur_feature_->score,
-                  cur_feature_->strand[0],
-                  cur_feature_->name,
-                  true,
-                  1,
-                  cur_feature_->chromEnd - cur_feature_->chromStart + 1,
-                  '.',
-                  NULL,
-                  ZMAPSTYLE_MODE_BASIC,
-                  false,
-                  error) ;
+      ZMapFeature feature = makeBEDFeature(cur_feature_, standard_fields_, ZMAP_BED_SO_TERM, error) ;
+
+      if (!feature)
+        result = false ;
     }
 
   return result ;
 }
 
-bool ZMapDataSourceBIGBEDStruct::parseBodyLine(GError **error)
+bool ZMapDataStreamBIGBEDStruct::parseBodyLine(GError **error)
 {
-  bool result = false ;
+  bool result = true ;
 
   if (readLine())
     {
-      makeFeature(cur_feature_->chrom,
-                  g_quark_to_string(source_name_),
-                  ZMAP_BIGBED_SO_TERM,
-                  cur_feature_->chromStart + 1, //0-based
-                  cur_feature_->chromEnd,       //chromEnd is one past the last coord
-                  cur_feature_->score,
-                  cur_feature_->strand[0],
-                  cur_feature_->name,
-                  true,
-                  1,
-                  cur_feature_->chromEnd - cur_feature_->chromStart + 1,
-                  '.',
-                  NULL,
-                  ZMAPSTYLE_MODE_BASIC,
-                  false,
-                  error) ;
+      ZMapFeature feature = makeBEDFeature(cur_feature_, standard_fields_, ZMAP_BIGBED_SO_TERM, error) ;
+
+      if (!feature)
+        result = false ;
     }
 
   return result ;
 }
 
-bool ZMapDataSourceBIGWIGStruct::parseBodyLine(GError **error)
+bool ZMapDataStreamBIGWIGStruct::parseBodyLine(GError **error)
 {
-  bool result = false ;
+  bool result = true ;
 
   if (readLine())
     {
-      makeFeature(sequence_,
-                  g_quark_to_string(source_name_),
-                  ZMAP_BIGWIG_SO_TERM,
-                  cur_interval_->start,
-                  cur_interval_->end,
-                  cur_interval_->val,
-                  '.',
-                  NULL,
-                  false,
-                  0,
-                  0,
-                  '.',
-                  NULL,
-                  ZMAPSTYLE_MODE_GRAPH,
-                  true,
-                  error) ;
+      ZMapFeature feature = makeFeature(sequence_,
+                                        ZMAP_BIGWIG_SO_TERM,
+                                        cur_interval_->start,
+                                        cur_interval_->end,
+                                        cur_interval_->val,
+                                        '.',
+                                        NULL,
+                                        false,
+                                        0,
+                                        0,
+                                        '.',
+                                        NULL,
+                                        ZMAPSTYLE_MODE_GRAPH,
+                                        true,
+                                        error) ;
+
+      if (!feature)
+        result = false ;
     }
 
   return result ;
 }
 
 #ifdef USE_HTSLIB
-bool ZMapDataSourceHTSStruct::parseBodyLine(GError **error)
+bool ZMapDataStreamHTSStruct::parseBodyLine(GError **error)
 {
-  bool result = false ;
+  bool result = true ;
 
   if (readLine())
     {
@@ -1857,49 +1837,53 @@ bool ZMapDataSourceHTSStruct::parseBodyLine(GError **error)
       //                          strand, start, end,
       //                          query_strand, query_start, query_end) ;
 
-      makeFeature(sequence_,
-                  g_quark_to_string(source_name_),
-                  ZMAP_BAM_SO_TERM,
-                  cur_feature_data_.start_,
-                  cur_feature_data_.end_,
-                  cur_feature_data_.score_,
-                  cur_feature_data_.strand_c_,
-                  cur_feature_data_.target_name_.c_str(),
-                  !cur_feature_data_.target_name_.empty(),
-                  cur_feature_data_.target_start_,
-                  cur_feature_data_.target_end_,
-                  cur_feature_data_.target_strand_c_,
-                  cur_feature_data_.cigar_.c_str(),
-                  ZMAPSTYLE_MODE_ALIGNMENT,
-                  true,
-                  error) ;
+      ZMapFeature feature = makeFeature(sequence_,
+                                        ZMAP_BAM_SO_TERM,
+                                        cur_feature_data_.start_,
+                                        cur_feature_data_.end_,
+                                        cur_feature_data_.score_,
+                                        cur_feature_data_.strand_c_,
+                                        cur_feature_data_.target_name_.c_str(),
+                                        !cur_feature_data_.target_name_.empty(),
+                                        cur_feature_data_.target_start_,
+                                        cur_feature_data_.target_end_,
+                                        cur_feature_data_.target_strand_c_,
+                                        cur_feature_data_.cigar_.c_str(),
+                                        ZMAPSTYLE_MODE_ALIGNMENT,
+                                        true,
+                                        error) ;
+
+      if (!feature)
+        result = false ;
     }
 
   return result ;
 }
 
-bool ZMapDataSourceBCFStruct::parseBodyLine(GError **error)
+bool ZMapDataStreamBCFStruct::parseBodyLine(GError **error)
 {
-  bool result = false ;
+  bool result = true ;
 
   if (readLine())
     {
-      makeFeature(sequence_,
-                  g_quark_to_string(source_name_),
-                  ZMAP_BCF_SO_TERM,
-                  cur_feature_data_.start_,
-                  cur_feature_data_.end_,
-                  cur_feature_data_.score_,
-                  cur_feature_data_.strand_c_,
-                  cur_feature_data_.target_name_.c_str(),
-                  !cur_feature_data_.target_name_.empty(),
-                  cur_feature_data_.target_start_,
-                  cur_feature_data_.target_end_,
-                  cur_feature_data_.target_strand_c_,
-                  cur_feature_data_.cigar_.c_str(), 
-                  ZMAPSTYLE_MODE_ALIGNMENT,
-                  false,
-                  error) ;
+      ZMapFeature feature = makeFeature(sequence_,
+                                        ZMAP_BCF_SO_TERM,
+                                        cur_feature_data_.start_,
+                                        cur_feature_data_.end_,
+                                        cur_feature_data_.score_,
+                                        cur_feature_data_.strand_c_,
+                                        cur_feature_data_.target_name_.c_str(),
+                                        !cur_feature_data_.target_name_.empty(),
+                                        cur_feature_data_.target_start_,
+                                        cur_feature_data_.target_end_,
+                                        cur_feature_data_.target_strand_c_,
+                                        cur_feature_data_.cigar_.c_str(), 
+                                        ZMAPSTYLE_MODE_ALIGNMENT,
+                                        false,
+                                        error) ;
+
+      if (!feature)
+        result = false ;
     }
 
   return result ;
@@ -1912,7 +1896,7 @@ bool ZMapDataSourceBCFStruct::parseBodyLine(GError **error)
  * This should be called after parsing is finished. It adds the features that were parsed
  * into the given block.
  */
-bool ZMapDataSourceStruct::addFeaturesToBlock(ZMapFeatureBlock feature_block)
+bool ZMapDataStreamStruct::addFeaturesToBlock(ZMapFeatureBlock feature_block)
 {
   if (feature_set_)
     zMapFeatureBlockAddFeatureSet(feature_block, feature_set_);
@@ -1920,7 +1904,7 @@ bool ZMapDataSourceStruct::addFeaturesToBlock(ZMapFeatureBlock feature_block)
   return true ;
 }
 
-bool ZMapDataSourceGIOStruct::addFeaturesToBlock(ZMapFeatureBlock feature_block)
+bool ZMapDataStreamGIOStruct::addFeaturesToBlock(ZMapFeatureBlock feature_block)
 {
   bool result = zMapGFFGetFeatures(parser_, feature_block) ;
 
@@ -1935,7 +1919,7 @@ bool ZMapDataSourceGIOStruct::addFeaturesToBlock(ZMapFeatureBlock feature_block)
 /*
  * This validates the number of features that were found and the length of sequence etc.
  */
-bool ZMapDataSourceStruct::checkFeatureCount(bool &empty, 
+bool ZMapDataStreamStruct::checkFeatureCount(bool &empty, 
                                              string &err_msg)
 {
   bool result = true ;
@@ -1970,16 +1954,15 @@ bool ZMapDataSourceStruct::checkFeatureCount(bool &empty,
 /*
  * This returns the list of featureset names that were found in the file.
  */
-GList* ZMapDataSourceStruct::getFeaturesets()
+GList* ZMapDataStreamStruct::getFeaturesets()
 {
   return zMapGFFGetFeaturesets(parser_) ;
 }
 
-
 /*
  * This returns the dna/peptide sequence that was parsed from the file, if it contained any
  */
-ZMapSequence ZMapDataSourceStruct::getSequence(GQuark seq_id, 
+ZMapSequence ZMapDataStreamStruct::getSequence(GQuark seq_id, 
                                                GError **error)
 {
   ZMapSequence result = zMapGFFGetSequence(parser_, seq_id) ;
@@ -1995,7 +1978,7 @@ ZMapSequence ZMapDataSourceStruct::getSequence(GQuark seq_id,
 /*
  * Utility to return the current line number
  */
-int ZMapDataSourceGIOStruct::curLineNumber()
+int ZMapDataStreamGIOStruct::curLineNumber()
 {
   return zMapGFFGetLineNumber(parser_) ;
 }
@@ -2004,7 +1987,7 @@ int ZMapDataSourceGIOStruct::curLineNumber()
 /*
  * Utility to return the current line string
  */
-const char* ZMapDataSourceGIOStruct::curLine()
+const char* ZMapDataStreamGIOStruct::curLine()
 {
   return buffer_line_->str ;
 }
@@ -2013,7 +1996,7 @@ const char* ZMapDataSourceGIOStruct::curLine()
 /*
  * Returns true if the parser hit the end of the file
  */
-bool ZMapDataSourceStruct::endOfFile()
+bool ZMapDataStreamStruct::endOfFile()
 {
   return end_of_file_ ;
 }
@@ -2022,14 +2005,14 @@ bool ZMapDataSourceStruct::endOfFile()
 /*
  * Returns true if the parser quit with a fatal error
  */
-bool ZMapDataSourceStruct::terminated()
+bool ZMapDataStreamStruct::terminated()
 {
   return zMapGFFTerminated(parser_) ;
 }
 
 
 /* Functions to do any initialisation required at the start of each block of reads */
-gboolean ZMapDataSourceStruct::init(const char *region_name, int start, int end)
+gboolean ZMapDataStreamStruct::init(const char *region_name, int start, int end)
 {
   // base class does nothing
   return TRUE ;
@@ -2037,7 +2020,7 @@ gboolean ZMapDataSourceStruct::init(const char *region_name, int start, int end)
 
 
 #ifdef USE_HTSLIB
-gboolean ZMapDataSourceHTSStruct::init(const char *region_name, int start, int end)
+gboolean ZMapDataStreamHTSStruct::init(const char *region_name, int start, int end)
 {
   gboolean result = FALSE;
   int begRange;
@@ -2061,11 +2044,15 @@ gboolean ZMapDataSourceHTSStruct::init(const char *region_name, int start, int e
                 }
               else
                 {
-                  return TRUE;
+                  result = TRUE;
                 }
             }
-          hts_iter = sam_itr_queryi(hts_idx, ref, begRange, endRange);
-          result = TRUE;
+
+          if (!result && hts_idx)
+            {
+              hts_iter = sam_itr_queryi(hts_idx, ref, begRange, endRange);
+              result = TRUE;
+            }
         }
       else
         {
@@ -2084,7 +2071,7 @@ gboolean ZMapDataSourceHTSStruct::init(const char *region_name, int start, int e
 /*
  * Read a record from a HTS file and store it as the current_feature_data_
  */
-bool ZMapDataSourceHTSStruct::processRead()
+bool ZMapDataStreamHTSStruct::processRead()
 {
   gboolean result = FALSE ;
   gboolean bHasCigarAttribute = FALSE ;
@@ -2150,7 +2137,7 @@ bool ZMapDataSourceHTSStruct::processRead()
       cTargetStrand = '+' ;
     }
 
-  cur_feature_data_ = ZMapDataSourceFeatureData(iStart, iEnd, dScore, cStrand, cPhase, 
+  cur_feature_data_ = ZMapDataStreamFeatureData(iStart, iEnd, dScore, cStrand, cPhase, 
                                                 query_name, iTargetStart, iTargetEnd, cTargetStrand,
                                                 ssCigar.str().c_str(), ZMAPALIGN_FORMAT_CIGAR_BAM) ;
 
@@ -2166,9 +2153,9 @@ bool ZMapDataSourceHTSStruct::processRead()
 
 
 /*
- * Create a ZMapDataSource object
+ * Create a ZMapDataStream object
  */
-ZMapDataSource zMapDataSourceCreate(const GQuark source_name, 
+ZMapDataStream zMapDataStreamCreate(ZMapConfigSource source,
                                     const char * const file_name, 
                                     const char *sequence,
                                     const int start,
@@ -2176,35 +2163,40 @@ ZMapDataSource zMapDataSourceCreate(const GQuark source_name,
                                     GError **error_out)
 {
   static const char * open_mode = "r" ;
-  ZMapDataSource data_source = NULL ;
-  ZMapDataSourceType source_type = ZMapDataSourceType::UNK ;
+  ZMapDataStream data_source = NULL ;
+  ZMapDataStreamType stream_type = ZMapDataStreamType::UNK ;
   GError *error = NULL ;
-  zMapReturnValIfFail(file_name && *file_name, data_source ) ;
+  zMapReturnValIfFail(source && file_name && *file_name, data_source ) ;
 
-  source_type = zMapDataSourceTypeFromFilename(file_name, &error) ;
+  // If the file type is known for this source, use that for the stream_type. Otherwise, try to
+  // determine the file type from the filename.
+  if (!source->fileType().empty())
+    stream_type = zMapDataStreamTypeFromFileType(source->fileType().c_str(), &error) ;
+  else
+    stream_type = zMapDataStreamTypeFromFilename(file_name, &error) ;
 
-  if (!error)
+  if (!error && stream_type != ZMapDataStreamType::UNK)
     {
-      switch (source_type)
+      switch (stream_type)
         {
-        case ZMapDataSourceType::GIO:
-          data_source = new ZMapDataSourceGIOStruct(source_name, file_name, open_mode, sequence, start, end) ;
+        case ZMapDataStreamType::GIO:
+          data_source = new ZMapDataStreamGIOStruct(source, file_name, open_mode, sequence, start, end) ;
           break ;
-        case ZMapDataSourceType::BED:
-          data_source = new ZMapDataSourceBEDStruct(source_name, file_name, open_mode, sequence, start, end) ;
+        case ZMapDataStreamType::BED:
+          data_source = new ZMapDataStreamBEDStruct(source, file_name, open_mode, sequence, start, end) ;
           break ;
-        case ZMapDataSourceType::BIGBED:
-          data_source = new ZMapDataSourceBIGBEDStruct(source_name, file_name, open_mode, sequence, start, end) ;
+        case ZMapDataStreamType::BIGBED:
+          data_source = new ZMapDataStreamBIGBEDStruct(source, file_name, open_mode, sequence, start, end) ;
           break ;
-        case ZMapDataSourceType::BIGWIG:
-          data_source = new ZMapDataSourceBIGWIGStruct(source_name, file_name, open_mode, sequence, start, end) ;
+        case ZMapDataStreamType::BIGWIG:
+          data_source = new ZMapDataStreamBIGWIGStruct(source, file_name, open_mode, sequence, start, end) ;
           break ;
 #ifdef USE_HTSLIB
-        case ZMapDataSourceType::HTS:
-          data_source = new ZMapDataSourceHTSStruct(source_name, file_name, open_mode, sequence, start, end) ;
+        case ZMapDataStreamType::HTS:
+          data_source = new ZMapDataStreamHTSStruct(source, file_name, open_mode, sequence, start, end) ;
           break ;
-        case ZMapDataSourceType::BCF:
-          data_source = new ZMapDataSourceBCFStruct(source_name, file_name, open_mode, sequence, start, end) ;
+        case ZMapDataStreamType::BCF:
+          data_source = new ZMapDataStreamBCFStruct(source, file_name, open_mode, sequence, start, end) ;
           break ;
 #endif
         default:
@@ -2213,6 +2205,11 @@ ZMapDataSource zMapDataSourceCreate(const GQuark source_name,
                       "Unexpected data source type for file '%s'", file_name) ;
           break ;
         }
+    }
+  else
+    {
+      g_set_error(&error, ZMAP_SERVER_ERROR, ZMAPSERVER_ERROR_UNKNOWN_TYPE,
+                  "Invalid file type '%s' for file '%s'", source->fileType().c_str(), file_name) ;
     }
 
   if (data_source)
@@ -2237,7 +2234,7 @@ ZMapDataSource zMapDataSourceCreate(const GQuark source_name,
 /*
  * Destroy the file object.
  */
-bool zMapDataSourceDestroy( ZMapDataSource *p_data_source )
+bool zMapDataStreamDestroy( ZMapDataStream *p_data_source )
 {
   bool result = false ;
 
@@ -2255,7 +2252,7 @@ bool zMapDataSourceDestroy( ZMapDataSource *p_data_source )
 /*
  * Checks that the data source is open.
  */
-bool zMapDataSourceIsOpen(ZMapDataSource const source)
+bool zMapDataStreamIsOpen(ZMapDataStream const source)
 {
   gboolean result = false ;
 
@@ -2269,48 +2266,29 @@ bool zMapDataSourceIsOpen(ZMapDataSource const source)
 /*
  * Return the type of the object
  */
-ZMapDataSourceType zMapDataSourceGetType(ZMapDataSource data_source )
+ZMapDataStreamType zMapDataStreamGetType(ZMapDataStream data_source )
 {
-  zMapReturnValIfFail(data_source, ZMapDataSourceType::UNK ) ;
+  zMapReturnValIfFail(data_source, ZMapDataStreamType::UNK ) ;
   return data_source->type ;
 }
-
 
 
 /*
  * Inspect the filename string (might include the path on the front, but this is
  * (ignored) for the extension to determine type:
  *
- *       *.gff                            ZMapDataSourceType::GIO
- *       *.bed                            ZMapDataSourceType::BED
- *       *.[bb,bigBed]                    ZMapDataSourceType::BIGBED
- *       *.[bw,bigWig]                    ZMapDataSourceType::BIGWIG
- *       *.[sam,bam,cram]                 ZMapDataSourceType::HTS
- *       *.[bcf,vcf]                      ZMapDataSourceType::BCF
- *       *.<everything_else>              ZMapDataSourceType::UNK
+ *       *.gff                            ZMapDataStreamType::GIO
+ *       *.bed                            ZMapDataStreamType::BED
+ *       *.[bb,bigBed]                    ZMapDataStreamType::BIGBED
+ *       *.[bw,bigWig]                    ZMapDataStreamType::BIGWIG
+ *       *.[sam,bam,cram]                 ZMapDataStreamType::HTS
+ *       *.[bcf,vcf]                      ZMapDataStreamType::BCF
+ *       *.<everything_else>              ZMapDataStreamType::UNK
  */
-ZMapDataSourceType zMapDataSourceTypeFromFilename(const char * const file_name, GError **error_out)
+ZMapDataStreamType zMapDataStreamTypeFromFilename(const char * const file_name, GError **error_out)
 {
-  static const map<string, ZMapDataSourceType, caseInsensitiveCmp> file_extensions = 
-    {
-      {"gff",     ZMapDataSourceType::GIO}
-      ,{"gff3",   ZMapDataSourceType::GIO}
-      ,{"bed",    ZMapDataSourceType::BED}
-      ,{"bb",     ZMapDataSourceType::BIGBED}
-      ,{"bigBed", ZMapDataSourceType::BIGBED}
-      ,{"bw",     ZMapDataSourceType::BIGWIG}
-      ,{"bigWig", ZMapDataSourceType::BIGWIG}
-#ifdef USE_HTSLIB
-      ,{"sam",    ZMapDataSourceType::HTS}
-      ,{"bam",    ZMapDataSourceType::HTS}
-      ,{"cram",   ZMapDataSourceType::HTS}
-      ,{"vcf",    ZMapDataSourceType::BCF}
-      ,{"bcf",    ZMapDataSourceType::BCF}
-#endif
-    };
-
   static const char dot = '.' ;
-  ZMapDataSourceType type = ZMapDataSourceType::UNK ;
+  ZMapDataStreamType type = ZMapDataStreamType::UNK ;
   GError *error = NULL ;
   char * pos = NULL ;
   char *tmp = (char*) file_name ;
@@ -2332,26 +2310,11 @@ ZMapDataSourceType zMapDataSourceTypeFromFilename(const char * const file_name, 
   if (pos)
     {
       string file_ext(pos) ;
-      auto found_iter = file_extensions.find(file_ext) ;
-      
-      if (found_iter != file_extensions.end())
-        {
-          type = found_iter->second ;
-        }
-      else
-        {
-          string expected("");
-          for (auto iter = file_extensions.begin(); iter != file_extensions.end(); ++iter)
-            expected += " ." + iter->first ;
-
-          g_set_error(&error, g_quark_from_string("ZMap"), 99,
-                      "Unrecognised file extension .'%s'. Expected one of:%s", 
-                      file_ext.c_str(), expected.c_str()) ;
-        }
+      type = dataSourceTypeFromExtension(file_ext, &error) ;
     }
   else
     {
-      g_set_error(&error, g_quark_from_string("ZMap"), 99,
+      g_set_error(&error, ZMAP_SERVER_ERROR, ZMAPSERVER_ERROR_UNKNOWN_EXTENSION,
                   "File name does not have an extension so cannot determine type: '%s'",
                   file_name) ;
     }
@@ -2362,3 +2325,265 @@ ZMapDataSourceType zMapDataSourceTypeFromFilename(const char * const file_name, 
   return type ;
 }
 
+
+/* Determine the file-type string from the given stream type. The file-type string is a list of
+ * all file types for the data stream type, e.g. for HTS, the file-type is "BAM/SAM/CRAM" */
+string zMapDataStreamTypeToFileType(ZMapDataStreamType &stream_type)
+{
+  string file_type ;
+
+  // Find all file types for this source type
+  for (auto &iter : file_type_to_stream_type_G)
+    {
+      string file_type = iter.first ;
+      
+      if (iter.second == stream_type)
+        {
+          // Append them as "/"-separated string
+          if (!file_type.empty())
+            file_type += "/" ;
+          
+          file_type += iter.first ;
+        }
+    }
+  
+  return file_type ;
+}
+
+
+/* Determine the source type from the given file-type string. This might be the inverse of
+ * zMapDataStreamTypeToFileType (e.g. "BAM/SAM/CRAM"), or a file type string such as "SAM" or
+ * "bigWig 9" that we need to find a match for. */
+ZMapDataStreamType zMapDataStreamTypeFromFileType(const string &file_type, GError **error_out)
+{
+  ZMapDataStreamType result = ZMapDataStreamType::UNK ;
+
+  int found_match_len = 0 ;
+
+  // Loop through all file types
+  for (auto &iter : file_type_to_stream_type_G)
+    {
+      string cur_file_type = iter.first ;
+      ZMapDataStreamType cur_stream_type = iter.second ;
+
+      // First, construct the composite file-type string for the current source, and see if it
+      // matches the given file-type
+      string cur_composite_file_type = zMapDataStreamTypeToFileType(cur_stream_type) ;
+
+      if (cur_composite_file_type == file_type)
+        {
+          result = cur_stream_type ;
+        }
+      else
+        {
+          // Convert to lowercase for case-insensitive search
+          string file_type_l = toLower(file_type) ;
+
+          // See if the file-type string contains this file type e.g. a file-type string of "BAM/SAM/CRAM"
+          // would contain the "SAM" file type
+          string cur_file_type_l = toLower(cur_file_type) ;
+          size_t found_pos = file_type_l.find(cur_file_type_l) ;
+
+            if (found_pos != string::npos)
+              {
+                int cur_match_len = cur_file_type_l.length() ;
+
+                // If there is more than one match, prefer the longest one, e.g. if we match "bed"
+                // and "bigbed" then the result is "bigbed".
+                if (result == ZMapDataStreamType::UNK || cur_match_len > found_match_len)
+                  {
+                    result = cur_stream_type ;
+                    found_match_len = cur_match_len ;
+                  }
+              }
+          }
+      }
+
+  if (result == ZMapDataStreamType::UNK)
+    {
+      g_set_error(error_out, ZMAP_SERVER_ERROR, ZMAPSERVER_ERROR_UNKNOWN_EXTENSION,
+                  "Unknown file type '%s'", file_type.c_str()) ;
+    }
+
+  return result ;
+}
+
+
+
+/*
+ *              Internal routines.
+ */
+
+namespace // unnamed namespace
+{
+
+inline semaphore::semaphore(size_t n) : count{n} {}
+
+inline void semaphore::notify() {
+    std::lock_guard<std::mutex> lock{mutex};
+    ++count;
+    cv.notify_one();
+}
+
+inline void semaphore::wait() {
+    std::unique_lock<std::mutex> lock{mutex};
+    cv.wait(lock, [&]{ return count > 0; });
+    --count;
+}
+
+inline bool semaphore::try_wait() {
+    std::lock_guard<std::mutex> lock{mutex};
+
+    if (count > 0) {
+        --count;
+        return true;
+    }
+
+    return false;
+}
+
+template<class Rep, class Period>
+bool semaphore::wait_for(const std::chrono::duration<Rep, Period>& d) {
+    std::unique_lock<std::mutex> lock{mutex};
+    auto finished = cv.wait_for(lock, d, [&]{ return count > 0; });
+
+    if (finished)
+        --count;
+
+    return finished;
+}
+
+template<class Clock, class Duration>
+bool semaphore::wait_until(const std::chrono::time_point<Clock, Duration>& t) {
+    std::unique_lock<std::mutex> lock{mutex};
+    auto finished = cv.wait_until(lock, t, [&]{ return count > 0; });
+
+    if (finished)
+        --count;
+
+    return finished;
+}
+
+inline semaphore::native_handle_type semaphore::native_handle() {
+    return cv.native_handle();
+}
+
+
+BlatLibErrHandler::BlatLibErrHandler()
+{
+}
+
+BlatLibErrHandler::~BlatLibErrHandler()
+{
+  if (err_catch_)
+    {
+      errCatchFree(&err_catch_) ;
+      err_catch_ = NULL ;
+    }
+}
+
+// Initialises the handler. Returns true if ok. Must be called before errCatch. There must be one
+// call to errCatch for each call to errTry.
+bool BlatLibErrHandler::errTry()
+{
+  bool result = false ;
+
+  if (err_catch_)
+    errCatchFree(&err_catch_) ;
+
+  err_catch_ = errCatchNew() ;
+
+  if (err_catch_)
+    result = errCatchStart(err_catch_) ;
+
+  return result ;
+}
+
+// Ends the handler. Returns true if there was an error. Must be called after errTry. There must
+// be one call to errCatch for each call to errTry.
+bool BlatLibErrHandler::errCatch()
+{
+  bool result = false ;
+
+  if (err_catch_)
+    {
+      errCatchEnd(err_catch_) ;
+      result = err_catch_->gotError ;
+    }
+
+  return result ;
+}
+
+// Returns the error message (empty string if no error)
+string BlatLibErrHandler::errMsg()
+{
+  string err_msg ;
+
+  if (err_catch_ && err_catch_->gotError && 
+      err_catch_->message && err_catch_->message->string)
+    {
+      err_msg = err_catch_->message->string ;
+    }
+
+  return err_msg ;
+}
+
+
+
+// Utility to convert a std::string to lowercase
+static string toLower(const string &s)
+{
+  string result(s) ;
+  
+  for (int i = 0; i < s.length(); ++i)
+    result[i] = std::tolower(result[i]) ;
+
+  return result ;
+}
+
+
+/* Determine the source type from the given file extension (e.g. "bigWig") */
+static ZMapDataStreamType dataSourceTypeFromExtension(const string &file_ext, GError **error_out)
+{
+  ZMapDataStreamType type = ZMapDataStreamType::UNK ;
+
+  static const map<string, ZMapDataStreamType, caseInsensitiveCmp> file_extensions = 
+    {
+      {"gff",     ZMapDataStreamType::GIO}
+      ,{"gff3",   ZMapDataStreamType::GIO}
+      ,{"bed",    ZMapDataStreamType::BED}
+      ,{"bb",     ZMapDataStreamType::BIGBED}
+      ,{"bigBed", ZMapDataStreamType::BIGBED}
+      ,{"bw",     ZMapDataStreamType::BIGWIG}
+      ,{"bigWig", ZMapDataStreamType::BIGWIG}
+#ifdef USE_HTSLIB
+      ,{"sam",    ZMapDataStreamType::HTS}
+      ,{"bam",    ZMapDataStreamType::HTS}
+      ,{"cram",   ZMapDataStreamType::HTS}
+      ,{"vcf",    ZMapDataStreamType::BCF}
+      ,{"bcf",    ZMapDataStreamType::BCF}
+#endif
+    };
+
+  auto found_iter = file_extensions.find(file_ext) ;
+      
+  if (found_iter != file_extensions.end())
+    {
+      type = found_iter->second ;
+    }
+  else
+    {
+      string expected("");
+      for (auto iter = file_extensions.begin(); iter != file_extensions.end(); ++iter)
+        expected += " ." + iter->first ;
+
+      g_set_error(error_out, ZMAP_SERVER_ERROR, ZMAPSERVER_ERROR_UNKNOWN_EXTENSION,
+                  "Unrecognised file extension .'%s'. Expected one of:%s", 
+                  file_ext.c_str(), expected.c_str()) ;
+    }
+
+  return type ;
+}
+
+
+} // unnamed namespace

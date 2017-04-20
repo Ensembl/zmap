@@ -24,9 +24,8 @@
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description: Interface for creating requests and passing them from
- *              the master thread to slave threads. Requests are via
- *              structs that give all the information/fields for the request/reply.
+ * Description: Interface for creating requests/replies to/from
+ *              the generalised server interface.
  *
  *-------------------------------------------------------------------
  */
@@ -34,11 +33,12 @@
 #define ZMAP_PROTOCOL_H
 
 #include <glib.h>
+
 #include <ZMap/zmapEnum.hpp>
+#include <ZMap/zmapConfigStanzaStructs.hpp>
 #include <ZMap/zmapUrl.hpp>
 #include <ZMap/zmapFeature.hpp>
 #include <ZMap/zmapFeatureLoadDisplay.hpp>
-#include <ZMap/zmapThreads.hpp>
 
 
 /* Requests can be of different types with different input parameters and returning
@@ -97,6 +97,18 @@ ZMAP_DEFINE_ENUM(ZMapServerResponseType, ZMAP_SERVER_RESPONSE_LIST) ;
 ZMAP_DEFINE_ENUM(ZMapServerConnectStateType, ZMAP_SERVER_CONNECT_STATE_LIST) ;
 
 
+/*
+ * We follow glib convention in error domain naming:
+ *          "The error domain is called <NAMESPACE>_<MODULE>_ERROR"
+ */
+#define ZMAP_SERVER_ERROR g_quark_from_string("ZMAP_SERVER_ERROR")
+
+typedef enum
+{
+  ZMAPSERVER_ERROR_UNKNOWN_EXTENSION  // unknown file extension
+  ,ZMAPSERVER_ERROR_UNKNOWN_TYPE      // unknown file extension
+} ZMapAppError;
+
 
 
 /*
@@ -117,13 +129,9 @@ typedef struct ZMapServerReqCreateStructType
   ZMapServerReqType type ;
   ZMapServerResponseType response ;
 
-  GQuark source_name ;
-  char *config_file ;
+  ZMapConfigSource config_source ; /* details about the configured source */
 
-  ZMapURL url ;
-  char *format ;
-  int timeout ;
-  char *version ;
+  const ZMapURL urlObj() const { return config_source ? config_source->urlObj() : NULL; } ;
 
 } ZMapServerReqCreateStruct, *ZMapServerReqCreate ;
 
@@ -183,7 +191,7 @@ typedef struct ZMapServerReqFeatureSetsStructType
 							       _must_ have a parent feature_set in
 							       feature_sets_inout, if NULL then
 							       _all_ the sources derived from
-							       feature_sets_inout will be loaded. */
+							       feature_sets_inout will be load. */
 
   /* Is this still needed ????? */
   GList *required_styles_out ;				    /* May be derived from features. */
@@ -240,7 +248,7 @@ typedef struct ZMapServerReqNewContextStructType
 
 
 
-/* Get features from a server. */
+/* Get features or context sequence from a server. */
 typedef struct ZMapServerReqGetFeaturesStructType
 {
   ZMapServerReqType type ;
@@ -251,8 +259,6 @@ typedef struct ZMapServerReqGetFeaturesStructType
 
   ZMapFeatureContext context ;				    /* Returned feature sets. */
 
-  /* Move from getstatus...seems better to report it here....maybe we need these as part of the
-     requestany struct ?? */
   gint exit_code ;
   gchar *stderr_out ;
 
@@ -320,18 +326,19 @@ typedef union
 } ZMapServerReqUnion ;
 
 
+typedef struct _ZMapServerStruct *ZMapServer ;
+
 
 /* Enum -> String function decs: const char *zMapXXXX2ExactStr(ZMapXXXXX type);  */
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zMapServerReqType2ExactStr, ZMapServerReqType) ;
+ZMAP_ENUM_AS_EXACT_STRING_DEC(zMapServerResponseType2ExactStr, ZMapServerResponseType) ;
 
 ZMapServerReqAny zMapServerRequestCreate(ZMapServerReqType request_type, ...) ;
 void zMapServerRequestDestroy(ZMapServerReqAny request) ;
-ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
-                                              pthread_mutex_t *mutex,
-					      void *request_in, void **reply_out,
-					      char **err_msg_out) ;
-ZMapThreadReturnCode zMapServerTerminateHandler(void **slave_data, char **err_msg_out) ;
-ZMapThreadReturnCode zMapServerDestroyHandler(void **slave_data) ;
+
+
+ZMapServerResponseType zMapServerRequest(ZMapServer *server_inout, ZMapServerReqAny request, char **err_msg_out) ;
+
 
 
 /* Debug flags. */

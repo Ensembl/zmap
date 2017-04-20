@@ -46,13 +46,22 @@
 #include <string.h>
 #include <glib.h>
 
+#include <gbtools/gbtools.hpp>
 #include <ZMap/zmapUtils.hpp>
 #include <ZMap/zmapGLibUtils.hpp>
 #include <ZMap/zmapConfigIni.hpp>
 #include <ZMap/zmapConfigStrings.hpp>
 #include <ZMap/zmapGFF.hpp>
 #include <ZMap/zmapServerProtocol.hpp>
+
+#include <ZMap/zmapThreadsLib.hpp>                             // for threadforklock/unlock which
+                                                            // shouldn't be in here....
+
 #include <pipeServer_P.hpp>
+
+
+using namespace gbtools ;
+
 
 
 /* Flag values for pipeArg struct flags. */
@@ -86,10 +95,15 @@ typedef struct GetFeaturesDataStructType
 
 
 static gboolean globalInit(void) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static gboolean createConnection(void **server_out,
                                  GQuark source_name, char *config_file, ZMapURL url, char *format,
                                  char *version_str, int timeout,
                                  pthread_mutex_t *mutex) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+static gboolean createConnection(void **server_out,ZMapConfigSource config_source) ;
+
 static ZMapServerResponseType openConnection(void *server, ZMapServerReqOpen req_open) ;
 static ZMapServerResponseType getInfo(void *server, ZMapServerReqGetServerInfo info) ;
 static ZMapServerResponseType getFeatureSetNames(void *server,
@@ -218,16 +232,18 @@ static gboolean globalInit(void)
  * parameters....
  *
  */
-static gboolean createConnection(void **server_out,
-                                 GQuark source_name, char *config_file, ZMapURL url, char *format,
-                                 char *version_str, int timeout_unused,
-                                 pthread_mutex_t *mutex_unused)
+
+static gboolean createConnection(void **server_out, ZMapConfigSource config_source)
 {
   gboolean result = FALSE ;
-  PipeServer server ;
+  zMapReturnValIfFail(config_source && config_source->urlObj(), result) ;
 
-  server = (PipeServer)g_new0(PipeServerStruct, 1) ;
+  PipeServer server = (PipeServer)g_new0(PipeServerStruct, 1) ;
+  
+  server->source = config_source ;
 
+  const ZMapURL url = config_source->urlObj() ;
+  
   if ((url->scheme != SCHEME_FILE || url->scheme != SCHEME_PIPE) && (!(url->path) || !(*(url->path))))
     {
       server->last_err_msg = g_strdup_printf("Connection failed because pipe url had wrong scheme or no path: %s.",
@@ -241,7 +257,9 @@ static gboolean createConnection(void **server_out,
       char *url_script_path ;
 
       /* Get configuration parameters. */
-      server->config_file = g_strdup(config_file) ;
+      if (config_source->configFile())
+        server->config_file = g_strdup(config_source->configFile()) ;
+
       getConfiguration(server) ;
 
       /* Get url parameters. */
@@ -340,6 +358,7 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   PipeServer server = (PipeServer)server_in ;
+  
   GError *gff_pipe_err = NULL ;
   GIOStatus pipe_status = G_IO_STATUS_NORMAL ;
 
@@ -463,7 +482,8 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
                     {
                       server->parser = zMapGFFCreateParser(server->gff_version,
                                                            g_quark_to_string(server->req_sequence),
-                                                           server->zmap_start, server->zmap_end) ;
+                                                           server->zmap_start, server->zmap_end,
+                                                           server->source) ;
                     }
 
                   /* First parse the header, if we need to (it might already have been done) */
@@ -490,6 +510,7 @@ static ZMapServerResponseType getInfo(void *server_in, ZMapServerReqGetServerInf
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   PipeServer server = (PipeServer)server_in ;
+  zMapReturnValIfFail(server, ZMAP_SERVERRESPONSE_REQFAIL) ;
 
   if ((result = childHasFailed(server, NULL)) == ZMAP_SERVERRESPONSE_OK)
     {
@@ -526,6 +547,7 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   PipeServer server = (PipeServer)server_in ;
+  zMapReturnValIfFail(server, ZMAP_SERVERRESPONSE_REQFAIL) ;
 
   if ((result = childHasFailed(server, NULL)) == ZMAP_SERVERRESPONSE_OK)
     {
@@ -559,6 +581,7 @@ static ZMapServerResponseType getStyles(void *server_in, GHashTable **styles_out
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   PipeServer server = (PipeServer)server_in ;
+  zMapReturnValIfFail(server, ZMAP_SERVERRESPONSE_REQFAIL) ;
 
   if ((result = childHasFailed(server, NULL)) == ZMAP_SERVERRESPONSE_OK)
     {
@@ -579,6 +602,7 @@ static ZMapServerResponseType haveModes(void *server_in, gboolean *have_mode)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   PipeServer server = (PipeServer)server_in ;
+  zMapReturnValIfFail(server, ZMAP_SERVERRESPONSE_REQFAIL) ;
 
   if ((result = childHasFailed(server, NULL)) == ZMAP_SERVERRESPONSE_OK)
     {
@@ -593,6 +617,7 @@ static ZMapServerResponseType getSequences(void *server_in, GList *sequences_ino
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_UNSUPPORTED ;
   PipeServer server = (PipeServer)server_in ;
+  zMapReturnValIfFail(server, ZMAP_SERVERRESPONSE_REQFAIL) ;
 
   if ((result = childHasFailed(server, NULL)) == ZMAP_SERVERRESPONSE_OK)
     {
@@ -617,6 +642,7 @@ static ZMapServerResponseType setContext(void *server_in, ZMapFeatureContext fea
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   PipeServer server = (PipeServer)server_in ;
+  zMapReturnValIfFail(server, ZMAP_SERVERRESPONSE_REQFAIL) ;
 
   if ((result = childHasFailed(server, NULL)) == ZMAP_SERVERRESPONSE_OK)
     {
@@ -641,6 +667,8 @@ static ZMapServerResponseType getFeatures(void *server_in, ZMapStyleTree &styles
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   PipeServer server = (PipeServer)server_in ;
+  zMapReturnValIfFail(server, ZMAP_SERVERRESPONSE_REQFAIL) ;
+
   GetFeaturesDataStruct get_features_data = {NULL} ;
 
   if ((result = childHasFailed(server, NULL)) == ZMAP_SERVERRESPONSE_OK)
@@ -721,6 +749,7 @@ static ZMapServerResponseType getContextSequence(void *server_in,
                                                  int *dna_length_out, char **dna_sequence_out)
 {
   PipeServer server = (PipeServer)server_in ;
+  zMapReturnValIfFail(server, ZMAP_SERVERRESPONSE_REQFAIL) ;
 
   if ((server->result = childHasFailed(server, NULL)) == ZMAP_SERVERRESPONSE_OK)
     {
@@ -775,6 +804,7 @@ static const char *lastErrorMsg(void *server_in)
 {
   char *err_msg = NULL ;
   PipeServer server = (PipeServer)server_in ;
+  zMapReturnValIfFail(server, err_msg) ;
 
   if (server->last_err_msg)
     err_msg = server->last_err_msg ;
@@ -787,6 +817,7 @@ static ZMapServerResponseType getStatus(void *server_conn, gint *exit_code)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   PipeServer server = (PipeServer)server_conn ;
+  zMapReturnValIfFail(server, ZMAP_SERVERRESPONSE_REQFAIL) ;
 
   if ((result = childHasFailed(server, NULL)) == ZMAP_SERVERRESPONSE_OK)
     {
@@ -813,6 +844,7 @@ static ZMapServerResponseType getConnectState(void *server_conn, ZMapServerConne
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   PipeServer server = (PipeServer)server_conn ;
+  zMapReturnValIfFail(server, ZMAP_SERVERRESPONSE_REQFAIL) ;
 
   if ((result = childHasFailed(server, NULL)) == ZMAP_SERVERRESPONSE_OK)
     {
@@ -831,6 +863,7 @@ static ZMapServerResponseType closeConnection(void *server_in)
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   PipeServer server = (PipeServer)server_in ;
   GError *gff_pipe_err = NULL ;
+  zMapReturnValIfFail(server, ZMAP_SERVERRESPONSE_REQFAIL) ;
 
 
   /* check clear up here is child pid has already gone..... */
@@ -880,7 +913,7 @@ static ZMapServerResponseType destroyConnection(void *server_in)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   PipeServer server = (PipeServer)server_in ;
-
+  zMapReturnValIfFail(server, ZMAP_SERVERRESPONSE_REQFAIL) ;
 
   if (child_pid_debug_G)
     zMapLogWarning("Child pid %d destroying server connection.", server->child_pid) ;
@@ -1093,36 +1126,61 @@ static gboolean pipeSpawn(PipeServer server, GError **error)
   }
 
   /* Seems that g_spawn_async_with_pipes() is not thread safe so lock round it. */
-  zMapThreadForkLock();
+  {
+    int err_num = 0 ;
+    bool locked ;
 
-  /* After we spawn we need access to the childs exit status so we set G_SPAWN_DO_NOT_REAP_CHILD
-   * so we can reap the child. */
-  if ((result = g_spawn_async_with_pipes(NULL, argv, NULL,
-                                         G_SPAWN_DO_NOT_REAP_CHILD, NULL, NULL, &server->child_pid,
-                                         NULL, &pipe_fd, NULL,
-                                         &pipe_error)))
-    {
-      /* Set up reading of stdout pipe. */
-      server->gff_pipe = g_io_channel_unix_new(pipe_fd) ;
+    if ((locked = UtilsGlobalThreadLock(&err_num)))
+      {
+        result = TRUE ;
+      }
+    else
+      {
+        zMapLogCriticalSysErr(err_num, "%s", "Error trying to lock for pfetch") ;
 
-      /* Set a callback to be called when child exits. */
-      server->child_watch_id = g_child_watch_add(server->child_pid, childFullReapCB, server) ;
+        result = FALSE ;
+      }
 
-      if (child_pid_debug_G)
-        zMapLogWarning("Child pid %d created.", server->child_pid) ;
-    }
-  else
-    {
-      /* If there was an error then return it. */
-      if (error)
-        *error = pipe_error ;
+    if (result)
+      {
+        /* After we spawn we need access to the childs exit status so we set G_SPAWN_DO_NOT_REAP_CHILD
+         * so we can reap the child. */
+        if ((result = g_spawn_async_with_pipes(NULL, argv, NULL,
+                                               G_SPAWN_DO_NOT_REAP_CHILD, NULL, NULL, &server->child_pid,
+                                               NULL, &pipe_fd, NULL,
+                                               &pipe_error)))
+          {
+            /* Set up reading of stdout pipe. */
+            server->gff_pipe = g_io_channel_unix_new(pipe_fd) ;
 
-      /* didn't run so can't have clean exit code; */
-      server->exit_code = EXIT_FAILURE ;
-    }
+            /* Set a callback to be called when child exits. */
+            server->child_watch_id = g_child_watch_add(server->child_pid, childFullReapCB, server) ;
 
-  /* Unlock ! */
-  zMapThreadForkUnlock();
+            if (child_pid_debug_G)
+              zMapLogWarning("Child pid %d created.", server->child_pid) ;
+          }
+        else
+          {
+            /* If there was an error then return it. */
+            if (error)
+              *error = pipe_error ;
+            
+            /* didn't run so can't have clean exit code; */
+            server->exit_code = EXIT_FAILURE ;
+          }
+      }
+
+    /* Unlock ! */
+    if (locked)
+      {
+        if (!(locked = UtilsGlobalThreadUnlock(&err_num)))
+          {
+            zMapLogCriticalSysErr(err_num, "%s", "Error trying to unlock for pfetch.") ;
+
+            result = FALSE ;
+          }
+      }
+  }
 
   /* Clear up */
   g_free(argv) ;

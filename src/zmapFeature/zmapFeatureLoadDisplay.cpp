@@ -57,21 +57,23 @@ typedef gboolean (*HashListExportValueFunc)(const char *key_str, const char *val
 // unnamed namespace
 namespace
 {
-gint colIDOrderCB(gconstpointer a, gconstpointer b,gpointer user_data) ;
-bool colOrderCB(const ZMapFeatureColumn &first, const ZMapFeatureColumn &second) ;
+static gint colIDOrderCB(gconstpointer a, gconstpointer b,gpointer user_data) ;
+static bool colOrderCB(const ZMapFeatureColumn &first, const ZMapFeatureColumn &second) ;
 
-void updateContextHashList(ZMapConfigIniContext context,
-                           ZMapConfigIniFileType file_type, 
-                           const char *stanza,
-                           GHashTable *ghash,
-                           HashListExportValueFunc *export_func) ;
+static void updateContextHashList(ZMapConfigIniContext context,
+                                  ZMapConfigIniFileType file_type, 
+                                  const char *stanza,
+                                  GHashTable *ghash,
+                                  HashListExportValueFunc *export_func) ;
 
-ZMapFeatureContextExecuteStatus updateContextFeatureSetStyle(GQuark key,
-                                                             gpointer data,
-                                                             gpointer user_data,
-                                                             char **err_out) ;
+static ZMapFeatureContextExecuteStatus updateContextFeatureSetStyle(GQuark key,
+                                                                    gpointer data,
+                                                                    gpointer user_data,
+                                                                    char **err_out) ;
 
-}
+static ZMapConfigSource findSourceRecursively(ZMapConfigSource source, const char *search_str) ;
+
+} // unnamed namespace
 
 /**********************************************************************
  *                       ZMapFeatureContextMap
@@ -460,7 +462,8 @@ ZMapFeatureSequenceMapStructType::ZMapFeatureSequenceMapStructType()
     dataset(NULL),
     sequence(NULL),
     start(0),
-    end(0)
+    end(0),
+    flags()
 {
   for (int i = 0; i < ZMAPFLAG_NUM_FLAGS; ++i)
     {
@@ -531,27 +534,28 @@ void ZMapFeatureSequenceMapStructType::addSource(const string &source_name,
 /* Create a source with the given details. If allow_duplicate is true then return the existing
  * source with the same name if one exists; otherwise, give an error if the source name already exists */
 ZMapConfigSource ZMapFeatureSequenceMapStructType::createSource(const char *source_name, 
-                                                                const std::string &url, 
+                                                                const std::string &url,
                                                                 const char *featuresets,
                                                                 const char *biotypes,
                                                                 const bool is_child,
                                                                 const bool allow_duplicate,
                                                                 GError **error)
 {
-  return createSource(source_name, url.c_str(), featuresets, biotypes, is_child, error) ;
+  return createSource(source_name, url.c_str(), featuresets, biotypes, "", 0, is_child, allow_duplicate, error) ;
 }
 
 
 ZMapConfigSource ZMapFeatureSequenceMapStructType::createSource(const char *source_name,
-                                                                const char *url,
+                                                                const std::string &url,
                                                                 const char *featuresets,
                                                                 const char *biotypes,
+                                                                const std::string &file_type,
+                                                                const int num_fields,
                                                                 const bool is_child,
                                                                 const bool allow_duplicate,
                                                                 GError **error)
 {
   ZMapConfigSource source = NULL ;
-  zMapReturnValIfFail(url, source) ;
 
   // Check if there's already a source with this name and url and return that if found
   source = getSource(source_name, url) ;
@@ -561,8 +565,9 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::createSource(const char *sour
       GError *tmp_error = NULL ;
       source = new ZMapConfigSourceStruct ;
 
+      source->setConfigFile(config_file) ;
       source->name_ = g_quark_from_string(source_name) ;
-      source->url = g_strdup(url) ;
+      source->setUrl(url.c_str()) ;
       source->recent = true ;
       
       if (featuresets && *featuresets)
@@ -570,6 +575,9 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::createSource(const char *sour
 
       if (biotypes && *biotypes)
         source->biotypes = g_strdup(biotypes) ;
+
+      source->setFileType(file_type) ;
+      source->setNumFields(num_fields) ;
 
       /* Add the new source to the view */
       std::string source_name_str(source_name) ;
@@ -589,7 +597,7 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::createSource(const char *sour
 
       if (tmp_error)
         {
-          zMapConfigSourceDestroy(source) ;
+          delete source ;
           source = NULL ;
           g_propagate_error(error, tmp_error) ;
         }
@@ -606,31 +614,39 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::createSource(const char *sour
 
 
 /* Get a trackhub registry object for performing trackhub operations */
-gbtools::trackhub::Registry ZMapFeatureSequenceMapStructType::getTrackhubRegistry()
+gbtools::trackhub::Registry& ZMapFeatureSequenceMapStructType::getTrackhubRegistry()
 {
-  gbtools::trackhub::Registry registry ;
+  // Make it static so there is only registry object. This means the user will only have to log in
+  // once.
+  static gbtools::trackhub::Registry registry ;
+  static bool done = false ;
 
-  // Set registry properties based on our config
-  registry.setDebug(getConfigBoolean(ZMAPSTANZA_APP_CURL_DEBUG));
-
-  char *proxy = getConfigString(ZMAPSTANZA_APP_PROXY) ;
-
-  if (proxy)
+  if (!done)
     {
-      registry.setProxy(proxy);
-      g_free(proxy);
-      proxy = NULL ;
-    }
+      // Set registry properties based on our config
+      registry.setDebug(getConfigBoolean(ZMAPSTANZA_APP_CURL_DEBUG));
 
-  char *cainfo = getConfigString(ZMAPSTANZA_APP_CURL_CAINFO) ;
+      char *proxy = getConfigString(ZMAPSTANZA_APP_PROXY) ;
 
-  if (cainfo)
-    {
-      registry.setCainfo(cainfo);
-      g_free(cainfo);
-      cainfo = NULL ;
+      if (proxy)
+        {
+          registry.setProxy(proxy);
+          g_free(proxy);
+          proxy = NULL ;
+        }
+
+      char *cainfo = getConfigString(ZMAPSTANZA_APP_CURL_CAINFO) ;
+
+      if (cainfo)
+        {
+          registry.setCainfo(cainfo);
+          g_free(cainfo);
+          cainfo = NULL ;
+        }
+
+      done = true ;
     }
-    
+  
   return registry ;
 }
 
@@ -641,7 +657,7 @@ gbtools::trackhub::Registry ZMapFeatureSequenceMapStructType::getTrackhubRegistr
 void ZMapFeatureSequenceMapStructType::createSourceChildren(ZMapConfigSource source,
                                                             GError **error)
 {
-  ZMapURL zmap_url = url_parse(source->url, NULL);
+  const ZMapURL zmap_url = source->urlObj() ;
 
   if (zmap_url && zmap_url->scheme == SCHEME_TRACKHUB)
     {
@@ -650,7 +666,7 @@ void ZMapFeatureSequenceMapStructType::createSourceChildren(ZMapConfigSource sou
       if (trackdb_id)
         {
           string err_msg;
-          gbtools::trackhub::Registry registry = getTrackhubRegistry() ;
+          gbtools::trackhub::Registry &registry = getTrackhubRegistry() ;
 
           // Ok, search the registry for this track db
           gbtools::trackhub::TrackDb trackdb = registry.searchTrackDb(trackdb_id, err_msg) ;
@@ -673,7 +689,7 @@ void ZMapFeatureSequenceMapStructType::createSourceChildren(ZMapConfigSource sou
       else
         {
           g_set_error(error, g_quark_from_string("ZMap"), 99,
-                      "Error getting trackDb from URL: %s", source->url) ;
+                      "Error getting trackDb from URL: %s", source->url()) ;
         }
     }
 }
@@ -691,12 +707,14 @@ void ZMapFeatureSequenceMapStructType::createTrackhubSourceChild(ZMapConfigSourc
   string track_name = track.name() ;
 
   // If the track doesn't have a name, create one from the file name in the url
-  if (track_name.empty())
+  if (track_name.empty() && !track.url().empty())
     {
       ZMapURL zmap_url = url_parse(track.url().c_str(), NULL) ;
 
       if (zmap_url && zmap_url->file)
         track_name = string(zmap_url->file) ;
+
+      url_free(zmap_url) ;
     }
 
   if (!track_name.empty())
@@ -707,14 +725,21 @@ void ZMapFeatureSequenceMapStructType::createTrackhubSourceChild(ZMapConfigSourc
                                                  track.url().c_str(), 
                                                  parent_source->featuresets, 
                                                  parent_source->biotypes,
-                                                 true, false,
+                                                 track.fileType(),
+                                                 track.fields(),
+                                                 true,
+                                                 false,
                                                  &g_error) ;
 
       if (new_source && !g_error)
         {
           // Success. Set the delayed flag if the track should be hidden by default.
+          // Also set this track to be delayed if its parent is delayed (otherwise the user might
+          // configure a trackhub source to be delayed but we would end up loading them if they
+          // are visible according to the track hub info).
+          new_source->delayed = !track.visible() || parent_source->delayed ;
+
           // Set the parent pointer and add the child to the parent's list.
-          new_source->delayed = !track.visible() ;
           new_source->parent = parent_source ;
           parent_source->children.push_back(new_source) ;
 
@@ -743,12 +768,15 @@ void ZMapFeatureSequenceMapStructType::createTrackhubSourceChild(ZMapConfigSourc
 }
 
 
-void ZMapFeatureSequenceMapStructType::updateSource(const char *source_name, const std::string &url, 
+void ZMapFeatureSequenceMapStructType::updateSource(const char *source_name, 
+                                                    const std::string &url, 
                                                     const char *featuresets,
                                                     const char *biotypes,
+                                                    const string &file_type, 
+                                                    const int num_fields,
                                                     GError **error)
 {
-  return updateSource(source_name, url.c_str(), featuresets, biotypes, error) ;
+  return updateSource(source_name, url.c_str(), featuresets, biotypes, file_type, num_fields, error) ;
 }
 
 
@@ -757,6 +785,8 @@ void ZMapFeatureSequenceMapStructType::updateSource(const char *source_name,
                                                     const char *url,
                                                     const char *featuresets,
                                                     const char *biotypes,
+                                                    const string &file_type, 
+                                                    const int num_fields,
                                                     GError **error)
 {
   ZMapConfigSource source = NULL ;
@@ -764,12 +794,7 @@ void ZMapFeatureSequenceMapStructType::updateSource(const char *source_name,
 
   source = getSource(source_name) ;
 
-  if (source->url)
-    {
-      g_free(source->url) ;
-      source->url = NULL ;
-    }
-  source->url = g_strdup(url) ;
+  source->setUrl(url) ;
 
   if (source->featuresets)
     {
@@ -786,6 +811,9 @@ void ZMapFeatureSequenceMapStructType::updateSource(const char *source_name,
     }
   if (biotypes && *biotypes)
     source->biotypes = g_strdup(biotypes) ;
+
+  source->setFileType(file_type) ;
+  source->setNumFields(num_fields) ;
 
   /* Indicate that there are changes that need saving */
   setFlag(ZMAPFLAG_SAVE_SOURCES, TRUE) ;
@@ -821,10 +849,11 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::createFileSource(const char *
       /* Create the new source */
       src = new ZMapConfigSourceStruct ;
 
+      src->setConfigFile(config_file) ;
       src->name_ = g_quark_from_string(source_name.c_str()) ;
       src->group = SOURCE_GROUP_START ;        // default_value
       src->featuresets = g_strdup(ZMAP_DEFAULT_FEATURESETS) ;
-      src->url = g_strdup(url.c_str()) ;
+      src->setUrl(url.c_str()) ;
 
       /* Add the source to our list. */
       GError *error = NULL ;
@@ -834,7 +863,7 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::createFileSource(const char *
         {
           zMapLogWarning("Error creating source for file '%s': %s", file, error->message) ;
           g_error_free(error) ;
-          zMapConfigSourceDestroy(src) ;
+          delete src ;
           src = NULL ;
         }
     }
@@ -870,10 +899,11 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::createPipeSource(const char *
       /* Create the new source */
       src = new ZMapConfigSourceStruct ;
 
+      src->setConfigFile(config_file) ;
       src->name_ = g_quark_from_string(source_name.c_str()) ;
       src->group = SOURCE_GROUP_START ;        // default_value
       src->featuresets = g_strdup(ZMAP_DEFAULT_FEATURESETS) ;
-      src->url = g_strdup(url.str().c_str()) ;
+      src->setUrl(url.str().c_str()) ;
 
       /* Add the source to our list. Use the filename as the source name if none given */
       GError *error = NULL ;
@@ -883,7 +913,7 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::createPipeSource(const char *
         {
           zMapLogWarning("Error creating source for file '%s': %s", file, error->message) ;
           g_error_free(error) ;
-          zMapConfigSourceDestroy(src) ;
+          delete src ;
           src = NULL ;
         }
     }
@@ -921,30 +951,26 @@ void ZMapFeatureSequenceMapStructType::removeSource(const char *source_name_cstr
 }
 
 
-/* Find the child of the given source that has the given name. Returns NULL if not found. */
-static ZMapConfigSource findSourceRecursively(ZMapConfigSource source, const char *search_str)
+
+/* Count how many sources there are (including child sources) and how many are selected for
+ * loading (i.e. not delayed). Only includes "recent" sources if the recent flag is true; includes
+ * all sources otherwise. */
+void ZMapFeatureSequenceMapStructType::countSources(unsigned int &num_total, 
+                                                    unsigned int &num_with_data,
+                                                    unsigned int &num_to_load,
+                                                    const bool recent)
 {
-  ZMapConfigSource result = NULL ;
-
-  if (source)
+  if (sources)
     {
-      if (strcasecmp(g_quark_to_string(source->name_), search_str) == 0)
-        {
-          result = source ;
-        }
-      else
-        {
-          for (auto child : source->children)
-            {
-              result = findSourceRecursively(child, search_str) ;
+      num_total = 0 ;
+      num_with_data = 0 ;
+      num_to_load = 0 ;
 
-              if (result)
-                break ;
-            }
+      for (auto &iter : *sources)
+        {
+          iter.second->countSources(num_total, num_with_data, num_to_load, recent) ;
         }
     }
-
-  return result ;
 }
 
 
@@ -979,7 +1005,7 @@ ZMapConfigSource ZMapFeatureSequenceMapStructType::getSource(const string &sourc
 
   if (result && !url.empty())
     {
-      if (!result->url || strcmp(url.c_str(), result->url) != 0)
+      if (!result->url() || strcmp(url.c_str(), result->url()) != 0)
         result = NULL ; // url doesn't match
     }
 
@@ -1009,8 +1035,8 @@ char* ZMapFeatureSequenceMapStructType::getSourceURL(const string &source_name)
 
   ZMapConfigSource source = getSource(source_name) ;
 
-  if (source && source->url)
-    result = g_strdup(source->url) ;
+  if (source && source->url())
+    result = g_strdup(source->url()) ;
 
   if (!result)
     {
@@ -1041,10 +1067,10 @@ GList* ZMapFeatureSequenceMapStructType::getSources(const bool include_children)
         {
           ZMapConfigSource source = iter.second ;
 
-          if (source && source->url && *source->url != '\0' && strncasecmp(source->url, "trackhub://", 11) != 0)
+          if (source && source->url() && *source->url() != '\0' && strncasecmp(source->url(), "trackhub://", 11) != 0)
             result = g_list_append(result, source) ;
 
-          if (include_children)
+          if (include_children && !(source->children.empty()))
             getSourceChildren(source, &result) ;
         }
     }
@@ -1061,10 +1087,24 @@ void ZMapFeatureSequenceMapStructType::getSourceChildren(ZMapConfigSource source
   
   for (ZMapConfigSource child : source->children)
     {
-      if (child && child->url && *child->url != '\0' && strncasecmp(child->url, "trackhub://", 11) != 0)
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      if (child && child->url() && *child->url() != '\0' && strncasecmp(child->url(), "trackhub://", 11) != 0)
         *result = g_list_append(*result, child) ;
 
       getSourceChildren(child, result) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+      // SHOULD THESE IF CLAUSES ACTUALLY BE COMBINED...????
+
+      if (child && child->url() && *child->url() != '\0' && strncasecmp(child->url(), "trackhub://", 11) != 0)
+        *result = g_list_append(*result, child) ;
+
+      if (child)
+        getSourceChildren(child, result) ;
+
+
+
     }
 }
 
@@ -1111,7 +1151,7 @@ void ZMapFeatureSequenceMapStructType::addSourcesFromConfig(const char *filename
               g_error_free(tmp_error) ;
               tmp_error = NULL ;
 
-              zMapConfigSourceDestroy(source) ;
+              delete source ;
               source = NULL ;
               source_item->data = NULL ;
             }
@@ -1160,8 +1200,8 @@ bool ZMapFeatureSequenceMapStructType::updateContext(ZMapConfigIniContext contex
             sources_str += "; " + source_name ;
 
           /* Set the values in the source stanza */
-          if (source->url)
-            zMapConfigIniContextSetString(context, file_type, source_name.c_str(), ZMAPSTANZA_SOURCE_CONFIG, ZMAPSTANZA_SOURCE_URL, source->url) ;
+          if (source->url())
+            zMapConfigIniContextSetString(context, file_type, source_name.c_str(), ZMAPSTANZA_SOURCE_CONFIG, ZMAPSTANZA_SOURCE_URL, source->url()) ;
 
           if (source->featuresets)
             zMapConfigIniContextSetString(context, file_type, source_name.c_str(), ZMAPSTANZA_SOURCE_CONFIG, ZMAPSTANZA_SOURCE_FEATURESETS, source->featuresets) ;
@@ -1379,7 +1419,7 @@ void zMapFeatureUpdateContext(ZMapFeatureContextMap context_map,
 namespace
 {
 
-gint colIDOrderCB(gconstpointer a, gconstpointer b,gpointer user_data)
+static gint colIDOrderCB(gconstpointer a, gconstpointer b,gpointer user_data)
 {
   ZMapFeatureColumn pa = NULL,pb = NULL;
   map<GQuark, ZMapFeatureColumn> *columns = (map<GQuark, ZMapFeatureColumn>*)user_data;
@@ -1410,7 +1450,7 @@ gint colIDOrderCB(gconstpointer a, gconstpointer b,gpointer user_data)
 }
 
 
-bool colOrderCB(const ZMapFeatureColumn &pa, const ZMapFeatureColumn &pb)
+static bool colOrderCB(const ZMapFeatureColumn &pa, const ZMapFeatureColumn &pb)
 {
   bool result = true ;
 
@@ -1430,8 +1470,8 @@ bool colOrderCB(const ZMapFeatureColumn &pa, const ZMapFeatureColumn &pb)
  * semi-colon-separated list of the ids from the glist. export_func is an optional function that
  * takes the key and glist-value and returns true if the value should be included in the context, false if
  * not. If this function is null then all values are included.  */
-void updateContextHashList(ZMapConfigIniContext context, ZMapConfigIniFileType file_type, 
-                           const char *stanza, GHashTable *ghash, HashListExportValueFunc *export_func)
+static void updateContextHashList(ZMapConfigIniContext context, ZMapConfigIniFileType file_type, 
+                                  const char *stanza, GHashTable *ghash, HashListExportValueFunc *export_func)
 {
   zMapReturnIfFail(context && context->config) ;
 
@@ -1478,10 +1518,10 @@ void updateContextHashList(ZMapConfigIniContext context, ZMapConfigIniFileType f
 
 /* Callback called for all featuresets to set the key-value pair for the featureset-style stanza
  * in the given key file. Note that featuresets that have their default are not included. */
-ZMapFeatureContextExecuteStatus updateContextFeatureSetStyle(GQuark key,
-                                                             gpointer data,
-                                                             gpointer user_data,
-                                                             char **err_out)
+static ZMapFeatureContextExecuteStatus updateContextFeatureSetStyle(GQuark key,
+                                                                    gpointer data,
+                                                                    gpointer user_data,
+                                                                    char **err_out)
 {
   ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK ;
   ZMapFeatureAny feature_any = (ZMapFeatureAny)data ;
@@ -1523,6 +1563,31 @@ ZMapFeatureContextExecuteStatus updateContextFeatureSetStyle(GQuark key,
   return status ;
 }
 
+/* Find the child of the given source that has the given name. Returns NULL if not found. */
+static ZMapConfigSource findSourceRecursively(ZMapConfigSource source, const char *search_str)
+{
+  ZMapConfigSource result = NULL ;
+
+  if (source)
+    {
+      if (strcasecmp(g_quark_to_string(source->name_), search_str) == 0)
+        {
+          result = source ;
+        }
+      else
+        {
+          for (auto child : source->children)
+            {
+              result = findSourceRecursively(child, search_str) ;
+
+              if (result)
+                break ;
+            }
+        }
+    }
+
+  return result ;
+}
 
 
 } // unnamed namespace

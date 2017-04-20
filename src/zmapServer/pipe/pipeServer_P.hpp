@@ -41,6 +41,7 @@
 /* Holds all the state we need to create and access the script output. */
 typedef struct _PipeServerStruct
 {
+  ZMapConfigSource source ;
   gchar *config_file ;
 
   char *url ;                                               /* Full url string. */

@@ -44,7 +44,12 @@ extern "C" {
 
 typedef struct _EnsemblServerStruct
 {
-  char *config_file ;
+  ZMapConfigSource source ;
+
+  // Lock shared between all ensembl data sources to protect ensc-core library calls as they are
+  // not thread safe, i.e. anything using dba, slice etc.
+  pthread_mutex_t *mutex ;
+
 
   /* Connection details. */
   DBAdaptor *dba ;
@@ -52,9 +57,6 @@ typedef struct _EnsemblServerStruct
   SequenceAdaptor *seq_adaptor ;
   const char* coord_system ;
   Slice *slice ;
-  pthread_mutex_t *mutex ;                                   /* lock to protect ensc-core library
-                                                             * calls as they are not thread safe,
-                                                             * i.e. anything using dba, slice etc. */
 
   char *host ;
   int port ;

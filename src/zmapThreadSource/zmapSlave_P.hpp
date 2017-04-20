@@ -30,19 +30,36 @@
 #define ZMAP_SLAVE_P_H
 
 #include <glib.h>
-#include <ZMap/zmapThreads.hpp>
+
+#include <ZMap/zmapThreadSource.hpp>
 
 
 
 typedef struct
 {
   ZMapThread thread ;
-  gboolean thread_died ;
+
+  // Used to detect whether thread was cancelled or exitted under control.
+  bool thread_cancelled ;
+
+  // true if the underlying data source has died.
+  gboolean server_died ;
+
   gchar *initial_error ;				    /* Holds string description of first
 							       serious error that caused thread
 							       termination. */
 
+  /* User registered routine which the thread calls to handle requests and replies. */
+  ZMapSlaveRequestHandlerFunc handler_func ;
+
+  /* User registered routine to terminate thread if it needs to exit abnormally. */
+  ZMapSlaveTerminateHandlerFunc terminate_func ;
+
+  /* User registered routine to destroy/clean up thread if it needs to exit abnormally. */
+  ZMapSlaveDestroyHandlerFunc destroy_func ;
+
   void *slave_data ;					    /* Any state required by slave. */
+
 } zmapThreadCBstruct, *zmapThreadCB ;
 
 
@@ -54,6 +71,12 @@ typedef struct
 #define ZMAPTHREAD_SLAVECONTEXT "Thread create context failed"
 #define ZMAPTHREAD_SLAVEREQUEST "Thread request failed"
 
+
+
+extern bool zmap_threadsource_debug_G ;
+
+
+void *zmapNewThread(void *thread_args) ;
 
 
 

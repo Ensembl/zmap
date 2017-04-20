@@ -34,7 +34,7 @@
 
 #include <ZMap/zmapView.hpp>
 #include <ZMap/zmapControl.hpp>
-#include <ZMap/zmapControlImportFile.hpp>
+#include <ZMap/zmapFeatureLoadDisplay.hpp>
 #include <zmapNavigator_P.hpp>                                /* WHY is this here ?? */
 
 
@@ -144,6 +144,10 @@ typedef struct _ZMapStruct
   /* New sequence dialog. */
   GtkWidget *sequence_dialog ;
 
+  // File import dialog, should only be one per zmap.
+  GtkWidget *import_file_dialog ;
+
+
   /* New source dialog. */
   GtkWidget *source_dialog ;
 
@@ -160,11 +164,10 @@ typedef struct _ZMapStruct
 							       to that windows parent widget
 							       (currently a frame). */
 
-  GError         *info;                 /* This is an object to hold a code
-                                         * and a message as info for the
-                                         * remote control simple IPC stuff */
 
-
+  GError         *info;                                     /* This is an object to hold a code
+                                                             * and a message as info for the
+                                                             * remote control simple IPC stuff */
 
   gulong map_handler ;					    /* Needed for disconnecting map handler cb. */
 
@@ -186,6 +189,9 @@ typedef struct
 
 #define VIEW_XREMOTE_WIDGET "view_xremote_widget"	    /* Key used for setting/getting view
 							       on xremote widget. */
+
+typedef void (*ZMapControlImportFileCB)(gpointer user_data) ;
+
 
 
 ZMapCallbacks zmapControlGetCallbacks(void) ;
@@ -259,6 +265,16 @@ void zmapControlPrintView(ZMap zmap, ZMapView view, char *action, gboolean print
 void zmapControlPrintAllViews(ZMap zmap, gboolean print_xids) ;
 
 void zmapControlWindowMaximize(GtkWidget *widget, ZMap map) ;
+
+
+void zmapControlImportFile(ZMap zmap,
+                           ZMapFeatureSequenceMap sequence_map, int req_start, int req_end) ;
+
+// scaffolding for testing new threads...
+void zmapControlNewImportFile(ZMap zmap,
+                              ZMapFeatureSequenceMap sequence_map, int req_start, int req_end) ;
+
+
 
 #endif /* !ZMAP_CONTROL_P_H */
 

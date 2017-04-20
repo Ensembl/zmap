@@ -34,7 +34,11 @@
 #include <map>
 #include <list>
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #include <ZMap/zmapConfigStanzaStructs.hpp>
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 class ZMapStyleTree ;
 
@@ -219,9 +223,6 @@ GHashTable *zMapConfigIniGetFeatureset2Featureset(ZMapConfigIniContext context,
 GHashTable *zMapConfigIniGetColumnGroups(ZMapConfigIniContext context) ;
 
 std::map<GQuark, ZMapFeatureColumnStructType*> *zMapConfigIniGetColumns(ZMapConfigIniContext context);
-
-void zMapConfigSourceDestroy(ZMapConfigSource source_to_free) ;
-void zMapConfigSourcesFreeList(GList *config_sources_list);
 
 GList *zMapConfigGetSources(const char *config_file, const char *config_str,char **stylesfile);
 

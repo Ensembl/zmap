@@ -5,15 +5,17 @@ SUBDIRS = .
 
 noinst_LTLIBRARIES = libZMapView.la
 
-libZMapView_la_SOURCES = zmapView.cpp \
-zmapView_P.hpp \
-zmapViewUtils.cpp \
+libZMapView_la_SOURCES = \
+zmapView.cpp \
 zmapViewCallBlixem.cpp \
 zmapViewCommand.cpp \
 zmapViewFeatureMask.cpp \
 zmapViewFeatureCollapse.cpp \
 zmapViewRemoteControl.cpp \
 zmapViewScratch.cpp \
+zmapViewServers.cpp \
+zmapViewUtils.cpp \
+zmapView_P.hpp \
 $(NULL)
 
 libZMapView_la_CFLAGS = $(INCLUDE_COMMON)

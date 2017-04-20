@@ -1,0 +1,14 @@
+--------------------------------------------------------------------------------
+datastream
+
+The rationale for this code is that previously we were reading GFF data only
+and always through a GIOChannel, now we have different data formats and read
+them from different streams/files.
+
+Thus the abstraction of ZMapDataStream, which has two types
+
+            ZMapDataStreamGIO       GIOChannel, synchronous OR asynchronous
+            ZMapDataStreamHTS       HTS file, synchronous only
+
+
+--------------------------------------------------------------------------------

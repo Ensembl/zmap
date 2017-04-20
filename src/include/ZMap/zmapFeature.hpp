@@ -36,7 +36,16 @@
 #include <ZMap/zmapConfigStyleDefaults.hpp>
 #include <ZMap/zmapStyle.hpp>
 #include <ZMap/zmapUtils.hpp>
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #include <ZMap/zmapFeatureLoadDisplay.hpp>
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+// echoes typedef in zmapConfigStanzaStructs.hpp unfortunately.
+class ZMapConfigSourceStruct ;
+typedef ZMapConfigSourceStruct *ZMapConfigSource ;
+
+
 
 /* Some basic macros. */
 #define ZMAPFEATURE_FORWARD(FEATURE)       ((FEATURE)->strand == ZMAPSTRAND_FORWARD)
@@ -572,6 +581,8 @@ typedef struct ZMapFeatureSetStructType
                                                             * of start coord we use ZMapSpanStruct (x1,x2) to
                                                             * hold this NOTE:may be null after context merge into
                                                             * view context */
+  ZMapConfigSource source ;                                /* The source this featureset was
+                                                            * loaded from */
 
 } ZMapFeatureSetStruct, *ZMapFeatureSet ;
 
@@ -1269,9 +1280,9 @@ GList *zMapFeatureGetOverlapFeatures(GList *feature_list, int start, int end, ZM
  * FeatureSet funcs
  */
 GQuark zMapFeatureSetCreateID(const char *feature_set_name) ;
-ZMapFeatureSet zMapFeatureSetCreate(const char *source, GHashTable *features) ;
+ZMapFeatureSet zMapFeatureSetCreate(const char *source, GHashTable *features, ZMapConfigSource config_source = NULL) ;
 ZMapFeatureSet zMapFeatureSetIDCreate(GQuark original_id, GQuark unique_id,
-				      ZMapFeatureTypeStyle style, GHashTable *features) ;
+				      ZMapFeatureTypeStyle style, GHashTable *features, ZMapConfigSource config_source = NULL) ;
 gboolean zMapFeatureSetAddFeature(ZMapFeatureSet feature_set, ZMapFeature feature) ;
 gboolean zMapFeatureSetFindFeature(ZMapFeatureSet feature_set, ZMapFeature feature) ;
 ZMapFeature zMapFeatureSetGetFeatureByID(ZMapFeatureSet feature_set,

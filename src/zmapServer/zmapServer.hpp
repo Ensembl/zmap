@@ -23,8 +23,8 @@
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description: Generalised server interface, hides acedb/file
- *              details from caller.
+ * Description: Generalised server interface, hides details of
+ *              acedb/file etc. details from caller.
  *
  *-------------------------------------------------------------------
  */
@@ -35,11 +35,8 @@
 
 #include <ZMap/zmapFeature.hpp>
 #include <ZMap/zmapUrl.hpp>
-#include <ZMap/zmapServerProtocol.hpp>			    /*  Is this a good idea...see if there
-							       is a more general sub header that
-							       could be used.... */
 
-#include <zmapServerPrototype.hpp>
+#include <ZMap/zmapServerProtocol.hpp>
 
 
 
@@ -47,18 +44,9 @@
 typedef struct _ZMapServerStruct *ZMapServer ;
 
 
-
-/* This routine must be called before any other server routines and must only be called once.
- * It is the callers responsibility to make sure this happens.
- * Provide matching Termination routine ???? */
 gboolean zMapServerGlobalInit(ZMapURL url, void **server_global_data_out) ;
-
-
 ZMapServerResponseType zMapServerCreateConnection(ZMapServer *server_out, void *server_global_data,
-						  GQuark source_name, char *config_file,
-						  ZMapURL url,  char *format,
-						  int timeout, char *version_str,
-                                                  pthread_mutex_t *mutex);
+                                                  ZMapConfigSource config_source) ;
 ZMapServerResponseType zMapServerOpenConnection(ZMapServer server,ZMapServerReqOpen req_open) ;
 ZMapServerResponseType zMapServerGetServerInfo(ZMapServer server, ZMapServerReqGetServerInfo info) ;
 ZMapServerResponseType zMapServerFeatureSetNames(ZMapServer server,
@@ -80,9 +68,7 @@ ZMapServerResponseType zMapServerSetContext(ZMapServer server, ZMapFeatureContex
 ZMapFeatureContext zMapServerCopyContext(ZMapServer server) ;
 const char *zMapServerLastErrorMsg(ZMapServer server) ;
 ZMapServerResponseType zMapServerGetStatus(ZMapServer server, gint *exit_code);
-
 ZMapServerResponseType zMapServerGetConnectState(ZMapServer server, ZMapServerConnectStateType *connect_state) ;
-
 ZMapServerResponseType zMapServerCloseConnection(ZMapServer server) ;
 ZMapServerResponseType zMapServerFreeConnection(ZMapServer server) ;
 

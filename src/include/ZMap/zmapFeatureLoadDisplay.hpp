@@ -41,6 +41,7 @@
 #include <ZMap/zmapStyle.hpp>
 #include <ZMap/zmapStyleTree.hpp>
 #include <ZMap/zmapConfigIni.hpp>
+#include <ZMap/zmapConfigStanzaStructs.hpp>
 #include <ZMap/zmapConfigStrings.hpp>
 
 
@@ -297,21 +298,27 @@ typedef struct ZMapFeatureSequenceMapStructType
   void addSourcesFromConfig(const char *config_str, char **stylesfile) ;
   bool updateContext(_ZMapConfigIniContextStruct *context, ZMapConfigIniFileType file_type) ;
 
-  ZMapConfigSource createSource(const char *source_name, const char *url, 
+  ZMapConfigSource createSource(const char *source_name, const std::string &url, 
                                 const char *featuresets, const char *biotypes, 
                                 const bool is_child = false, const bool allow_duplicate = true,
                                 GError **error = NULL) ;
   ZMapConfigSource createSource(const char *source_name, const std::string &url, 
                                 const char *featuresets, const char *biotypes, 
+                                const std::string &file_type, const int num_fields,
                                 const bool is_child = false, const bool allow_duplicate = true,
                                 GError **error = NULL) ;
   void updateSource(const char *source_name, const char *url, 
-                    const char *featuresets, const char *biotypes, GError **error) ;
+                    const char *featuresets, const char *biotypes, 
+                    const std::string &file_type, const int num_fields,
+                    GError **error) ;
   void updateSource(const char *source_name, const std::string &url, 
-                    const char *featuresets, const char *biotypes, GError **error) ;
+                    const char *featuresets, const char *biotypes, 
+                    const std::string &file_type, const int num_fields,
+                    GError **error) ;
   ZMapConfigSource createFileSource(const char *source_name, const char *file) ;
   ZMapConfigSource createPipeSource(const char *source_name, const char *file, const char *script, const char *args) ;
   void removeSource(const char *source_name_cstr, GError **error) ;
+  void countSources(unsigned int &num_total, unsigned int &num_with_data, unsigned int &num_to_load, const bool recent = false) ;
 
   bool runningUnderOtter() ;
 
@@ -322,7 +329,7 @@ typedef struct ZMapFeatureSequenceMapStructType
   int getConfigInt(const char *key_name, const char *stanza_name = ZMAPSTANZA_APP_CONFIG, 
                    const char *stanza_type = ZMAPSTANZA_APP_CONFIG) ;
 
-  gbtools::trackhub::Registry getTrackhubRegistry() ;
+  gbtools::trackhub::Registry& getTrackhubRegistry() ;
 
 private:
   void addSource(const std::string &source_name, ZMapConfigSourceStruct *source, GError **error) ;

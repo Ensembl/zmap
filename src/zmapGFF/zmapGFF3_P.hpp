@@ -150,7 +150,7 @@ typedef struct ZMapGFF3ParserStruct_
 
 
 
-ZMapGFFParser zMapGFFCreateParser_V3(const char *sequence, int features_start, int features_end) ;
+ZMapGFFParser zMapGFFCreateParser_V3(const char *sequence, int features_start, int features_end, ZMapConfigSource source) ;
 void zMapGFFDestroyParser_V3(ZMapGFFParser parser) ;
 gboolean zMapGFFParse_V3(ZMapGFFParser parser_base, char* const line ) ;
 gboolean zMapGFFGetLogWarnings(ZMapGFFParser pParser );

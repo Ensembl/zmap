@@ -160,6 +160,7 @@ void zMapWindowShowStyleDialog(ZMapWindow window,
   my_data->window = window;
   my_data->created_cb_func = created_cb_func ;
   my_data->cb_data = cb_data ;
+  my_data->create_child = create_child ;
 
   /* Add ptr so parent knows about us */
   my_data->window->style_window = (gpointer) my_data ;
@@ -426,13 +427,14 @@ gboolean zmapWindowFeaturesetSetStyle(GQuark style_id,
                                       const gboolean destroy_canvas_items,
                                       const gboolean redraw)
 {
-  gboolean ok = FALSE ;
+  gboolean ok = TRUE ;
   zMapReturnValIfFail(style_id && feature_set && context_map && window, ok) ;
 
   ZMapFeatureTypeStyle style;
   FooCanvasItem *set_item, *canvas_item;
   int set_strand, set_frame;
   ID2Canvas id2c;
+  char *err_msg = NULL ;
 
   style = context_map->styles.find_style(style_id);
 
@@ -444,21 +446,44 @@ gboolean zmapWindowFeaturesetSetStyle(GQuark style_id,
       s2s = (ZMapFeatureSource)g_hash_table_lookup(context_map->source_2_sourcedata,GUINT_TO_POINTER(feature_set->unique_id));
       ZMapFeatureSetDesc f2c = (ZMapFeatureSetDesc)g_hash_table_lookup(context_map->featureset_2_column, GUINT_TO_POINTER(feature_set->unique_id));
 
-      if(s2s && f2c)
+      // gb10: Some featuresets don't have source data. I think this is ok.
+      if(s2s)
         {
           s2s->style_id = style_id ;
-          ok = TRUE ;
+        }
 
-          if (ok && feature_set && feature_set->style)
-            zmapWindowColumnRemoveStyle(feature_set->style->unique_id, f2c->column_id, context_map, window) ;
+      // The featureset should have a mapping to a column
+      if (f2c)
+        {
+          if (feature_set && feature_set->style)
+            {
+              ok = zmapWindowColumnRemoveStyle(feature_set->style->unique_id, f2c->column_id, context_map, window) ;
+
+              if (!ok)
+                err_msg = g_strdup_printf("Error removing old style '%s'", g_quark_to_string(feature_set->style->unique_id)) ;
+            }
 
           if (ok)
-            ok = zmapWindowColumnAddStyle(style_id, f2c->column_id, context_map, window) ;
+            {
+              ok = zmapWindowColumnAddStyle(style_id, f2c->column_id, context_map, window) ;
+
+              if (!ok)
+                err_msg = g_strdup_printf("Error adding style to column '%s'", g_quark_to_string(f2c->column_id)) ;
+            }
+        }
+      else
+        {
+          ok = FALSE ;
         }
     }
   else if (style)
     {
       ok = TRUE ;
+    }
+  else
+    {
+      err_msg = g_strdup_printf("Couldn't find style with this id") ;
+      ok = FALSE ;
     }
 
   if (ok && destroy_canvas_items)
@@ -560,10 +585,15 @@ gboolean zmapWindowFeaturesetSetStyle(GQuark style_id,
 
   if (!ok)
     {
-      zMapWarning("Error setting new style '%s' for featureset '%s'",
-                  g_quark_to_string(style_id), g_quark_to_string(feature_set->unique_id));
+      zMapWarning("Error setting new style '%s' for featureset '%s': %s",
+                  g_quark_to_string(style_id),
+                  g_quark_to_string(feature_set->unique_id),
+                  (err_msg ? err_msg : ""));
     }
 
+  if (err_msg)
+    g_free(err_msg) ;
+  
   return ok ;
 }
 

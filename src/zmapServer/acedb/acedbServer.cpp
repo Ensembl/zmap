@@ -150,10 +150,15 @@ typedef gboolean (*ParseMethodNamesFunc)(AcedbServer server, char *method_str_in
 /* These provide the interface functions for an acedb server implementation, i.e. you
  * shouldn't change these prototypes without changing all the other server prototypes..... */
 static gboolean globalInit(void) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static gboolean createConnection(void **server_out,
 				 GQuark source_name, char *config_file, ZMapURL url, char *format,
                                  char *version_str, int timeout,
                                  pthread_mutex_t *mutex) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+static gboolean createConnection(void **server_out, ZMapConfigSource config_source) ;
+
 static ZMapServerResponseType openConnection(void *server, ZMapServerReqOpen req_open) ;
 static ZMapServerResponseType getInfo(void *server, ZMapServerReqGetServerInfo info) ;
 static ZMapServerResponseType getFeatureSetNames(void *server,
@@ -298,14 +303,15 @@ static gboolean globalInit(void)
   return result ;
 }
 
-static gboolean createConnection(void **server_out,
-				 GQuark source_name, char *config_file, ZMapURL url, char *format,
-                                 char *version_str, int timeout,
-                                 pthread_mutex_t *mutex_unused)
+
+static gboolean createConnection(void **server_out, ZMapConfigSource config_source)
 {
   gboolean result = FALSE ;
+  zMapReturnValIfFail(config_source && config_source->urlObj(), result) ;
+
   GError *error = NULL ;
   gboolean use_methods = FALSE;
+  const ZMapURL url = config_source->urlObj() ;
   AcedbServer server ;
 
   /* Always return a server struct as it contains error message stuff. */
@@ -313,17 +319,20 @@ static gboolean createConnection(void **server_out,
 
   resetErr(server) ;
 
-  server->config_file = g_strdup(config_file) ;
+  server->source = config_source ;
+
+  if (config_source->configFile())
+    server->config_file = g_strdup(config_source->configFile()) ;
 
   server->host = g_strdup(url->host) ;
   server->port = url->port ;
 
   /* We need a minimum server version but user can specify a higher one in the config file. */
-  if (version_str)
+  if (config_source->version)
     {
-      if (zMapCompareVersionStings(ACEDB_SERVER_MIN_VERSION, version_str, &error))
+      if (zMapCompareVersionStings(ACEDB_SERVER_MIN_VERSION, config_source->version, &error))
 	{
-	  server->version_str = g_strdup(version_str) ;
+          server->version_str = g_strdup(config_source->version) ;
 	}
       else
 	{
@@ -367,7 +376,8 @@ static gboolean createConnection(void **server_out,
   *server_out = (void *)server ;
 
   if ((server->last_err_status =
-       AceConnCreate(&(server->connection), server->host, url->port, url->user, url->passwd, timeout)) == ACECONN_OK)
+       AceConnCreate(&(server->connection), server->host,
+                     url->port, url->user, url->passwd, ACEDB_SERVER_DEFAULT_TIMEOUT)) == ACECONN_OK)
     result = TRUE ;
 
   return result ;
@@ -1447,7 +1457,7 @@ static gboolean sequenceRequest(DoAllAlignBlocks get_features, ZMapFeatureBlock 
 	  /* Set up the parser, if we are doing cols/styles then set hash tables
 	   * in parser to map the gff source name to the Feature Set (== Column) and a Style. */
 	  parser = zMapGFFCreateParser(iGFFVersion, (char *) g_quark_to_string(feature_block->original_id),
-				       server->zmap_start, server->zmap_end) ;
+				       server->zmap_start, server->zmap_end, server->source) ;
 	  zMapGFFParserInitForFeatures(parser, styles, FALSE) ;
 
 	  zMapGFFSetDefaultToBasic(parser, TRUE);

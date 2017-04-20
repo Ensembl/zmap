@@ -1,24 +1,54 @@
 
-Request Tracker Tickets Resolved from 05/07/2016 to 23/09/2016
+Request Tracker Tickets Resolved from 12/09/2016 to 28/03/2017
 
-[tviewsrv get_rt_tickets.sh (18:30:59)]  /software/bin/rt is there !!
-ticket/538309
-id: ticket/538309
+[lucid-dev64 get_rt_tickets.sh (17:13:50)]  /software/bin/rt is there !!
+ticket/425064
+id: ticket/425064
 Queue: zmap
-Subject: Ensc-core check
-Requestors: thibaut@ebi.ac.uk
+Subject: Import VCF files into ZMap
+Requestors: af2@sanger.ac.uk, gb10@sanger.ac.uk, jla1@sanger.ac.uk
 Owner: gb10
-Resolved: Thu Jul 14 17:26:01 2016
+Resolved: Thu Nov 24 13:15:42 2016
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
-ticket/539904
-id: ticket/539904
+ticket/492766
+id: ticket/492766
 Queue: zmap
-Subject: Bad asserts in otter log from zmap.....
+Subject: Viewing mulitple PacBio, SLRseq dataset in single Blixem
+Requestors: af2@sanger.ac.uk
+Owner: gb10
+Resolved: Thu Nov 24 13:13:34 2016
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
+ticket/508075
+id: ticket/508075
+Queue: zmap
+Subject: Loading BAM files with htslib in zmap
+Requestors: thibaut@ebi.ac.uk
+Owner: gb10
+Resolved: Mon Sep 26 11:27:42 2016
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
+ticket/535369
+id: ticket/535369
+Queue: zmap
+Subject: Problems installing ZMap
+Requestors: acortazar@cicbiogune.es
+Owner: gb10
+Resolved: Thu Nov 24 13:14:02 2016
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
+ticket/542513
+id: ticket/542513
+Queue: zmap
+Subject: Reporting unsuported extensions, e.g. acedb
 Requestors: edgrif@sanger.ac.uk
-Owner: sm23
-Resolved: Tue Jul 26 15:08:51 2016
+Owner: edgrif
+Resolved: Tue Oct 18 11:27:03 2016
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
@@ -27,18 +57,8 @@ id: ticket/542750
 Queue: zmap
 Subject: Patch for bam file index support and display of spliced reads 
 Requestors: thibaut@ebi.ac.uk
-Owner: edgrif
-Resolved: Fri Sep 23 17:55:11 2016
-CF.{zmapace_gitcommit}: 
-CF.{zmapace_resolve_version}: 
-
-ticket/543246
-id: ticket/543246
-Queue: zmap
-Subject: Menu bar in VM
-Requestors: sm23@sanger.ac.uk
-Owner: sm23
-Resolved: Wed Aug 17 12:06:05 2016
+Owner: gb10
+Resolved: Thu Oct 06 09:24:46 2016
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 
@@ -49,6 +69,26 @@ Subject: Possible model duplication
 Requestors: thibaut@ebi.ac.uk
 Owner: gb10
 Resolved: Mon Sep 12 15:51:20 2016
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
+ticket/549947
+id: ticket/549947
+Queue: zmap
+Subject: Pull request on Ensc-core
+Requestors: thibaut@ebi.ac.uk
+Owner: gb10
+Resolved: Thu Oct 06 09:21:24 2016
+CF.{zmapace_gitcommit}: 
+CF.{zmapace_resolve_version}: 
+
+ticket/550986
+id: ticket/550986
+Queue: zmap
+Subject: Problem with assigning group to selections
+Requestors: thibaut@ebi.ac.uk
+Owner: gb10
+Resolved: Fri Oct 14 18:02:05 2016
 CF.{zmapace_gitcommit}: 
 CF.{zmapace_resolve_version}: 
 

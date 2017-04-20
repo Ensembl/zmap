@@ -92,7 +92,7 @@ public:
   }
 
 private:
-  GQuark m_val;
+  GQuark m_val{0};
 } ;
 
 

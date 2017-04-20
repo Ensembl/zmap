@@ -179,14 +179,22 @@ declare -A install=( [$aceconn_key]='maybe' [$ensc_core_key]='maybe' [$gb_tools_
 declare -A repos=( [$aceconn_key]='AceConn' [$ensc_core_key]='ensc-core' [$gb_tools_key]='gbtools'
     [$htslib_key]='htslib' [$zeromq_key]='zeromq_v3' )
 
+declare -A repos_url=( 
+    [$aceconn_key]="$git_host:$git_root/${repos[$aceconn_key]}" 
+    [$ensc_core_key]="https://github.com/Ensembl/ensc-core.git"
+    [$gb_tools_key]="$git_host:$git_root/${repos[$gb_tools_key]}"
+    [$htslib_key]="https://github.com/samtools/htslib"
+    [$zeromq_key]="$git_host:$git_root/${repos[$zeromq_key]}" )
+
 declare -A dir=( [$aceconn_key]='AceConn' [$ensc_core_key]='ensc-core' [$gb_tools_key]='gbtools'
     [$htslib_key]='htslib' [$zeromq_key]='zeromq' )
 
 declare -A test_file=( [$aceconn_key]='configure.ac' [$ensc_core_key]='src/Makefile' [$gb_tools_key]='configure.ac'
     [$htslib_key]='Makefile' [$zeromq_key]='configure.in' )
 
-declare -A branch=( [$aceconn_key]='' [$ensc_core_key]='' [$gb_tools_key]=''
-    [$htslib_key]='' [$zeromq_key]='' )
+# can specify a specific branch name or tag here by using the -b arg:
+declare -A branch=( [$aceconn_key]='' [$ensc_core_key]='-b 0.1' [$gb_tools_key]=''
+    [$htslib_key]='-b 1.3.2' [$zeromq_key]='' )
 
 
 # for ensembl development we sometimes need zmap to reference it but we don't want to build
@@ -293,7 +301,7 @@ for i in "${!install[@]}"
 
         if [[ ! -f "./${dir[$i]}/${test_file[$i]}" ]] ; then
 
-            fetch_lib "$git_host:$git_root/${repos[$i]}" "${dir[$i]}" "${branch[$i]}"
+            fetch_lib "${repos_url[$i]}" "${dir[$i]}" "${branch[$i]}"
 
         fi
 

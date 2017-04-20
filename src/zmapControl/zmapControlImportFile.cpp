@@ -1,4 +1,4 @@
-/*  File: zmapControlImportFile.c
+/*  File: zmapControlImportFile.cpp
  *  Author: Malcolm Hinsley (mh17@sanger.ac.uk)
  *  Copyright (c) 2012-2015: Genome Research Ltd.
  *-------------------------------------------------------------------
@@ -20,7 +20,7 @@
  * This file is part of the ZMap genome database package
  * originally written by:
  *
- * Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
@@ -29,7 +29,7 @@
  *              user has chosen then this code calls the function
  *              provided by the caller to get the sequence displayed.
  *
- * Exported functions: See ZMap/zmapControlImportFile.h
+ * Exported functions: See zmapControl_P.hpp
  *
  * NOTE this file was initially copied from zmapAppSequenceView.c
  * and then tweaked. There may be some common code & functions
@@ -49,10 +49,9 @@
 #include <ZMap/zmapConfigIni.hpp>
 #include <ZMap/zmapConfigStanzaStructs.hpp>
 #include <ZMap/zmapConfigStrings.hpp>
-#include <ZMap/zmapControlImportFile.hpp>
 #include <ZMap/zmapFeatureLoadDisplay.hpp>
 #include <ZMap/zmapAppServices.hpp>
-#include <ZMap/zmapDataSource.hpp>
+#include <ZMap/zmapDataStream.hpp>
 #include <zmapControl_P.hpp>
 
 
@@ -73,6 +72,8 @@ typedef struct
 /* Data we need in callbacks. */
 typedef struct MainFrameStruct_
 {
+  ZMap zmap ;
+
   GtkWidget *toplevel ;
   GtkWidget *sequence_widg ;
   GtkWidget *start_widg ;
@@ -89,26 +90,19 @@ typedef struct MainFrameStruct_
 
   ZMapFeatureSequenceMap sequence_map;
 
-  ZMapControlImportFileCB user_func ;
-  gpointer user_data ;
 } MainFrameStruct, *MainFrame ;
 
 
 
 
-static MainFrame makePanel(GtkWidget *toplevel, gpointer *seqdata_out,
-                      ZMapControlImportFileCB user_func, gpointer user_data,
-                      ZMapFeatureSequenceMap sequence_map, int req_start, int req_end) ;
+static void makePanel(MainFrame main_frame, ZMapFeatureSequenceMap sequence_map, int req_start, int req_end) ;
 static GtkWidget *makeOptionsBox(MainFrame main_frame, const char *seq, int start, int end);
 
 static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data) ;
 static void importFileCB(ZMapFeatureSequenceMap sequence_map, 
                          const bool recent_only,
                          gpointer cb_data) ;
-
-#ifdef NOT_USED
-static void sequenceCB(GtkWidget *widget, gpointer cb_data) ;
-#endif
+static void fileImportCloseCB(GtkWidget *widget, gpointer cb_data) ;
 
 static void clearRecentSources(ZMapFeatureSequenceMap sequence_map) ;
 
@@ -121,50 +115,41 @@ static void clearRecentSources(ZMapFeatureSequenceMap sequence_map) ;
 /* Display a dialog to get from the reader a file to be displayed
  * with a optional start/end and various mapping parameters
  */
-void zMapControlImportFile(ZMapControlImportFileCB user_func, gpointer user_data,
-    ZMapFeatureSequenceMap sequence_map, int req_start, int req_end)
+void zmapControlImportFile(ZMap zmap, ZMapFeatureSequenceMap sequence_map, int req_start, int req_end)
 {
   GtkWidget *toplevel ;
-  gpointer seq_data = NULL ;
-  MainFrame main_frame = NULL ;
+  MainFrame main_frame ;
+  static bool first_time = true ;
 
-  /* if (!user_func)
-    return ; */
-  zMapReturnIfFail(user_func && user_data) ;
-
-  ZMap zmap = (ZMap)user_data;
-
-  /* First tiem around, clear the 'recent' flag from all sources so that we don't show sources
+  /* First time around, clear the 'recent' flag from all sources so that we don't show sources
    * that were loaded on startup. This won't be ideal if the user opens the import dialog before
    * all sources have finished loading. In that case though they can clear the list manually. */
-  static bool first_time = true ;
   if (first_time)
     {
       clearRecentSources(sequence_map) ;
       first_time = false ;
     }
 
-  toplevel = zMapGUIDialogNew(NULL, "Import data from a source", NULL, NULL) ;
+  main_frame = g_new0(MainFrameStruct, 1) ;
+
+  main_frame->zmap = zmap ;
+
+  zmap->import_file_dialog = main_frame->toplevel = toplevel
+    = zMapGUIDialogNew(NULL, "Import data from a source", NULL, NULL) ;
 
   int width = 0 ;
   int height = 0 ;
 
   if (gbtools::GUIGetTrueMonitorSize(toplevel, &width, &height) && GTK_IS_WINDOW(toplevel))
-    gtk_window_set_default_size(GTK_WINDOW(toplevel), std::min(640.0, width * 0.5), std::min(400.0, height * 0.7)) ;
-
-  /* Make sure the dialog is destroyed if the zmap window is closed */
-  /*! \todo For some reason this doesn't work and the dialog hangs around
-   * after zmap->toplevel is destroyed */
-  if (zmap && zmap->toplevel && GTK_IS_WINDOW(zmap->toplevel))
-    gtk_window_set_transient_for(GTK_WINDOW(toplevel), GTK_WINDOW(zmap->toplevel)) ;
+    gtk_window_set_default_size(GTK_WINDOW(toplevel), std::min(640.0, width * 0.5), std::min(600.0, height * 0.7)) ;
 
   gtk_window_set_policy(GTK_WINDOW(toplevel), FALSE, TRUE, FALSE ) ;
   gtk_container_border_width(GTK_CONTAINER(toplevel), 0) ;
 
-  main_frame = makePanel(toplevel, &seq_data, user_func, user_data, sequence_map, req_start, req_end) ;
+  makePanel(main_frame, sequence_map, req_start, req_end) ;
 
   gtk_signal_connect(GTK_OBJECT(toplevel), "destroy",
-     GTK_SIGNAL_FUNC(toplevelDestroyCB), seq_data) ;
+                     GTK_SIGNAL_FUNC(toplevelDestroyCB), main_frame) ;
 
   gtk_widget_show_all(toplevel) ;
 
@@ -248,41 +233,30 @@ static void importGetConfig(MainFrame main_frame, char *config_file)
 
 
 /* Make the whole panel returning the top container of the panel. */
-static MainFrame makePanel(GtkWidget *toplevel, gpointer *our_data,
-                           ZMapControlImportFileCB user_func, gpointer user_data,
-                           ZMapFeatureSequenceMap sequence_map, int req_start, int req_end)
+static void makePanel(MainFrame main_frame, ZMapFeatureSequenceMap sequence_map, int req_start, int req_end)
 {
   GtkWidget *vbox, *sequence_box, *options_box;
-  MainFrame main_data ;
   const char *sequence = "";
-  GtkDialog *dialog = GTK_DIALOG(toplevel) ;
+  GtkDialog *dialog = GTK_DIALOG(main_frame->toplevel) ;
 
   vbox = dialog->vbox ;
 
-  main_data = g_new0(MainFrameStruct, 1) ;
+  importGetConfig(main_frame, sequence_map->config_file );
 
-  main_data->user_func = user_func ;
-  main_data->user_data = user_data ;
+  main_frame->sequence_map = sequence_map;
 
-  importGetConfig(main_data, sequence_map->config_file );
-
-  if (toplevel)
-    {
-      main_data->toplevel = toplevel ;
-      *our_data = main_data ;
-    }
-
-  main_data->sequence_map = sequence_map;
   if(sequence_map)
     sequence = sequence_map->sequence;/* request defaults to original */
 
-  options_box = makeOptionsBox(main_data, sequence, req_start, req_end) ;
+  options_box = makeOptionsBox(main_frame, sequence, req_start, req_end) ;
   gtk_box_pack_start(GTK_BOX(vbox), options_box, FALSE, FALSE, 0) ;
 
-  sequence_box = zMapCreateSequenceViewWidg(importFileCB, main_data, sequence_map, TRUE, TRUE, toplevel) ;
+  sequence_box = zMapCreateSequenceViewWidg(importFileCB, main_frame,
+                                            fileImportCloseCB, main_frame,
+                                            sequence_map, TRUE, TRUE, main_frame->toplevel) ;
   gtk_box_pack_start(GTK_BOX(vbox), sequence_box, TRUE, TRUE, 0) ;
 
-  return main_data ;
+  return ;
 }
 
 
@@ -382,6 +356,21 @@ static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data)
 }
 
 
+// called from the file import sub-dialog to say that it's closing, we then
+// remove our reference to that dialog as we don't need to close it later.
+static void fileImportCloseCB(GtkWidget *widget, gpointer cb_data)
+{
+  MainFrame main_data = (MainFrame)cb_data ;
+
+  // Reset record of our dialog in main zmap struct (used where user destroys zmap window while
+  // this dialog is displayed).
+  main_data->zmap->import_file_dialog = NULL ;
+
+  return ;
+}
+
+
+
 
 static void validateReqSequence(bool &status,
                                 std::string &err_msg,
@@ -436,14 +425,13 @@ static void createSourceData(ZMapView view,
 
   ZMapFeatureContextMap context_map = zMapViewGetContextMap(view) ;
 
-  int status = 0 ;
-  ZMapURL zmap_url = url_parse(source->url, &status) ;
+  const ZMapURL zmap_url = source->urlObj() ;
 
   if (context_map && sequence_map->runningUnderOtter() && zmap_url && zmap_url->path)
     {
-      ZMapDataSourceType source_type = zMapDataSourceTypeFromFilename(zmap_url->path, NULL) ;
+      ZMapDataStreamType stream_type = zMapDataStreamTypeFromFilename(zmap_url->path, NULL) ;
 
-      if (source_type == ZMapDataSourceType::HTS || source_type == ZMapDataSourceType::BIGWIG)
+      if (stream_type == ZMapDataStreamType::HTS || stream_type == ZMapDataStreamType::BIGWIG)
         {
           const char *source_name = g_quark_to_string(source->name_) ;
           GQuark fset_id = zMapFeatureSetCreateID(source_name);
@@ -476,16 +464,21 @@ static void importSource(ZMapConfigSource server,
 {
   if (!recent_only || server->recent)
     {
-      createSourceData(view, sequence_map, server) ;
-
-      GError *g_error = NULL ;
-      zMapViewSetUpServerConnection(view, server, req_sequence, req_start, req_end, false, &g_error) ;
-
-      if (g_error)
+      // Some sources do not have a url because they are just parent sources in the hierarchy. Do
+      // not process them, but process their children.
+      if (server->url())
         {
-          zMapWarning("Failed to set up server connection for '%s': %s", 
-                      g_quark_to_string(server->name_),
-                      (g_error ? g_error->message : "<no error>")) ;
+          createSourceData(view, sequence_map, server) ;
+
+          GError *g_error = NULL ;
+          zMapViewSetUpServerConnection(view, server, req_sequence, req_start, req_end, false, &g_error) ;
+
+          if (g_error)
+            {
+              zMapWarning("Failed to set up server connection for '%s': %s", 
+                          g_quark_to_string(server->name_),
+                          (g_error ? g_error->message : "<no error>")) ;
+            }
         }
 
       // Recurse through children
@@ -511,14 +504,10 @@ static void importSource(ZMapConfigSource server,
  * remapping should be done.
  *
  */
-static void importFileCB(ZMapFeatureSequenceMap sequence_map, 
-                         const bool recent_only,
-                         gpointer cb_data)
+static void importFileCB(ZMapFeatureSequenceMap sequence_map, const bool recent_only, gpointer cb_data)
 {
   bool status = TRUE ;
   MainFrame main_frame = (MainFrame)cb_data ;
-  zMapReturnIfFail(main_frame) ;
-
   std::string err_msg("") ;
   const char *req_start_txt= NULL ;
   const char *req_end_txt = NULL ;
@@ -527,18 +516,7 @@ static void importFileCB(ZMapFeatureSequenceMap sequence_map,
   int req_start = 0 ;
   int req_end = 0 ;
   ZMapView view = NULL ;
-  ZMap zmap = NULL ;
-
-
-  zmap = (ZMap) main_frame->user_data;
-  zMapReturnIfFail(zmap) ;
-  zMapReturnIfFail(sequence_map) ;
-
-  /* Check that the zmap window hasn't been closed (currently the dialog
-   * isn't closed automatically with it, so we'll have problems if we don't
-   * exit early here) */
-  if (!zmap->toplevel)
-    return;
+  ZMap zmap = main_frame->zmap ;
 
   view = zMapViewGetView(zmap->focus_viewwindow);
 
