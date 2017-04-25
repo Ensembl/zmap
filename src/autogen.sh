@@ -539,10 +539,14 @@ fi
 # zeromq should not be built using its own autogen.sh because this does not produce the right
 # set up for the build to be run as part of the zmap build. However this means we need
 # to create a config sub-directory so that its ./configure will run.
-zeromq_dir='zeromq/config'
-rm -rf $zeromq_dir  || zmap_message_exit "Could not remove tmp dir $zeromq_dir for zeromq build."
-mkdir $zeromq_dir  || zmap_message_exit "Cannot make $zeromq_dir for zeromq build."
 
+if [[ "${install[$zeromq_key]}" == "yes" ]] ; then
+
+  zeromq_dir='zeromq/config'
+  rm -rf $zeromq_dir  || zmap_message_exit "Could not remove tmp dir $zeromq_dir for zeromq build."
+  mkdir $zeromq_dir  || zmap_message_exit "Cannot make $zeromq_dir for zeromq build."
+
+fi
 
 
 

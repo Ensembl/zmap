@@ -616,7 +616,9 @@ AM_CONDITIONAL(ON_CYGWIN, test "x$on_cygwin" = "xyes")
 
 AC_CONFIG_COMMANDS_PRE([ac_configure_args="$ac_configure_args_pre"])
 AC_CONFIG_COMMANDS_POST([ac_configure_args="$ac_configure_args_post"])
-AC_CONFIG_SUBDIRS([zeromq])
+
+AM_COND_IF([USE_ZEROMQ],
+           [AC_CONFIG_SUBDIRS([zeromq])])
 
 
 
