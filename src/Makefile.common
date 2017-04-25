@@ -5,14 +5,11 @@ NULL =
 
 ARFLAGS = cru
 
-# in the below why don't we use the "+=" syntax  for ensembl stuff too ?
-
 # I'm hacking in zmapApp here for now....
 AM_CPPFLAGS = \
 -I$(top_srcdir)/zmapApp \
 -I$(top_srcdir)/include \
 -I$(top_builddir) \
--I$(top_srcdir)/zeromq/include \
 -I$(top_srcdir) \
 @GTK_CFLAGS@ \
 @LIBCURL_CPPFLAGS@ \
@@ -38,7 +35,6 @@ if USE_HTSLIB
 AM_CPPFLAGS += -I$(top_srcdir)/htslib
 endif
 
-
 if USE_ACECONN
 AM_CPPFLAGS += -I$(top_srcdir)/AceConn/include
 endif
@@ -54,6 +50,10 @@ AM_CPPFLAGS += -I$(top_srcdir)/ensc-core/src/DataModel \
 -I$(top_srcdir)/ensc-core/src/Compara/DataModel \
 -I$(top_srcdir)/ensc-core/src/OBDA 
 endif
+endif
+
+if USE_ZEROMQ
+AM_CPPFLAGS += -I$(top_srcdir)/zeromq/include
 endif
 
 

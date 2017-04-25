@@ -18,9 +18,6 @@
 include $(srcdir)/Makefile.common
 
 
-# reinclude this once I know how to do it conditionally....
-#include $(srcdir)/am_doxygen.am
-
 
 # Local macros.
 #
@@ -62,9 +59,6 @@ SUBDIRS += include $(ZMAP_SRC_DIRS) $(CANVAS_TESTING)
 
 
 CLEANFILES = $(pkgconfig_DATA)
-
-MOSTLYCLEANFILES = $(DX_CLEANFILES)
-
 
 
 
@@ -339,8 +333,7 @@ mkdocdir:
 	  mkdir docs; \
 	fi
 
-docs: mkdocdir doxygen-doc
-
+docs: mkdocdir
 
 
 # the next two targets are required for installing the static

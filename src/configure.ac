@@ -240,19 +240,7 @@ elif test "$zmap_os_type" = "darwin" ; then
 
 fi
 
-################################################################################
-################################################################################
-# Doxygen Features
 
-#DX_HTML_FEATURE(ON)
-#DX_CHM_FEATURE(OFF)
-#DX_CHI_FEATURE(OFF)
-#DX_MAN_FEATURE(OFF)
-#DX_RTF_FEATURE(OFF)
-#DX_XML_FEATURE(OFF)
-#DX_PDF_FEATURE(ON)
-#DX_PS_FEATURE(OFF)
-#DX_INIT_DOXYGEN([AC_PACKAGE_NAME], Doxyfile, docs/[AC_PACKAGE_NAME])
 
 ZMAP_FALSE=no
 ZMAP_TRUE=yes
@@ -288,19 +276,6 @@ AC_SUBST(abs_top_srcdir)
 AC_ARG_ENABLE(shtml-doc,
         AS_HELP_STRING(--enable-shtml-doc,enable shtml documentation info compilation (no)),
         shtml=$enableval, shtml=no)
-
-ZMAP_DOXY_HTML_FILE_EXT=".html"
-ZMAP_DOXY_HTML_HEADER=""
-ZMAP_DOXY_HTML_FOOTER=""
-
-if test "x$shtml" = "xyes"; then
-  ZMAP_DOXY_HTML_FILE_EXT=".shtml";
-  ZMAP_DOXY_HTML_HEADER="doxyhtml.hdr";
-  ZMAP_DOXY_HTML_FOOTER="doxyhtml.ftr";
-fi
-AC_SUBST(ZMAP_DOXY_HTML_FILE_EXT)
-AC_SUBST(ZMAP_DOXY_HTML_HEADER)
-AC_SUBST(ZMAP_DOXY_HTML_FOOTER)
 
 
 dnl Disable shared libs so foocanvas is bound in to zmap.
@@ -555,23 +530,10 @@ zmapWindow \
 zmapXML"
 
 
-# this needs to go....we just don't it any more....
-#
+
 AC_SUBST(ZMAP_SRC_DIRS)
-ZMAP_SRC_DIRS_DOXYGEN=""
-for zm_srcdir in $ZMAP_SRC_DIRS
-do
-   ZMAP_SRC_DIRS_DOXYGEN="$ZMAP_SRC_DIRS_DOXYGEN $srcdir/$zm_srcdir"
-done
-AC_SUBST(ZMAP_SRC_DIRS_DOXYGEN)
 
 
-# canvas_choice compilation is disabled for now, it should be moved
-# out of the src dir into its own dir. It does not fit in with
-# doing a dist build.
-#
-#AC_CONFIG_FILES([Makefile
-#canvas_choice/Makefile
 
 AC_CONFIG_FILES([Makefile
 zmapApp/Makefile
@@ -603,10 +565,6 @@ dotZMap:dotZmap.in
 ])
 
 
-# We've decided not to the doxygen stuff, no one uses it.
-#
-#$srcdir/$DX_CONFIG:Doxyfile.in
-#
 
 
 # Run autoconf in the aceconn directory.
