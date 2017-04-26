@@ -158,8 +158,114 @@ version_arg=''
 checkout_old_commits='no'
 
 # Base location of our git repositories
-git_host='git.internal.sanger.ac.uk'
+git_host='git.internal.sanger.ac.uk:'
 git_root='/repos/git/annotools'
+
+
+# for ensembl development we sometimes need zmap to reference it but we don't want to build
+# it locally....this is a slightly more complicated case then for other libs....for which we
+# use a 'dummy' file to signal to configure that we want to do this.
+ensembl_file='ensembl_ref_but_no_build'
+
+
+# Cmd line options....
+#
+# Do args.
+#
+
+#
+# NOT SURE ABOUT THIS CHANGE AS IT LOOKS LIKE FOR ENSEMBL THERE ARE COMPLICATIONS
+# WITH HANDLING THE USING OF A LOCAL INSTALL.....THERE ARE 3 OPTIONS: install,
+# don't install and don't install but reference....I THINK THE BELOW IS CORRECT.
+#
+
+
+usage="
+
+Usage:
+ $SCRIPT_NAME [ -n -a -e -g -h -z -d -c -o -r <repository path> -i -u -v ]
+
+   Optional libraries options:
+
+   -n  Disable checkout of any sub libraries
+
+   -a  Force checkout of aceconn (overwrite existing subdir)
+   -e  Force checkout of ensc-core
+   -g  Force checkout of gbtools
+   -h  Force checkout of htslib
+   -z  Force checkout of zeromq
+
+   -d  Force a reference to an existing ensembl checkout (mutually exclusive to -e)
+
+   (i.e. to select a subset of libraries specify -n and then specify the libs you want)
+
+   -c  Checkout sub libraries then exit (no autoreconf step)
+
+   -o  Checkout versions of sub libs that match the current zmap version
+       (currently only gbtools and enscore)
+
+   -r  specify a directory to check out the repositories from
+
+   Build options:
+
+   -f  Force remake all
+   -i  Install missing
+   -u  Run autoupdate
+   -v  Verbose
+
+"
+
+
+if [[ -f $ensembl_file ]] ; then
+  rm -f $ensembl_file
+fi
+
+
+while getopts ":naceghzdcor:fiuv" opt ; do
+    case $opt in
+        n  ) install[$aceconn_key]='no'
+             install[$ensc_core_key]='no'
+             install[$gb_tools_key]='no'
+             install[$htslib_key]='no'
+             install[$zeromq_key]='no' ;;
+
+        a  ) install[$aceconn_key]='yes' ;;
+        e  ) install[$ensc_core_key]='yes' ;;
+        g  ) install[$gb_tools_key]='yes' ;;
+        h  ) install[$htslib_key]='yes' ;;
+
+        z  ) install[$zeromq_key]='yes' ;;
+
+        d  ) touch $ensembl_file
+             install[$ensc_core_key]='no' ;;
+
+        c  ) checkout_only='yes' ;;
+        o  ) checkout_old_commits='yes' ;;
+
+        r  ) git_host=''
+             git_root=$OPTARG ;;
+
+        f  ) force_remake_all='-f' ;;
+        i  ) install_missing='-i' ;;
+        u  ) run_autoupdate_key]='yes' ;;
+        v  ) verbose='-v' ;;
+
+        \? ) zmap_message_exit "Bad arg flag: $usage" ;;
+    esac
+done
+
+
+# Look for extraneous args....
+#
+shift $(($OPTIND - 1))
+
+if [ $# != 0 ]; then
+  zmap_message_exit "Too many args: $usage"
+fi
+
+
+#echo "setting for git: $git_host$git_root"
+
 
 
 # Set up info. about each external library using bash associative arrays.
@@ -182,11 +288,11 @@ declare -A repos=( [$aceconn_key]='AceConn' [$ensc_core_key]='ensc-core' [$gb_to
     [$htslib_key]='htslib' [$zeromq_key]='zeromq_v3' )
 
 declare -A repos_url=( 
-    [$aceconn_key]="$git_host:$git_root/${repos[$aceconn_key]}" 
+    [$aceconn_key]="$git_host$git_root/${repos[$aceconn_key]}" 
     [$ensc_core_key]="https://github.com/Ensembl/ensc-core.git"
-    [$gb_tools_key]="$git_host:$git_root/${repos[$gb_tools_key]}"
+    [$gb_tools_key]="$git_host$git_root/${repos[$gb_tools_key]}"
     [$htslib_key]="https://github.com/samtools/htslib"
-    [$zeromq_key]="$git_host:$git_root/${repos[$zeromq_key]}" )
+    [$zeromq_key]="$git_host$git_root/${repos[$zeromq_key]}" )
 
 declare -A dir=( [$aceconn_key]='AceConn' [$ensc_core_key]='ensc-core' [$gb_tools_key]='gbtools'
     [$htslib_key]='htslib' [$zeromq_key]='zeromq' )
@@ -198,100 +304,6 @@ declare -A test_file=( [$aceconn_key]='configure.ac' [$ensc_core_key]='src/Makef
 declare -A branch=( [$aceconn_key]='' [$ensc_core_key]='-b 0.1' [$gb_tools_key]=''
     [$htslib_key]='-b 1.3.2' [$zeromq_key]='' )
 
-
-# for ensembl development we sometimes need zmap to reference it but we don't want to build
-# it locally....this is a slightly more complicated case then for other libs....for which we
-# use a 'dummy' file to signal to configure that we want to do this.
-ensembl_file='ensembl_ref_but_no_build'
-
-
-# Cmd line options....
-#
-# Do args.
-#
-
-#
-# NOT SURE ABOUT THIS CHANGE AS IT LOOKS LIKE FOR ENSEMBL THERE ARE COMPLICATIONS
-# WITH HANDLING THE USING OF A LOCAL INSTALL.....THERE ARE 3 OPTIONS: install,
-# don't install and don't install but reference....
-#
-
-
-usage="
-
-Usage:
- $SCRIPT_NAME [ -n -a -e -g -h -z -c -f -i -u -v ]
-
-   Optional libraries:
-
-   -n  Disable checkout of any sub libraries
-
-   -a  Force checkout of aceconn (overwrite existing subdir)
-   -e  Force checkout of ensc-core
-   -g  Force checkout of gbtools
-   -h  Force checkout of htslib
-   -z  Force checkout of zeromq
-
-   -d  Force a reference to an existing ensembl checkout (mutually exclusive to -e)
-
-   (i.e. to select a subset of libraries specify -n and then specify the libs you want)
-
-   -c  Checkout sub libraries then exit (no autoreconf step)
-
-   -o  Checkout versions of sub libs that match the current zmap version
-       (currently only gbtools and enscore)
-
-   -f  Force remake all
-   -i  Install missing
-   -u  Run autoupdate
-   -v  Verbose
-
-"
-
-
-if [[ -f $ensembl_file ]] ; then
-  rm -f $ensembl_file
-fi
-
-
-while getopts ":naceghzdcfiouv" opt ; do
-    case $opt in
-        n  ) install[$aceconn_key]='no'
-             install[$ensc_core_key]='no'
-             install[$gb_tools_key]='no'
-             install[$htslib_key]='no'
-             install[$zeromq_key]='no' ;;
-
-        a  ) install[$aceconn_key]='yes' ;;
-        e  ) install[$ensc_core_key]='yes' ;;
-        g  ) install[$gb_tools_key]='yes' ;;
-        h  ) install[$htslib_key]='yes' ;;
-
-        z  ) install[$zeromq_key]='yes' ;;
-
-        d  ) touch $ensembl_file
-             install[$ensc_core_key]='no' ;;
-
-        c  ) checkout_only='yes' ;;
-
-        f  ) force_remake_all='-f' ;;
-        i  ) install_missing='-i' ;;
-        o  ) checkout_old_commits='yes' ;;
-        u  ) run_autoupdate_key]='yes' ;;
-        v  ) verbose='-v' ;;
-
-        \? ) zmap_message_exit "Bad arg flag: $usage" ;;
-    esac
-done
-
-
-# Look for extraneous args....
-#
-shift $(($OPTIND - 1))
-
-if [ $# != 0 ]; then
-  zmap_message_exit "Too many args: $usage"
-fi
 
 
 # Off we go......
