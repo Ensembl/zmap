@@ -168,6 +168,47 @@ git_root='/repos/git/annotools'
 ensembl_file='ensembl_ref_but_no_build'
 
 
+
+# Set up info. about each external library using bash associative arrays.
+# To add more libraries you must invent a new key name (e.g. the name of your
+# library) and use that name to add your values to each of the below arrays.
+# (note order of keys below is of course irrelevant as it's an associative array)
+#
+aceconn_key='aceconn'
+ensc_core_key='ensc_core'
+gb_tools_key='gb_tools'
+htslib_key='htslib'
+zeromq_key='zeromq'
+
+declare -A install=( [$aceconn_key]='maybe' [$ensc_core_key]='maybe' [$gb_tools_key]='maybe'
+    [$htslib_key]='maybe' [$zeromq_key]='maybe' )
+
+# to move to v4 of zeromq simply change the value for zeromq in this array to 'zeromq' and rebuild.
+#
+declare -A repos=( [$aceconn_key]='AceConn' [$ensc_core_key]='ensc-core' [$gb_tools_key]='gbtools'
+    [$htslib_key]='htslib' [$zeromq_key]='zeromq_v3' )
+
+declare -A repos_url=( 
+    [$aceconn_key]="$git_host$git_root/${repos[$aceconn_key]}" 
+    [$ensc_core_key]="https://github.com/Ensembl/ensc-core.git"
+    [$gb_tools_key]="$git_host$git_root/${repos[$gb_tools_key]}"
+    [$htslib_key]="https://github.com/samtools/htslib"
+    [$zeromq_key]="$git_host$git_root/${repos[$zeromq_key]}" )
+
+declare -A dir=( [$aceconn_key]='AceConn' [$ensc_core_key]='ensc-core' [$gb_tools_key]='gbtools'
+    [$htslib_key]='htslib' [$zeromq_key]='zeromq' )
+
+declare -A test_file=( [$aceconn_key]='configure.ac' [$ensc_core_key]='src/Makefile' [$gb_tools_key]='configure.ac'
+    [$htslib_key]='Makefile' [$zeromq_key]='configure.in' )
+
+# can specify a specific branch name or tag here by using the -b arg:
+declare -A branch=( [$aceconn_key]='' [$ensc_core_key]='-b 0.1' [$gb_tools_key]=''
+    [$htslib_key]='-b 1.3.2' [$zeromq_key]='' )
+
+
+
+
+
 # Cmd line options....
 #
 # Do args.
@@ -266,43 +307,6 @@ fi
 
 #echo "setting for git: $git_host$git_root"
 
-
-
-# Set up info. about each external library using bash associative arrays.
-# To add more libraries you must invent a new key name (e.g. the name of your
-# library) and use that name to add your values to each of the below arrays.
-# (note order of keys below is of course irrelevant as it's an associative array)
-#
-aceconn_key='aceconn'
-ensc_core_key='ensc_core'
-gb_tools_key='gb_tools'
-htslib_key='htslib'
-zeromq_key='zeromq'
-
-declare -A install=( [$aceconn_key]='maybe' [$ensc_core_key]='maybe' [$gb_tools_key]='maybe'
-    [$htslib_key]='maybe' [$zeromq_key]='maybe' )
-
-# to move to v4 of zeromq simply change the value for zeromq in this array to 'zeromq' and rebuild.
-#
-declare -A repos=( [$aceconn_key]='AceConn' [$ensc_core_key]='ensc-core' [$gb_tools_key]='gbtools'
-    [$htslib_key]='htslib' [$zeromq_key]='zeromq_v3' )
-
-declare -A repos_url=( 
-    [$aceconn_key]="$git_host$git_root/${repos[$aceconn_key]}" 
-    [$ensc_core_key]="https://github.com/Ensembl/ensc-core.git"
-    [$gb_tools_key]="$git_host$git_root/${repos[$gb_tools_key]}"
-    [$htslib_key]="https://github.com/samtools/htslib"
-    [$zeromq_key]="$git_host$git_root/${repos[$zeromq_key]}" )
-
-declare -A dir=( [$aceconn_key]='AceConn' [$ensc_core_key]='ensc-core' [$gb_tools_key]='gbtools'
-    [$htslib_key]='htslib' [$zeromq_key]='zeromq' )
-
-declare -A test_file=( [$aceconn_key]='configure.ac' [$ensc_core_key]='src/Makefile' [$gb_tools_key]='configure.ac'
-    [$htslib_key]='Makefile' [$zeromq_key]='configure.in' )
-
-# can specify a specific branch name or tag here by using the -b arg:
-declare -A branch=( [$aceconn_key]='' [$ensc_core_key]='-b 0.1' [$gb_tools_key]=''
-    [$htslib_key]='-b 1.3.2' [$zeromq_key]='' )
 
 
 
