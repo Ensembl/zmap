@@ -130,7 +130,12 @@ function config_set_ZMAP_ARCH
 
     case $opsys in
         "Linux")
-            lsb_release=`ssh $host lsb_release -cs`
+            if [ "$host" == "$current_host" ] ; then
+                lsb_release=`lsb_release -cs`
+            else
+                lsb_release=`ssh $host lsb_release -cs`
+            fi
+
             case $lsb_release in
                 "lucid")
                     ZMAP_ARCH="Linux"$separator$arch
