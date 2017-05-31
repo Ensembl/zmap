@@ -194,11 +194,11 @@ declare -A repos=( [$aceconn_key]='AceConn' [$ensc_core_key]='ensc-core' [$gb_to
     [$htslib_key]='htslib' [$zeromq_key]='zeromq_v3' )
 
 declare -A repos_url=( 
-    [$aceconn_key]="$git_host$git_root/${repos[$aceconn_key]}" 
-    [$ensc_core_key]="https://github.com/Ensembl/ensc-core.git"
-    [$gb_tools_key]="$git_host$git_root/${repos[$gb_tools_key]}"
-    [$htslib_key]="https://github.com/samtools/htslib"
-    [$zeromq_key]="$git_host$git_root/${repos[$zeromq_key]}" )
+    [$aceconn_key]='git@github.com:Ensembl/AceConn.git'
+    [$ensc_core_key]='https://github.com/Ensembl/ensc-core.git'
+    [$gb_tools_key]='git@github.com:Ensembl/gbtools.git'
+    [$htslib_key]='https://github.com/samtools/htslib'
+    [$zeromq_key]='git@github.com:Ensembl/zeromq_v3.git' )
 
 declare -A dir=( [$aceconn_key]='AceConn' [$ensc_core_key]='ensc-core' [$gb_tools_key]='gbtools'
     [$htslib_key]='htslib' [$zeromq_key]='zeromq' )
@@ -206,10 +206,12 @@ declare -A dir=( [$aceconn_key]='AceConn' [$ensc_core_key]='ensc-core' [$gb_tool
 declare -A test_file=( [$aceconn_key]='configure.ac' [$ensc_core_key]='src/Makefile' [$gb_tools_key]='configure.ac'
     [$htslib_key]='Makefile' [$zeromq_key]='configure.in' )
 
-# can specify a specific branch name or tag here by using the -b arg:
-declare -A branch=( [$aceconn_key]='' [$ensc_core_key]='-b 0.1' [$gb_tools_key]=''
-    [$htslib_key]='-b 1.3.2' [$zeromq_key]='' )
 
+# can specify a specific branch name or tag here by using the -b arg:
+declare -A branch=( [$aceconn_key]='-b develop' [$ensc_core_key]='-b 0.1' [$gb_tools_key]='-b develop'
+    [$htslib_key]='-b 1.3.2' [$zeromq_key]='-b develop' )
+
+# github: had to add -b develop for gbtools git clone, somehow github doesn't just get develop....
 
 
 
@@ -219,7 +221,7 @@ declare -A branch=( [$aceconn_key]='' [$ensc_core_key]='-b 0.1' [$gb_tools_key]=
 # Do args.
 #
 
-#
+# NEW COMMAND LINE ARGS:
 # NOT SURE ABOUT THIS CHANGE AS IT LOOKS LIKE FOR ENSEMBL THERE ARE COMPLICATIONS
 # WITH HANDLING THE USING OF A LOCAL INSTALL.....THERE ARE 3 OPTIONS: install,
 # don't install and don't install but reference....I THINK THE BELOW IS CORRECT.
@@ -243,7 +245,7 @@ Usage:
 
    -d  Force a reference to an existing ensembl checkout (mutually exclusive to -e)
 
-   (i.e. to select a subset of libraries specify -n and then specify the libs you want)
+   To select a subset of libraries specify -n and then specify the libs you want.
 
    -c  Checkout sub libraries then exit (no autoreconf step)
 
