@@ -156,8 +156,8 @@ version_arg=''
 checkout_old_commits='no'
 
 # Base location of our git repositories
-git_host='git.internal.sanger.ac.uk'
-git_root='/repos/git/annotools'
+git_host='git@github.com'
+git_root='/Ensembl'
 
 
 # Set up info. about each external library using bash associative arrays.
