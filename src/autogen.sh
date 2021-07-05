@@ -194,11 +194,11 @@ declare -A repos=( [$aceconn_key]='AceConn' [$ensc_core_key]='ensc-core' [$gb_to
     [$htslib_key]='htslib' [$zeromq_key]='zeromq_v3' )
 
 declare -A repos_url=( 
-    [$aceconn_key]=''https://github.com/Ensembl/AceConn.git'
+    [$aceconn_key]='https://github.com/Ensembl/AceConn.git'
     [$ensc_core_key]='https://github.com/Ensembl/ensc-core.git'
-    [$gb_tools_key]=''https://github.com/Ensembl/gbtools.git'
+    [$gb_tools_key]='https://github.com/Ensembl/gbtools.git'
     [$htslib_key]='https://github.com/samtools/htslib.git'
-    [$zeromq_key]=''https://github.com/Ensembl/zeromq_v3.git' )
+    [$zeromq_key]='https://github.com/Ensembl/zeromq_v3.git' )
 
 declare -A dir=( [$aceconn_key]='AceConn' [$ensc_core_key]='ensc-core' [$gb_tools_key]='gbtools'
     [$htslib_key]='htslib' [$zeromq_key]='zeromq' )
