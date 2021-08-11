@@ -31,7 +31,7 @@
 #ifndef __LIBFOO_CANVAS_I18N_H__
 #define __LIBFOO_CANVAS_I18N_H__ 
 
-#include <glib.h>
+
 
 G_BEGIN_DECLS
 

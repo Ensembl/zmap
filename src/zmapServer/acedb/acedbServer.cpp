@@ -34,6 +34,7 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <glib.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -43,7 +44,6 @@ extern "C" {
 }
 #endif
 
-#include <glib.h>
 #include <ZMap/zmapUtils.hpp>
 #include <ZMap/zmapGLibUtils.hpp>
 #include <ZMap/zmapConfigIni.hpp>

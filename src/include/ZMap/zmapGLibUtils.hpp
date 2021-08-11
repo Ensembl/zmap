@@ -28,6 +28,8 @@
  *
  *-------------------------------------------------------------------
  */
+#include <glib.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -35,7 +37,6 @@ extern "C" {
 #ifndef ZMAP_GLIBUTILS_H
 #define ZMAP_GLIBUTILS_H
 
-#include <glib.h>
 
 
 
