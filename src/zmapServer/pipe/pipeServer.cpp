@@ -1560,18 +1560,28 @@ static void setErrorMsgGError(PipeServer server, GError **gff_pipe_err_inout)
 
 
 /* It's possible for us to have reported an error and then another error to come along. */
-static void setErrMsg(PipeServer server, const char *new_msg)
-{
-  char *error_msg ;
+static void setErrMsg(PipeServer server, const char *new_msg) {
+    char *error_msg ;
 
-  if (server->last_err_msg)
-    g_free(server->last_err_msg) ;
+    int err_num = 0 ;
+    bool locked ;
 
-  error_msg = g_strdup_printf("error: \"%s\" request: \"%s\",", new_msg, server->script_args) ;
+    // acquire mutex
+    if (UtilsGlobalThreadLock(&err_num)) {
+       if (server->last_err_msg) {
+           g_free(server->last_err_msg) ;
+           server->last_err_msg = NULL;
+       }
+       error_msg = g_strdup_printf("error: \"%s\" request: \"%s\",", new_msg, server->script_args) ;
+       server->last_err_msg = error_msg ;
+       if (! UtilsGlobalThreadUnlock(&err_num)) {
+           zMapLogCriticalSysErr(err_num, "%s", "Error trying to unlock setErrMsg.") ;
+       }
+    } else {
+       zMapLogCriticalSysErr(err_num, "%s", "Error trying to lock setErrMsg.") ;
+    }
 
-  server->last_err_msg = error_msg ;
-
-  return ;
+    return ;
 }
 
 
