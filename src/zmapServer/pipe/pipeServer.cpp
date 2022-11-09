@@ -871,42 +871,45 @@ static ZMapServerResponseType destroyConnection(void *server_in)
   PipeServer server = (PipeServer)server_in ;
   zMapReturnValIfFail(server, ZMAP_SERVERRESPONSE_REQFAIL) ;
 
-  if (server->child_pid)
-    {
-      zMapLogCritical("Connection being destroyed before child %d has finished (\"%s\")",
-                      server->child_pid, server->script_path) ;
+  if (server->child_pid) {
+    zMapLogCritical("Connection being destroyed before child %d has finished (\"%s\")",
+        server->child_pid, server->script_path) ;
 
-      /* Slightly tricky here, we can be requested to destroy the connection _before_ the
-       * child has died so we need to replace the standard child watch routine with one that
-       * _only_ reaps the child and nothing else, this will be called sometime later when
-       * the child dies. (no point in recording watch id for reap callback
-       * as once we exit here this connection no longer exists. */
-      if (server->child_watch_id)
-        g_source_remove(server->child_watch_id) ;
-      g_child_watch_add(server->child_pid, childReapOnlyCB, NULL) ;
+    /* Slightly tricky here, we can be requested to destroy the connection _before_ the
+     * child has died so we need to replace the standard child watch routine with one that
+     * _only_ reaps the child and nothing else, this will be called sometime later when
+     * the child dies. (no point in recording watch id for reap callback
+     * as once we exit here this connection no longer exists. */
+    if (server->child_watch_id)
+      g_source_remove(server->child_watch_id) ;
+    g_child_watch_add(server->child_pid, childReapOnlyCB, NULL) ;
 
-      killChild(server) ;
+    killChild(server) ;
 
-      // reset to avoid any possibility of reuse.
-      server->child_pid = 0 ;
-      server->child_watch_id = 0 ;
-    }
+    // reset to avoid any possibility of reuse.
+    server->child_pid = 0 ;
+    server->child_watch_id = 0 ;
+  }
 
-
-  if (server->url)
+  int err_num = 0 ;
+  // Acquire mutex to avoid race conditions when freeing memory
+  if (UtilsGlobalThreadLock(&err_num)) {
     g_free(server->url) ;
-
-  if (server->script_path)
+    server->url = NULL ;
     g_free(server->script_path) ;
-
-  if (server->analysis_summary)
+    server->script_path = NULL ;
     g_free(server->analysis_summary) ;
-
-
-  if (server->last_err_msg)
+    server->analysis_summary = NULL ;
     g_free(server->last_err_msg) ;
-
-  g_free(server) ;
+    server->last_err_msg = NULL ;
+    g_free(server) ;
+    server = NULL ;
+    if (! UtilsGlobalThreadUnlock(&err_num)) {
+      zMapLogCriticalSysErr(err_num, "%s", "Error trying to unlock destroyConnection.") ;
+    }
+  } else {
+    zMapLogCriticalSysErr(err_num, "%s", "Error trying to lock destroyConnection.") ;
+  }
 
   return result ;
 }
@@ -1560,28 +1563,27 @@ static void setErrorMsgGError(PipeServer server, GError **gff_pipe_err_inout)
 
 
 /* It's possible for us to have reported an error and then another error to come along. */
-static void setErrMsg(PipeServer server, const char *new_msg) {
-    char *error_msg ;
+static void setErrMsg(PipeServer server, const char *new_msg)
+{
+  char *error_msg ;
+  int err_num = 0 ;
 
-    int err_num = 0 ;
-    bool locked ;
-
-    // acquire mutex
-    if (UtilsGlobalThreadLock(&err_num)) {
-       if (server->last_err_msg) {
-           g_free(server->last_err_msg) ;
-           server->last_err_msg = NULL;
-       }
-       error_msg = g_strdup_printf("error: \"%s\" request: \"%s\",", new_msg, server->script_args) ;
-       server->last_err_msg = error_msg ;
-       if (! UtilsGlobalThreadUnlock(&err_num)) {
-           zMapLogCriticalSysErr(err_num, "%s", "Error trying to unlock setErrMsg.") ;
-       }
-    } else {
-       zMapLogCriticalSysErr(err_num, "%s", "Error trying to lock setErrMsg.") ;
+  // Acquire mutex to avoid race conditions when freeing memory
+  if (UtilsGlobalThreadLock(&err_num)) {
+    if (server->last_err_msg) {
+      g_free(server->last_err_msg) ;
+      server->last_err_msg = NULL ;
     }
+    error_msg = g_strdup_printf("error: \"%s\" request: \"%s\",", new_msg, server->script_args) ;
+    server->last_err_msg = error_msg ;
+    if (! UtilsGlobalThreadUnlock(&err_num)) {
+      zMapLogCriticalSysErr(err_num, "%s", "Error trying to unlock setErrMsg.") ;
+    }
+  } else {
+    zMapLogCriticalSysErr(err_num, "%s", "Error trying to lock setErrMsg.") ;
+  }
 
-    return ;
+  return ;
 }
 
 
