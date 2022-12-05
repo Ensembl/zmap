@@ -1455,7 +1455,10 @@ static void handleXRemoteReply(gboolean reply_ok, char *reply_error,
                                gpointer reply_handler_func_data)
 {
   RemoteData remote_data = (RemoteData)reply_handler_func_data ;
-
+  if (! remote_data) {
+      zMapLogCritical("handleXRemoteReply: reply_handler_func_data should not be NULL");
+      return;
+  }
 
   if (!reply_ok)
     {
@@ -1490,6 +1493,7 @@ static void handleXRemoteReply(gboolean reply_ok, char *reply_error,
     }
 
   g_free(remote_data) ;                                            /* Allocated in zmapWindowFeatureCallXRemote() */
+  remote_data = NULL;
 
   return ;
 }
