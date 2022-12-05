@@ -1456,7 +1456,7 @@ static void handleXRemoteReply(gboolean reply_ok, char *reply_error,
 {
   RemoteData remote_data = (RemoteData)reply_handler_func_data ;
   if (! remote_data) {
-      zMapLogCritical("handleXRemoteReply: reply_handler_func_data should not be NULL");
+      zMapLogCritical("%s", "handleXRemoteReply: reply_handler_func_data should not be NULL");
       return;
   }
 
