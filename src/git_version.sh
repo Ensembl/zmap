@@ -61,7 +61,7 @@ fi
 git status >/dev/null 2>&1 || { echo "NULL" ; exit 0 ; }
 
 
-git_version=`git log --format="%cs:%h" HEAD^..HEAD` || { message_err 'git log failed' ; exit 1 ; }
+git_version=`git log --format="%cs:%h" -n 1 HEAD` || { message_err 'git log failed' ; exit 1 ; }
 
 
 # git branch lists branches like this (* shows current branch):
